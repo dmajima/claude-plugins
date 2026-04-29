@@ -136,6 +136,8 @@ Claude Code のサブエージェント単体・エージェントチームを�
 - 既存エージェントとの重複は必ずユーザに提示
 - スキル内 `agents/` のグローバル重複削除禁止（プラグイン配布のため）
 - パスポータビリティチェック必須
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 

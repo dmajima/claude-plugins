@@ -151,6 +151,8 @@ marketplace.json の更新が完了しました。
 - 重複検出時は **必ずユーザに提示**（自動マージ・自動却下しない）
 - フルオート実行前に **ユーザの明示的選択** が必須
 - 既存 marketplace.json のエンコーディング維持
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 

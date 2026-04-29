@@ -106,6 +106,8 @@ Claude Code のスキル（`SKILL.md` + `README.md` + `references/` + `scripts/`
 - 既存ファイル更新時はエンコーディング・改行コード維持（`~/.claude/rules/common/file-encoding.md`）
 - パスポータビリティチェック必須
 - `git commit` 以降の操作は実行しない
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
