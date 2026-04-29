@@ -6,9 +6,9 @@
   "description": "dmajima 個人用 Claude Code プラグインマーケットプレイス",
   "plugins": [
     {
-      "name": "extension-creator",
-      "source": "./plugins/extension-creator",
-      "description": "Claude Code の各種拡張要素（プラグイン・スキル・コマンド・エージェント・チーム・フック）の作成からマーケットプレイス公開までを支援するツールキット"
+      "name": "extension-toolkit",
+      "source": "./plugins/extension-toolkit",
+      "description": "Claude Code の各種拡張要素（プラグイン・スキル・コマンド・エージェント・チーム・フック）の作成・改修からマーケットプレイス公開までを支援するツールキット"
     }
   ]
 }
