@@ -1,6 +1,6 @@
 # dmajima-claude-plugins
 
-wwdmajima 個人用 Claude Code プラグインマーケットプレイス。
+dmajima 個人用 Claude Code プラグインマーケットプレイス。
 
 ## 構成
 
