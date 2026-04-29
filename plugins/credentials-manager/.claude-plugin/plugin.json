@@ -1,0 +1,15 @@
+{
+  "name": "credentials-manager",
+  "description": "Manage authentication credentials (API keys, tokens, passwords) across Claude Code sessions. Stores credentials in a scope-aware JSON file (project-local when inside a git repo, user-global otherwise) and auto-applies them by URL/domain match.",
+  "version": "0.1.0",
+  "author": {
+    "name": "dmajima"
+  },
+  "keywords": [
+    "credentials",
+    "secrets",
+    "api-key",
+    "token",
+    "auth"
+  ]
+}
