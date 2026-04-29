@@ -19,9 +19,9 @@ Claude Code の拡張要素（スキル・プラグイン・コマンド・エ�
 
 | 業務 | 担当スキル |
 |-----|----------|
-| 拡張要素の新規作成 | 各 `*-creator` |
+| 拡張要素の新規作成 | 各 `*-toolkit` |
 | マーケットプレイス公開 | `marketplace-publisher` |
-| 修正の実装 | レビュー結果に基づき各 `*-creator` を再起動 |
+| 修正の実装 | レビュー結果に基づき各 `*-toolkit` を再起動 |
 
 ## トリガー条件
 
@@ -73,23 +73,13 @@ Claude Code の拡張要素（スキル・プラグイン・コマンド・エ�
 | チーム | 観点網羅性 / メンバー相補性 / サイズ妥当性 |
 | フック | セキュリティ（command 実行内容） / パスポータビリティ |
 
-### 3. レビューエージェントの並列起動
+### 3. チームの選定 + 並列レビュー実施
 
-[references/review-perspectives.md](references/review-perspectives.md) の「エージェント起動」を参照。
+レビューは **専門家を集めたチーム単位で起動** する（単独レビュアーへの集約を避け、観点ごとに分散）。
 
-最低 3 名のエージェントを **並列で起動** し、独立した観点で評価させる:
+対象別の採用チームと専門家エージェント一覧は [references/team-selection.md](references/team-selection.md) を参照。
 
-```text
-Agent({ subagent_type: "implementation-engineer", prompt: "..." })  # 並列
-Agent({ subagent_type: "architect", prompt: "..." })                # 並列
-Agent({ subagent_type: "security-engineer", prompt: "..." })        # 並列
-```
-
-レビュー対象に応じて追加エージェントを起動:
-
-- スキル/プラグイン → `+ test-engineer`
-- フック・外部公開 → `+ security-engineer`（必須）
-- 大規模プラグイン → `+ project-leader`
+機械チェック（[references/automated-checks.md](references/automated-checks.md)）を並行して実行する。
 
 ### 4. 共通自動チェック
 
@@ -134,7 +124,7 @@ Agent({ subagent_type: "security-engineer", prompt: "..." })        # 並列
 
 | モード | 動作 |
 |-------|------|
-| 通常 | 結果を提示、修正は別スキル（`*-creator`）で実施するよう案内 |
+| 通常 | 結果を提示、修正は別スキル（`*-toolkit`）で実施するよう案内 |
 | `--auto-fix` | 軽微な指摘（パスポータビリティ・プレースホルダ・フォーマット）を自動修正 |
 
 自動修正の対象外:
@@ -148,15 +138,18 @@ Agent({ subagent_type: "security-engineer", prompt: "..." })        # 並列
 | 結果 | 接続先 |
 |-----|-------|
 | Critical/High なし | `marketplace-publisher` への接続を提案 |
-| Critical/High あり | 該当 `*-creator` への接続を提案（修正後再レビュー推奨） |
+| Critical/High あり | 該当 `*-toolkit` への接続を提案（修正後再レビュー推奨） |
 
 ## 重要な制約
 
-- **レビューエージェント最低 3 名**（観点網羅のため）
-- エージェントは **並列起動**（独立した観点で評価）
+- **レビューはチーム単位で起動**（[`../../teams/`](../../teams/) のチーム定義に従う）
+- 標準は最低 3 名（観点が 2 つに固定の場合は 2 名でも可）
+- メンバーは並列起動（独立観点）
 - 自動修正は軽微な指摘のみ
 - セキュリティ指摘は必ずユーザ確認
 - このスキル自身では構造変更を伴う修正は行わない
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証を実施
 
 ## 参照
 
