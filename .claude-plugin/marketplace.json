@@ -1,8 +1,8 @@
 {
   "name": "dmajima-claude-plugins",
   "owner": {
-    "name": "wwdmajima"
+    "name": "dmajima"
   },
-  "description": "wwdmajima 個人用 Claude Code プラグインマーケットプレイス",
+  "description": "dmajima 個人用 Claude Code プラグインマーケットプレイス",
   "plugins": []
 }
