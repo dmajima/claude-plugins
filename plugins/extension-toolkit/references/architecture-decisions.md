@@ -6,7 +6,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | `creator` 系 6（skill / plugin / command / agent / hook / readme）+ `reviewer` 1 + `publisher` 1 + オーケストレータ `/extension` の 3 層パイプラインで構成 |
+| 決定 | `toolkit` 系 7（skill / plugin / command / agent / hook / readme / environment-setup）+ `reviewer` 1 + `publisher` 1 + オーケストレータ `/extension` の 3 層パイプラインで構成 |
 | 理由 | 1 スキル 1 責務（SRP）の徹底。各スキルが他スキルを Skill ツール経由で呼び出す疎結合。ユーザはオーケストレータ（`/extension`）または個別スキル（自然言語起動）の両方で利用可能 |
 | トレードオフ | スキル間連携のオーケストレーションが `/extension` と各 SKILL.md「引き渡し」表に分散する |
 | 代替案 | 単一の mega-skill で全機能提供 → SKILL.md 200 行制約に違反、却下 |
@@ -47,8 +47,8 @@
 | 決定 | エージェント単体作成 とエージェントチーム編成を `agent-toolkit` 1 スキルで担当（モード判定で内部分岐） |
 | 理由 | 両者は「エージェントを設計する」という同じドメイン。チーム編成も内部的にメンバー候補のエージェント定義参照を伴うため、単体作成と密結合 |
 | トレードオフ | チーム編成は議論ラウンド・相補性検証など固有の不変条件を持ち、DDD 観点では境界コンテキストが混在 |
-| 代替案 | `team-creator` への分離 → 単体エージェント定義の参照・派生作成が困難 |
-| 将来検討 | チーム編成の複雑度がさらに増した場合、`team-creator` への分離余地を残す |
+| 代替案 | `team-toolkit` への分離 → 単体エージェント定義の参照・派生作成が困難 |
+| 将来検討 | チーム編成の複雑度がさらに増した場合、`team-toolkit` への分離余地を残す |
 
 ## ADR-006: `extension-reviewer` が並列エージェント起動を担う（最低 3 名）
 
@@ -73,7 +73,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | 各 `*-creator` の検証セクション と `extension-reviewer/references/automated-checks.md` で参照する検証ルールを `references/validation-rules.md` に集約。各参照元はチェックリストの該当節を指定して引用する |
+| 決定 | 各 `*-toolkit` の検証セクション と `extension-reviewer/references/automated-checks.md` で参照する検証ルールを `references/validation-rules.md` に集約。各参照元はチェックリストの該当節を指定して引用する |
 | 理由 | 検証ルールが 8 スキル + reviewer に散在すると更新時の整合性維持が困難（SSOT 違反） |
 | トレードオフ | 参照階層が深くなる |
 | 代替案 | 各スキル内に重複記述 → 更新コスト増、却下 |

@@ -34,7 +34,7 @@
 ### Phase 5: 引き渡し
 
 Critical/High なし → `marketplace-publisher` への接続を提案
-Critical/High あり → 該当 `*-creator` への接続を提案
+Critical/High あり → 該当 `*-toolkit` への接続を提案
 
 ## 期待出力
 

@@ -3,7 +3,7 @@ name: readme-toolkit
 description: Claude Code のプラグイン・スキル等の README.md（人間向けリファレンス）を新規作成・更新するスキル。「foo プラグインの README を書いて」「bar スキルの README を更新」「README を最新化」などの依頼で起動する。Use when the user wants to create or update a human-facing README.md for a plugin, skill, or other artifact. SKIP when the user wants to create a SKILL.md (use skill-toolkit), plugin.json (use plugin-toolkit), or other body files.
 ---
 
-# README Creator
+# README Toolkit
 
 Claude Code のプラグイン・スキル等の `README.md`（人間向けリファレンス）を作成・更新するスキル。プラグイン横断テンプレート（`templates/readme/README.md`）を使用する。
 

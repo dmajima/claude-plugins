@@ -20,7 +20,7 @@ Claude Code プラグインマーケットプレイス（`.claude-plugin/marketp
 | 業務 | 担当スキル |
 |-----|----------|
 | プラグイン本体の作成 | `plugin-toolkit` |
-| スキル/コマンド/エージェント/フック本体の作成 | 各 `*-creator` |
+| スキル/コマンド/エージェント/フック本体の作成 | 各 `*-toolkit` |
 | 公開前のレビュー | `extension-reviewer` |
 | README 単体の生成・更新 | `readme-toolkit` |
 

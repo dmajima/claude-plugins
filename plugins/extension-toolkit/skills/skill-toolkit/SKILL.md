@@ -3,7 +3,7 @@ name: skill-toolkit
 description: Claude Code のスキル（SKILL.md・references・scripts・evals 一式）を新規作成または既存改修するスキル。「新しいスキル foo を作って」「skill foo を更新」「○○用のスキルが欲しい」「既存スキル bar に機能追加」などの依頼で起動する。Use when the user wants to create, scaffold, refactor, or enhance a Claude Code skill. SKIP when the user asks for a plugin shell (use plugin-toolkit), a slash command (use command-toolkit), an agent (use agent-toolkit), or a hook (use hook-toolkit).
 ---
 
-# Skill Creator
+# Skill Toolkit
 
 Claude Code のスキル（`SKILL.md` + `README.md` + `references/` + `scripts/` + `evals/`）を新規作成・改修するスキル。プラグイン横断テンプレート（`templates/skill/`）と SSOT（`references/`）に従って構造化された生成物を出力する。
 

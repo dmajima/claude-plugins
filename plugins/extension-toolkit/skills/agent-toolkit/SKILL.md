@@ -3,7 +3,7 @@ name: agent-toolkit
 description: Claude Code のサブエージェント（agents/{name}.md）およびエージェントチーム（複数の独立した Claude Code インスタンスによる協調作業）を新規作成・編成・改修するスキル。「コードレビュー用エージェントを作って」「セキュリティ評価チームを編成」「実装エンジニア視点のエージェントが欲しい」などの依頼で起動する。Use when the user wants to create, design, or refactor a sub-agent or an agent team. SKIP when the user wants a skill (use skill-toolkit), plugin shell (use plugin-toolkit), command (use command-toolkit), or hook (use hook-toolkit).
 ---
 
-# Agent Creator
+# Agent Toolkit
 
 Claude Code のサブエージェント単体・エージェントチームを設計・作成するスキル。要件に合わせて専門性のあるエージェントを選定し、デファクトスタンダードや外部リファレンスを取り入れた設計を行う。
 

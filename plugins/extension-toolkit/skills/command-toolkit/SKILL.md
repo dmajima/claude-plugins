@@ -3,7 +3,7 @@ name: command-toolkit
 description: Claude Code のスラッシュコマンド（commands/{name}.md）を新規作成・改修するスキル。「新しい /foo コマンドを作って」「foo コマンドを更新」「○○用のコマンドが欲しい」などの依頼で起動する。Use when the user wants to create or modify a slash command file. SKIP when the user wants to create a skill (use skill-toolkit), plugin shell (use plugin-toolkit), agent (use agent-toolkit), or hook (use hook-toolkit).
 ---
 
-# Command Creator
+# Command Toolkit
 
 Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{name}.md` または `<repo>/.claude/commands/{name}.md`）を作成・改修するスキル。プラグイン横断テンプレート（`templates/command/command.md`）に従って構造化された生成物を出力する。
 

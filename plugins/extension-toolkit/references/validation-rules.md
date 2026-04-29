@@ -1,6 +1,6 @@
 # 検証ルール（SSOT）
 
-`extension-toolkit` の各 `*-creator` および `extension-reviewer` が共通で参照する検証チェックリスト。同じ検証ルールを複数箇所に書かないようにこのファイルに集約する。
+`extension-toolkit` の各 `*-toolkit` および `extension-reviewer` が共通で参照する検証チェックリスト。同じ検証ルールを複数箇所に書かないようにこのファイルに集約する。
 
 ## 1. 共通検証項目（全拡張要素）
 
@@ -90,7 +90,7 @@
 
 | タイミング | 実施者 |
 |----------|-------|
-| `*-creator` 実行直後 | 各 `*-creator` 自身（自己検証） |
+| `*-toolkit` 実行直後 | 各 `*-toolkit` 自身（自己検証） |
 | プラグイン公開前 | `extension-reviewer`（並列エージェント + 機械チェック） |
 | マーケットプレイス登録前 | `marketplace-publisher`（プラグイン実体検証部分のみ） |
 
@@ -114,7 +114,7 @@
 | Medium | 検討推奨。指摘として記録し、ユーザの判断に委ねる |
 | Low | 改善提案として記録 |
 
-## 6. 各 creator / reviewer からの参照
+## 6. 各 toolkit / reviewer からの参照
 
 | 参照元 | 参照部分 |
 |-------|---------|

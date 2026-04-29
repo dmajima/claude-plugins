@@ -1,9 +1,9 @@
 ---
 name: hook-toolkit
-description: Claude Code のフック設定（hooks/hooks.json または settings.json の hooks セクション）を新規作成・改修するスキル。「PreToolUse フックを作って」「Stop イベントで通知音」「Bash 実行前にログを残す」「フックを settings.json から切り出してプラグイン化」などの依頼で起動する。Use when the user wants to create or modify a hook configuration. SKIP when the user wants to create a skill, plugin shell, command, or agent (use the corresponding creator skill).
+description: Claude Code のフック設定（hooks/hooks.json または settings.json の hooks セクション）を新規作成・改修するスキル。「PreToolUse フックを作って」「Stop イベントで通知音」「Bash 実行前にログを残す」「フックを settings.json から切り出してプラグイン化」などの依頼で起動する。Use when the user wants to create or modify a hook configuration. SKIP when the user wants to create a skill, plugin shell, command, or agent (use the corresponding *-toolkit skill).
 ---
 
-# Hook Creator
+# Hook Toolkit
 
 Claude Code のフック設定（`hooks.json`）を作成・改修するスキル。プラグイン横断テンプレート（`templates/hook/hooks.json`）に従って構造化された生成物を出力する。
 
@@ -19,7 +19,7 @@ Claude Code のフック設定（`hooks.json`）を作成・改修するスキ�
 | 業務 | 担当スキル |
 |-----|----------|
 | `settings.json` からフック抽出 → プラグイン化 | `plugin-toolkit`（移管シナリオ） |
-| スキル/コマンド/エージェント生成 | 各 `*-creator` |
+| スキル/コマンド/エージェント生成 | 各 `*-toolkit` |
 | マーケットプレイス公開 | `marketplace-publisher` |
 
 ## トリガー条件
