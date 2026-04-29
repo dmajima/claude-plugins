@@ -1,4 +1,4 @@
-# Case 03: フックレビュー（security-engineer 必須）
+# Case 03: フックレビュー（hook-security-team 起動）
 
 ## 入力
 
@@ -15,17 +15,19 @@
 
 `hooks.json` → フックレビューモード。
 
-### Phase 2: 観点選定（security-engineer 必須）
+### Phase 2: チーム選定
 
-| エージェント | 観点 |
-|------------|------|
-| `security-engineer`（リード・必須） | command の安全性・終了コード・ブロック動作 |
-| `implementation-engineer` | timeout 設定・パスポータビリティ |
-| `infrastructure-engineer` | 副作用・パフォーマンス影響 |
+[`../references/team-selection.md`](../references/team-selection.md) に従い `hook-security-team`（3 名）を採用。
 
-### Phase 3: 並列起動 + 機械チェック
+| メンバー | 配布元 | 役割 |
+|--------|-------|------|
+| `security-engineer` | グローバル | リード（脅威モデル・command 安全性） |
+| `implementation-engineer` | グローバル | timeout / パスポータビリティ / 終了コード |
+| `infrastructure-engineer` | グローバル | 副作用・パフォーマンス影響 |
 
-特に command フィールドの危険コマンド検出に注力。
+### Phase 3: チーム起動 + 機械チェック
+
+[`../../../teams/hook-security-team.md`](../../../teams/hook-security-team.md) のスポーンプロンプトに従い、3 名を 1 メッセージ内で **並列 Agent 起動**。command フィールドの危険コマンド検出を重点的に実施。
 
 ### Phase 4: セキュリティ指摘の扱い
 
@@ -40,4 +42,8 @@
 
 ## 分岐の根拠
 
-対象 = フック → security-engineer 必須。
+対象 = フック → `hook-security-team` 採用。
+
+## 関連ケース
+
+- `case-02_plugin_review.md`（フック含むプラグイン全体レビュー）

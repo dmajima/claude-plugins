@@ -1,4 +1,4 @@
-# Case 02: プラグイン全体レビュー（5 名）
+# Case 02: プラグイン全体レビュー（plugin-review-team 起動）
 
 ## 入力
 
@@ -7,27 +7,32 @@
 | 起動フレーズ | "`extension-toolkit` プラグイン全体をレビュー" |
 | 引数 | `extension-toolkit` |
 | フラグ | なし |
-| 既存状態 | プラグイン全体が存在 |
+| 既存状態 | プラグイン全体が存在（フック含む） |
 
 ## 期待動作
 
 ### Phase 1: 対象判定
 
-`.claude-plugin/plugin.json` 含むディレクトリ → プラグインレビューモード。
+`.claude-plugin/plugin.json` 含むディレクトリ → プラグインレビューモード。フック有無を検出（`hooks/hooks.json` の存在）。
 
-### Phase 2: 観点選定
+### Phase 2: チーム選定
 
-| エージェント | 観点 |
-|------------|------|
-| `architect`（リード） | 全体構造・スキル間責務分離・SSOT |
-| `implementation-engineer` | 各 SKILL.md / references / scripts の品質 |
-| `security-engineer` | フック・外部公開機能（あれば） |
-| `test-engineer` | 全 evals の網羅性 |
-| `project-leader` | マーケットプレイス整合性・命名衝突・依存関係 |
+[`../references/team-selection.md`](../references/team-selection.md) に従い `plugin-review-team` を採用。フック含有のため `security-engineer` を含む 5 名構成。
 
-### Phase 3: 並列起動 + 機械チェック
+| メンバー | 配布元 | 役割 |
+|--------|-------|------|
+| `architect` | グローバル | リード（全体構造） |
+| `plugin-structure-reviewer` | プラグイン同梱 | 規約準拠 |
+| `implementation-engineer` | グローバル | 実装品質 |
+| `evals-coverage-reviewer` | プラグイン同梱 | evals 網羅性 |
+| `marketplace-fit-reviewer` | プラグイン同梱 | マーケット適合 |
+| `security-engineer` | グローバル | フック安全性（フック含有時） |
 
-5 つの Agent を 1 メッセージ内で並列起動。各スキル/コマンド/フックを横断的に機械チェック。
+フック未含有なら `security-engineer` を省略し 5 名構成。
+
+### Phase 3: チーム起動 + 機械チェック
+
+[`../../../teams/plugin-review-team.md`](../../../teams/plugin-review-team.md) のスポーンプロンプトに従い、メンバーを 1 メッセージ内で **並列 Agent 起動**。各スキル/コマンド/フックを横断的に機械チェック。
 
 ### Phase 4: 結果統合
 
@@ -41,9 +46,14 @@
 
 | 項目 | 期待値 |
 |-----|-------|
-| 標準出力 | スキル毎にグルーピングされた統合レビュー結果 + 総合判定 |
+| 標準出力 | スキル毎にグルーピングされた統合レビュー結果（メンバー別所見 + 統合判定） |
 | 終了状態 | レビュー完了 |
 
 ## 分岐の根拠
 
-対象 = プラグイン（横断レビュー、エージェント数増加）。
+対象 = プラグイン → `plugin-review-team` 採用。
+
+## 関連ケース
+
+- `case-01_skill_review.md`（スキル単体）
+- `case-03_hook_review.md`（フック専用）
