@@ -25,6 +25,7 @@ description: Claude Code の拡張要素（スキル/プラグイン/コマン�
 | `team <name>` または `team ...` | `agent-toolkit`（チームモード） | エージェントチーム編成 |
 | `hook <event>` または `hook ...` | `hook-toolkit` | フック設定作成 |
 | `readme <target>` または `readme ...` | `readme-toolkit` | README 生成・更新 |
+| `setup <work-dir>` または `setup ...` | `environment-setup-toolkit` | Python venv 構築・撤去 |
 | `review <target>` または `review ...` | `extension-reviewer` | 多角レビュー実施 |
 | `publish <plugin>` または `publish ...` | `marketplace-publisher` | マーケットプレイス公開 |
 
@@ -46,8 +47,12 @@ description: Claude Code の拡張要素（スキル/プラグイン/コマン�
 2. 重複チェックを `marketplace-publisher` で実施
 3. 結果に応じて以下のいずれかを案内
    - 既存プラグインへの追加 → `plugin-toolkit`（追加シナリオ）
-   - 新規プラグイン作成 → `plugin-toolkit` + 各 `*-creator`
-   - 既存スキルへの統合 → 該当 `*-creator`（更新シナリオ）
+   - 新規プラグイン作成 → `plugin-toolkit` + 各 `*-toolkit`
+   - 既存スキルへの統合 → 該当 `*-toolkit`（更新シナリオ）
+
+## ユーザ選択の UI
+
+何らかの選択をユーザに求める場合は `AskUserQuestion`（Claude UI）を原則として使用する。詳細は `references/user-interaction.md` を参照。
 
 ## 共通の終了処理
 
@@ -68,5 +73,6 @@ description: Claude Code の拡張要素（スキル/プラグイン/コマン�
 | `agent-toolkit` | エージェント・チーム作成 |
 | `hook-toolkit` | フック設定作成 |
 | `readme-toolkit` | README 生成・更新 |
-| `extension-reviewer` | 多角レビュー（並列エージェント） |
-| `marketplace-publisher` | マーケットプレイス公開・重複チェック |
+| `environment-setup-toolkit` | Python venv 構築・撤去 |
+| `extension-reviewer` | 多角レビュー（チーム起動） |
+| `marketplace-publisher` | マーケットプレイス公開・重複/マージチェック |
