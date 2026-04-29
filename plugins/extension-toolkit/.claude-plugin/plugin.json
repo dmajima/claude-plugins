@@ -1,7 +1,7 @@
 {
   "name": "extension-toolkit",
   "version": "0.1.0",
-  "description": "Claude Code のプラグイン・スキル・コマンド・エージェント・チーム・フックの作成からマーケットプレイス公開までを支援するツールキット",
+  "description": "Claude Code のプラグイン・スキル・コマンド・エージェント・チーム・フックの作成・改修からマーケットプレイス公開までを支援するツールキット",
   "author": {
     "name": "dmajima"
   },
@@ -11,8 +11,19 @@
     "command-toolkit",
     "agent-toolkit",
     "hook-toolkit",
-    "marketplace",
-    "scaffolding",
-    "review"
+    "readme-toolkit",
+    "extension-reviewer",
+    "marketplace-publisher",
+    "scaffolding"
+  ],
+  "dependencies": [
+    {
+      "name": "example-skills",
+      "marketplace": "anthropic-agent-skills"
+    },
+    {
+      "name": "document-skills",
+      "marketplace": "anthropic-agent-skills"
+    }
   ]
 }

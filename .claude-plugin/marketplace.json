@@ -4,6 +4,7 @@
     "name": "dmajima"
   },
   "description": "dmajima 個人用 Claude Code プラグインマーケットプレイス",
+  "allowCrossMarketplaceDependenciesOn": ["anthropic-agent-skills"],
   "plugins": [
     {
       "name": "extension-toolkit",
