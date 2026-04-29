@@ -29,10 +29,8 @@ plugins/{plugin-name}/
 │       ├── README.md                # 必須
 │       ├── references/              # 任意
 │       ├── scripts/                 # 任意（業務単位サブフォルダ必須）
-│       │   └── setup/               # Python 利用時の必須セット
-│       │       ├── requirements.txt
-│       │       ├── setup_venv.sh
-│       │       └── teardown_venv.sh
+│       │   └── deps/                # 任意（Python 利用時の依存リスト等。venv 構築自体は environment-setup-toolkit に委譲）
+│       │       └── requirements.txt
 │       ├── agents/                  # 任意（プラグイン配布時はグローバル重複でも保持）
 │       └── evals/                   # 動作分岐ありなら必須
 ├── agents/                          # 任意
@@ -74,8 +72,9 @@ references/
 | フォルダ名 | `scripts/`（`knowledge/` 不可） |
 | 業務単位サブフォルダ | 必須（複数業務がある場合） |
 | 拡張子分類 | 禁止 |
-| Python 利用時 | `scripts/setup/` に `requirements.txt` `setup_venv.sh` `teardown_venv.sh` |
+| Python 利用時 | スキル固有の依存リストを `scripts/deps/requirements.txt` または `references/setup.md` に保管。venv 構築・撤去は `environment-setup-toolkit` に委譲（責務の単一化） |
 | venv の作成先 | `<work_dir>/.venv`（`scripts/` 内ではない） |
+| venv 構築・撤去スクリプト | スキル内に置かない。共通スクリプトは `plugins/extension-toolkit/skills/environment-setup-toolkit/scripts/python/` を参照 |
 
 ### 3.4 agents/ 配下
 

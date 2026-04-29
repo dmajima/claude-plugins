@@ -24,7 +24,8 @@
 | frontmatter `name` がディレクトリ名と一致 | High | パス比較 |
 | 必須セクション存在（責務 / 責務外 / トリガー条件 / 前提 / 実行モード判定 / 実行フロー / 重要な制約） | High | パターン検索 |
 | `scripts/` 命名（`knowledge/` 不可） | Medium | パス確認 |
-| Python 利用時 `setup_venv.sh` / `teardown_venv.sh` / `requirements.txt` の存在 | High | ファイル存在確認 |
+| Python 利用時の依存リスト保有（`scripts/deps/requirements.txt` または `references/setup.md`） | High | ファイル存在確認 |
+| Python 利用時の venv 構築・撤去は `environment-setup-toolkit` に委譲（スキル内 `scripts/setup/setup_venv.sh` 等は配置不要） | Medium | パターン不在確認 |
 | `agents/` 削除痕跡なし（更新時） | High | git diff |
 | 動作分岐がある場合 `evals/` 存在 | High | ディレクトリ存在確認 |
 | `README.md` 存在 | Medium | ファイル存在確認 |

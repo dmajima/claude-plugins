@@ -47,13 +47,15 @@
 SKILL.md
 README.md
 references/procedures.md
-references/setup.md          ← Python 利用時のみ
-scripts/setup/               ← Python 利用時のみ
+references/setup.md          ← Python 利用時のみ（依存リスト + environment-setup-toolkit への委譲記述）
+scripts/deps/requirements.txt ← Python 利用時のみ（任意：依存リストをファイルで保管する場合）
 evals/README.md              ← 動作分岐ありの時のみ
 evals/case-template.md       ← 動作分岐ありの時のみ
 ```
 
 Python 利用なしの場合、`scripts/` ディレクトリは作成せず `references/setup.md` も省略する。
+
+**venv 構築・撤去スクリプトはスキル内に置かない**（`environment-setup-toolkit` に委譲）。各スキルは依存リスト（requirements.txt 内容または `references/setup.md` 中の記述）のみを保有する。
 
 ### 4. プレースホルダ置換
 

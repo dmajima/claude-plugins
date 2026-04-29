@@ -65,7 +65,7 @@ description: Claude Code のスキル/プラグインの実行環境（Python ve
 |----------|------|---|
 | 動作（setup / teardown / refresh / check） | 必須 | `setup` |
 | 作業ディレクトリ | 必須 | `.claude/.local/work/{yyyyMMdd_nn_summary}/workspace` |
-| `requirements.txt` の場所 | setup 時必須 | スキル内 `${CLAUDE_SKILL_DIR}/scripts/setup/requirements.txt` |
+| `requirements.txt` の場所 | setup 時任意 | 呼び出し元スキル内 `${CLAUDE_SKILL_DIR}/scripts/deps/requirements.txt` または明示的なパス指定。省略時は依存インストールをスキップ |
 | Python バージョン要件 | 任意 | `>=3.10` |
 
 ### 3. 環境チェック

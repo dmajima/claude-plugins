@@ -87,7 +87,7 @@ Claude Code のスキル（`SKILL.md` + `README.md` + `references/` + `scripts/`
 - [ ] description が [`../../references/description-guide.md`](../../references/description-guide.md) の方針に準拠
 - [ ] パスポータビリティチェック合格（[`../../references/path-portability.md`](../../references/path-portability.md)）
 - [ ] `scripts/` の業務単位サブフォルダ構造が正しい
-- [ ] Python 利用時 `setup_venv.sh` / `teardown_venv.sh` / `requirements.txt` が揃っている
+- [ ] Python 利用時、依存リストが `scripts/deps/requirements.txt` または `references/setup.md` に保管され、venv 構築は `environment-setup-toolkit` への委譲が明記されている
 - [ ] `agents/` を重複理由で削除していない
 - [ ] 動作分岐がある場合 `evals/` が存在する
 

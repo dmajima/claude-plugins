@@ -44,7 +44,7 @@
 | 2 | `SKILL.md` の frontmatter `name` がディレクトリ名と一致するか確認 |
 | 3 | ハードコード絶対パスを Grep（[`../../../references/path-portability.md`](../../../references/path-portability.md)） |
 | 4 | `README.md` 有無確認（無ければ警告し `readme-toolkit` 接続を提案） |
-| 5 | `scripts/` の実行可能性確認（Python 利用時 `setup_venv.sh` 等の存在） |
+| 5 | `scripts/` の実行可能性確認（Python 利用時、依存リストが `scripts/deps/requirements.txt` または `references/setup.md` に保管されているか。venv 構築は `environment-setup-toolkit` に委譲されるため、スキル内 `setup_venv.sh` 等は不要） |
 | 6 | `agents/` `evals/` のサブディレクトリ保持を確認 |
 
 ### 4.2 コマンドの移管
