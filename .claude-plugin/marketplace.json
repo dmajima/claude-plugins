@@ -4,5 +4,28 @@
     "name": "dmajima"
   },
   "description": "dmajima 個人用 Claude Code プラグインマーケットプレイス",
-  "plugins": []
+  "plugins": [
+    {
+      "name": "convert-doc",
+      "source": "./plugins/convert-doc",
+      "description": "Markdown を HTML / PDF / PowerPoint（PPTX）に Wiki スタイルで一括変換できる 3 スキル + 4 コマンド同梱のドキュメント変換プラグイン",
+      "version": "1.0.0",
+      "author": {
+        "name": "dmajima"
+      },
+      "category": "documentation",
+      "keywords": [
+        "markdown",
+        "html",
+        "pdf",
+        "pptx",
+        "powerpoint",
+        "conversion",
+        "documentation",
+        "mermaid",
+        "wiki"
+      ],
+      "strict": false
+    }
+  ]
 }

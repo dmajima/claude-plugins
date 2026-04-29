@@ -1,0 +1,62 @@
+<!--
+  HTML テンプレート - convert-html スキル
+  =========================================
+
+  このファイルは生成HTMLの骨格を定義します。自由に編集できます。
+
+  【プレースホルダー記法】
+  プレースホルダーは {{PLACEHOLDER_NAME}} 形式で記述します。
+  テンプレートから削除したプレースホルダーは変換処理でも挿入されません。
+  （例：{{JS_BLOCK}} を削除するとJSは一切埋め込まれません）
+
+  【利用可能なプレースホルダー】
+
+  {{TITLE}}
+    ドキュメントタイトル。
+    <title> タグおよび本文先頭の見出し (.doc-title) に使用します。
+
+  {{CSS}}
+    assets/css/template.css（skill → plugin の順で解決）から読み込んだCSSの内容。
+    <style> タグ内に配置してください。
+
+  {{PYGMENTS_CSS}}
+    Pygmentsが自動生成するシンタックスハイライト用CSS。
+    <style> タグ内に配置してください。省略するとコードブロックの色付けが無効になります。
+
+  {{TOC_SIDEBAR}}
+    自動生成された目次サイドバーHTML（<aside id="toc-sidebar">...</aside>）。
+    H2〜H6の見出しから生成されます。見出しがない場合は空文字列になります。
+
+  {{BODY_HTML}}
+    Markdownから変換されたメイン本文のHTML。
+
+  {{JS_BLOCK}}
+    選択されたJSフィーチャーの <script> ブロック。
+    JSが0件のときは空文字列になります。
+-->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}}</title>
+<style>
+{{CSS}}
+
+/* Pygments syntax highlight */
+{{PYGMENTS_CSS}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  {{TOC_SIDEBAR}}
+  <div id="main-content">
+    <span class="doc-title">{{TITLE}}</span>
+    <div class="article-body">
+{{BODY_HTML}}
+    </div>
+  </div>
+</div>
+{{JS_BLOCK}}
+</body>
+</html>

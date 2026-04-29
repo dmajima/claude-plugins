@@ -1,0 +1,16 @@
+{
+  "features": [
+    {
+      "file": "toc-toggle.js",
+      "name": "目次",
+      "description": "目次を右サイドバーに表示し、画面右端のアイコンバーで表示/非表示を切り替える。このフィーチャーが無効の場合は目次自体を出力しない",
+      "dom_prefix": "toc-"
+    },
+    {
+      "file": "lightbox.js",
+      "name": "ライトボックス",
+      "description": "画像・Mermaid図をクリックでポップアップ表示（ズーム・パン対応）",
+      "dom_prefix": "lb-"
+    }
+  ]
+}
