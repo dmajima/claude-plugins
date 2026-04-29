@@ -149,10 +149,6 @@ If during a conversation the user pastes or provides something that looks like a
 
 When saving proactively, capture any URL/domain context from the current conversation so the credential can be auto-matched later.
 
-## Migration from legacy location
-
-If `~/.claude/credentials.json` exists from a previous installation of this skill (pre-plugin), offer to migrate its contents into the resolved path on first use. Do not migrate automatically without user consent. After successful migration, suggest deleting the legacy file.
-
 ## Security Notes
 
 - Credentials are stored as **plain text** in the local filesystem. This is acceptable for local development use but not suitable for production secrets management.
