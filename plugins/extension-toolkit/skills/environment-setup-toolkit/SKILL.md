@@ -123,6 +123,8 @@ bash "${CLAUDE_SKILL_DIR}/scripts/python/teardown_venv.sh" <work_dir>
 - スキル/プラグインのソースディレクトリ（`scripts/` 等）に venv を作らない
 - ユーザシェル環境の永続変数（`.bashrc` 等）への書き込み禁止
 - パスポータビリティチェック必須（[`../../references/path-portability.md`](../../references/path-portability.md)）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
