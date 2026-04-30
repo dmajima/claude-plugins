@@ -4,13 +4,14 @@
 
 ## 対象別の採用チーム
 
-| 対象 | 採用するチーム | チーム定義 |
+| 対象 | 採用するチーム / 構成 | 定義 |
 |-----|------------|----------|
-| スキル | `skill-review-team`（3 名） | [`../../../teams/skill-review-team.md`](../../../teams/skill-review-team.md) |
-| プラグイン | `plugin-review-team`（4〜5 名） | [`../../../teams/plugin-review-team.md`](../../../teams/plugin-review-team.md) |
-| フック | `hook-security-team`（3 名） | [`../../../teams/hook-security-team.md`](../../../teams/hook-security-team.md) |
-| コマンド | 専用チームなし、個別エージェント 4 名並列（`plugin-structure-reviewer` / `description-trigger-reviewer` / `security-engineer` / `implementation-engineer`） | [`review-perspectives.md`](review-perspectives.md) セクション 3 |
-| エージェント / チーム | `description-trigger-reviewer` + `plugin-structure-reviewer` を並列起動（チームを組まない） | 各 agent 定義 |
+| スキル | `skill-review-team`（3 名、リード含む） | [`../../../teams/skill-review-team.md`](../../../teams/skill-review-team.md) |
+| プラグイン | `plugin-review-team`（フック含有 6 名 / 非含有 5 名、リード含む） | [`../../../teams/plugin-review-team.md`](../../../teams/plugin-review-team.md) |
+| フック | `hook-security-team`（3 名、リード含む） | [`../../../teams/hook-security-team.md`](../../../teams/hook-security-team.md) |
+| コマンド | 専用チームなし、個別 4 名並列（`plugin-structure-reviewer` / `description-trigger-reviewer` / `implementation-engineer` / `security-engineer`、`security-engineer` は外部実行・危険操作を含まない場合省略可で 3 名構成） | [`review-perspectives.md`](review-perspectives.md) セクション 3 |
+| エージェント単体定義（`agents/{name}.md`） | 専用チームなし、個別 3 名並列（`plugin-structure-reviewer` / `description-trigger-reviewer` / `architect`） | [evals/case-08](../evals/case-08_agent_definition_review.md) |
+| チーム定義（`teams/{name}.md`） | 専用チームなし、個別 4 名並列（上記 3 名 + `project-leader`） | [evals/case-09](../evals/case-09_team_definition_review.md) |
 
 ## 起動方法
 

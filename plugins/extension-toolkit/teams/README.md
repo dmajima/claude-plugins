@@ -10,15 +10,17 @@
 
 | チーム名 | 用途 | リード | 人数 |
 |---------|------|-------|-----|
-| [`plugin-review-team`](plugin-review-team.md) | プラグイン横断レビュー | `architect` | 4〜5（フック有無で変動） |
-| [`skill-review-team`](skill-review-team.md) | スキル単体レビュー | `plugin-structure-reviewer` | 3 |
-| [`hook-security-team`](hook-security-team.md) | フックセキュリティレビュー | `security-engineer` | 3 |
+| [`plugin-review-team`](plugin-review-team.md) | プラグイン横断レビュー | `architect` | 5〜6（フック有無で変動、リード含む） |
+| [`skill-review-team`](skill-review-team.md) | スキル単体レビュー | `plugin-structure-reviewer` | 3（リード含む） |
+| [`hook-security-team`](hook-security-team.md) | フックセキュリティレビュー | `security-engineer` | 3（リード含む） |
 
 ## チームサイズの原則
 
-- **標準**: 3〜5 名（最低 3 名）
-- **例外**: 観点が 2 つしか想定できない場合は 2 名でも可（例: 性別観点で「男 / 女」のみ）。理由をチーム定義に明記する
-- **最大**: 5 名（議論調整コストの上限）
+- **標準**: 3〜5 名（最低 3 名、リード含む）
+- **例外**:
+  - 観点が 2 つしか想定できない場合は 2 名でも可（例: 性別観点で「男 / 女」のみ）。理由をチーム定義に明記する
+  - 観点網羅が必要なプラグイン全体レビューは最大 6 名まで許容（フック含有時の `plugin-review-team`）
+- **最大**: 標準 5 名、上記の例外時 6 名（議論調整コストの上限）
 
 ## 構成エージェント
 
