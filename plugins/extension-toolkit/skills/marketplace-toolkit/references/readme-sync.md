@@ -41,6 +41,43 @@
 # 擬似コード
 import json, pathlib, re
 
+def replace_section(content: str, heading: str, new_table: str) -> str:
+    """指定見出し直下の Markdown テーブル本体のみを置換する。
+
+    - 見出し（`heading`）の直後にテーブル前置きテキストがある場合は保持
+    - テーブル本体（`|` で始まる連続行）のみを `new_table` で差し替え
+    - 次の `## ` 見出しまでをセクション境界とみなす
+    """
+    # 見出しから次の ## 見出しまでをセクションとして抽出
+    lines = content.split("\n")
+    out = []
+    i = 0
+    while i < len(lines):
+        if lines[i].strip() == heading:
+            out.append(lines[i])
+            i += 1
+            # セクション内: 次の ## までを処理
+            section_lines = []
+            while i < len(lines) and not lines[i].startswith("## "):
+                section_lines.append(lines[i])
+                i += 1
+            # テーブル行（| で始まる連続行）を検出して new_table に置換
+            in_table = False
+            for sl in section_lines:
+                if sl.startswith("|") or sl.startswith("|---"):
+                    if not in_table:
+                        out.append(new_table)
+                        in_table = True
+                    # テーブル行はスキップ
+                else:
+                    if in_table and sl.strip() == "":
+                        in_table = False
+                    out.append(sl)
+        else:
+            out.append(lines[i])
+            i += 1
+    return "\n".join(out)
+
 def assert_source_safe(repo_root: pathlib.Path, source: str) -> pathlib.Path:
     """source パスのパストラバーサル対策（ADR-022 / セキュリティ）."""
     # 必須プレフィックス確認

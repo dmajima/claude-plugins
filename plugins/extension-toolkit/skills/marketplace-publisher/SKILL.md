@@ -82,9 +82,10 @@ Claude Code プラグインの **公開ワークフロー**（重複検査・実
 
 1. 該当ファイルを削除/移動して再実行
 2. `.gitignore` に追加して再実行
-3. キャンセル
+3. 誤検出として続行（二重確認あり、`--non-interactive` / `--full-auto` 時は提供しない）
+4. キャンセル
 
-詳細パターンと検出ロジックは [references/secret-scan.md](references/secret-scan.md) を参照。
+非対話・フルオート併用時は選択肢 3 を提供せず exit 1（fail-closed 強化）。詳細パターンと検出ロジックは [references/secret-scan.md](references/secret-scan.md) を参照。
 
 ### 3. 重複・マージチェック（新規登録時）
 

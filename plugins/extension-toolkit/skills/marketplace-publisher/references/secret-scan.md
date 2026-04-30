@@ -79,6 +79,15 @@
 選択肢の提示は `AskUserQuestion`（[`../../../references/user-interaction.md`](../../../references/user-interaction.md)）を用いる。
 「3. 誤検出として続行」は二重確認（"本当に公開してよいか？" の追加質問）を必ず行う。
 
+### 非対話・フルオート併用時の特例（fail-closed 強化）
+
+`--non-interactive` または `--full-auto` で対話確認が成立しない環境では、選択肢 3「誤検出として続行」を **提供しない**。検出時は常に exit 1（公開中断）とし、利用者が対話モードで再実行するか、選択肢 1（削除）/ 選択肢 2（gitignore 追加）の事前準備を行ってから再実行する必要がある。
+
+| モード | 選択肢 1（削除） | 選択肢 2（gitignore） | 選択肢 3（続行） | 選択肢 4（キャンセル） |
+|-------|-----------------|--------------------|----------------|--------------------|
+| 対話モード | 提供 | 提供 | 提供（二重確認） | 提供 |
+| 非対話 + フルオート | 案内のみ（再実行待ち） | 案内のみ（再実行待ち） | **不可（fail-closed）** | 案内のみ |
+
 ## 4. 実装ヒント
 
 擬似コード（参考実装）:
@@ -104,17 +113,36 @@ CONTENT_PATTERNS = {
     "aws_secret_key": r"aws_secret_access_key\s*=\s*[\"']?[A-Za-z0-9/+=]{40}[\"']?",
     "github_pat": r"ghp_[A-Za-z0-9]{36}",
     "github_oauth": r"gho_[A-Za-z0-9]{36}",
+    "github_user_server": r"ghu_[A-Za-z0-9]{36}",
+    "github_server_server": r"ghs_[A-Za-z0-9]{36}",
+    "github_refresh": r"ghr_[A-Za-z0-9]{36}",
     "slack_token": r"xox[baprs]-[0-9A-Za-z-]{10,}",
     "google_api_key": r"AIza[0-9A-Za-z\-_]{35}",
     "stripe_key": r"sk_live_[0-9a-zA-Z]{24,}",
-    "anthropic_key": r"sk-ant-[A-Za-z0-9\-_]{20,}",
+    "stripe_restricted_key": r"rk_(live|test)_[0-9a-zA-Z]{24,}",
+    "anthropic_key": r"sk-ant-(api\d+-)?[A-Za-z0-9\-_]{20,}",
     "openai_key": r"sk-[A-Za-z0-9]{48}",
+    "openai_proj_key": r"sk-proj-[A-Za-z0-9_-]{20,}",
+    "openai_svcacct_key": r"sk-svcacct-[A-Za-z0-9_-]{20,}",
     "private_key_pem": r"-----BEGIN (RSA |EC |OPENSSH |DSA |PGP |)PRIVATE KEY-----",
     "bearer_token": r"Bearer\s+[A-Za-z0-9\-_=]{20,}",
     "generic_password": r"(?i)(password|passwd|secret|api[-_]?key)\s*[:=]\s*[\"']?[^\"'\s]{8,}[\"']?",
     "jwt": r"eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+",
     "azure_storage": r"DefaultEndpointsProtocol=https;AccountName=[A-Za-z0-9]+;AccountKey=[A-Za-z0-9+/=]+",
+    "azure_sas_token": r"sig=[A-Za-z0-9%]+(?:&|$)",
+    "gcp_private_key_id": r'"private_key_id"\s*:\s*"[a-f0-9]{40}"',
 }
+
+# プレースホルダ（テンプレート値）の除外パターン
+PLACEHOLDER_PATTERNS = [
+    r"\$\{[A-Z_]+\}",        # ${ENV_VAR}
+    r"\{\{[a-z_]+\}\}",      # {{template}}
+    r"<[a-z-]+>",            # <placeholder>
+    r"\$\([A-Z_]+\)",        # $(VAR)
+]
+
+# スキャン対象から除外するディレクトリ
+EXCLUDE_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".tox", ".mypy_cache"}
 
 def is_binary(path: pathlib.Path) -> bool:
     """先頭 8KB に NUL バイトを含むファイルはバイナリ判定."""
@@ -124,18 +152,30 @@ def is_binary(path: pathlib.Path) -> bool:
         return True
     return b"\x00" in chunk
 
+def is_in_excluded_dir(path: pathlib.Path, root: pathlib.Path) -> bool:
+    """パスのいずれかの親が EXCLUDE_DIRS に該当するか判定."""
+    rel = path.relative_to(root)
+    return any(part in EXCLUDE_DIRS for part in rel.parts)
+
+def is_placeholder_value(value: str) -> bool:
+    """値がテンプレートプレースホルダか判定."""
+    return any(re.search(pat, value) for pat in PLACEHOLDER_PATTERNS)
+
 def scan(plugin_root: pathlib.Path) -> list[dict]:
     findings = []
     for path in plugin_root.rglob("*"):
         if not path.is_file():
             continue
-        if path.name.endswith(EXCLUDE_SUFFIX):
+        # 除外ディレクトリ配下はスキップ（.git / .venv / node_modules 等）
+        if is_in_excluded_dir(path, plugin_root):
             continue
-        # ファイル名完全一致で照合
-        for pat in FILE_PATTERNS_FULL:
-            if re.fullmatch(pat, path.name):
-                findings.append({"file": str(path), "reason": f"filename:{pat}"})
-                break
+        # ファイル名照合（テンプレート系サフィックスは除外）
+        # ただし内容スキャンは常に実施する（テンプレートと称した実値含有の検出のため）
+        if not path.name.endswith(EXCLUDE_SUFFIX):
+            for pat in FILE_PATTERNS_FULL:
+                if re.fullmatch(pat, path.name):
+                    findings.append({"file": str(path), "reason": f"filename:{pat}"})
+                    break
         # バイナリは内容スキャン対象外
         if is_binary(path):
             continue
@@ -154,15 +194,24 @@ def scan(plugin_root: pathlib.Path) -> list[dict]:
         except Exception:
             continue
         for name, pat in CONTENT_PATTERNS.items():
-            if re.search(pat, text):
-                findings.append({"file": str(path), "reason": f"content:{name}"})
+            for m in re.finditer(pat, text):
+                # プレースホルダ値は除外
+                matched = m.group(0)
+                if is_placeholder_value(matched):
+                    continue
+                findings.append({"file": str(path), "reason": f"content:{name}", "match_prefix": matched[:8]})
+                break
     return findings
 ```
 
 実装ヒント:
 - ファイル名は `re.fullmatch` で完全一致を要求（先頭一致による誤検出を排除）
+- `EXCLUDE_SUFFIX` はファイル名照合のみに適用し、**内容スキャンは常に実施**（テンプレート名で偽装されたシークレットを検出）
+- `EXCLUDE_DIRS`（`.git/` `.venv/` `node_modules/` 等）配下は走査しない（無駄なコスト + 偽陽性削減）
 - `errors="strict"` + 例外時に他エンコーディングを試行することで、無効バイト破棄による検出漏れを防ぐ
-- バイナリファイルは `\x00` 検出でスキップ（読み込みコスト削減）
+- バイナリファイルは `\x00` 検出でスキップ（読み込みコスト削減）。BOM（`\xef\xbb\xbf` UTF-8 / `\xff\xfe` UTF-16 LE / `\xfe\xff` UTF-16 BE）を持つ場合は対応エンコーディングで再評価する
+- プレースホルダ値（`${VAR}` / `{{template}}` / `<placeholder>` / `$(VAR)`）は誤検出抑制のため除外
+- 検出ログには **キーの先頭 8 文字** のみ記録し、フル値はログに残さない（情報露出防止）
 
 ## 5. 関連ルール
 
