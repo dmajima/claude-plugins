@@ -12,3 +12,13 @@
 | case-04 | README 同期のみ | `--sync-readme` フラグ |
 | case-05 | 重複プラグイン追加の阻止 | 既存と同名プラグイン追加 |
 | case-06 | `--non-interactive` モード（質問なしで構築） | `--non-interactive` フラグ |
+| case-07 | プラグイン更新（`--update-plugin` モード） | `--update-plugin` フラグ |
+
+## 実行確認方法
+
+各ケースは `marketplace-toolkit` の動作分岐を例示する仕様書である。実装側で本ケースを満たすか確認する手順:
+
+1. ケースの「入力」を再現する状態（前提ファイル・フラグ）を整える
+2. `marketplace-toolkit` を起動（自然言語フレーズ or `/extension marketplace`）
+3. ケースの「期待動作」「期待出力」と実動作が一致することを確認
+4. 不整合があれば指摘として記録
