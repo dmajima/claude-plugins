@@ -14,14 +14,20 @@ WORK_DIR="$1"
 VENV_DIR="${WORK_DIR}/.venv"
 
 # 安全装置 1: パスを正規化してシンボリックリンク迂回を防ぐ
-# realpath が使えない環境（古い Bash 等）では絶対パスへの変換のみ実施
+# realpath / readlink -f のいずれかが利用可能であることを必須とする（fail-closed）
 if command -v realpath >/dev/null 2>&1; then
   RESOLVED_VENV_DIR=$(realpath -m "${VENV_DIR}")
 elif command -v readlink >/dev/null 2>&1; then
-  RESOLVED_VENV_DIR=$(readlink -f "${VENV_DIR}" 2>/dev/null || echo "${VENV_DIR}")
+  RESOLVED_VENV_DIR=$(readlink -f "${VENV_DIR}" 2>/dev/null || true)
+  if [ -z "${RESOLVED_VENV_DIR}" ]; then
+    echo "[teardown_venv] Error: readlink -f failed to resolve path, refusing to delete." >&2
+    echo "  target (input): ${VENV_DIR}" >&2
+    exit 1
+  fi
 else
-  RESOLVED_VENV_DIR="${VENV_DIR}"
-  echo "[teardown_venv] Warning: realpath/readlink unavailable, using literal path." >&2
+  echo "[teardown_venv] Error: neither realpath nor readlink available, refusing to delete (fail-closed)." >&2
+  echo "  Install GNU coreutils or util-linux readlink to use teardown." >&2
+  exit 1
 fi
 
 # Windows ネイティブのバックスラッシュパスをスラッシュに正規化（クロスプラットフォーム対応）

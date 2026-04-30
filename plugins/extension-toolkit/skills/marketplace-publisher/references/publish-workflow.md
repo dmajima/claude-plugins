@@ -61,8 +61,33 @@ git branch --show-current
 
 | 結果 | 動作 |
 |-----|------|
-| `main` または `master` | フルオートを **中断**、フィーチャーブランチへの切り替えを依頼 |
+| `main` / `master` / `release` / `production` / `develop` 等の保護ブランチ候補名 | フルオートを **中断**、フィーチャーブランチへの切り替えを依頼 |
+| 上流追跡が `origin/main` 等の保護候補へ直接 fast-forward する設定 | フルオートを **中断**、利用者に確認 |
 | その他 | 進行 |
+
+ブランチ名候補リストはユーザリポジトリの慣習に応じて拡張可能。利用者が組織独自の保護ブランチ名（例: `staging`、`hotfix-*`）を使う場合は AskUserQuestion で確認する。
+
+#### 推奨実装
+
+```bash
+CURRENT_BRANCH=$(git branch --show-current)
+PROTECTED_PATTERNS="main master release production develop staging"
+for p in $PROTECTED_PATTERNS; do
+  if [ "$CURRENT_BRANCH" = "$p" ]; then
+    echo "Error: refusing to push protected branch: $CURRENT_BRANCH" >&2
+    exit 1
+  fi
+done
+
+# 上流が保護ブランチを直接追跡していないか確認
+UPSTREAM=$(git rev-parse --abbrev-ref @{upstream} 2>/dev/null || echo "")
+case "$UPSTREAM" in
+  origin/main|origin/master|origin/release|origin/production|origin/develop)
+    echo "Error: branch tracks a protected upstream: $UPSTREAM" >&2
+    exit 1
+    ;;
+esac
+```
 
 ### 2. リモート種別判定
 
