@@ -136,6 +136,8 @@ settings.json への追加の場合は既存 `hooks` を Read してマージ書
 
 | 用途 | ファイル |
 |-----|---------|
+| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.6） |
 | イベント詳細 | [`references/hook-events.md`](references/hook-events.md) |
+| 動作例 | [`evals/`](evals/) |

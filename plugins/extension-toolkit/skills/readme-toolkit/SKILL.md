@@ -116,3 +116,5 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 | 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.7） |
+| README 規約 | [`../../references/readme-policy.md`](../../references/readme-policy.md) |
+| 動作例 | [`evals/`](evals/) |

@@ -130,3 +130,4 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.3） |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
+| 動作例 | [`evals/`](evals/) |

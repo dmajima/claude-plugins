@@ -164,4 +164,6 @@ Claude Code の拡張要素（スキル・プラグイン・コマンド・エ�
 | 検証ルール（SSOT） | [`../../references/validation-rules.md`](../../references/validation-rules.md)（全節） |
 | アーキテクチャ決定 | [`../../references/architecture-decisions.md`](../../references/architecture-decisions.md) |
 | レビュー観点 | [`references/review-perspectives.md`](references/review-perspectives.md) |
+| チーム選定 | [`references/team-selection.md`](references/team-selection.md) |
 | 自動チェック | [`references/automated-checks.md`](references/automated-checks.md) |
+| 動作例 | [`evals/`](evals/) |

@@ -26,7 +26,7 @@
 | `implementation-engineer` | グローバル | メンバー | 実装品質 | SKILL.md の論理整合・procedures の実行可能性 |
 | `evals-coverage-reviewer` | プラグイン同梱 | メンバー | テスト網羅 | evals の分岐網羅・形式準拠 |
 
-description 観点は本チームに含めない。`description-trigger-reviewer` は他のスキルレビュー時にも単独で並列起動する運用とする（運用詳細は [`../references/agent-utilization.md`](../references/agent-utilization.md) のセクション「単独並列起動するエージェント」を参照）。チーム内に組み込むと議論ラウンドで他観点と混ざり、description 専門評価の独立性が損なわれるため。
+description 観点は本チームに含めない。`description-trigger-reviewer` は他のスキルレビュー時にも単独で並列起動する運用とする（運用詳細は [`../agent-utilization.md`](../agent-utilization.md) のセクション「単独並列起動するエージェント」を参照）。チーム内に組み込むと議論ラウンドで他観点と混ざり、description 専門評価の独立性が損なわれるため。
 
 ## 調整ガイドライン
 

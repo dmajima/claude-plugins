@@ -164,3 +164,4 @@ marketplace.json の更新が完了しました。
 | marketplace.json 仕様 | [`references/marketplace-json.md`](references/marketplace-json.md) |
 | 重複チェック詳細 | [`references/duplication-check.md`](references/duplication-check.md) |
 | 公開ワークフロー | [`references/publish-workflow.md`](references/publish-workflow.md) |
+| 動作例 | [`evals/`](evals/) |
