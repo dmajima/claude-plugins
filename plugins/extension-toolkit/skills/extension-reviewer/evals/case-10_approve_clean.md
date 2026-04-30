@@ -24,17 +24,13 @@
 | Medium | 0 |
 | Low | 0（または「Suggestion」のみ） |
 
-すべての観点で問題なし、または軽微な改善提案のみ。
+すべての観点で重大な問題なし、または軽微な改善提案のみ。例: 「README にバージョンバッジを追記する」「ファイル構成ツリーに新しいテンプレート種別を追加する」等の Suggestion は許容される。
 
 ### Phase 6: 総合判定
 
-Critical 0 + High 0 + Medium 0 → **APPROVE**。
+Critical 0 + High 0 → **APPROVE**。
 
-| 判定ルール | 条件 |
-|----------|------|
-| **APPROVE** | Critical 0 + High 0 + Medium 0（Low / Suggestion のみ可） |
-| CONDITIONAL_APPROVE | Critical 0 + High 1 件以上 または Medium 1 件以上 |
-| REJECT | Critical 1 件以上 |
+判定ルールの SSOT は [`../references/review-perspectives.md`](../references/review-perspectives.md) の「総合判定ルール」を参照する。本ケースの数値（Critical 0、High 0、Medium 0、Low 0 または Suggestion のみ）は APPROVE 条件を満たす。Medium が 1 件以上あっても APPROVE は維持される（SSOT の注意事項参照）。
 
 ### Phase 7: 引き渡し
 

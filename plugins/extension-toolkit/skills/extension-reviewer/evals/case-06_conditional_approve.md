@@ -28,11 +28,7 @@ case-01 と同じ。エージェント並列起動 + 機械チェック。
 
 Critical 0 + High 1 件以上 → **CONDITIONAL_APPROVE**。
 
-| 判定ルール | 条件 |
-|----------|------|
-| APPROVE | Critical 0 + High 0（Medium / Low のみ） |
-| CONDITIONAL_APPROVE | Critical 0 + High 1 件以上（修正後再レビュー推奨） |
-| REJECT | Critical 1 件以上 |
+判定ルールの SSOT は [`../references/review-perspectives.md`](../references/review-perspectives.md) の「総合判定ルール」を参照する。本ケースの数値（Critical 0、High 2、Medium 3、Low 1）は CONDITIONAL_APPROVE 条件に該当する。
 
 ### Phase 6: 引き渡し
 

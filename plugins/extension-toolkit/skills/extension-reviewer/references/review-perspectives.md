@@ -120,4 +120,18 @@ Agent({ subagent_type: "security-engineer", prompt: "..." })
 | 重複指摘の集約 | 同じ問題を複数エージェントが指摘 → 1 件に集約、根拠を併記 |
 | 矛盾指摘の提示 | エージェント間で矛盾 → ユーザに提示し判断を仰ぐ |
 | 優先度の決定 | 最も高い指摘者の優先度を採用 |
-| 総合判定 | 1 名でも REJECT → CONDITIONAL_APPROVE 以下、Critical なし → APPROVE |
+
+## 総合判定ルール（SSOT）
+
+`extension-reviewer` の総合判定の正典定義。各 evals ケース（case-05 / case-06 / case-10 等）はこの表を参照する。
+
+| 判定 | 条件 |
+|-----|------|
+| **APPROVE** | Critical 0 + High 0（Medium / Low / Suggestion はあってもよい） |
+| **CONDITIONAL_APPROVE** | Critical 0 + High 1 件以上（修正後再レビュー推奨） |
+| **REJECT** | Critical 1 件以上 |
+
+注意:
+- Medium 件数は判定に直接影響しない。Medium が多数（例: 5 件以上）でも APPROVE は可だが、ユーザに整理して提示する
+- Suggestion は判定に影響しない（参考情報）
+- 「総合判定」は重大度別の最も厳しい指摘を採用する（例: Critical 1 + High 0 → REJECT）
