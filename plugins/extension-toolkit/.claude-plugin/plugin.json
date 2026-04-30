@@ -1,7 +1,7 @@
 {
   "name": "extension-toolkit",
-  "version": "0.4.2",
-  "description": "Claude Code のプラグイン・スキル・コマンド・エージェント・チーム・フックの作成・改修からマーケットプレイス公開までを支援するツールキット",
+  "version": "0.4.3",
+  "description": "Claude Code の各種拡張要素（プラグイン・スキル・コマンド・エージェント・チーム・フック）の作成・改修からマーケットプレイス公開までを支援するツールキット",
   "author": {
     "name": "dmajima"
   },
@@ -12,6 +12,7 @@
     "agent-toolkit",
     "hook-toolkit",
     "readme-toolkit",
+    "environment-setup-toolkit",
     "extension-reviewer",
     "marketplace-publisher",
     "scaffolding"
