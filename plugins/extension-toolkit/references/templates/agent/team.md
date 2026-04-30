@@ -1,6 +1,6 @@
 # Agent Team: {team-name}
 
-エージェントチーム定義テンプレート。`~/.claude/rules/claude/agent-teams.md` の規約に準拠する。
+エージェントチーム定義テンプレート。プラグイン内 SSOT（`references/teams/README.md` / `agent-utilization.md`）に準拠する。グローバルルール（`~/.claude/rules/claude/agent-teams.md`）は **存在すれば追加情報** として参照可能だが必須ではない（ADR-022）。
 
 ## チーム情報
 

@@ -133,6 +133,8 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 - スキルを勝手に分割しない（ユーザ指示なき限り原型を保つ）
 - スキル内 `agents/` は重複理由で削除しない（プラグイン配布のため）
 - パスポータビリティチェック必須
+- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
 - `git commit` 以降の操作は実行しない
 - ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
 - 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施

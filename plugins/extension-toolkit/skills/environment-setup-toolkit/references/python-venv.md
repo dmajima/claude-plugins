@@ -122,7 +122,7 @@ plugins/extension-toolkit/skills/{skill-name}/scripts/deps/requirements.txt
 
 ## 9. グローバルルールとの関係
 
-`~/.claude/rules/tools/python-venv.md` のグローバルルールに準拠:
+プラグイン内 SSOT として、venv は **必ずセッション作業領域 `.claude/.local/work/{...}/workspace/.venv`** に作成、タスク完了で削除する。グローバルルール（`~/.claude/rules/tools/python-venv.md`）は **存在すれば追加情報** として参照可能（ADR-022、不在時は本ルールのみで動作）:
 
 - venv は作業ディレクトリ内に作成
 - システム環境へのインストール禁止

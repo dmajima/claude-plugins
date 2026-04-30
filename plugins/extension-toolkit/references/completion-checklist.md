@@ -28,7 +28,7 @@
 | 状態ファイル形式 | 構造化データは JSON/YAML | [`state-files.md`](state-files.md) |
 | README 規約 | 人間向け明記・導入手順優先 | [`readme-policy.md`](readme-policy.md) |
 | エージェント活用 | Explore 等の既存機能利用 | [`agent-utilization.md`](agent-utilization.md) |
-| エンコーディング | 元ファイルの文字コード・改行コード保持 | `~/.claude/rules/common/file-encoding.md` |
+| エンコーディング | 元ファイルの文字コード・改行コード保持。グローバルルール参照は ADR-022 例外（OS/Claude Code 共通ルール）として許容、不在時は UTF-8 / 元の改行コードを既定維持 | `~/.claude/rules/common/file-encoding.md`（任意参照） |
 
 ### 2.2 要件適合性チェック
 

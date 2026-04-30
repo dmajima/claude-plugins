@@ -173,7 +173,9 @@ marketplace.json の更新が完了しました。
 - バージョン情報は marketplace.json に書かない（plugin.json で管理）
 - 重複検出時は **必ずユーザに提示**（自動マージ・自動却下しない）
 - フルオート実行前に **ユーザの明示的選択** が必須
-- 既存 marketplace.json のエンコーディング維持
+- 既存 marketplace.json のエンコーディング維持（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
+- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
 - ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
 - 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
