@@ -26,8 +26,9 @@ description: Claude Code の拡張要素（スキル/プラグイン/コマン�
 | `hook <event>` または `hook ...` | `hook-toolkit` | フック設定作成 |
 | `readme <target>` または `readme ...` | `readme-toolkit` | README 生成・更新 |
 | `setup <work-dir>` または `setup ...` | `environment-setup-toolkit` | Python venv 構築・撤去 |
+| `marketplace <name>` または `marketplace ...` | `marketplace-toolkit` | マーケットプレイス新規構築・本体管理 |
 | `review <target>` または `review ...` | `extension-reviewer` | 多角レビュー実施 |
-| `publish <plugin>` または `publish ...` | `marketplace-publisher` | マーケットプレイス公開 |
+| `publish <plugin>` または `publish ...` | `marketplace-publisher` | プラグイン公開ワークフロー |
 
 ## 引数が空の場合
 
@@ -74,5 +75,6 @@ description: Claude Code の拡張要素（スキル/プラグイン/コマン�
 | `hook-toolkit` | フック設定作成 |
 | `readme-toolkit` | README 生成・更新 |
 | `environment-setup-toolkit` | Python venv 構築・撤去 |
+| `marketplace-toolkit` | マーケットプレイス新規構築・本体管理 |
 | `extension-reviewer` | 多角レビュー（チーム起動） |
-| `marketplace-publisher` | マーケットプレイス公開・重複/マージチェック |
+| `marketplace-publisher` | プラグイン公開ワークフロー（git push / PR） |

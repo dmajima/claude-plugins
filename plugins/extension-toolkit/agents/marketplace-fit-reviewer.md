@@ -31,6 +31,9 @@ tools: Read, Grep, Glob
 - [ ] バージョン記述が `plugin.json` のみで、`marketplace.json` に重複していない
 - [ ] description が利用者にとって価値が明確
 - [ ] keywords がマーケットプレイス検索に有用
+- [ ] マーケットプレイス直下 README のプラグイン一覧テーブルが `marketplace.json` と完全一致（行数 / 名前 / バージョン、ADR-019 準拠）
+- [ ] マーケットプレイス README に「マーケットプレイスの追加方法」（A: URL / B: ローカル複製の両方）が記載されている
+- [ ] マーケットプレイス README に「自動更新の有効化」セクションが記載されている
 
 ## 出力フォーマット
 

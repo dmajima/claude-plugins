@@ -22,7 +22,9 @@ Claude Code プラグインマーケットプレイス（`.claude-plugin/marketp
 | プラグイン本体の作成 | `plugin-toolkit` |
 | スキル/コマンド/エージェント/フック本体の作成 | 各 `*-toolkit` |
 | 公開前のレビュー | `extension-reviewer` |
-| README 単体の生成・更新 | `readme-toolkit` |
+| プラグイン・スキルの README 生成・更新 | `readme-toolkit` |
+| マーケットプレイス新規構築 | `marketplace-toolkit` |
+| `marketplace.json` の編集（plugins[] 追加・更新・削除）+ マーケットプレイス README 同期 | `marketplace-toolkit`（本スキルから呼び出し） |
 
 ## トリガー条件
 
@@ -110,17 +112,19 @@ Claude Code プラグインマーケットプレイス（`.claude-plugin/marketp
 どうしますか？
 ```
 
-### 4. marketplace.json の更新
+### 4. marketplace.json の更新（marketplace-toolkit に委譲）
 
-詳細は [references/marketplace-json.md](references/marketplace-json.md) を参照。
+`marketplace.json` の編集とマーケットプレイス README 同期は `marketplace-toolkit` に委譲する（ADR-020 準拠）。本スキルは Skill ツール経由で `marketplace-toolkit` を呼び出す:
 
-| シナリオ | 動作 |
-|---------|------|
-| 新規登録 | `plugins[]` にエントリ追加 |
-| 既存更新 | description / source の変更を反映 |
-| 削除 | ユーザ **明示的確認** 必須、エントリ削除 + ディレクトリ削除も併せて確認 |
+| シナリオ | `marketplace-toolkit` 呼び出し |
+|---------|-----------------------------|
+| 新規登録 | `--add-plugin <name> --description "..." --source ./plugins/<name>` |
+| 既存更新 | `--update-plugin <name>` + 変更フィールド |
+| 削除 | `--remove-plugin <name>`（`marketplace-toolkit` 側で明示確認） |
 
-並び順は **アルファベット順**。
+並び順は `marketplace-toolkit` 側でアルファベット順に挿入する。本スキルは結果（成功/失敗）を受け取り、後続の git 操作に進む。
+
+詳細は [references/marketplace-json.md](references/marketplace-json.md) および [`../marketplace-toolkit/SKILL.md`](../marketplace-toolkit/SKILL.md) を参照。
 
 ### 5. 検証
 

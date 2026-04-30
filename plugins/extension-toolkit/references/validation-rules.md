@@ -129,7 +129,9 @@ done
 | timeout 指定済 | Medium | フィールド存在確認 |
 | `settings.json` 既存エントリの保全（マージ書き戻し） | Critical | 既存比較 |
 
-### 2.7 README（`readme-toolkit` 出力）
+### 2.7 README（`readme-toolkit` / `marketplace-toolkit` 出力）
+
+#### プラグイン・スキル READMEの共通項目
 
 | 項目 | 重大度 | 確認方法 |
 |-----|-------|---------|
@@ -137,6 +139,41 @@ done
 | ファイル構成が実構成と一致 | High | ツリー比較 |
 | 過去履歴・変更経緯記載なし | Medium | パターン検索 |
 | プレースホルダ残存なし | High | Grep |
+
+#### プラグイン README 固有項目（ADR-018 準拠）
+
+| 項目 | 重大度 | 確認方法 |
+|-----|-------|---------|
+| 導入手順 4 要素の存在（A: マーケットプレイス経由 / B: ローカル複製 / C: 自動更新 / D: 依存関係） | High | 必須セクションパターン検索 |
+| ローカル複製手順に `git clone` + `/plugin marketplace add <local-path>` の両方が記載されている | High | パターン検索 |
+| 自動更新セクションに `autoUpdate: true` の設定例が記載されている | Medium | パターン検索 |
+| 依存関係セクションが存在（依存なしの場合も「依存関係なし」と明示） | High | パターン検索 |
+
+### 2.8 マーケットプレイス（`marketplace-toolkit` 出力、ADR-019 / ADR-020 準拠）
+
+#### marketplace.json
+
+| 項目 | 重大度 | 確認方法 |
+|-----|-------|---------|
+| `marketplace.json` JSON valid | Critical | JSON パース |
+| `name` がリポジトリディレクトリ名と一致 | High | パス比較 |
+| `plugins[]` 各エントリに `name` / `source` / `description` 必須 | High | キー存在確認 |
+| 各 `plugins[].source` が実在 | Critical | パス確認 |
+| 各 `plugins[].name` が `<source>/.claude-plugin/plugin.json` の `name` と一致 | High | クロス参照 |
+| バージョン情報を `marketplace.json` に持たせない（`plugin.json` のみが正典） | Medium | フィールド不在確認 |
+| `plugins[]` がアルファベット順 | Low | ソート比較 |
+
+#### マーケットプレイス直下 README
+
+| 項目 | 重大度 | 確認方法 |
+|-----|-------|---------|
+| 「プラグイン一覧」セクション存在 | Critical | パターン検索 |
+| プラグイン一覧テーブル行数 = `marketplace.json` の `plugins[]` 件数 | Critical | カウント比較 |
+| 各行のプラグイン名が `marketplace.json` と完全一致 | Critical | クロス参照 |
+| バージョン列が各 `<source>/.claude-plugin/plugin.json` の `version` と一致 | High | クロス参照 |
+| 「マーケットプレイスの追加方法」セクション存在（A: URL / B: ローカル複製の両方） | High | パターン検索 |
+| 「自動更新の有効化」セクション存在 | High | パターン検索 |
+| `marketplace.json` 編集と同一コミットに README 変更が含まれる | High | git diff 確認 |
 
 ## 3. 検証実施タイミング
 
@@ -176,8 +213,9 @@ done
 | `agent-toolkit` | 1 + 2.4（単体）or 2.5（チーム） |
 | `hook-toolkit` | 1 + 2.6 |
 | `readme-toolkit` | 1 + 2.7 |
+| `marketplace-toolkit` | 1 + 2.8（マーケットプレイス本体検証） |
 | `extension-reviewer` | 全節 + 自動チェック手順は [`../skills/extension-reviewer/references/automated-checks.md`](../skills/extension-reviewer/references/automated-checks.md) |
-| `marketplace-publisher` | 1 + 2.2（実体検証） |
+| `marketplace-publisher` | 1 + 2.2（実体検証）+ 2.8（マーケットプレイス README 同期確認） |
 
 ## 7. 関連ファイル
 

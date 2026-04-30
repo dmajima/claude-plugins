@@ -23,6 +23,7 @@
 | エージェントチーム | `agent/team.md` | `agent-toolkit` |
 | フック | `hook/hooks.json` | `hook-toolkit` |
 | README | `readme/README.md` | `readme-toolkit` |
+| マーケットプレイス一式 | `marketplace/` | `marketplace-toolkit` |
 
 ## 利用方針
 

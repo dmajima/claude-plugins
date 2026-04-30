@@ -174,7 +174,8 @@ plugins/{plugin-name}/references/
     ├── command/
     ├── agent/
     ├── hook/
-    └── readme/
+    ├── readme/
+    └── marketplace/                # マーケットプレイス（marketplace.json + README）
 ```
 
 ### 4.2 references/ 直下の運用ルール（緩い）

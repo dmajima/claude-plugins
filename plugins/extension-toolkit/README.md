@@ -16,14 +16,78 @@ Claude Code の各種拡張要素（プラグイン・スキル・コマンド�
   - `document-skills@anthropic-agent-skills`
 - `marketplace.json` の `allowCrossMarketplaceDependenciesOn` で `anthropic-agent-skills` への自動インストールを許可
 
-> **依存の役割**: これらは `skill-toolkit` がスキル雛形・ドキュメント生成系の参考実装を引用する際に利用します。**本プラグインの核機能（スキル/プラグイン/コマンド/エージェント/フック/環境構築/レビュー/公開）はこれら依存なしでも動作します**が、利用体験を損なわないよう `dependencies` で宣言し自動解決します（[`references/dependencies-policy.md`](references/dependencies-policy.md) のセクション 4「設定する判断基準」参照）。自動インストールを避けたい場合は、利用者側でマーケットプレイスから個別アンインストールしてください。
+> **依存の役割**: これらは `skill-toolkit` がスキル雛形・ドキュメント生成系の参考実装を引用する際に利用します。**本プラグインの核機能（スキル/プラグイン/コマンド/エージェント/フック/環境構築/マーケットプレイス管理/レビュー/公開）はこれら依存なしでも動作します**が、利用体験を損なわないよう `dependencies` で宣言し自動解決します（[`references/dependencies-policy.md`](references/dependencies-policy.md) のセクション 4「設定する判断基準」参照）。自動インストールを避けたい場合は、利用者側でマーケットプレイスから個別アンインストールしてください。
 
-### インストール
+### A. マーケットプレイス経由インストール（推奨）
 
 ```text
 /plugin marketplace add https://github.com/dmajima/claude-plugins
 /plugin install extension-toolkit@dmajima-claude-plugins
 ```
+
+### B. ローカル複製してインストール（オフライン・企業内環境向け）
+
+公開リポジトリにアクセスできない環境では、リポジトリをローカルに複製してから登録します。
+
+```bash
+# 1. リポジトリを複製
+git clone https://github.com/dmajima/claude-plugins <local-path>
+
+# 2. 必要に応じてブランチ・タグ切替（特定リリースを使う場合）
+cd <local-path>
+git checkout main
+```
+
+```text
+# 3. ローカルパスでマーケットプレイスを登録
+/plugin marketplace add <local-path>
+
+# 4. プラグインをインストール
+/plugin install extension-toolkit@dmajima-claude-plugins
+```
+
+### C. 自動更新の有効化
+
+`~/.claude/settings.json` の `extraKnownMarketplaces` で `autoUpdate: true` を設定すると、Claude Code セッション起動時にマーケットプレイス + インストール済みプラグインが自動更新されます。
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "dmajima-claude-plugins": {
+      "source": {
+        "type": "github",
+        "repo": "dmajima/claude-plugins"
+      },
+      "autoUpdate": true
+    }
+  }
+}
+```
+
+`autoUpdate: false` の場合は `/plugin update` を手動実行することで最新化できます。
+
+### D. 依存関係のインストール
+
+依存プラグイン（`example-skills` / `document-skills`）は、`marketplace.json` の `allowCrossMarketplaceDependenciesOn` で `anthropic-agent-skills` を許可している場合、**自動インストールされます**。
+
+自動インストールが成立しない場合（別マーケットプレイスへの参照が許可されていない・ネットワーク制約等）は、以下の手順で個別インストールします:
+
+```text
+# 依存マーケットプレイスを追加
+/plugin marketplace add https://github.com/anthropics/skills
+
+# 依存プラグインを明示インストール
+/plugin install example-skills@anthropic-agent-skills
+/plugin install document-skills@anthropic-agent-skills
+```
+
+#### Python 等の外部ツール依存
+
+一部スキル（`environment-setup-toolkit`）で Python venv を構築する場合、利用者環境に Python が導入されていることが前提となります:
+
+- Python 3.10 以上
+- 標準ライブラリ `venv` モジュール（通常 Python に同梱）
+- `git`（ローカル複製インストール時）
 
 ### 動作確認
 
@@ -51,10 +115,11 @@ Claude Code の各種拡張要素（プラグイン・スキル・コマンド�
 | `agent <name>` | `agent-toolkit` | サブエージェント単体作成 |
 | `team <name>` | `agent-toolkit`（チームモード） | エージェントチーム編成 |
 | `hook <event>` | `hook-toolkit` | フック設定作成 |
-| `readme <target>` | `readme-toolkit` | README 生成・更新 |
+| `readme <target>` | `readme-toolkit` | プラグイン・スキル README 生成・更新 |
 | `setup <work-dir>` | `environment-setup-toolkit` | Python venv 構築 |
+| `marketplace <name>` | `marketplace-toolkit` | マーケットプレイス新規構築・本体管理 |
 | `review <target>` | `extension-reviewer` | 多角レビュー |
-| `publish <plugin>` | `marketplace-publisher` | マーケットプレイス公開 |
+| `publish <plugin>` | `marketplace-publisher` | プラグイン公開ワークフロー |
 
 ### 自然言語起動
 
@@ -67,6 +132,7 @@ Claude Code の各種拡張要素（プラグイン・スキル・コマンド�
 | 「PreToolUse フックで X したい」 | `hook-toolkit` |
 | 「`qux` スキルの README を書いて」 | `readme-toolkit` |
 | 「Python venv 作って」 | `environment-setup-toolkit` |
+| 「新しいマーケットプレイス `acme-claude-plugins` を作って」 | `marketplace-toolkit` |
 | 「`quux` プラグインをレビュー」 | `extension-reviewer` |
 | 「`corge` プラグインを公開」 | `marketplace-publisher` |
 
@@ -97,10 +163,11 @@ Claude（要約）:
 | `command-toolkit` | スラッシュコマンド作成・改修 |
 | `agent-toolkit` | サブエージェント・エージェントチーム作成 |
 | `hook-toolkit` | フック設定作成 |
-| `readme-toolkit` | README 生成・更新 |
+| `readme-toolkit` | プラグイン・スキル単位の README 生成・更新 |
 | `environment-setup-toolkit` | Python venv 等の環境構築・撤去 |
+| `marketplace-toolkit` | マーケットプレイス新規構築・本体管理（`marketplace.json` + マーケットプレイス README） |
 | `extension-reviewer` | 拡張要素の多角レビュー（チーム起動） |
-| `marketplace-publisher` | マーケットプレイス公開・重複/マージチェック |
+| `marketplace-publisher` | プラグイン公開ワークフロー（git push / PR、`marketplace.json` 編集は `marketplace-toolkit` に委譲） |
 
 ## エージェント・チーム
 
@@ -135,7 +202,7 @@ Claude（要約）:
 | 完了チェックリスト | `references/completion-checklist.md` |
 | Claude UI 利用ルール | `references/user-interaction.md` |
 | 状態ファイル形式 | `references/state-files.md` |
-| README 規約 | `references/readme-policy.md` |
+| README 規約（プラグイン・スキル・マーケットプレイス共通） | `references/readme-policy.md` |
 | エージェント活用方針 | `references/agent-utilization.md` |
 | 依存関係宣言ルール | `references/dependencies-policy.md` |
 | 推奨構成テンプレート | `references/templates/{種別}/` |
@@ -182,7 +249,8 @@ plugins/extension-toolkit/
 │       ├── command/
 │       ├── agent/
 │       ├── hook/
-│       └── readme/
+│       ├── readme/
+│       └── marketplace/
 ├── agents/                          # プラグイン同梱エージェント（Claude Code 公式仕様）
 │   ├── plugin-structure-reviewer.md
 │   ├── evals-coverage-reviewer.md
@@ -196,6 +264,7 @@ plugins/extension-toolkit/
     ├── hook-toolkit/
     ├── readme-toolkit/
     ├── environment-setup-toolkit/
+    ├── marketplace-toolkit/
     ├── extension-reviewer/
     └── marketplace-publisher/
 ```

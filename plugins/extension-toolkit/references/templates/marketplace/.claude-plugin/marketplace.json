@@ -1,0 +1,9 @@
+{
+  "name": "{marketplace-name}",
+  "owner": {
+    "name": "{owner-name}"
+  },
+  "description": "{マーケットプレイスの目的を 1〜2 文で記載}",
+  "allowCrossMarketplaceDependenciesOn": [],
+  "plugins": []
+}

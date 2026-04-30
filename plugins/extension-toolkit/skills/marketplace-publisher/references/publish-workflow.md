@@ -101,8 +101,10 @@ esac
 
 ### 3. git add & commit
 
+`marketplace.json` の編集とマーケットプレイス README 同期は事前に `marketplace-toolkit` へ委譲済み（ADR-019 / ADR-020 準拠）。本ステップではコミット対象に **README.md** を必ず含める:
+
 ```bash
-git add plugins/{plugin-name} .claude-plugin/marketplace.json
+git add plugins/{plugin-name} .claude-plugin/marketplace.json README.md
 git commit -m "Add plugin: {plugin-name}"
 ```
 
@@ -113,6 +115,16 @@ git commit -m "Add plugin: {plugin-name}"
 | 新規登録 | `Add plugin: {plugin-name}` |
 | 既存更新 | `Update plugin: {plugin-name}` |
 | 削除 | `Remove plugin: {plugin-name}` |
+
+#### マーケットプレイス README 同期確認（必須・ADR-019）
+
+git add 前に以下を確認:
+
+- [ ] `marketplace.json` の編集差分が、マーケットプレイス README（リポジトリルート `README.md`）の同期と整合しているか
+- [ ] プラグイン一覧テーブルの行数 = `marketplace.json` の `plugins[]` 件数
+- [ ] バージョン列 = 各 `plugin.json` の `version`
+
+不整合検出時は `marketplace-toolkit --sync-readme` を呼び出して再同期する（fail-closed: 不整合のまま push しない）。
 
 ### 4. git push
 

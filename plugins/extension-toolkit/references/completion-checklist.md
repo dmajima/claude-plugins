@@ -21,6 +21,7 @@
 | evals 設計 | 動作分岐ありなら必須・各ケースのフォーマット | [`eval-guide.md`](eval-guide.md) |
 | 検証ルール | 種別別の検証項目 | [`validation-rules.md`](validation-rules.md) |
 | バージョン更新 | **必須**: 1 コミット 1 バージョン更新（マーケットプレイス自動更新検知のため）。スキル側で `plugin.json` の編集が発生した場合は必ず `version` を桁付きで更新する | [`versioning.md`](versioning.md) |
+| マーケットプレイス README 同期 | `marketplace.json` を編集した場合は **必ず同一コミット** でマーケットプレイス README を同期する（ADR-019 準拠） | [`readme-policy.md`](readme-policy.md) 節 11.1 |
 | ユーザ対話 | 選択は AskUserQuestion 優先 | [`user-interaction.md`](user-interaction.md) |
 | 状態ファイル形式 | 構造化データは JSON/YAML | [`state-files.md`](state-files.md) |
 | README 規約 | 人間向け明記・導入手順優先 | [`readme-policy.md`](readme-policy.md) |
