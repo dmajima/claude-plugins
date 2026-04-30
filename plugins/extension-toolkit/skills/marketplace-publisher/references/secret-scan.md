@@ -146,11 +146,14 @@ PLACEHOLDER_PATTERNS = [
 EXCLUDE_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".tox", ".mypy_cache"}
 
 def is_binary(path: pathlib.Path) -> bool:
-    """先頭 8KB に NUL バイトを含むファイルはバイナリ判定."""
+    """先頭 8KB に NUL バイトを含むファイルはバイナリ判定（BOM 持ちは除外）."""
     try:
         chunk = path.read_bytes()[:8192]
     except Exception:
         return True
+    # UTF-16 / UTF-8 BOM を持つファイルはテキストとして扱う
+    if chunk.startswith(b"\xff\xfe") or chunk.startswith(b"\xfe\xff") or chunk.startswith(b"\xef\xbb\xbf"):
+        return False
     return b"\x00" in chunk
 
 def is_in_excluded_dir(path: pathlib.Path, root: pathlib.Path) -> bool:
@@ -200,7 +203,10 @@ def scan(plugin_root: pathlib.Path) -> list[dict]:
                 matched = m.group(0)
                 if is_placeholder_value(matched):
                     continue
-                findings.append({"file": str(path), "reason": f"content:{name}", "match_prefix": matched[:8]})
+                # 行番号を計算（マッチ位置までの改行数 + 1）
+                line_num = text[: m.start()].count("\n") + 1
+                # CWE-532 対応: 検出値の prefix も残さない（パターン名 + ファイルパス + 行番号のみ）
+                findings.append({"file": str(path), "line": line_num, "reason": f"content:{name}"})
                 break
     return findings
 ```

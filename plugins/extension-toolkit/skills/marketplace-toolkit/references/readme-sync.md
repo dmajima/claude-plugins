@@ -41,33 +41,38 @@
 # 擬似コード
 import json, pathlib, re
 
+class SectionNotFoundError(Exception):
+    """見出しが見つからない / テーブルが存在しない場合のエラー."""
+
 def replace_section(content: str, heading: str, new_table: str) -> str:
     """指定見出し直下の Markdown テーブル本体のみを置換する。
 
     - 見出し（`heading`）の直後にテーブル前置きテキストがある場合は保持
     - テーブル本体（`|` で始まる連続行）のみを `new_table` で差し替え
     - 次の `## ` 見出しまでをセクション境界とみなす
+    - 見出し未存在 / テーブル未検出時は SectionNotFoundError を raise（fail-loud）
     """
-    # 見出しから次の ## 見出しまでをセクションとして抽出
     lines = content.split("\n")
     out = []
     i = 0
+    heading_found = False
+    table_replaced = False
     while i < len(lines):
         if lines[i].strip() == heading:
+            heading_found = True
             out.append(lines[i])
             i += 1
-            # セクション内: 次の ## までを処理
             section_lines = []
             while i < len(lines) and not lines[i].startswith("## "):
                 section_lines.append(lines[i])
                 i += 1
-            # テーブル行（| で始まる連続行）を検出して new_table に置換
             in_table = False
             for sl in section_lines:
                 if sl.startswith("|") or sl.startswith("|---"):
                     if not in_table:
                         out.append(new_table)
                         in_table = True
+                        table_replaced = True
                     # テーブル行はスキップ
                 else:
                     if in_table and sl.strip() == "":
@@ -76,6 +81,11 @@ def replace_section(content: str, heading: str, new_table: str) -> str:
         else:
             out.append(lines[i])
             i += 1
+    # fail-loud: 見出し未存在 or テーブル未検出はエラー
+    if not heading_found:
+        raise SectionNotFoundError(f"Section heading not found: {heading!r}. Run --sync-readme with template補完 first.")
+    if not table_replaced:
+        raise SectionNotFoundError(f"Table not found under {heading!r}. The section exists but contains no table; insert the template table before re-running.")
     return "\n".join(out)
 
 def assert_source_safe(repo_root: pathlib.Path, source: str) -> pathlib.Path:
@@ -174,3 +184,5 @@ def sync_marketplace_readme(repo_root: pathlib.Path):
 | プラグインの `plugin.json` が見つからない | エラーメッセージ + 該当エントリをスキップせず処理中断（不整合を放置しない） |
 | `marketplace.json` の JSON エラー | 修復前に同期不可、エラー終了 |
 | README に該当セクションがなく、補完もできない | テンプレートから新規生成を提案 |
+| `SectionNotFoundError`: 見出しが見つからない | テンプレート（[`../../../references/templates/marketplace/README.md`](../../../references/templates/marketplace/README.md)）から該当セクションを補完してユーザに通知 |
+| `SectionNotFoundError`: 見出しはあるがテーブル未検出 | テンプレートのテーブル骨格を挿入し、再実行を案内 |

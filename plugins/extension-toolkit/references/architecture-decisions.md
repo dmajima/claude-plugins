@@ -6,7 +6,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | `toolkit` 系 8（skill / plugin / command / agent / hook / readme / environment-setup / marketplace）+ `reviewer` 1 + `publisher` 1 = 10 スキル + オーケストレータ `/extension` の 3 層パイプラインで構成 |
+| 決定 | `toolkit` 系 8（skill / plugin / command / agent / hook / readme / environment-setup / marketplace、`marketplace` 追加は ADR-020 参照）+ `reviewer` 1 + `publisher` 1 = 10 スキル + オーケストレータ `/extension` の 3 層パイプラインで構成 |
 | 理由 | 1 スキル 1 責務（SRP）の徹底。各スキルが他スキルを Skill ツール経由で呼び出す疎結合。ユーザはオーケストレータ（`/extension`）または個別スキル（自然言語起動）の両方で利用可能 |
 | トレードオフ | スキル間連携のオーケストレーションが `/extension` と各 SKILL.md「引き渡し」表に分散する |
 | 代替案 | 単一の mega-skill で全機能提供 → SKILL.md 200 行制約に違反、却下 |
@@ -82,7 +82,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | toolkit 系 8 スキル（skill / plugin / command / agent / hook / readme / environment-setup / marketplace）の名称を `*-toolkit` で統一。プラグイン名 `extension-toolkit`、Git ブランチ `feature/extension-toolkit` も同命名 |
+| 決定 | toolkit 系 8 スキル（skill / plugin / command / agent / hook / readme / environment-setup / marketplace、`marketplace` 追加は ADR-020 参照）の名称を `*-toolkit` で統一。プラグイン名 `extension-toolkit`、Git ブランチ `feature/extension-toolkit` も同命名 |
 | 理由 | (1) `creator` は新規作成のみのニュアンスだが、これらスキルは改修・高度化も担当する。(2) `example-skills:skill-creator` という外部スキルとの命名衝突を回避 |
 | トレードオフ | リネームによる参照置換ミスのリスクがあり、規約遵守時はレビューによる検証が必要 |
 | 代替案 | 一部スキルのみリネーム → 命名規則の不統一、却下 |
