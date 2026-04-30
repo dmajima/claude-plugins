@@ -59,17 +59,19 @@ bash "${CLAUDE_SKILL_DIR}/scripts/python/teardown_venv.sh" <work_dir>
 ```markdown
 ## 環境構築
 
-Python 利用時は `environment-setup-toolkit` スキルに委譲する:
+Python 利用時は `environment-setup-toolkit` スキルに委譲する。**`Skill` ツール経由を第一推奨**（配置形態に依存しないため）:
+
+\`\`\`text
+Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --requirements <requirements>")
+\`\`\`
+
+直接スクリプト呼び出しが必要な場合（プラグイン同梱配布時のみ動作）:
 
 \`\`\`bash
 bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/python/setup_venv.sh" <work_dir> <requirements>
 \`\`\`
 
-または `Skill` ツール経由:
-
-\`\`\`text
-Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --requirements <requirements>")
-\`\`\`
+`${CLAUDE_PLUGIN_ROOT}` は **当該プラグイン由来のスキル/コマンド/フック実行時のみ** Claude Code が解決する。スタンドアロン配布のスキル（`<repo>/.claude/skills/{name}/` 等）からは未定義となるため `Skill` ツール経由を選ぶこと。
 ```
 
 ## requirements.txt の配置
