@@ -21,10 +21,10 @@
 |-------|-----|
 | Critical | 0 |
 | High | 0 |
-| Medium | 0 |
-| Low | 0（または「Suggestion」のみ） |
+| Medium | 0 件以上（APPROVE 条件には影響しない、SSOT 参照） |
+| Low / Suggestion | 0 件以上（APPROVE 条件には影響しない） |
 
-すべての観点で重大な問題なし、または軽微な改善提案のみ。例: 「README にバージョンバッジを追記する」「ファイル構成ツリーに新しいテンプレート種別を追加する」等の Suggestion は許容される。
+Critical / High が 0 であれば APPROVE。Medium / Low / Suggestion は件数を問わず APPROVE 維持（[`../references/review-perspectives.md`](../references/review-perspectives.md) の「総合判定ルール」参照）。例: 「README にバージョンバッジを追記する」「ファイル構成ツリーに新しいテンプレート種別を追加する」等の Suggestion は許容される。
 
 ### Phase 6: 総合判定
 

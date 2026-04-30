@@ -68,4 +68,4 @@ Claude（要約）:
 
 - venv は **必ずセッション作業領域**（`.claude/.local/work/{yyyyMMdd_nn_summary}/workspace/.venv`）に作成
 - スキル / プラグインのソース内には venv を作らない
-- 各スキルが個別に持っていた `scripts/setup/setup_venv.sh` 等を本スキルに集約（責務の単一化）
+- venv 構築・撤去は本スキルが責務単一として担当（各スキルは依存リストのみ保有）

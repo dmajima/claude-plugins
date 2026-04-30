@@ -220,4 +220,4 @@ plugins/extension-toolkit/
 
 ### アーキテクチャ判断
 
-詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) を参照（ADR-001〜015）。
+詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) を参照（全 ADR）。

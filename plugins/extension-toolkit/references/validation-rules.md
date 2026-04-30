@@ -13,7 +13,7 @@
 | `§` 記号の使用 | Medium | Grep `§` |
 | エンコーディング・改行コード保持 | Critical | バイト列比較 |
 | description 文字数 | Medium | 文字数カウント（[`description-guide.md`](description-guide.md) 参照） |
-| ディレクトリ構造の許可リスト遵守 | High | `conventions.md` 節 2.1 / 2.2 / 3.1 と照合 |
+| ディレクトリ構造の許可リスト遵守 | High | `conventions.md` 節 2.1 / 3.1 と照合 |
 
 ### 1.1 ディレクトリ構造の許可リスト機械チェック（厳格対象のみ）
 

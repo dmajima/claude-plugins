@@ -33,7 +33,7 @@
 | 人間が編集する設定 | `config.yaml` |
 | マニフェスト | `manifest.yaml` |
 | パイプライン定義 | `pipeline.yaml` |
-| エージェントチーム定義（コメント多め） | `references/teams/{name}.yaml`（任意） |
+| エージェントチーム定義（YAML 化を選ぶ場合の例。本プラグインは MD で運用中） | `references/teams/{name}.yaml`（任意・将来選択肢） |
 
 ### 2.3 Markdown
 
