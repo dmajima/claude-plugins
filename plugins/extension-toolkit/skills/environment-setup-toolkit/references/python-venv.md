@@ -102,19 +102,15 @@ plugins/extension-toolkit/skills/{skill-name}/scripts/deps/requirements.txt
 
 ## 7. teardown の安全性
 
-`teardown_venv.sh` の安全装置:
+`teardown_venv.sh` の安全装置は 3 段構成。詳細は実装（[`../scripts/python/teardown_venv.sh`](../scripts/python/teardown_venv.sh)）を参照。要点のみ記載:
 
-```bash
-# .claude/.local/ 配下であることを必ず確認
-if [[ "${VENV_DIR}" != *"/.claude/.local/"* ]]; then
-  echo "Error: venv path is not in .claude/.local/, refusing to delete." >&2
-  exit 1
-fi
+| 段 | 内容 |
+|---|------|
+| 1 | パスを `realpath -m`（fallback: `readlink -f`）で正規化し、シンボリックリンク迂回を防ぐ |
+| 2 | 正規化後パスが `.claude/.local/` を含むか `case` 文で確認。含まなければ拒否 |
+| 3 | 既知のシステムパス（`/`、`/root`、`/home`、`/etc`、`/usr`、`/var`、`/bin`、`/sbin`、`/opt`、`/Users`、Windows ドライブルート）に該当する場合は二重チェックで拒否 |
 
-rm -rf "${VENV_DIR}"
-```
-
-範囲外の `.venv` の誤削除を防ぐ。
+範囲外の `.venv` の誤削除を防ぐと同時に、シンボリックリンク経由の迂回攻撃にも対応する。
 
 ## 8. キャッシュとパフォーマンス
 
