@@ -44,7 +44,7 @@
 | 選択 | 動作 |
 |-----|------|
 | 1 | `plugin-toolkit` の追加シナリオを案内、本スキル終了 |
-| 2 | 差別化点を確認、description 更新後に新規登録続行 |
+| 2 | 差別化点を確認、description 更新後に case-01 と同フローへ続行（`marketplace-toolkit --add-plugin` 委譲 + リポジトリルート `README.md` 同期、ADR-020/019） |
 | 3 | 何もしない |
 
 ## 期待出力

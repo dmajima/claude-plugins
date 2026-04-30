@@ -1,6 +1,15 @@
-# marketplace.json 更新仕様
+# marketplace.json スキーマ概要（参照ポインタ）
 
-`.claude-plugin/marketplace.json` の `plugins[]` 配列を更新する際のルール。
+`.claude-plugin/marketplace.json` のスキーマと公式仕様の参照をまとめたドキュメント。
+
+> **重要（ADR-020 準拠）**:
+> `marketplace.json` の **編集操作**（plugins[] への追加 / 更新 / 削除、マーケットプレイス README 同期）は `marketplace-toolkit` が担当する SSOT である。本ファイルは `marketplace-publisher` が公開ワークフローを実行する際の **スキーマ参照** のみを目的とし、編集ロジックは保持しない。
+>
+> 編集操作の詳細手順は以下を参照:
+>
+> - [`../../marketplace-toolkit/SKILL.md`](../../marketplace-toolkit/SKILL.md)（責務全体）
+> - [`../../marketplace-toolkit/references/operations.md`](../../marketplace-toolkit/references/operations.md)（モード別操作手順 SSOT）
+> - [`../../marketplace-toolkit/references/readme-sync.md`](../../marketplace-toolkit/references/readme-sync.md)（README 同期ロジック）
 
 ## ファイルパス
 
@@ -8,113 +17,52 @@
 <repo-root>/.claude-plugin/marketplace.json
 ```
 
-## エントリ追加（新規プラグイン）
+## スキーマの最上位フィールド
 
-`plugins[]` に以下の形式で要素を追加:
+| フィールド | 必須 | 内容 |
+|----------|------|------|
+| `name` | 必須 | マーケットプレイス名（リポジトリディレクトリ名と一致） |
+| `owner.name` | 必須 | オーナー名 |
+| `description` | 必須 | マーケットプレイスの目的・配布方針（1〜2 文） |
+| `plugins[]` | 必須 | プラグインエントリ配列 |
+| `allowCrossMarketplaceDependenciesOn` | 任意 | 依存先マーケットプレイス名のリスト |
+
+## `plugins[]` エントリの形式
 
 ```json
 {
   "name": "{plugin-name}",
   "source": "./plugins/{plugin-name}",
-  "description": "{プラグインの 1 行説明}"
+  "description": "{プラグインの 1〜2 文説明}"
 }
 ```
 
-### 必須フィールド
+| フィールド | 必須 | 内容 |
+|----------|------|------|
+| `name` | 必須 | プラグイン名（`<source>/.claude-plugin/plugin.json` の `name` と一致） |
+| `source` | 必須 | リポジトリルートからの相対パス（`./plugins/` プレフィックス必須、パストラバーサル対策） |
+| `description` | 必須 | 1〜2 文の概要 |
 
-| フィールド | 内容 |
-|----------|------|
-| `name` | プラグイン名（plugin.json の `name` と一致） |
-| `source` | リポジトリルートからの相対パス |
-| `description` | 1 行説明 |
+## バージョンに関する重要原則
 
-### 任意フィールド
-
-| フィールド | 内容 |
-|----------|------|
-| `keywords` | 検索キーワード配列（plugin.json と同期推奨） |
-| `category` | カテゴリ分類（必要時） |
-
-## エントリ更新（既存プラグイン）
-
-| 変更可 | 変更内容 |
-|-------|---------|
-| `description` | 1 行説明の修正 |
-| `source` | パス変更（プラグイン移動時） |
-| `keywords` | キーワード追加・削除 |
-
-| 変更不可 | 理由 |
-|---------|------|
-| `name` | 識別子のため、変更時は削除 + 別 name で新規追加扱い |
-| `version` | marketplace.json には書かない（plugin.json で管理） |
-
-## エントリ削除
-
-プラグイン自体を削除する場合のみ。`plugins/{plugin-name}/` ディレクトリも合わせて削除する必要があるため **必ずユーザに確認**。
-
-```text
-プラグイン `{plugin-name}` をマーケットプレイスから削除します:
-
-- marketplace.json のエントリ削除
-- plugins/{plugin-name}/ ディレクトリ削除
-
-実行しますか？（yes/no）
-```
+- バージョン情報は `marketplace.json` に **記載しない**
+- バージョンの正典は各プラグインの `<source>/.claude-plugin/plugin.json` の `version`
+- マーケットプレイス README のプラグイン一覧テーブルのバージョン列も、`plugin.json` から **直接転記** する（`marketplace-toolkit` が同期）
 
 ## 並び順
 
-`plugins[]` は **アルファベット順** に並べる（メンテナンス性のため）。
+`plugins[]` は **アルファベット順** で挿入する。並び順の管理は `marketplace-toolkit` 側で行う。
 
-## 更新前の確認
+## marketplace-publisher が `marketplace.json` を扱う場面
 
-1. 同名のエントリがすでに存在しないか
-2. 現在の JSON が valid（パース確認）
-3. `source` パスが実在するか
+`marketplace-publisher` が `marketplace.json` に対して直接行う操作は以下に **限定** される:
 
-## 更新後の確認
+- **読み込み**: 重複検査・実体検証・公開フローの判断材料として
+- **検証**: JSON valid / プラグイン名整合 / source パス実在 / README 同期確認
+- **コミット範囲への含有**: `git add .claude-plugin/marketplace.json` を実行（変更したのは `marketplace-toolkit`）
 
-1. JSON が valid
-2. 追加・変更したエントリの内容を diff としてユーザに提示
+**書き換え（plugins[] の追加・更新・削除）は本スキルの責務外**。`marketplace-toolkit` を Skill ツール経由で呼び出して実行する。
 
-## 例
+## 検証ルール
 
-### 追加前
-
-```json
-{
-  "name": "dmajima-claude-plugins",
-  "owner": { "name": "dmajima" },
-  "description": "dmajima 個人用 Claude Code プラグインマーケットプレイス",
-  "plugins": []
-}
-```
-
-### `extension-toolkit` を追加後
-
-```json
-{
-  "name": "dmajima-claude-plugins",
-  "owner": { "name": "dmajima" },
-  "description": "dmajima 個人用 Claude Code プラグインマーケットプレイス",
-  "plugins": [
-    {
-      "name": "extension-toolkit",
-      "source": "./plugins/extension-toolkit",
-      "description": "Claude Code の各種拡張要素の作成からマーケットプレイス公開までを支援するツールキット"
-    }
-  ]
-}
-```
-
-## エンコーディング・改行コード
-
-既存 `marketplace.json` のエンコーディング・改行コードを維持する（`~/.claude/rules/common/file-encoding.md`）。通常は UTF-8（BOM なし）+ LF。
-
-JSON 書き戻し時は以下に注意:
-
-| 観点 | 推奨 |
-|-----|------|
-| インデント | 2 スペース |
-| 末尾改行 | 1 行 |
-| 日本語の保持 | `ensure_ascii=False`（Python） |
-| キー順序 | 既存順序を維持（`name` → `owner` → `description` → `plugins`） |
+`marketplace.json` および関連 README の検証項目は [`../../../references/validation-rules.md`](../../../references/validation-rules.md) 節 2.8 を参照（`marketplace-toolkit` 出力検証として SSOT 化）。

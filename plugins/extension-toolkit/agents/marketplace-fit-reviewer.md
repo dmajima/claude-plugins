@@ -69,8 +69,11 @@ tools: Read, Grep, Glob
 
 ## 参照すべき規約
 - references/dependencies-policy.md
-- skills/marketplace-publisher/references/marketplace-json.md
-- skills/marketplace-publisher/references/duplication-check.md
+- references/readme-policy.md（節 11.1 マーケットプレイス README 同期、ADR-019）
+- skills/marketplace-toolkit/references/operations.md（marketplace.json 編集の正典、ADR-020）
+- skills/marketplace-toolkit/references/readme-sync.md（README 同期ロジック）
+- skills/marketplace-publisher/references/duplication-check.md（重複・マージ判定）
+- skills/marketplace-publisher/references/secret-scan.md（シークレット検査）
 
 ## 出力
 上記の出力フォーマットに従って結果をまとめてください。重複候補プラグインがあれば具体名を提示してください。

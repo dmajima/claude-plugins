@@ -1,6 +1,6 @@
 ---
 name: marketplace-publisher
-description: Claude Code プラグインマーケットプレイスの marketplace.json を更新し、新規プラグインの登録・既存プラグインの更新・重複/マージ判定・公開ワークフロー（ハンドオフ or フルオート）を支援するスキル。「foo プラグインを公開」「マーケットプレイスに登録」「marketplace.json を更新」「重複チェックして」などの依頼で起動する。Use when the user wants to register or update a plugin in the marketplace, check for duplicates with existing plugins, or publish with a full automation flow. SKIP when the user wants to create plugin files (use plugin-toolkit) or migrate items (use plugin-toolkit's migration scenario).
+description: Claude Code プラグインマーケットプレイスへの公開ワークフロー（重複検査・実体検証・git add/commit/push・PR 作成・ハンドオフ or フルオート選択）を担当するスキル。「foo プラグインを公開」「マーケットプレイスに登録」「重複チェックして」「フルオートで公開」などの依頼で起動する。Use when the user wants to publish a plugin to a marketplace, check for duplicates, or run a full automation publish flow. SKIP when the user wants to create plugin files (use plugin-toolkit), edit marketplace.json or sync the marketplace README directly (use marketplace-toolkit, ADR-020), or migrate items (use plugin-toolkit's migration scenario).
 ---
 
 # Marketplace Publisher
@@ -29,14 +29,15 @@ Claude Code プラグインマーケットプレイス（`.claude-plugin/marketp
 ## トリガー条件
 
 - 「マーケットプレイスに `{plugin}` を公開」「`{plugin}` を登録」
-- 「marketplace.json を更新」
 - 「`{plugin}` の重複チェックして」
-- 「`{plugin}` をフルオートで公開」
+- 「`{plugin}` をフルオートで公開」「公開ワークフロー」
 
 このスキルを起動しないケース:
 
 - 「プラグインを作って」（→ `plugin-toolkit`）
 - 「既存スキルをプラグイン化」（→ `plugin-toolkit` の移管シナリオ）
+- 「`marketplace.json` を直接編集」「マーケットプレイス README を同期」（→ `marketplace-toolkit`、ADR-020）
+- 「新しいマーケットプレイスを作成」（→ `marketplace-toolkit`）
 
 ## 前提
 
@@ -132,6 +133,9 @@ Claude Code プラグインマーケットプレイス（`.claude-plugin/marketp
 - [ ] エントリの `source` パスが実在
 - [ ] `name` が plugin.json と一致
 - [ ] バージョン情報が `marketplace.json` に書かれていない（plugin.json で管理）
+- [ ] `plugin-name` が `^[a-z][a-z0-9-]*$` に一致（コマンド注入対策）
+- [ ] **`marketplace-toolkit` による マーケットプレイス README 同期が完了している**（ADR-019）
+- [ ] git add 範囲に **リポジトリルート `README.md`** が含まれている（ADR-019）
 
 ### 6. 公開モードの選択
 
