@@ -93,7 +93,12 @@
 
 ### 3. テンプレート展開
 
-`${CLAUDE_PLUGIN_ROOT}/references/templates/agent/team.md` を `agents/teams/{team-name}.md` 等に配置。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/agent/team.md` を以下に配置:
+
+| 配置先 | パス |
+|-------|-----|
+| プラグイン内（推奨） | `plugins/{plugin}/references/teams/{team-name}.md`（ADR-002 準拠） |
+| グローバル | `~/.claude/teams/{team-name}.md` |
 
 ### 4. スポーンプロンプト充填
 

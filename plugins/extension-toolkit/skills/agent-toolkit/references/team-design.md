@@ -121,7 +121,7 @@
 | 配置先 | パス |
 |-------|-----|
 | グローバル | `~/.claude/teams/{team-name}.md` |
-| プラグイン内 | `plugins/{plugin}/teams/{team-name}.md`（任意） |
+| プラグイン内 | `plugins/{plugin}/references/teams/{team-name}.md`（ADR-002 準拠、プラグイン直下 `teams/` は規約違反） |
 
 ## 9. チーム検証チェックリスト
 
