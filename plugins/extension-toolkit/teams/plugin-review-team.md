@@ -8,8 +8,8 @@
 |------|------|
 | 目的 | プラグインの構造妥当性・実装品質・evals 網羅性・マーケットプレイス適合・セキュリティを多角的に評価し合議で総合判定を導く |
 | リード | `architect`（グローバル） |
-| メンバー | `plugin-structure-reviewer` / `implementation-engineer`（グローバル） / `evals-coverage-reviewer` / `marketplace-fit-reviewer` / `security-engineer`（グローバル） |
-| 人数 | 5 名 |
+| メンバー（リード以外） | `plugin-structure-reviewer` / `implementation-engineer`（グローバル） / `evals-coverage-reviewer` / `marketplace-fit-reviewer` / `security-engineer`（グローバル、フック含有時のみ） |
+| 人数 | フック含有時 6 名（リード含む） / 非含有時 5 名（リード含む） |
 | 議論ラウンド | 最低 3、上限 5 |
 
 ## 起動条件

@@ -17,7 +17,7 @@
 
 ### Phase 2: チーム選定
 
-[`../references/team-selection.md`](../references/team-selection.md) に従い `plugin-review-team` を採用。フック含有のため `security-engineer` を含む 5 名構成。
+[`../references/team-selection.md`](../references/team-selection.md) に従い `plugin-review-team` を採用。フック含有のため `security-engineer` を含む **6 名構成**（リード含む）。
 
 | メンバー | 配布元 | 役割 |
 |--------|-------|------|
@@ -28,7 +28,7 @@
 | `marketplace-fit-reviewer` | プラグイン同梱 | マーケット適合 |
 | `security-engineer` | グローバル | フック安全性（フック含有時） |
 
-フック未含有なら `security-engineer` を省略し 5 名構成。
+フック未含有なら `security-engineer` を省略し **5 名構成**（リード含む）になる。
 
 ### Phase 3: チーム起動 + 機械チェック
 
