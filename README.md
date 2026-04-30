@@ -12,7 +12,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 
 | プラグイン | 説明 | バージョン | インストール |
 |----------|------|----------|----------|
-| `credentials-manager` | Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン（URL/ドメイン自動マッチ・グローバルルール非依存で自動トリガー） | 0.2.0 | `/plugin install credentials-manager@dmajima-claude-plugins` |
+| `credentials-manager` | Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン（URL/ドメイン自動マッチ・グローバルルール非依存で自動トリガー） | 1.0.0 | `/plugin install credentials-manager@dmajima-claude-plugins` |
 | `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成からマーケットプレイス構築・公開まで支援 | 1.0.0 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 
 ## マーケットプレイスの追加方法

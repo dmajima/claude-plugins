@@ -36,7 +36,7 @@ git clone https://github.com/dmajima/claude-plugins <local-path>
 
 # 2. リリースタグ（推奨）またはブランチに切替
 cd <local-path>
-git checkout v0.2.0   # 推奨: 検証済みリリースタグ
+git checkout v1.0.0   # 推奨: 検証済みリリースタグ
 # または: git checkout main   # 最新追従
 ```
 

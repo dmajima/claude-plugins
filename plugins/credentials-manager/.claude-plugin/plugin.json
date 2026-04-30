@@ -1,6 +1,6 @@
 {
   "name": "credentials-manager",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン",
   "author": {
     "name": "dmajima"
