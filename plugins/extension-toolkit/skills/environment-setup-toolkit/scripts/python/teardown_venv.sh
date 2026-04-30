@@ -42,12 +42,16 @@ case "${NORMALIZED_PATH}" in
 esac
 
 # 安全装置 3: ルート / ホームディレクトリ等のシステムパスを禁止（正規化後パスで判定）
+# 注: 安全装置 2 ですでに .claude/.local/ 配下を確認しているため、ここで該当ケースは
+#     既に許可されている。本ケース文は正規化パスがシステムルート風（"/", "/root", ...,
+#     Windows ドライブルート "C:/"）に該当する場合の二重チェック。
+#     Windows パス例: "C:/Users/.../.claude/.local/work/..." は外側 case にマッチするが、
+#     内側で .claude/.local/ を含むため許容される。
 case "${NORMALIZED_PATH}" in
   "/" | "/root"* | "/home"* | "/etc"* | "/usr"* | "/var"* | "/bin"* | "/sbin"* | "/opt"* | "/Users"* | [A-Za-z]:[\\/]*)
-    # これらは .claude/.local/ 配下に該当しないため通常は到達しないが、二重チェック
     case "${NORMALIZED_PATH}" in
       *"/.claude/.local/"*)
-        : # 例外的に許容
+        : # .claude/.local/ を含むため許容
         ;;
       *)
         echo "[teardown_venv] Error: refusing to operate on system path: ${NORMALIZED_PATH}" >&2

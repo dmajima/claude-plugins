@@ -42,16 +42,33 @@ teardown → setup の順次実行。
 
 ## 引数仕様
 
-```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/python/setup_venv.sh" <work_dir> [<requirements_path>] [<min_python_version>]
-bash "${CLAUDE_SKILL_DIR}/scripts/python/teardown_venv.sh" <work_dir>
+呼び出し方法によって引数形式が異なる。
+
+### Skill ツール経由（推奨、名前付き引数）
+
+```text
+Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> [--requirements <path>] [--min-python-version <ver>]")
+Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>")
 ```
 
-| 引数 | 対象動作 | 必須 | 内容 |
-|-----|--------|------|------|
-| `<work_dir>` | setup / teardown | 必須 | 作業ディレクトリ（`.venv` の親ディレクトリ） |
-| `<requirements_path>` | setup | 任意 | requirements.txt のパス（省略時は依存インストールをスキップ） |
-| `<min_python_version>` | setup | 任意 | 最小 Python バージョン要件（例: `3.10`）。未指定時はバージョンチェックなし |
+| 名前付き引数 | 対象動作 | 必須 | 内容 |
+|-----------|--------|------|------|
+| `--work-dir` | setup / teardown | 必須 | 作業ディレクトリ（`.venv` の親ディレクトリ） |
+| `--requirements` | setup | 任意 | requirements.txt のパス（省略時は依存インストールをスキップ） |
+| `--min-python-version` | setup | 任意 | 最小 Python バージョン要件（例: `3.10`） |
+
+### シェル直叩き（プラグイン同梱配布時のみ動作、位置引数）
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/python/setup_venv.sh" <work_dir> [<requirements_path>] [<min_python_version>]
+bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/python/teardown_venv.sh" <work_dir>
+```
+
+位置引数の順序は上記のまま固定。`<requirements_path>` を省略して `<min_python_version>` だけ指定する場合は、空文字列 `""` を第 2 引数に渡す:
+
+```bash
+bash setup_venv.sh "${WORK_DIR}" "" "3.10"
+```
 
 ## 各 *-toolkit スキルからの利用
 
