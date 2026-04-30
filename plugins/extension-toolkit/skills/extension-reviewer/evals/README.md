@@ -20,6 +20,7 @@
 | case-12 | `--non-interactive` モード（自動レビュー） | `--non-interactive` フラグ |
 | case-13 | プラグイン全体レビュー（フック未含有・5 名構成） | プラグイン対象 + フック非含有 |
 | case-14 | マーケットプレイス本体レビュー（個別 3 名並列） | 対象 = マーケットプレイス（marketplace.json） |
+| case-15 | `--non-interactive` + `--auto-fix` 同時指定（CI 自動修正） | 両フラグ検出 |
 
 ## 実行確認方法
 

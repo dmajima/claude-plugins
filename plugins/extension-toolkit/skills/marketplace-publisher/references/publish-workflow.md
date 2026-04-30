@@ -182,7 +182,7 @@ PR 作成完了: {PR URL}
 | `git commit` で nothing to commit | 既にコミット済み、push のみ実行 |
 | `git push` で rejected | `git pull --rebase` を提案、解決後に再 push |
 | PR 作成失敗 | ハンドオフに切り替え、PR 作成 URL を提示 |
-| 認証エラー | ユーザに認証情報の確認を依頼（`credentials-manager` スキルへの接続を提案） |
+| 認証エラー | ユーザに認証情報の確認を依頼（`credentials-manager` スキルがインストール済みなら接続を提案、未導入時は **ユーザに直接** 認証情報の確認・再設定を依頼。ADR-022 自己完結性原則のグローバルスキル依存フォールバック）|
 
 ## PR 説明テンプレート
 

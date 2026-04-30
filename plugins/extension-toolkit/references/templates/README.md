@@ -4,7 +4,7 @@
 
 ## このドキュメントについて
 
-このファイルは人間向けのリファレンス。Claude Code がスキル動作中に参照することはあるが、テンプレート本体への参照はスキルの SKILL.md / references で行う。
+このファイル（`references/templates/README.md`）は **人間向けのリファレンス** です。Claude Code がスキル動作中に本 README 自体を参照することはありません（テンプレート本体ファイル `skill/`・`plugin/` 等は各 `*-toolkit` が直接読み込みます）。
 
 ## テンプレートファイル取り扱い注意
 

@@ -188,6 +188,7 @@ marketplace.json の更新が完了しました。
 | 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.2 実体検証） |
+| バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md)（公開コミットでのバージョン更新確認）|
 | marketplace.json 仕様 | [`references/marketplace-json.md`](references/marketplace-json.md) |
 | 重複チェック詳細 | [`references/duplication-check.md`](references/duplication-check.md) |
 | シークレットスキャン | [`references/secret-scan.md`](references/secret-scan.md) |

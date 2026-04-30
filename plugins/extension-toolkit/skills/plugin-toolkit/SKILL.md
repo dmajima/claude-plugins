@@ -147,6 +147,7 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 | AI 誤認回避 | [`../../references/ai-readability.md`](../../references/ai-readability.md) |
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.2） |
+| バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md)（`plugin.json` 編集時必須）|
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
 | 移管ルール | [`references/migration-rules.md`](references/migration-rules.md) |
 | 動作例 | [`evals/`](evals/) |

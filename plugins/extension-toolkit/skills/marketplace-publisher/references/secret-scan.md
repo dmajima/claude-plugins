@@ -218,5 +218,5 @@ def scan(plugin_root: pathlib.Path) -> list[dict]:
 ## 5. 関連ルール
 
 - 検出されたシークレットが既にコミット履歴にある場合、本スキルでは履歴の書き換えを行わない（`git filter-repo` 等は別途ユーザに案内）
-- 認証情報そのものの管理はグローバル `credentials-manager` スキルに委譲。本スキルは公開対象に「混入していないか」のみを担当する
+- 認証情報そのものの管理はグローバル `credentials-manager` スキル（インストール済みの場合）に委譲。本スキルは公開対象に「混入していないか」のみを担当する。`credentials-manager` 未導入時は利用者に直接認証情報の確認・再設定を依頼する（ADR-022 自己完結性原則のグローバルスキル依存フォールバック）
 - 関連: [`../../../references/validation-rules.md`](../../../references/validation-rules.md) のセクション 2.2「プラグイン実体検証」

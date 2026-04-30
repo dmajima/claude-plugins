@@ -131,6 +131,7 @@ JSON 整合性は編集後に必ず検証（[`../../references/validation-rules.
 | 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
 | README 規約（マーケットプレイス節） | [`../../references/readme-policy.md`](../../references/readme-policy.md)（節 11.1） |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.8） |
+| バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md)（`marketplace.json` 編集時のプラグインバージョン同期確認）|
 | 操作詳細 | [`references/operations.md`](references/operations.md) |
 | README 同期詳細 | [`references/readme-sync.md`](references/readme-sync.md) |
 | テンプレート | [`../../references/templates/marketplace/`](../../references/templates/marketplace/) |

@@ -12,7 +12,8 @@
 | case-04 | フルオートモード | `--full-auto` フラグ |
 | case-05 | 削除（明示確認） | 削除指示 |
 | case-06 | フルオート時の保護ブランチ阻止 | `--full-auto` + 現在ブランチが main/master |
-| case-07 | シークレット混入検出時の fail-closed | `.env` / API キー等の検出 |
+| case-07 | フルオート + シークレット検出時の fail-closed | `--full-auto` + `.env` / API キー等の検出 |
+| case-08 | 非対話ハンドオフ + シークレット検出時の fail-closed | `--non-interactive` 単独 + シークレット検出 |
 
 ## 実行確認方法
 
