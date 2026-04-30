@@ -12,7 +12,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 
 | プラグイン | 説明 | バージョン | インストール |
 |----------|------|----------|----------|
-| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成からマーケットプレイス構築・公開まで支援 | 0.9.0 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
+| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成からマーケットプレイス構築・公開まで支援 | 0.9.1 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 
 ## マーケットプレイスの追加方法
 
@@ -34,10 +34,13 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 # 1. リポジトリを複製
 git clone https://github.com/dmajima/claude-plugins <local-path>
 
-# 2. 必要に応じてブランチ・タグ切替（特定リリースを使う場合）
+# 2. リリースタグ（推奨）またはブランチに切替
 cd <local-path>
-git checkout main
+git checkout v0.9.0   # 推奨: 特定リリース（タグ）を利用
+# または: git checkout main   # 最新版を追従（上流変更を取り込みます）
 ```
+
+企業内・オフライン環境では、`main` 追従よりも検証済みリリースタグ + 自動更新無効化（後述）の組み合わせが安全です。
 
 ```text
 # 3. ローカルパスでマーケットプレイスを登録
@@ -67,6 +70,16 @@ git checkout main
 ローカル複製で登録した場合は `source.type` を `"path"` 等に置換してください（環境に応じた設定は Claude Code のドキュメントを参照）。
 
 `autoUpdate: false` の場合は `/plugin update` を手動実行することで最新化できます。
+
+## 依存マーケットプレイス
+
+`marketplace.json` で `allowCrossMarketplaceDependenciesOn: ["anthropic-agent-skills"]` を宣言しています。これにより本マーケットプレイス内のプラグインが `anthropic-agent-skills` マーケットプレイス（Anthropic 公式）のプラグインを `dependencies` として宣言可能です。
+
+| 依存マーケットプレイス | 用途 | 利用プラグイン | 個別追加（自動解決不可時） |
+|------------------|-----|------------|----------------------|
+| `anthropic-agent-skills` | スキル雛形・ドキュメント生成系の参考実装 | `extension-toolkit`（`example-skills` / `document-skills` を依存宣言） | `/plugin marketplace add https://github.com/anthropics/skills` |
+
+依存マーケットプレイスは `allowCrossMarketplaceDependenciesOn` で許可していれば自動解決されます。許可されていない / ネットワーク制約がある環境では、利用者が手動で依存マーケットプレイスを追加してください。
 
 ## プラグイン追加手順（メンテナ向け）
 

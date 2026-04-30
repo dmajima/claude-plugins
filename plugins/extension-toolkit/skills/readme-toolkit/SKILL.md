@@ -50,11 +50,12 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 
 ### 1. 対象種別判定
 
-| 対象 | 判定 |
-|-----|------|
-| プラグイン名 | `plugins/{plugin}/.claude-plugin/plugin.json` の存在を確認 |
-| スキル名 | `skills/{skill}/SKILL.md` の存在を確認 |
-| パス指定 | 指定パスの内容を確認 |
+| 対象 | 判定 | 動作 |
+|-----|------|-----|
+| プラグイン名 | `plugins/{plugin}/.claude-plugin/plugin.json` の存在を確認 | プラグインテンプレート（ADR-018 4 要素）で生成 |
+| スキル名 | `skills/{skill}/SKILL.md` の存在を確認 | スキルテンプレートで生成 |
+| パス指定 | 指定パスの内容を確認 | 汎用テンプレートで生成 |
+| マーケットプレイス（`.claude-plugin/marketplace.json` を含むリポジトリルート） | 検出時 | **本スキルの対象外**、`marketplace-toolkit --sync-readme` への接続を提案 |
 
 ### 2. 既存内容のスキャン
 
@@ -63,9 +64,17 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 | プラグイン | `plugin.json`、`commands/`、`skills/`、`agents/`、`hooks/` の内容 |
 | スキル | `SKILL.md` のトリガー条件・責務、`references/` のファイル一覧 |
 
-### 3. テンプレート展開
+### 3. テンプレート選定 + 展開
 
-`${CLAUDE_PLUGIN_ROOT}/references/templates/readme/README.md`（または対象種別に応じたテンプレート）をベースに、スキャンした内容を反映する。
+対象種別に応じて以下のテンプレートを使う:
+
+| 対象 | テンプレート | 備考 |
+|-----|------------|-----|
+| プラグイン | `${CLAUDE_PLUGIN_ROOT}/references/templates/plugin/README.md` | **ADR-018 必須 4 要素**（A: マーケットプレイス経由 / B: ローカル複製 / C: 自動更新 / D: 依存関係）が含まれる |
+| スキル | `${CLAUDE_PLUGIN_ROOT}/references/templates/skill/README.md` | スキル単体用 |
+| その他（任意ディレクトリ等） | `${CLAUDE_PLUGIN_ROOT}/references/templates/readme/README.md` | 汎用テンプレート |
+
+スキャンした内容を反映してプレースホルダを置換する。マーケットプレイス README は本スキルの対象外（→ `marketplace-toolkit`）。
 
 ### 4. 各セクションの充填
 
