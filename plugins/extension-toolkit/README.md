@@ -13,6 +13,8 @@ Claude Code の各種拡張要素（プラグイン・スキル・コマンド�
 - Claude Code がインストール済み
 - 推奨依存プラグイン: `example-skills@anthropic-agent-skills` / `document-skills@anthropic-agent-skills`（自動インストール対象、`marketplace.json` の `allowCrossMarketplaceDependenciesOn` で許可済）
 
+> **依存の任意/必須判定根拠**: これらは `skill-toolkit` がスキル雛形・ドキュメント生成系の参考実装を引用する際に利用します。**本プラグインの核機能（スキル/プラグイン/コマンド/エージェント/フック/環境構築/レビュー/公開）はこれら依存なしでも動作します**。それでも `dependencies` に宣言している理由は、利用者が個別にインストール手順を踏まずに済むよう自動解決を提供するためです（[`references/dependencies-policy.md`](references/dependencies-policy.md) のセクション 4「設定する判断基準」参照）。自動インストールを避けたい場合は、利用者側でマーケットプレイスから個別アンインストールできます。
+
 ### インストール
 
 ```text

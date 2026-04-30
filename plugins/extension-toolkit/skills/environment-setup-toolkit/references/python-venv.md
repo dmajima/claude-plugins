@@ -143,6 +143,22 @@ rm -rf "${VENV_DIR}"
 | アクティベート前提のスクリプト | 副作用残存・移植困難 | 直接 `python` 呼び出し |
 | 依存バージョン無指定（再現性が必要な場面） | バージョン変動で挙動が変わる | バージョン固定 |
 
+## 10.5 Python バージョン要件チェック
+
+`setup_venv.sh` は第 3 引数で **最小 Python バージョン要件** を受け付ける:
+
+```bash
+bash setup_venv.sh <work_dir> [<requirements_path>] [<min_python_version>]
+```
+
+例: Python 3.10 以上を要求する場合
+
+```bash
+bash setup_venv.sh "${WORK_DIR}" "${REQ_PATH}" "3.10"
+```
+
+要件を満たさない場合はエラー終了し、ユーザに pyenv 等での切替を案内する。要件未指定時はチェックをスキップする。
+
 ## 11. 検証コマンド
 
 setup 直後の確認:
