@@ -13,6 +13,7 @@
 | case-05 | 外部依存スキル参照 | `--external-deps example-skills` |
 | case-06 | 動作分岐なし（evals 省略） | `--no-branching` |
 | case-07 | エラー系（命名衝突 / 配置先未存在） | 既存スキル名 + 新規作成依頼 |
+| case-08 | 既存改修で SKILL.md 200 行超過 → references 分離 | 改修後の行数予測が 200 行超過 |
 
 ## 実行確認方法
 

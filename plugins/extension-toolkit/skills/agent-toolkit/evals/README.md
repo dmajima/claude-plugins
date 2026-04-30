@@ -13,6 +13,7 @@
 | case-05 | チームサイズ不足の警告 | 2 名指定 |
 | case-06 | `--non-interactive` モード（質問なしで生成） | `--non-interactive` フラグ |
 | case-07 | 既存改修・専門性一致時の正常系 | 既存 + 専門領域一致 |
+| case-08 | 非対話 + チームサイズ不足の fail-closed | `--non-interactive` + メンバー 2 名 |
 
 ## 実行確認方法
 
