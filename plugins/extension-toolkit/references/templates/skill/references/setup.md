@@ -23,7 +23,7 @@ Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --r
 
 | 配置先 | 呼び出し例 | 備考 |
 |-------|----------|------|
-| プラグイン同梱（`extension-toolkit` インストール済） | `bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/python/setup_venv.sh" "<work_dir>" "${CLAUDE_SKILL_DIR}/scripts/deps/requirements.txt"` | `${CLAUDE_PLUGIN_ROOT}` は同プラグイン由来のスキル/コマンド/フック実行時に Claude Code が解決 |
+| プラグイン同梱（`extension-toolkit` インストール済） | `bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/setup/setup_venv.sh" "<work_dir>" "${CLAUDE_SKILL_DIR}/scripts/deps/requirements.txt"` | `${CLAUDE_PLUGIN_ROOT}` は同プラグイン由来のスキル/コマンド/フック実行時に Claude Code が解決 |
 | スタンドアロン（`<repo>/.claude/skills/{name}/`、または `~/.claude/skills/{name}/`） | 直接呼び出し不可。`Skill` ツール経由のみ | `${CLAUDE_PLUGIN_ROOT}` が未定義のため。プラグイン非依存の単体スキルは Skill ツール経由を必須とする |
 
 `<work_dir>` は `.claude/.local/work/{yyyyMMdd_nn_summary}/workspace/` を推奨する（`~/.claude/rules/claude/work-directory.md` を参照）。

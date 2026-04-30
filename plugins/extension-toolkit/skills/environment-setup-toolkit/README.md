@@ -53,8 +53,8 @@ Claude（要約）:
 | `SKILL.md` | スキル定義とトリガー条件 |
 | `references/procedures.md` | setup / teardown / refresh / check の詳細手順 |
 | `references/python-venv.md` | Python venv の構造・互換性 |
-| `scripts/python/setup_venv.sh` | venv 構築スクリプト |
-| `scripts/python/teardown_venv.sh` | venv 撤去スクリプト |
+| `scripts/setup/setup_venv.sh` | venv 構築スクリプト |
+| `scripts/setup/teardown_venv.sh` | venv 撤去スクリプト |
 
 ## 技術スタック・アーキテクチャ
 

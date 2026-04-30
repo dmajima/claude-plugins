@@ -82,7 +82,7 @@ description: Claude Code のスキル/プラグインの実行環境（Python ve
 ### 4. setup 実行
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/python/setup_venv.sh" <work_dir> [<requirements_path>] [<min_python_version>]
+bash "${CLAUDE_SKILL_DIR}/scripts/setup/setup_venv.sh" <work_dir> [<requirements_path>] [<min_python_version>]
 ```
 
 | 引数 | 必須 | 内容 |
@@ -101,7 +101,7 @@ bash "${CLAUDE_SKILL_DIR}/scripts/python/setup_venv.sh" <work_dir> [<requirement
 ### 5. teardown 実行
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/python/teardown_venv.sh" <work_dir>
+bash "${CLAUDE_SKILL_DIR}/scripts/setup/teardown_venv.sh" <work_dir>
 ```
 
 `<work_dir>/.venv` を削除。

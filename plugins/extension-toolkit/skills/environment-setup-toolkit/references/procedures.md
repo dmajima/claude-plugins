@@ -60,8 +60,8 @@ Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>"
 ### シェル直叩き（プラグイン同梱配布時のみ動作、位置引数）
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/python/setup_venv.sh" <work_dir> [<requirements_path>] [<min_python_version>]
-bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/python/teardown_venv.sh" <work_dir>
+bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/setup/setup_venv.sh" <work_dir> [<requirements_path>] [<min_python_version>]
+bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/setup/teardown_venv.sh" <work_dir>
 ```
 
 位置引数の順序は上記のまま固定。`<requirements_path>` を省略して `<min_python_version>` だけ指定する場合は、空文字列 `""` を第 2 引数に渡す:
@@ -86,7 +86,7 @@ Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --r
 直接スクリプト呼び出しが必要な場合（プラグイン同梱配布時のみ動作）:
 
 \`\`\`bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/python/setup_venv.sh" <work_dir> <requirements>
+bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/setup/setup_venv.sh" <work_dir> <requirements>
 \`\`\`
 
 `${CLAUDE_PLUGIN_ROOT}` は **当該プラグイン由来のスキル/コマンド/フック実行時のみ** Claude Code が解決する。スタンドアロン配布のスキル（`<repo>/.claude/skills/{name}/` 等）からは未定義となるため `Skill` ツール経由を選ぶこと。

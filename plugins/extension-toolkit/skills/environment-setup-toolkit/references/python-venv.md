@@ -102,7 +102,7 @@ plugins/extension-toolkit/skills/{skill-name}/scripts/deps/requirements.txt
 
 ## 7. teardown の安全性
 
-`teardown_venv.sh` の安全装置は 3 段構成。詳細は実装（[`../scripts/python/teardown_venv.sh`](../scripts/python/teardown_venv.sh)）を参照。要点のみ記載:
+`teardown_venv.sh` の安全装置は 3 段構成。詳細は実装（[`../scripts/setup/teardown_venv.sh`](../scripts/setup/teardown_venv.sh)）を参照。要点のみ記載:
 
 | 段 | 内容 |
 |---|------|

@@ -88,4 +88,4 @@ if [ -n "${REQUIREMENTS_PATH}" ]; then
 fi
 
 echo "[setup_venv] Ready: ${VENV_DIR}"
-echo "[setup_venv] Python: $(${PYTHON} --version)"
+echo "[setup_venv] Python: $("${PYTHON}" --version 2>&1)"
