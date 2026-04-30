@@ -83,6 +83,7 @@ done
 | 移管シナリオで元ファイルが無傷 | Critical | git diff |
 | 移管後の `settings.json` が改変されていない | Critical | git diff |
 | 含まれるスキル/コマンド/エージェント/フックの種別別検証合格 | High | 本ファイルの該当節 |
+| シークレットファイル不在（`.env` / `*.pem` / `*.key` / `id_rsa` / `credentials.json` / `secrets.json` 等） | Critical | ファイル名パターン + 内容パターンスキャン（[`../skills/marketplace-publisher/references/secret-scan.md`](../skills/marketplace-publisher/references/secret-scan.md) 参照） |
 
 ### 2.3 コマンド（`command-toolkit` 出力）
 

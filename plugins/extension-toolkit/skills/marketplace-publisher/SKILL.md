@@ -66,6 +66,21 @@ Claude Code プラグインマーケットプレイス（`.claude-plugin/marketp
 | plugin.json の `name` がディレクトリ名と一致 | 必須 |
 | description が plugin.json と整合 | 不一致時はユーザ確認 |
 | `README.md` 存在 | 推奨 |
+| シークレット混入スキャン | **必須**（[references/secret-scan.md](references/secret-scan.md) 参照、検出時 fail-closed） |
+
+#### シークレット混入スキャン（必須）
+
+公開対象に `.env` / 鍵ファイル / API トークン文字列が含まれていないかを `git add` 前に検査する。
+ファイル名パターン（`*.env` / `*.pem` / `*.key` / `id_rsa` / `credentials.json` / `secrets.json`）と
+内容パターン（AWS アクセスキー `AKIA[0-9A-Z]{16}` / GitHub トークン `ghp_[A-Za-z0-9]{36}` / Slack トークン `xox[baprs]-` 等）を検出。
+
+検出時は **fail-closed**（公開フローを中断）し、ユーザに対象ファイルを提示して以下を選択させる:
+
+1. 該当ファイルを削除/移動して再実行
+2. `.gitignore` に追加して再実行
+3. キャンセル
+
+詳細パターンと検出ロジックは [references/secret-scan.md](references/secret-scan.md) を参照。
 
 ### 3. 重複・マージチェック（新規登録時）
 
@@ -163,5 +178,6 @@ marketplace.json の更新が完了しました。
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.2 実体検証） |
 | marketplace.json 仕様 | [`references/marketplace-json.md`](references/marketplace-json.md) |
 | 重複チェック詳細 | [`references/duplication-check.md`](references/duplication-check.md) |
+| シークレットスキャン | [`references/secret-scan.md`](references/secret-scan.md) |
 | 公開ワークフロー | [`references/publish-workflow.md`](references/publish-workflow.md) |
 | 動作例 | [`evals/`](evals/) |

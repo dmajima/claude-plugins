@@ -16,6 +16,7 @@
 | description 文字数 | frontmatter `description` | 文字数カウント | Medium |
 | `agents/` 削除痕跡 | 既存スキル更新時 | git diff | High |
 | エンコーディング保持 | 編集ファイル | バイト列比較 | Critical |
+| シークレット混入（`.env` / 鍵 / トークン文字列） | プラグイン全体 | ファイル名 + 内容パターン | Critical |
 
 ## 実行方法
 
@@ -115,19 +116,36 @@ git diff HEAD -- "*/agents/"
 
 編集前後でバイト列を比較し、文字コード変換が起きていないか確認。
 
+`file_path` は **必ずレビュー対象ディレクトリ配下であることを呼び出し前に検証**（パストラバーサル対策）。
+スコープ外のシステムファイルに対して `file` コマンドを実行しないこと。
+
 ```python
-import subprocess
+import subprocess, pathlib
+
+def assert_in_scope(target_dir: pathlib.Path, file_path: pathlib.Path) -> None:
+    target_resolved = target_dir.resolve()
+    file_resolved = file_path.resolve()
+    if target_resolved not in file_resolved.parents and file_resolved != target_resolved:
+        raise ValueError(f"out of scope: {file_path}")
+
+assert_in_scope(target_dir, pathlib.Path(file_path))
 
 # 編集前のエンコーディング
-before = subprocess.run(['file', '--mime-encoding', file_path], capture_output=True).stdout
+before = subprocess.run(['file', '--mime-encoding', file_path],
+                        capture_output=True, shell=False).stdout
 
 # 編集後
-after = subprocess.run(['file', '--mime-encoding', file_path], capture_output=True).stdout
+after = subprocess.run(['file', '--mime-encoding', file_path],
+                       capture_output=True, shell=False).stdout
 
 if before != after:
     # Critical 指摘
     pass
 ```
+
+### 10. シークレット混入チェック
+
+詳細パターンと検出ロジックは [`../../marketplace-publisher/references/secret-scan.md`](../../marketplace-publisher/references/secret-scan.md) を参照。`extension-reviewer` 起動時にも公開前のラストガードとして同チェックを実施する。検出時は **Critical 指摘**（公開フローを中断、ユーザの明示的な対応を要求）。
 
 ## 指摘出力フォーマット
 
