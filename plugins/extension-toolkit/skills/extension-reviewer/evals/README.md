@@ -16,6 +16,8 @@
 | case-08 | エージェント定義レビュー（個別 3 名並列） | 対象 = `agents/{name}.md` |
 | case-09 | チーム定義レビュー（個別 4 名並列） | 対象 = `references/teams/{name}.md` |
 | case-10 | APPROVE（指摘なし正常完了） | Critical / High / Medium = 0 |
+| case-11 | チーム機能不可環境でのフォールバック起動 | `TeamCreate` 利用不可（ADR-017） |
+| case-12 | `--non-interactive` モード（自動レビュー） | `--non-interactive` フラグ |
 
 ## ケース追加ルール
 
