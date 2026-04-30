@@ -108,7 +108,7 @@ description: {トリガー条件を網羅した詳細説明}
 | 入出力明示 | 各ステップの入力・出力・参照ファイルを明記 |
 | 分岐あり | 条件表で分岐を表現 |
 | 詳細手順 | `references/{name}.md` に分離し本文から参照 |
-| references 参照 | 相対パス `[name](references/name.md)` |
+| references 参照 | 相対パス（書式: `references/{ファイル名}.md` を Markdown リンクの URL 部分に置く） |
 
 ## 7. 否定形の書き方
 

@@ -143,8 +143,10 @@ Claude（要約）:
 
 ### アーキテクチャ判断
 
-詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) を参照。
+詳細は ./references/architecture-decisions.md を参照。
 ```
+
+> 上記コードブロック内の「`./references/architecture-decisions.md` を参照」は、生成 README が記述すべきサンプルテキストです。**実際の README ファイルでは Markdown リンク形式（角括弧でラベル `references/architecture-decisions.md` を、丸括弧で URL `references/architecture-decisions.md` を指定）で記述してください。** ここでは Markdown リンクとして書くと、本ファイル（README ではなく）から見た broken link として機械チェックで誤検出されるため、平文表記としています。
 
 ## 8. 過去履歴記載の禁止
 
