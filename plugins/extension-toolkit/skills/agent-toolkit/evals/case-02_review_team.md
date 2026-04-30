@@ -46,7 +46,7 @@
 
 | 項目 | 期待値 |
 |-----|-------|
-| 生成ファイル | `~/.claude/teams/code-review.md` または プラグイン内 `teams/code-review.md` |
+| 生成ファイル | `~/.claude/teams/code-review.md`（グローバル） または `plugins/{plugin}/references/teams/code-review.md`（プラグイン内、ADR-002 準拠） |
 | 標準出力 | 「`code-review` チーム編成（4 名）」+ スポーンプロンプト例 |
 | 終了状態 | 成功 |
 
