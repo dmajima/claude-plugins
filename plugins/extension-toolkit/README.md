@@ -36,7 +36,7 @@ git clone https://github.com/dmajima/claude-plugins <local-path>
 # 2. リリースタグ（推奨）またはブランチに切替
 #    タグを使うと特定バージョンに固定でき、想定外の変更を取り込みません。
 cd <local-path>
-git checkout v0.9.0   # 推奨: 特定リリース（タグ）を利用
+git checkout v0.9.1   # 推奨: 特定リリース（タグ）を利用（最新は plugin.json の version を参照）
 # または: git checkout main   # 最新版を追従（注意: 上流の変更を取り込みます）
 ```
 

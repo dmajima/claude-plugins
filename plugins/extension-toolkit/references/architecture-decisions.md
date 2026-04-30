@@ -34,11 +34,11 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | `marketplace-publisher` は marketplace.json 更新 + ハンドオフ提示を主責務とし、ユーザが明示的に選択した場合のみ git add / commit / push / PR 作成（フルオート）まで実行 |
-| 理由 | 「公開」というユーザ意図に対し、マーケットプレイスへの登録と git リポジトリへの反映は不可分なため、同一スキルで完結させたほうがユーザ体験が良い |
-| トレードオフ | publisher の責務が肥大化（マーケットプレイス登録 + git release management） |
-| 代替案 | git/PR 操作を `release-publisher` 等に分離 → スキル間連携が増え、ユーザ操作が複雑化 |
-| 制約 | フルオートは明示的選択時のみ。main / master 直接 push は禁止。フィーチャーブランチ確認必須 |
+| 決定 | `marketplace-publisher` は **公開ワークフロー**（重複検査・実体検証・シークレットスキャン・git add / commit / push / PR 作成）を主責務とし、ユーザが明示的に選択した場合のみフルオートで実行する。`marketplace.json` の編集とマーケットプレイス README 同期は **`marketplace-toolkit` に委譲**（ADR-020 参照） |
+| 理由 | 「公開」というユーザ意図に対し、マーケットプレイスへの登録と git リポジトリへの反映は不可分なため、公開フローは同一スキルで完結させたほうがユーザ体験が良い。一方、`marketplace.json` 編集ロジックは独立した責務として `marketplace-toolkit` に分離する（ADR-020）|
+| トレードオフ | publisher と toolkit の連携呼び出しが必要（Skill ツール経由で疎結合に保つ） |
+| 代替案 | git/PR 操作を `release-publisher` 等に分離 → スキル間連携が増え、ユーザ操作が複雑化、却下 |
+| 制約 | フルオートは明示的選択時のみ。main / master 直接 push は禁止。フィーチャーブランチ確認必須。シークレット混入時は fail-closed |
 
 ## ADR-005: `agent-toolkit` が単体エージェントとチーム編成の両方を担当
 
@@ -82,7 +82,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | toolkit 系 7 スキル（skill / plugin / command / agent / hook / readme / environment-setup）の名称を `*-toolkit` で統一。プラグイン名 `extension-toolkit`、Git ブランチ `feature/extension-toolkit` も同命名 |
+| 決定 | toolkit 系 8 スキル（skill / plugin / command / agent / hook / readme / environment-setup / marketplace）の名称を `*-toolkit` で統一。プラグイン名 `extension-toolkit`、Git ブランチ `feature/extension-toolkit` も同命名 |
 | 理由 | (1) `creator` は新規作成のみのニュアンスだが、これらスキルは改修・高度化も担当する。(2) `example-skills:skill-creator` という外部スキルとの命名衝突を回避 |
 | トレードオフ | リネームによる参照置換ミスのリスクがあり、規約遵守時はレビューによる検証が必要 |
 | 代替案 | 一部スキルのみリネーム → 命名規則の不統一、却下 |
