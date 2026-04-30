@@ -8,7 +8,7 @@
 |-----|------------|----------|
 | スキル | `skill-review-team`（3 名、リード含む） | [`../../../references/teams/skill-review-team.md`](../../../references/teams/skill-review-team.md) |
 | プラグイン | `plugin-review-team`（フック含有 6 名 / 非含有 5 名、リード含む） | [`../../../references/teams/plugin-review-team.md`](../../../references/teams/plugin-review-team.md) |
-| マーケットプレイス | 専用チームなし、個別 3 名並列（`marketplace-fit-reviewer` リード / `plugin-structure-reviewer` / `architect`） | [review-perspectives.md](review-perspectives.md) セクション 3（マーケットプレイス節） |
+| マーケットプレイス | 専用チームなし、個別 3 名並列（`marketplace-fit-reviewer` リード / `plugin-structure-reviewer` / `architect`） | [review-perspectives.md](review-perspectives.md) セクション 7（マーケットプレイスレビュー） |
 | フック | `hook-security-team`（3 名、リード含む） | [`../../../references/teams/hook-security-team.md`](../../../references/teams/hook-security-team.md) |
 | コマンド | 専用チームなし、個別 4 名並列（`plugin-structure-reviewer` / `description-trigger-reviewer` / `implementation-engineer` / `security-engineer`、`security-engineer` は外部実行・危険操作を含まない場合省略可で 3 名構成） | [`review-perspectives.md`](review-perspectives.md) セクション 3 |
 | エージェント単体定義（`agents/{name}.md`） | 専用チームなし、個別 3 名並列（`plugin-structure-reviewer` / `description-trigger-reviewer` / `architect`） | [evals/case-08](../evals/case-08_agent_definition_review.md) |

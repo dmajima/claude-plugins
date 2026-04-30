@@ -14,13 +14,18 @@
 
 ### 2. プラグインレビュー（横断）
 
-| エージェント | 観点 |
-|------------|------|
-| `architect`（リード） | 全体構造・スキル間の責務分離 |
-| `implementation-engineer` | 各スキル/コマンド/フックの実装品質 |
-| `security-engineer` | フック・外部公開機能の安全性 |
-| `test-engineer` | evals 全体の網羅性 |
-| `project-leader` | マーケットプレイス整合性・命名衝突 |
+`plugin-review-team` の正典定義は [`../../../references/teams/plugin-review-team.md`](../../../references/teams/plugin-review-team.md) を参照。本セクションは要約。
+
+| エージェント | 配布元 | 観点 |
+|------------|-------|------|
+| `architect`（リード） | グローバル | 全体構造・スキル間の責務分離 |
+| `plugin-structure-reviewer` | プラグイン同梱 | 規約準拠（conventions / ai-readability / readme-policy） |
+| `implementation-engineer` | グローバル | 各スキル/コマンド/フックの実装品質 |
+| `evals-coverage-reviewer` | プラグイン同梱 | evals 全体の網羅性 |
+| `marketplace-fit-reviewer` | プラグイン同梱 | マーケットプレイス整合性・命名衝突・依存解決 |
+| `security-engineer` | グローバル | フック含有時のみ（フック・外部公開機能の安全性） |
+
+人数: フック含有時 6 名 / 非含有時 5 名。グローバルエージェント不在時のフォールバックは `plugin-review-team.md` を参照。
 
 ### 3. コマンドレビュー（専用チームなし、個別エージェント 4 名並列）
 
@@ -61,6 +66,18 @@
 | `security-engineer`（リード） | command の安全性・終了コード設計 |
 | `implementation-engineer` | timeout 設定・パスポータビリティ |
 | `infrastructure-engineer` | 副作用・パフォーマンス影響 |
+
+### 7. マーケットプレイスレビュー（個別 3 名並列、専用チームなし）
+
+`marketplace.json` + マーケットプレイス README の整合性レビュー（ADR-019 準拠）。詳細は [evals/case-14_marketplace_review.md](../evals/case-14_marketplace_review.md) を参照。
+
+| エージェント | 配布元 | 観点 |
+|------------|-------|------|
+| `marketplace-fit-reviewer`（リード） | プラグイン同梱 | マーケットプレイス整合・命名衝突・依存解決・README 同期（ADR-019）|
+| `plugin-structure-reviewer` | プラグイン同梱 | 規約準拠（marketplace README の必須セクション・テーブル形式・追加方法 A+B）|
+| `architect` | グローバル | 構造妥当性・拡張性・依存マーケットプレイスの設計 |
+
+`architect` 不在時のフォールバック: `plugin-structure-reviewer` がリード兼任、または `general-purpose` を `architect` の専門性プロンプトで起動（ADR-022 準拠）。
 
 ## エージェント起動
 
