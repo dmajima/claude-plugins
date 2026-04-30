@@ -8,7 +8,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 |------|-----------|------|---------|
 | [credentials-manager](plugins/credentials-manager/) | — | Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン | security |
 | [extension-toolkit](plugins/extension-toolkit/) | — | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成からマーケットプレイス構築・公開まで支援 | — |
-| [convert-doc](plugins/convert-doc/) | 1.0.1 | Markdown を HTML / PDF / PowerPoint（PPTX）に Wiki スタイルで一括変換できる 3 スキル + 4 コマンド同梱のドキュメント変換プラグイン | documentation |
+| [convert-doc](plugins/convert-doc/) | 1.0.0 | Markdown を HTML / PDF / PowerPoint（PPTX）に Wiki スタイルで一括変換できる 3 スキル + 4 コマンド同梱のドキュメント変換プラグイン | documentation |
 
 > バージョン欄が `—` のプラグインは `plugin.json` でバージョンを管理しないか、別の方式で管理されています。
 
