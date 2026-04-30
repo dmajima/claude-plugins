@@ -13,6 +13,12 @@
 | case-05 | 重複プラグイン追加の阻止 | 既存と同名プラグイン追加 |
 | case-06 | `--non-interactive` モード（質問なしで構築） | `--non-interactive` フラグ |
 | case-07 | プラグイン更新（`--update-plugin` モード） | `--update-plugin` フラグ |
+| case-08 | 非対話モード + 二段フラグでファイル本体含む削除 | `--non-interactive --remove-plugin --also-delete-files --confirm-destructive` |
+| case-09 | 非対話モード + 二段フラグ不揃い時の fail-closed | `--also-delete-files` 単独（`--confirm-destructive` なし）|
+
+## ケース追加ルール
+
+新しい分岐ロジックを追加した時は、対応するケースファイルを必ず追加し、本 README のケース一覧に登録する。詳細は [`../../../references/eval-guide.md`](../../../references/eval-guide.md) を参照。
 
 ## 実行確認方法
 
