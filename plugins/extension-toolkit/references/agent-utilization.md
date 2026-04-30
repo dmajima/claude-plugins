@@ -110,15 +110,16 @@ Agent({
 ### 5.3 専門家を集めたチーム
 
 複数観点が必要なレビューでは、専門家を集めた **エージェントチーム** を組成する。
+メンバー詳細・人数・役割の正典は各チーム定義ファイル側に置く（SSOT）。
 
-| チーム名 | 構成 | 適用 | 定義ファイル |
-|---------|------|-----|-----------|
-| `plugin-review-team` | architect（リード）+ plugin-structure-reviewer + implementation-engineer + evals-coverage-reviewer + marketplace-fit-reviewer + security-engineer（フック含有時のみ） | プラグイン横断レビュー（5〜6 名） | [`teams/plugin-review-team.md`](teams/plugin-review-team.md) |
-| `skill-review-team` | plugin-structure-reviewer（リード）+ implementation-engineer + evals-coverage-reviewer | スキル単体レビュー（3 名） | [`teams/skill-review-team.md`](teams/skill-review-team.md) |
-| `hook-security-team` | security-engineer（リード）+ implementation-engineer + infrastructure-engineer | フック安全性レビュー（3 名） | [`teams/hook-security-team.md`](teams/hook-security-team.md) |
-| （例）`gender-perspective-team` | male-perspective-reviewer + female-perspective-reviewer | 観点が 2 つに固定（最低 3 名規則の例外、本プラグインでは未定義） | — |
+| チーム名 | 用途 | 定義ファイル（メンバー詳細はこちら） |
+|---------|------|-----------|
+| `plugin-review-team` | プラグイン横断レビュー | [`teams/plugin-review-team.md`](teams/plugin-review-team.md) |
+| `skill-review-team` | スキル単体レビュー | [`teams/skill-review-team.md`](teams/skill-review-team.md) |
+| `hook-security-team` | フック安全性レビュー | [`teams/hook-security-team.md`](teams/hook-security-team.md) |
+| （例）`gender-perspective-team` | 観点が 2 つに固定の場合の参考例（本プラグインでは未定義） | — |
 
-## 5.5 単独並列起動するエージェント
+### 5.4 単独並列起動するエージェント
 
 一部の専門家エージェントはチーム内に組み込むと議論ラウンドで他観点と混ざり、専門評価の独立性が損なわれる。これらは **チームの外で単独並列起動** する運用とする。
 
@@ -146,11 +147,11 @@ Agent({ subagent_type: "description-trigger-reviewer", prompt: "..." })     # �
 | 例外（上限） | プラグイン全体レビュー（フック含有時の `plugin-review-team`）は 6 名まで許容 |
 | 最大 | 標準 5 名、例外条項該当時 6 名（議論調整コストの上限） |
 
-## 6.5 チーム機能が利用できない環境でのフォールバック
+### 6.1 チーム機能が利用できない環境でのフォールバック
 
 エージェントチーム（`TeamCreate` / Agent Teams 機能）は Claude Code の特定バージョン・特定環境でのみ利用可能。利用できない環境では **Agent ツール（subagent_type 指定）でメンバーを個別並列起動** することで同等のレビュー体験を提供する。
 
-### 6.5.1 利用可否の判定
+#### 6.1.1 利用可否の判定
 
 | 観点 | 判定方法 |
 |-----|---------|
@@ -158,7 +159,7 @@ Agent({ subagent_type: "description-trigger-reviewer", prompt: "..." })     # �
 | ユーザ環境の制限 | ユーザから「チーム機能を使わない」と明示された場合 |
 | トークンコスト判断 | チームメンバー独立インスタンスのコストを抑えたい場合（フォールバックは Agent サブエージェントなのでメインコンテキスト消費は発生するがインスタンス分離なし） |
 
-### 6.5.2 フォールバック手順
+#### 6.1.2 フォールバック手順
 
 | ステップ | 動作 |
 |---------|------|
@@ -169,7 +170,7 @@ Agent({ subagent_type: "description-trigger-reviewer", prompt: "..." })     # �
 | 5 | 各エージェントの結果をメインに集約（チームの議論ラウンドはメイン Claude が役割を兼ねる） |
 | 6 | 統合判定を [`../skills/extension-reviewer/references/review-perspectives.md`](../skills/extension-reviewer/references/review-perspectives.md) の「総合判定ルール」に従って算出 |
 
-### 6.5.3 並列起動の例
+#### 6.1.3 並列起動の例
 
 `skill-review-team`（3 名）をフォールバックで起動する例:
 
@@ -182,7 +183,7 @@ Agent({ subagent_type: "evals-coverage-reviewer",
         prompt: "（evals 網羅性観点）" })                              # 並列
 ```
 
-### 6.5.4 チーム機能との差分
+#### 6.1.4 チーム機能との差分
 
 | 観点 | チーム機能あり | フォールバック |
 |-----|------------|------------|
@@ -192,15 +193,15 @@ Agent({ subagent_type: "evals-coverage-reviewer",
 | 結果統合 | 自動（チーム機能内） | メイン Claude が手動 |
 | 適用範囲 | 議論・反論・合意形成が必要 | 観点並列レビューのみで足りる場合 |
 
-### 6.5.5 フォールバック使用時の注意
+#### 6.1.5 フォールバック使用時の注意
 
 - **議論ラウンドが省略される** ため、メンバー間の反論・補強による品質向上は期待できない。重要な判断（公開判定・セキュリティ審議）ではチーム機能が利用可能な環境での実施を推奨する
 - メイン Claude が複数視点を取り込む際、結果統合の偏りに注意（特に矛盾指摘の扱い）
 - フォールバック使用時はその旨をユーザへの最終報告に明記する（「チーム機能不可のため Agent 並列起動で代替」等）
 
-### 6.5.6 適用先
+#### 6.1.6 適用先
 
-`extension-reviewer` の全ケース（case-01〜case-10）はチーム起動を前提としているが、本フォールバックを適用することで同じ観点をカバー可能。詳細は [`../skills/extension-reviewer/references/team-selection.md`](../skills/extension-reviewer/references/team-selection.md) の「フォールバック起動」節を参照。
+`extension-reviewer` のチーム起動を前提とするレビューケース全般に対し、本フォールバックを適用することで同じ観点をカバーできる。具体的なケースとフォールバック起動方法は [`../skills/extension-reviewer/references/team-selection.md`](../skills/extension-reviewer/references/team-selection.md) の「フォールバック起動」節を参照。
 
 ## 7. 並列起動と逐次起動の使い分け
 

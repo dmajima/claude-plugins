@@ -79,7 +79,7 @@ Claude Code の拡張要素（スキル・プラグイン・コマンド・エ�
 
 対象別の採用チームと専門家エージェント一覧は [references/team-selection.md](references/team-selection.md) を参照。
 
-`TeamCreate` 機能が利用できない環境では、Agent ツールでメンバーを個別並列起動する **フォールバック** に切り替える。手順は [`../../references/agent-utilization.md`](../../references/agent-utilization.md) の「6.5 チーム機能が利用できない環境でのフォールバック」と [references/team-selection.md](references/team-selection.md) の「フォールバック起動」を参照。
+`TeamCreate` 機能が利用できない環境では、Agent ツールでメンバーを個別並列起動する **フォールバック** に切り替える。手順は [`../../references/agent-utilization.md`](../../references/agent-utilization.md) の「6.1 チーム機能が利用できない環境でのフォールバック」と [references/team-selection.md](references/team-selection.md) の「フォールバック起動」を参照。
 
 機械チェック（[references/automated-checks.md](references/automated-checks.md)）を並行して実行する。
 
