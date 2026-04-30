@@ -30,10 +30,16 @@
 
 #### Bash でのチェック例
 
+以下の例は **テンプレート** であり、`{plugin-name}` を実プラグイン名（例: `dev-toolkit`）に置換してから実行する必要がある。
+そのまま実行するとリテラル文字列 `{plugin-name}` として glob 展開されず、空ループになる点に注意。
+
 ```bash
+# プラグイン名を変数化（{plugin-name} を実値に置換）
+PLUGIN_NAME="dev-toolkit"   # ← 実値に置換
+
 # プラグイン直下に許可されないディレクトリ・ファイルがあるか
 ALLOWED_PLUGIN_ROOT=".claude-plugin commands skills agents hooks mcp references README.md"
-for entry in plugins/{plugin-name}/*; do
+for entry in plugins/"$PLUGIN_NAME"/*; do
   name=$(basename "$entry")
   if ! echo "$ALLOWED_PLUGIN_ROOT" | grep -qw "$name"; then
     echo "[High] Disallowed entry at plugin root: $entry"
@@ -42,7 +48,7 @@ done
 
 # スキル直下に許可されないエントリがあるか
 ALLOWED_SKILL_ROOT="SKILL.md README.md references scripts agents evals"
-for skill_dir in plugins/{plugin-name}/skills/*/; do
+for skill_dir in plugins/"$PLUGIN_NAME"/skills/*/; do
   for entry in "$skill_dir"*; do
     name=$(basename "$entry")
     if ! echo "$ALLOWED_SKILL_ROOT" | grep -qw "$name"; then
@@ -53,7 +59,7 @@ done
 
 # scripts/ 配下の禁止命名チェック
 for forbidden in knowledge lib bin py sh; do
-  find plugins/{plugin-name}/skills/*/scripts -maxdepth 1 -type d -name "$forbidden" 2>/dev/null \
+  find plugins/"$PLUGIN_NAME"/skills/*/scripts -maxdepth 1 -type d -name "$forbidden" 2>/dev/null \
     | while read d; do echo "[Medium] Forbidden subfolder name: $d"; done
 done
 ```

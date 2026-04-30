@@ -17,8 +17,11 @@
 
 ### Phase 2: 警告とユーザ確認
 
+ユーザに表示するメッセージは Markdown リンク構文を含めず、自然文で提示する（ターミナルで生のリンク構文が見えると意図が伝わらないため）。
+リンク参照（`team-design.md`）は SKILL.md 等の Claude 動作向けドキュメント側に置く。
+
 ```text
-レビュー系チームは最低 3 名が推奨です（[`team-design.md`](team-design.md) のサイズ基準）。
+レビュー系チームは最低 3 名が推奨です（references/team-design.md のサイズ基準）。
 現在のメンバー: implementation-engineer, test-engineer（2 名）
 
 選択肢:
