@@ -36,7 +36,9 @@ git clone https://github.com/dmajima/claude-plugins <local-path>
 # 2. リリースタグ（推奨）またはブランチに切替
 #    タグを使うと特定バージョンに固定でき、想定外の変更を取り込みません。
 cd <local-path>
-git checkout v0.9.1   # 推奨: 特定リリース（タグ）を利用（最新は plugin.json の version を参照）
+git checkout v{x.y.z}   # 推奨: 特定リリースタグを指定（最新タグは plugin.json の version、または `git tag --sort=-v:refname | head -1` を参照）
+# 厳密な再現性が必要な場合はコミット SHA を直接指定: git checkout <commit-sha>
+# タグの GPG 署名検証: git tag -v v{x.y.z}（任意、リリース時に署名されている場合）
 # または: git checkout main   # 最新版を追従（注意: 上流の変更を取り込みます）
 ```
 

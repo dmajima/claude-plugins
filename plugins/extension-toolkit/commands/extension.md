@@ -68,6 +68,20 @@ description: Claude Code の拡張要素（スキル/プラグイン/コマン�
 
 これらは利用者が誤ってコピペ実行することを防ぐためのオーケストレータ段階の安全装置。対象スキル側にも同等のゲートがあるが、`/extension` 段階で先に確認することで一段早く事故を止める。詳細は `references/review-freshness.md` の安全装置原則と整合。
 
+### 検出方式（誤判定防止）
+
+引数を **空白で分割し、トークンごとに完全一致** で判定する（部分一致禁止）:
+
+| 入力例 | `--full-auto` 検出 | `--remove` 検出 | 備考 |
+|--------|------------------|----------------|------|
+| `--full-auto` | YES | NO | 完全一致 |
+| `--full-auto-mode` | NO | NO | 別フラグとして扱う |
+| `--remove` | NO | YES | 完全一致 |
+| `--remove-plugin foo` | NO | NO | `--remove-plugin` は別の完全一致対象として独立判定 |
+| `--remove-cache` | NO | NO | 別フラグとして扱う |
+
+判定すべきフラグの完全一致リスト: `--remove`, `--remove-plugin`, `--also-delete-files`, `--full-auto`, `--confirm-destructive`
+
 ## 共通の終了処理
 
 | 動作した最後のスキル | 提示者 | 提示内容 |

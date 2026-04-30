@@ -69,6 +69,16 @@ git checkout {tag-or-branch}
 
 `autoUpdate: false` の場合は `/plugin update` を手動実行することで最新化できます。
 
+## 依存マーケットプレイス
+
+`marketplace.json` の `allowCrossMarketplaceDependenciesOn` で別マーケットプレイスのプラグインを依存として宣言可能にしている場合のみ本セクションを記載します。空配列の場合は本セクションごと削除してください。
+
+| 依存マーケットプレイス | 用途 | 利用プラグイン | 個別追加（自動解決不可時） |
+|------------------|-----|------------|----------------------|
+| `{dependency-marketplace}` | {用途} | {依存を宣言しているプラグイン} | `/plugin marketplace add {dependency-url}` |
+
+依存マーケットプレイスは `allowCrossMarketplaceDependenciesOn` で許可していれば自動解決されます。許可されていない / ネットワーク制約がある環境では、利用者が手動で依存マーケットプレイスを追加してください。
+
 ## プラグイン追加手順（メンテナ向け）
 
 1. `plugins/{plugin-name}/` ディレクトリを作成し、プラグインを配置する（`plugin-toolkit` を利用推奨）
