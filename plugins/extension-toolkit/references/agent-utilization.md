@@ -117,6 +117,25 @@ Agent({
 | `hook-security-review-team` | security-engineer, infrastructure-engineer, implementation-engineer | フック安全性レビュー |
 | `gender-perspective-team` | male-perspective-reviewer, female-perspective-reviewer | 観点が 2 つに固定（最低 3 名規則の例外） |
 
+## 5.5 単独並列起動するエージェント
+
+一部の専門家エージェントはチーム内に組み込むと議論ラウンドで他観点と混ざり、専門評価の独立性が損なわれる。これらは **チームの外で単独並列起動** する運用とする。
+
+| エージェント | 単独並列が望ましい理由 |
+|------------|-------------------|
+| `description-trigger-reviewer` | description は AI 自動トリガー判定に直結する独立した評価軸であり、構造・実装の議論と混ぜないほうが評価が明瞭 |
+
+`extension-reviewer` がこれらを起動する際は、対象に応じて主たるチームと **同じメッセージ内で並列起動** する:
+
+```text
+Agent({ subagent_type: "{lead}", prompt: "（チームスポーンプロンプト）" })       # 並列（チーム）
+Agent({ subagent_type: "{member-1}", prompt: "..." })                       # 並列（チーム）
+Agent({ subagent_type: "{member-2}", prompt: "..." })                       # 並列（チーム）
+Agent({ subagent_type: "description-trigger-reviewer", prompt: "..." })     # 並列（単独）
+```
+
+結果統合時にチーム結果と単独結果を同一フォーマットで集約する。
+
 ## 6. チームサイズの原則
 
 | 原則 | 内容 |

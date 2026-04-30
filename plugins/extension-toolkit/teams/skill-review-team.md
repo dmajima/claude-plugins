@@ -8,8 +8,8 @@
 |------|------|
 | 目的 | スキル単体（SKILL.md / references / scripts / evals）の構造妥当性・実装品質・evals 網羅性を評価する |
 | リード | `plugin-structure-reviewer` |
-| メンバー | `plugin-structure-reviewer` / `implementation-engineer`（グローバル） / `evals-coverage-reviewer` |
-| 人数 | 3 名 |
+| メンバー（リード以外） | `implementation-engineer`（グローバル） / `evals-coverage-reviewer` |
+| 人数 | 3 名（リード含む） |
 | 議論ラウンド | 最低 3、上限 5 |
 
 ## 起動条件
@@ -26,7 +26,7 @@
 | `implementation-engineer` | グローバル | メンバー | 実装品質 | SKILL.md の論理整合・procedures の実行可能性 |
 | `evals-coverage-reviewer` | プラグイン同梱 | メンバー | テスト網羅 | evals の分岐網羅・形式準拠 |
 
-description 観点も重要だが、`description-trigger-reviewer` は単独利用が多いためチームには含めない。description 単独レビューが必要なら別途並列起動する。
+description 観点は本チームに含めない。`description-trigger-reviewer` は他のスキルレビュー時にも単独で並列起動する運用とする（運用詳細は [`../references/agent-utilization.md`](../references/agent-utilization.md) のセクション「単独並列起動するエージェント」を参照）。チーム内に組み込むと議論ラウンドで他観点と混ざり、description 専門評価の独立性が損なわれるため。
 
 ## 調整ガイドライン
 
