@@ -4,6 +4,7 @@
     "name": "dmajima"
   },
   "description": "dmajima 個人用 Claude Code プラグインマーケットプレイス",
+  "allowCrossMarketplaceDependenciesOn": ["anthropic-agent-skills"],
   "plugins": [
     {
       "name": "credentials-manager",
@@ -20,6 +21,11 @@
         "token",
         "auth"
       ]
+    },
+    {
+      "name": "extension-toolkit",
+      "source": "./plugins/extension-toolkit",
+      "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成からマーケットプレイス構築・公開まで支援"
     }
   ]
 }
