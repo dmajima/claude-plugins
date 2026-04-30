@@ -26,8 +26,10 @@ Claude Code フックの設定テンプレート。`hooks/hooks.json` 1 ファ�
 ## command の制約
 
 - `${CLAUDE_PLUGIN_ROOT}` を活用してプラグイン内スクリプトを呼び出す
-- ローカル絶対パスのハードコード禁止（[`../../references/path-portability.md`](../../references/path-portability.md)）
+- ローカル絶対パスのハードコード禁止（パスポータビリティ規約: `${CLAUDE_PLUGIN_ROOT}/references/path-portability.md`）
 - timeout は秒単位、デフォルト 60 秒
+
+> **テンプレートファイル注記**: 本 README はテンプレート格納場所（`references/templates/hook/`）にあるため、相対リンクではなく `${CLAUDE_PLUGIN_ROOT}` 起点の絶対パス記法で参照を記述する。テンプレートが配備された後はそれぞれの場所からの相対パスで解決される。
 
 ## 終了コードと意味
 

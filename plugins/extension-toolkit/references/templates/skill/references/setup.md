@@ -46,7 +46,9 @@ Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>"
 
 ## 参照
 
-| 用途 | ファイル |
+| 用途 | ファイル（テンプレート配備後は相対パスで解決される） |
 |-----|---------|
-| 環境構築スキル | [`environment-setup-toolkit`](../../../environment-setup-toolkit/) |
-| Python venv 仕様 | [`environment-setup-toolkit/references/python-venv.md`](../../../environment-setup-toolkit/references/python-venv.md) |
+| 環境構築スキル | `environment-setup-toolkit`（同一プラグイン内、配備後は `../../environment-setup-toolkit/`） |
+| Python venv 仕様 | `environment-setup-toolkit/references/python-venv.md`（配備後は `../../environment-setup-toolkit/references/python-venv.md`） |
+
+> **テンプレートファイル注記**: 本ファイルはテンプレート格納場所（`references/templates/skill/references/`）にあるため、相対リンクの起点が配備先（`skills/{name}/references/`）と異なる。テンプレート展開時に配備先からの正しい相対パス（`../../environment-setup-toolkit/...`）に置換される前提で、ここでは平文表記とする。
