@@ -9,7 +9,7 @@
 | スキル | `skill-review-team`（3 名） | [`../../../teams/skill-review-team.md`](../../../teams/skill-review-team.md) |
 | プラグイン | `plugin-review-team`（4〜5 名） | [`../../../teams/plugin-review-team.md`](../../../teams/plugin-review-team.md) |
 | フック | `hook-security-team`（3 名） | [`../../../teams/hook-security-team.md`](../../../teams/hook-security-team.md) |
-| コマンド | スキルチーム + `description-trigger-reviewer` 単独並列 | [`../../../agents/description-trigger-reviewer.md`](../../../agents/description-trigger-reviewer.md) |
+| コマンド | 専用チームなし、個別エージェント 4 名並列（`plugin-structure-reviewer` / `description-trigger-reviewer` / `security-engineer` / `implementation-engineer`） | [`review-perspectives.md`](review-perspectives.md) セクション 3 |
 | エージェント / チーム | `description-trigger-reviewer` + `plugin-structure-reviewer` を並列起動（チームを組まない） | 各 agent 定義 |
 
 ## 起動方法

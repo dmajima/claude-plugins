@@ -22,13 +22,16 @@
 | `test-engineer` | evals 全体の網羅性 |
 | `project-leader` | マーケットプレイス整合性・命名衝突 |
 
-### 3. コマンドレビュー
+### 3. コマンドレビュー（専用チームなし、個別エージェント 4 名並列）
 
-| エージェント | 観点 |
-|------------|------|
-| `implementation-engineer` | プロンプト構造・ルーティング |
-| `security-engineer` | 実行されるコマンド・スクリプトの危険性 |
-| `architect` | 他コマンド・スキルとの整合 |
+| エージェント | 配布元 | 観点 |
+|------------|-------|------|
+| `plugin-structure-reviewer` | プラグイン同梱 | 規約準拠（frontmatter / description 文字数） |
+| `description-trigger-reviewer` | プラグイン同梱 | description のトリガー精度 |
+| `security-engineer` | グローバル | 実行されるコマンド・スクリプトの危険性 |
+| `implementation-engineer` | グローバル | プロンプト構造・ルーティング |
+
+最低 3 名の並列起動を満たす標準構成。コマンドが外部実行・危険操作を含まない場合は `security-engineer` を省略し 3 名構成にしてもよい。
 
 ### 4. エージェント単体レビュー
 

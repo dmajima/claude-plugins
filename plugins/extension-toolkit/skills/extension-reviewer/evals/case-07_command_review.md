@@ -1,4 +1,4 @@
-# Case 07: コマンドレビュー（スキルチーム + description-trigger-reviewer 単独並列）
+# Case 07: コマンドレビュー（専用チームなし、個別エージェント 4 名並列）
 
 ## 入力
 
@@ -15,18 +15,18 @@
 
 `commands/{name}.md` 単体 → コマンドレビューモード。
 
-### Phase 2: チーム + 個別エージェント選定
+### Phase 2: 個別エージェント選定（標準 4 名）
 
-[`../references/team-selection.md`](../references/team-selection.md) に従う。コマンド対象は **専用チームを設けない**（観点が限定的なため）。代わりに以下を並列起動:
+コマンド対象は **専用チームを設けない**（観点が限定的なため）。[`../references/review-perspectives.md`](../references/review-perspectives.md) セクション 3 と [`../references/team-selection.md`](../references/team-selection.md) に従い、以下 4 名を並列起動する:
 
-| エージェント | 配布元 | 観点 |
-|------------|-------|------|
-| `plugin-structure-reviewer` | プラグイン同梱 | 規約準拠 |
-| `description-trigger-reviewer` | プラグイン同梱 | description のトリガー精度 |
-| `security-engineer` | グローバル | 実行コマンド・スクリプトの危険性 |
-| `implementation-engineer` | グローバル | プロンプト構造・ルーティング |
+| エージェント | 配布元 | 観点 | 省略可否 |
+|------------|-------|------|--------|
+| `plugin-structure-reviewer` | プラグイン同梱 | 規約準拠 | 必須 |
+| `description-trigger-reviewer` | プラグイン同梱 | description のトリガー精度 | 必須 |
+| `implementation-engineer` | グローバル | プロンプト構造・ルーティング | 必須 |
+| `security-engineer` | グローバル | 実行コマンド・スクリプトの危険性 | 任意（外部実行・危険操作なしなら省略可） |
 
-3 名以上の並列起動を最低条件とし、コマンドの性質に応じてメンバーを増減する。
+最低 3 名（必須エージェント）を確保。`security-engineer` 省略時は 3 名、含める標準時は 4 名構成。
 
 ### Phase 3: 並列起動 + 機械チェック
 
