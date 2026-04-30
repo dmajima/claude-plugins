@@ -145,7 +145,33 @@ flowchart TD
 | 新規構築時 | `--name` `--owner` `--description` `--target-path` |
 | 追加 | `--add-plugin <name>` `--description` `--source` |
 | 更新 | `--update-plugin <name>` + 更新フィールド |
-| 削除 | `--remove-plugin <name>` `--also-delete-files`（ファイル本体削除可否） |
+| 削除（メタデータのみ） | `--remove-plugin <name>` |
+| 削除（ファイル本体含む） | `--remove-plugin <name>` `--also-delete-files` `--confirm-destructive`（**二段フラグ必須**） |
 | README 同期 | `--sync-readme` |
 
 すべての必須フラグが揃わない場合は対話なしでエラー終了する。
+
+### 削除操作の安全装置（fail-closed）
+
+`--also-delete-files` は **単独では受け付けない**。`--confirm-destructive` の **二段フラグ** が揃った場合のみファイル本体削除を実行する。
+
+| 受け取ったフラグ | 動作 |
+|---------------|------|
+| `--remove-plugin X` のみ | `marketplace.json` + マーケットプレイス README からエントリ削除（ファイル本体は保持） |
+| `--remove-plugin X --also-delete-files` のみ | エラー終了（`--confirm-destructive` 必須） |
+| `--remove-plugin X --also-delete-files --confirm-destructive` | ファイル本体含む完全削除（最も破壊的、対話モードでは AskUserQuestion 二重確認、非対話モードではログにのみ警告） |
+
+非対話モードでもファイル本体の完全削除は **二段フラグでガード** する。これにより上位スキル（`marketplace-publisher` のフルオート等）が誤って広範な削除を実行することを防ぐ（ADR の安全装置原則）。
+
+### `<target-path>` の検証（パストラバーサル対策）
+
+新規構築モードの `<target-path>` は以下のいずれにも該当してはならない:
+
+| 拒否対象 | 例 |
+|---------|---|
+| ルートおよびシステムパス | `/`, `/etc`, `/usr`, `/var`, `/bin`, `/sbin`, `/opt`, `/home/<user>`, `/Users/<user>` |
+| Windows ドライブルートおよびシステム | `C:\`, `C:\Windows`, `C:\Program Files`, `C:\Users\<user>` |
+| ホームディレクトリ展開先 | `~`, `~/`, `$HOME` |
+| シンボリックリンクが上記を指す | realpath 解決後に上記いずれかに該当 |
+
+実装時は `realpath -m` で正規化したうえで上記拒否リストと照合する（[`../../environment-setup-toolkit/scripts/python/teardown_venv.sh`](../../environment-setup-toolkit/scripts/python/teardown_venv.sh) と同様の 3 段ガード設計）。

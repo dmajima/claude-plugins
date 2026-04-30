@@ -114,8 +114,12 @@ JSON 整合性は編集後に必ず検証（[`../../references/validation-rules.
 - `marketplace.json` の編集と **同一の操作内** で必ず README を同期する（ADR-019 違反を防ぐ）
 - バージョン情報は `marketplace.json` には持たず、各プラグインの `plugin.json` を正典とする
 - プラグイン削除はユーザの **明示的確認** を必須とする（誤削除防止）
+- **ファイル本体削除（`--also-delete-files`）は `--confirm-destructive` との二段フラグでのみ受理**（非対話モードでも本制約は維持、対話モードでは追加で `AskUserQuestion` 二重確認）
+- 新規構築時の `<target-path>` はシステムパス・ホームディレクトリ等の拒否リストと照合（パストラバーサル対策、[references/operations.md](references/operations.md) の検証ロジック）
+- `marketplace.json` の `plugins[].source` は `./plugins/` プレフィックス必須（パストラバーサル対策）
 - パスポータビリティチェック必須（[`../../references/path-portability.md`](../../references/path-portability.md)）
-- エンコーディング・改行コード維持必須（`~/.claude/rules/common/file-encoding.md`）
+- エンコーディング・改行コード維持必須（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
+- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
 - ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
 - 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証を実施
 

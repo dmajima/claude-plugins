@@ -24,6 +24,9 @@
 | `*.p12` / `*.pfx` | PKCS#12 証明書 |
 | `*.kdbx` | KeePass DB |
 | `.netrc` / `_netrc` | HTTP 認証情報 |
+| `.htpasswd` / `*.htpasswd` | Apache 認証ファイル |
+| `*.secret` / `*-secret` | 一般的なシークレット命名 |
+| `.aws/credentials` / `.azure/credentials` | クラウド認証情報 |
 
 ### 除外（false positive 抑制）
 
@@ -50,7 +53,10 @@
 | OpenAI API Key | `sk-[A-Za-z0-9]{48}` |
 | 秘密鍵（PEM ヘッダー） | `-----BEGIN (RSA \|EC \|OPENSSH \|DSA \|PGP \|)PRIVATE KEY-----` |
 | Generic Bearer Token | `Bearer\s+[A-Za-z0-9\-_=]{20,}` |
-| Generic Password 代入 | `(password\|passwd\|secret\|api[-_]?key)\s*[:=]\s*["'][^"'\s]{8,}["']` |
+| Generic Password 代入（クォート任意） | `(?i)(password\|passwd\|secret\|api[-_]?key)\s*[:=]\s*["']?([^"'\s]{8,})["']?` |
+| JWT | `eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+` |
+| Azure Storage Key | `DefaultEndpointsProtocol=https;AccountName=[A-Za-z0-9]+;AccountKey=[A-Za-z0-9+/=]+` |
+| Azure SAS Token | `sig=[A-Za-z0-9%]+(&|$)` |
 
 ## 3. 検出時の動作（fail-closed）
 
@@ -80,21 +86,43 @@
 ```python
 import re, pathlib
 
-FILE_PATTERNS = [
-    r"\.env(\.|$)", r"\.pem$", r"\.key$",
-    r"^id_(rsa|dsa|ecdsa|ed25519)(\.|$)",
-    r"^credentials\.(json|yaml|yml)$",
-    r"^secrets\.(json|yaml|yml)$",
-    r"\.p12$", r"\.pfx$", r"\.kdbx$",
-    r"^\.?_?netrc$",
+# ファイル名は完全一致（fullmatch）で評価する
+FILE_PATTERNS_FULL = [
+    r"\.env(\..+)?",
+    r".+\.pem", r".+\.key", r".+\.secret", r".+-secret",
+    r"id_(rsa|dsa|ecdsa|ed25519)(\..+)?",
+    r"credentials\.(json|yaml|yml)",
+    r"secrets\.(json|yaml|yml)",
+    r".+\.p12", r".+\.pfx", r".+\.kdbx",
+    r"\.netrc", r"_netrc",
+    r"\.htpasswd", r".+\.htpasswd",
 ]
 EXCLUDE_SUFFIX = (".example", ".sample", ".template")
+
 CONTENT_PATTERNS = {
     "aws_access_key": r"AKIA[0-9A-Z]{16}",
+    "aws_secret_key": r"aws_secret_access_key\s*=\s*[\"']?[A-Za-z0-9/+=]{40}[\"']?",
     "github_pat": r"ghp_[A-Za-z0-9]{36}",
+    "github_oauth": r"gho_[A-Za-z0-9]{36}",
+    "slack_token": r"xox[baprs]-[0-9A-Za-z-]{10,}",
+    "google_api_key": r"AIza[0-9A-Za-z\-_]{35}",
+    "stripe_key": r"sk_live_[0-9a-zA-Z]{24,}",
+    "anthropic_key": r"sk-ant-[A-Za-z0-9\-_]{20,}",
+    "openai_key": r"sk-[A-Za-z0-9]{48}",
     "private_key_pem": r"-----BEGIN (RSA |EC |OPENSSH |DSA |PGP |)PRIVATE KEY-----",
-    # ... 上記表の全パターン
+    "bearer_token": r"Bearer\s+[A-Za-z0-9\-_=]{20,}",
+    "generic_password": r"(?i)(password|passwd|secret|api[-_]?key)\s*[:=]\s*[\"']?[^\"'\s]{8,}[\"']?",
+    "jwt": r"eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+",
+    "azure_storage": r"DefaultEndpointsProtocol=https;AccountName=[A-Za-z0-9]+;AccountKey=[A-Za-z0-9+/=]+",
 }
+
+def is_binary(path: pathlib.Path) -> bool:
+    """先頭 8KB に NUL バイトを含むファイルはバイナリ判定."""
+    try:
+        chunk = path.read_bytes()[:8192]
+    except Exception:
+        return True
+    return b"\x00" in chunk
 
 def scan(plugin_root: pathlib.Path) -> list[dict]:
     findings = []
@@ -103,12 +131,26 @@ def scan(plugin_root: pathlib.Path) -> list[dict]:
             continue
         if path.name.endswith(EXCLUDE_SUFFIX):
             continue
-        for pat in FILE_PATTERNS:
-            if re.search(pat, path.name):
+        # ファイル名完全一致で照合
+        for pat in FILE_PATTERNS_FULL:
+            if re.fullmatch(pat, path.name):
                 findings.append({"file": str(path), "reason": f"filename:{pat}"})
                 break
+        # バイナリは内容スキャン対象外
+        if is_binary(path):
+            continue
         try:
-            text = path.read_text(encoding="utf-8", errors="ignore")
+            text = path.read_text(encoding="utf-8", errors="strict")
+        except UnicodeDecodeError:
+            # UTF-8 でデコード不能なら CP932 / UTF-16 を試行
+            for enc in ("cp932", "utf-16"):
+                try:
+                    text = path.read_text(encoding=enc, errors="strict")
+                    break
+                except UnicodeDecodeError:
+                    continue
+            else:
+                continue
         except Exception:
             continue
         for name, pat in CONTENT_PATTERNS.items():
@@ -116,6 +158,11 @@ def scan(plugin_root: pathlib.Path) -> list[dict]:
                 findings.append({"file": str(path), "reason": f"content:{name}"})
     return findings
 ```
+
+実装ヒント:
+- ファイル名は `re.fullmatch` で完全一致を要求（先頭一致による誤検出を排除）
+- `errors="strict"` + 例外時に他エンコーディングを試行することで、無効バイト破棄による検出漏れを防ぐ
+- バイナリファイルは `\x00` 検出でスキップ（読み込みコスト削減）
 
 ## 5. 関連ルール
 

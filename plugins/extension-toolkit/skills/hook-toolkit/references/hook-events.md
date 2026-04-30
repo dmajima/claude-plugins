@@ -157,7 +157,9 @@ Claude Code のフックイベント別の意味と使い方。
 }
 ```
 
-### SessionStart: 初期メッセージ表示
+### SessionStart: 初期化スクリプトの呼び出し
+
+動的データ（タイムスタンプ等）を扱う場合は、`command` フィールド内で `$(...)` を使わず、外部スクリプトに委譲する（コマンドインジェクション対策、本ファイル「セキュリティ設計」節参照）。
 
 ```json
 {
@@ -167,7 +169,7 @@ Claude Code のフックイベント別の意味と使い方。
         "hooks": [
           {
             "type": "command",
-            "command": "echo 'Session started: $(date)'",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/log-session-start.sh",
             "timeout": 2
           }
         ]
@@ -176,6 +178,8 @@ Claude Code のフックイベント別の意味と使い方。
   }
 }
 ```
+
+`log-session-start.sh` 側で `set -euo pipefail` のもと、必要な処理（タイムスタンプ取得・ログ書き込み等）を実装する。`command` 内で直接 `$(date)` を実行する形は、利用者が動的入力を含むよう書き換える誘惑を招くため非推奨。
 
 ### PreToolUse: 危険コマンドのブロック
 

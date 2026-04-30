@@ -20,10 +20,15 @@
 
 ## 実行方法
 
+> **シェル例の安全な扱い（CWE-78 / CWE-88 対策）**:
+> 以下の例で `{target_dir}` はテンプレート変数。実行時には **必ずダブルクォートで囲む**（`"{target_dir}"` または `"$TARGET_DIR"`）こと。スペース・`;` ・ `$(...)` を含むパス、シェルメタ文字を含む値が混入するとコマンド注入につながる。
+> 機械チェック呼び出し前に「9. エンコーディング保持」節の `assert_in_scope` 関数で、対象がレビュー対象ディレクトリ配下であることを **必ず検証** すること。
+
 ### 1. 行数チェック（SKILL.md 200 行）
 
 ```bash
-find {target_dir} -name "SKILL.md" -exec wc -l {} \;
+TARGET_DIR="{target_dir}"   # ← レビュー対象パス。事前に assert_in_scope で検証する
+find "$TARGET_DIR" -name "SKILL.md" -exec wc -l {} \;
 ```
 
 200 行超過のファイルを High 指摘として記録。
@@ -32,19 +37,19 @@ find {target_dir} -name "SKILL.md" -exec wc -l {} \;
 
 ```bash
 # Windows ドライブレター
-grep -rn "[A-Za-z]:[\\/]" {target_dir}
+grep -rn "[A-Za-z]:[\\/]" "$TARGET_DIR"
 
 # Unix ユーザディレクトリ
-grep -rn "/home/\|/Users/\|/root/" {target_dir}
+grep -rn "/home/\|/Users/\|/root/" "$TARGET_DIR"
 
 # Windows 環境変数
-grep -rn "%USERPROFILE%\|%APPDATA%\|%LOCALAPPDATA%" {target_dir}
+grep -rn "%USERPROFILE%\|%APPDATA%\|%LOCALAPPDATA%" "$TARGET_DIR"
 
 # シェル HOME 変数
-grep -rn '\$HOME\|\${HOME}' {target_dir}
+grep -rn '\$HOME\|\${HOME}' "$TARGET_DIR"
 
 # UNC パス
-grep -rn '\\\\[A-Za-z0-9._-]\+\\' {target_dir}
+grep -rn '\\\\[A-Za-z0-9._-]\+\\' "$TARGET_DIR"
 ```
 
 検出結果を [`../../../references/path-portability.md`](../../../references/path-portability.md) の分類（NG / 例外候補 / OK）に振り分け。
@@ -52,7 +57,7 @@ grep -rn '\\\\[A-Za-z0-9._-]\+\\' {target_dir}
 ### 3. プレースホルダ残存
 
 ```bash
-grep -rn '{[a-z][a-z0-9-]*}' {target_dir} --include="*.md" --include="*.json"
+grep -rn '{[a-z][a-z0-9-]*}' "$TARGET_DIR" --include="*.md" --include="*.json"
 ```
 
 `{plugin-name}` `{skill-name}` 等のテンプレートプレースホルダが残存していれば High 指摘。
@@ -78,7 +83,7 @@ with open(plugin_json, 'r', encoding='utf-8') as f:
 ### 5. `§` 記号検出
 
 ```bash
-grep -rn '§' {target_dir}
+grep -rn '§' "$TARGET_DIR"
 ```
 
 検出時は Medium 指摘 + 代替表現の提案。
@@ -88,7 +93,7 @@ grep -rn '§' {target_dir}
 `SKILL.md` に以下のセクションが存在するか確認:
 
 ```bash
-grep -E '^## (責務|責務外|トリガー条件|前提|実行フロー|重要な制約)' {skill_md}
+grep -E '^## (責務|責務外|トリガー条件|前提|実行フロー|重要な制約)' "$SKILL_MD"
 ```
 
 欠落時は High 指摘。
@@ -107,7 +112,7 @@ grep -E '^## (責務|責務外|トリガー条件|前提|実行フロー|重要�
 ### 8. `agents/` 削除痕跡（更新時）
 
 ```bash
-git diff HEAD -- "*/agents/"
+git diff HEAD -- "$TARGET_DIR/*/agents/"
 ```
 
 スキル内 `agents/` が削除されていたら High 指摘（プラグイン配布のため保持必須）。

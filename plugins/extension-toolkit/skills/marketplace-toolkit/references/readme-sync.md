@@ -39,7 +39,22 @@
 
 ```python
 # 擬似コード
-import json, pathlib
+import json, pathlib, re
+
+def assert_source_safe(repo_root: pathlib.Path, source: str) -> pathlib.Path:
+    """source パスのパストラバーサル対策（ADR-022 / セキュリティ）."""
+    # 必須プレフィックス確認
+    if not source.startswith("./plugins/"):
+        raise ValueError(f"source must start with ./plugins/: {source}")
+    # 上位ディレクトリ参照禁止
+    if ".." in pathlib.PurePosixPath(source).parts:
+        raise ValueError(f"source must not contain '..': {source}")
+    # 解決後パスがリポジトリルート配下であることを確認
+    resolved = (repo_root / source).resolve()
+    repo_resolved = repo_root.resolve()
+    if repo_resolved not in resolved.parents and resolved != repo_resolved:
+        raise ValueError(f"source resolves outside of repo: {source}")
+    return resolved
 
 def sync_marketplace_readme(repo_root: pathlib.Path):
     # 1. marketplace.json 読込
@@ -49,10 +64,11 @@ def sync_marketplace_readme(repo_root: pathlib.Path):
 
     marketplace_name = mp["name"]
 
-    # 2. プラグイン一覧テーブル生成
+    # 2. プラグイン一覧テーブル生成（パストラバーサル検証付き）
     rows = []
     for entry in mp["plugins"]:
-        plugin_json_path = repo_root / entry["source"] / ".claude-plugin/plugin.json"
+        source_path = assert_source_safe(repo_root, entry["source"])
+        plugin_json_path = source_path / ".claude-plugin/plugin.json"
         with open(plugin_json_path, encoding="utf-8") as f:
             pj = json.load(f)
         version = pj["version"]
@@ -66,12 +82,16 @@ def sync_marketplace_readme(repo_root: pathlib.Path):
     with open(readme, encoding="utf-8") as f:
         content = f.read()
 
-    # マーカー間（後述）の内容を再生成テーブルで置換
     new_content = replace_section(content, "## プラグイン一覧", table)
 
     with open(readme, "w", encoding="utf-8") as f:
         f.write(new_content)
 ```
+
+`assert_source_safe` は以下を保証する:
+- `./plugins/` プレフィックス必須（マーケットプレイス本体外の参照を排除）
+- `..` を含むパス禁止（パストラバーサル攻撃を排除）
+- 解決後パスがリポジトリルート配下であることを保証（シンボリックリンク経由の境界破壊を排除）
 
 ## セクション境界の検出
 
