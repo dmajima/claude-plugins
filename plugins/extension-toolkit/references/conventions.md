@@ -28,8 +28,8 @@
 
 | 禁止 | 理由 | 代替 |
 |-----|------|------|
-| `knowledge/`（スクリプト保管用） | 過去指摘で却下 | `scripts/` |
-| `shared/`（プラグイン横断 SSOT） | 過去指摘で却下 | `references/` |
+| `knowledge/`（スクリプト保管用） | 規約違反 | `scripts/` |
+| `shared/`（プラグイン横断 SSOT） | 規約違反 | `references/` |
 | CamelCase / snake_case のディレクトリ名 | エコシステム慣用に反する | kebab-case |
 | `§` 記号を含むファイル名・本文 | 文書ルール違反 | `1.` / `セクション1` / `第1節` |
 
@@ -122,9 +122,9 @@ plugins/{plugin-name}/skills/{skill-name}/
 
 | 禁止 | 理由 |
 |-----|------|
-| `scripts/` の代わりに `knowledge/` `lib/` `bin/` 等 | 過去指摘で却下、`scripts/` 固定 |
+| `scripts/` の代わりに `knowledge/` `lib/` `bin/` 等 | `scripts/` 固定（命名衝突回避） |
 | `references/` の代わりに `docs/` `notes/` 等 | エコシステム慣用に反する |
-| `agents/` ディレクトリの重複理由による削除 | プラグイン配布先環境に依存できないため保持必須（過去指摘） |
+| `agents/` ディレクトリの重複理由による削除 | プラグイン配布先環境に依存できないため保持必須 |
 | `tests/` `spec/` 等を直下に置く | 動作分岐の例示は `evals/` を使う |
 | 列挙されていないトップレベルディレクトリの追加 | ADR で明示する場合のみ例外 |
 
@@ -223,7 +223,7 @@ references/
 
 | 禁止 | 理由 |
 |-----|------|
-| `scripts/` の代わりに `knowledge/` `lib/` `bin/` を使う | 過去指摘で `scripts/` 固定、命名衝突回避 |
+| `scripts/` の代わりに `knowledge/` `lib/` `bin/` を使う | `scripts/` 固定、命名衝突回避 |
 | 拡張子別サブフォルダ（`scripts/py/` `scripts/sh/` 等） | 業務単位で分けるべき |
 | Python venv 構築・撤去スクリプトをスキル内に置く | `environment-setup-toolkit` に委譲（ADR-010） |
 
@@ -300,7 +300,7 @@ tools: {許可ツールのカンマ区切りリスト}
 
 ## 10. ファイル編集時のエンコーディング
 
-既存ファイル更新時は **元ファイルのエンコーディング・改行コードを維持** する（過去指摘・Shift-JIS 文字化け事故の教訓）。詳細は `~/.claude/rules/common/file-encoding.md` を参照。
+既存ファイル更新時は **元ファイルのエンコーディング・改行コードを維持** する（文字化け防止）。詳細は `~/.claude/rules/common/file-encoding.md` を参照。
 
 UTF-8 以外（Shift-JIS / CP932 等）のファイルは Edit / Write ツールを直接使用せず、Python 経由で書き戻す。
 
@@ -342,6 +342,13 @@ UTF-8 以外（Shift-JIS / CP932 等）のファイルは Edit / Write ツール
 - 既存ファイル更新時のエンコーディング・改行コード変更
 - ユーザ選択を AskUserQuestion 以外の方法で求める（重要な選択肢の場合）
 - 作業完了報告前に [`completion-checklist.md`](completion-checklist.md) の自己検証を省略
+
+### 12.5 厳格な禁止（ドキュメント履歴記載）
+
+- プラグイン内ドキュメント（README / SKILL.md / references / evals 等）に自身の更新履歴を残すこと（[ADR-016](architecture-decisions.md) 参照）
+- 「当初は」「改訂」「Round-N で」「リネーム時点で」のような時系列記述
+- 「## 変更履歴」「## Changelog」「## Release Notes」等のセクション
+- 例外: ユーザから明示指示があった場合のみ履歴記載を許容
 
 ## 13. 検証
 
