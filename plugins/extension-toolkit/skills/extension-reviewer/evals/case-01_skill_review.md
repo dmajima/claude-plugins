@@ -56,4 +56,5 @@
 - `case-02_plugin_review.md`（プラグイン横断、`plugin-review-team`）
 - `case-03_hook_review.md`（フック専用、`hook-security-team`）
 - `case-07_command_review.md`（コマンド単体、専用チームなし・個別 4 名並列）
-- `case-08_agent_team_review.md`（エージェント / チーム定義レビュー）
+- `case-08_agent_definition_review.md`（エージェント単体定義）
+- `case-09_team_definition_review.md`（チーム定義）

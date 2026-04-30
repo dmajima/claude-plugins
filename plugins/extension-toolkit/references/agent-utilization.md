@@ -111,11 +111,12 @@ Agent({
 
 複数観点が必要なレビューでは、専門家を集めた **エージェントチーム** を組成する。
 
-| チーム例 | 構成 | 適用 |
-|---------|------|------|
-| `extension-review-team` | architect, implementation-engineer, test-engineer | プラグイン横断レビュー |
-| `hook-security-review-team` | security-engineer, infrastructure-engineer, implementation-engineer | フック安全性レビュー |
-| `gender-perspective-team` | male-perspective-reviewer, female-perspective-reviewer | 観点が 2 つに固定（最低 3 名規則の例外） |
+| チーム名 | 構成 | 適用 | 定義ファイル |
+|---------|------|-----|-----------|
+| `plugin-review-team` | architect（リード）+ plugin-structure-reviewer + implementation-engineer + evals-coverage-reviewer + marketplace-fit-reviewer + security-engineer（フック含有時のみ） | プラグイン横断レビュー（5〜6 名） | [`../teams/plugin-review-team.md`](../teams/plugin-review-team.md) |
+| `skill-review-team` | plugin-structure-reviewer（リード）+ implementation-engineer + evals-coverage-reviewer | スキル単体レビュー（3 名） | [`../teams/skill-review-team.md`](../teams/skill-review-team.md) |
+| `hook-security-team` | security-engineer（リード）+ implementation-engineer + infrastructure-engineer | フック安全性レビュー（3 名） | [`../teams/hook-security-team.md`](../teams/hook-security-team.md) |
+| （例）`gender-perspective-team` | male-perspective-reviewer + female-perspective-reviewer | 観点が 2 つに固定（最低 3 名規則の例外、本プラグインでは未定義） | — |
 
 ## 5.5 単独並列起動するエージェント
 

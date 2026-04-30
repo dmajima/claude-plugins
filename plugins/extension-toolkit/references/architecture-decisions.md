@@ -82,7 +82,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | 全 6 スキル（skill / plugin / command / agent / hook / readme）の名称を `*-creator` から `*-toolkit` に変更。プラグイン名 `extension-creator` も `extension-toolkit` に変更。Git ブランチも `feature/extension-toolkit` に変更 |
+| 決定 | リネーム時点で存在した 6 スキル（skill / plugin / command / agent / hook / readme）の名称を `*-creator` から `*-toolkit` に変更。プラグイン名 `extension-creator` も `extension-toolkit` に変更。Git ブランチも `feature/extension-toolkit` に変更。後続の ADR-010 で追加した `environment-setup-toolkit` も同命名規約に従う |
 | 理由 | (1) `creator` は新規作成のみのニュアンスだが、これらスキルは改修・高度化も担当する。(2) `example-skills:skill-creator` という外部スキルとの命名衝突を回避 |
 | トレードオフ | リネームによる変更コスト・参照置換ミスのリスク（実際にレビューで複数件検出） |
 | 代替案 | `skill-creator` のみリネーム → 命名規則の不統一、却下 |

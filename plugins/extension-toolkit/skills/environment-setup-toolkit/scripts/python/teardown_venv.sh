@@ -24,8 +24,11 @@ else
   echo "[teardown_venv] Warning: realpath/readlink unavailable, using literal path." >&2
 fi
 
+# Windows ネイティブのバックスラッシュパスをスラッシュに正規化（クロスプラットフォーム対応）
+NORMALIZED_PATH="${RESOLVED_VENV_DIR//\\//}"
+
 # 安全装置 2: .claude/.local/ 配下のみ削除を許可（正規化後パスで判定）
-case "${RESOLVED_VENV_DIR}" in
+case "${NORMALIZED_PATH}" in
   *"/.claude/.local/"*)
     : # OK
     ;;
@@ -33,18 +36,24 @@ case "${RESOLVED_VENV_DIR}" in
     echo "[teardown_venv] Error: venv path is not under .claude/.local/, refusing to delete." >&2
     echo "  target (input): ${VENV_DIR}" >&2
     echo "  target (resolved): ${RESOLVED_VENV_DIR}" >&2
+    echo "  target (normalized): ${NORMALIZED_PATH}" >&2
     exit 1
     ;;
 esac
 
-# 安全装置 3: ルート / ホームディレクトリ等のシステムパスを禁止
-case "${RESOLVED_VENV_DIR}" in
-  "/" | "/root"* | "/home"* | "/etc"* | "/usr"* | "/var"* | "/bin"* | "/sbin"* | "/opt"* | "/Users"* | [A-Za-z]:[\\/])
+# 安全装置 3: ルート / ホームディレクトリ等のシステムパスを禁止（正規化後パスで判定）
+case "${NORMALIZED_PATH}" in
+  "/" | "/root"* | "/home"* | "/etc"* | "/usr"* | "/var"* | "/bin"* | "/sbin"* | "/opt"* | "/Users"* | [A-Za-z]:[\\/]*)
     # これらは .claude/.local/ 配下に該当しないため通常は到達しないが、二重チェック
-    if [[ "${RESOLVED_VENV_DIR}" != *"/.claude/.local/"* ]]; then
-      echo "[teardown_venv] Error: refusing to operate on system path: ${RESOLVED_VENV_DIR}" >&2
-      exit 1
-    fi
+    case "${NORMALIZED_PATH}" in
+      *"/.claude/.local/"*)
+        : # 例外的に許容
+        ;;
+      *)
+        echo "[teardown_venv] Error: refusing to operate on system path: ${NORMALIZED_PATH}" >&2
+        exit 1
+        ;;
+    esac
     ;;
 esac
 
