@@ -5,7 +5,7 @@ description: Claude Code のフック設定（hooks/hooks.json または setting
 
 # Hook Toolkit
 
-Claude Code のフック設定（`hooks.json`）を作成・改修するスキル。プラグイン横断テンプレート（`templates/hook/hooks.json`）に従って構造化された生成物を出力する。
+Claude Code のフック設定（`hooks.json`）を作成・改修するスキル。プラグイン横断テンプレート（`${CLAUDE_PLUGIN_ROOT}/references/templates/hook/hooks.json`）に従って構造化された生成物を出力する。
 
 ## 責務
 

@@ -17,7 +17,7 @@
 
 ### Phase 2: テンプレート展開 + ルーティング表充填
 
-`templates/command/command.md` の `## ルーティング` セクションに引数情報を反映。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/command/command.md` の `## ルーティング` セクションに引数情報を反映。
 
 ### Phase 3: 検証
 

@@ -5,7 +5,7 @@ description: Claude Code のプラグイン・スキル等の README.md（人間
 
 # README Toolkit
 
-Claude Code のプラグイン・スキル等の `README.md`（人間向けリファレンス）を作成・更新するスキル。プラグイン横断テンプレート（`templates/readme/README.md`）を使用する。
+Claude Code のプラグイン・スキル等の `README.md`（人間向けリファレンス）を作成・更新するスキル。プラグイン横断テンプレート（`${CLAUDE_PLUGIN_ROOT}/references/templates/readme/README.md`）を使用する。
 
 ## 責務
 

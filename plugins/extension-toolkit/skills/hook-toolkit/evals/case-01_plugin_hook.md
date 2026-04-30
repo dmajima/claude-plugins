@@ -17,7 +17,7 @@
 
 ### Phase 2: テンプレート展開
 
-`templates/hook/hooks.json` をコピー、引数値を反映。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/hook/hooks.json` をコピー、引数値を反映。
 
 ### Phase 3: パスポータビリティチェック
 

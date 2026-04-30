@@ -32,7 +32,7 @@
 
 ### Phase 4: テンプレート展開 + 充填
 
-`templates/agent/agent.md` をコピー、専門性セクションにデファクトスタンダード（Clean Code、SOLID）を反映。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/agent/agent.md` をコピー、専門性セクションにデファクトスタンダード（Clean Code、SOLID）を反映。
 
 ### Phase 5: 検証 + 引き渡し
 

@@ -27,7 +27,7 @@
 
 ### Phase 3: テンプレート展開 + 充填
 
-`templates/readme/README.md` をベースに、スキャン結果を反映。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/readme/README.md` をベースに、スキャン結果を反映。
 
 ### Phase 4: 検証 + 引き渡し
 

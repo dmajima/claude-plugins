@@ -5,7 +5,7 @@ description: Claude Code のスラッシュコマンド（commands/{name}.md）�
 
 # Command Toolkit
 
-Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{name}.md` または `<repo>/.claude/commands/{name}.md`）を作成・改修するスキル。プラグイン横断テンプレート（`templates/command/command.md`）に従って構造化された生成物を出力する。
+Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{name}.md` または `<repo>/.claude/commands/{name}.md`）を作成・改修するスキル。プラグイン横断テンプレート（`${CLAUDE_PLUGIN_ROOT}/references/templates/command/command.md`）に従って構造化された生成物を出力する。
 
 ## 責務
 

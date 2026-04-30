@@ -5,7 +5,7 @@ description: Claude Code のプラグイン外形（plugin.json・README・デ�
 
 # Plugin Toolkit
 
-Claude Code のプラグイン **外形構築 + 既存資産の移管（コピー）** を担当するスキル。プラグイン横断テンプレート（`templates/plugin/`）と SSOT（`references/`）に従って構造化された生成物を出力する。
+Claude Code のプラグイン **外形構築 + 既存資産の移管（コピー）** を担当するスキル。プラグイン横断テンプレート（`${CLAUDE_PLUGIN_ROOT}/references/templates/plugin/`）と SSOT（`references/`）に従って構造化された生成物を出力する。
 
 ## 責務
 
@@ -75,7 +75,7 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 
 ### 3. 外形生成（新規時）
 
-`templates/plugin/` を `plugins/{plugin-name}/` にコピーし、プレースホルダ置換。詳細は [references/procedures.md](references/procedures.md) の「外形生成手順」を参照。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/plugin/` を `plugins/{plugin-name}/` にコピーし、プレースホルダ置換。詳細は [references/procedures.md](references/procedures.md) の「外形生成手順」を参照。
 
 サブディレクトリは含めるアイテム種別に応じて作成（`commands/` / `skills/` / `agents/` / `hooks/` / `mcp/`）。git は空ディレクトリ保持しないため、実体ファイルが配置される時のみ作成する。
 

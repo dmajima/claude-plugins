@@ -32,7 +32,7 @@
 
 ### Phase 4: テンプレート展開
 
-`templates/agent/team.md` を配置先にコピー、プレースホルダ置換。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/agent/team.md` を配置先にコピー、プレースホルダ置換。
 
 ### Phase 5: スポーンプロンプト充填
 

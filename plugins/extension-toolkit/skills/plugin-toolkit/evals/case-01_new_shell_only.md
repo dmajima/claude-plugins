@@ -25,7 +25,7 @@
 
 ### Phase 3: 外形生成
 
-`templates/plugin/` をコピー、プレースホルダ置換。指定されたサブディレクトリのみ作成。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/plugin/` をコピー、プレースホルダ置換。指定されたサブディレクトリのみ作成。
 
 ### Phase 4: 検証
 

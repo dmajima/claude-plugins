@@ -22,7 +22,7 @@
 
 ### Phase 2: テンプレート展開
 
-`templates/command/command.md` をコピー、プレースホルダ置換。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/command/command.md` をコピー、プレースホルダ置換。
 
 ### Phase 3: 検証 + 引き渡し
 
