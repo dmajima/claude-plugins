@@ -111,8 +111,11 @@ def sync_marketplace_readme(repo_root: pathlib.Path):
 
     marketplace_name = mp["name"]
 
-    # 2. プラグイン一覧テーブル生成（パストラバーサル検証付き）
-    rows = []
+    # 2. プラグイン一覧テーブル生成（ヘッダー行 + 区切り行 + データ行、パストラバーサル検証付き）
+    rows = [
+        "| プラグイン | 説明 | バージョン | インストール |",
+        "|----------|------|----------|----------|",
+    ]
     for entry in mp["plugins"]:
         source_path = assert_source_safe(repo_root, entry["source"])
         plugin_json_path = source_path / ".claude-plugin/plugin.json"

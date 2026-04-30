@@ -49,14 +49,18 @@
 | Slack Token | `xox[baprs]-[0-9A-Za-z-]{10,}` |
 | Google API Key | `AIza[0-9A-Za-z\-_]{35}` |
 | Stripe Secret Key | `sk_live_[0-9a-zA-Z]{24,}` |
-| Anthropic API Key | `sk-ant-[A-Za-z0-9\-_]{20,}` |
-| OpenAI API Key | `sk-[A-Za-z0-9]{48}` |
+| Stripe Restricted Key | `rk_(live\|test)_[0-9a-zA-Z]{24,}` |
+| Anthropic API Key | `sk-ant-(api\d+-)?[A-Za-z0-9\-_]{20,}` |
+| OpenAI API Key（legacy） | `sk-(?!proj-)(?!svcacct-)(?!ant-)[A-Za-z0-9]{48}` |
+| OpenAI Project Key | `sk-proj-[A-Za-z0-9_-]{20,}` |
+| OpenAI Service Account Key | `sk-svcacct-[A-Za-z0-9_-]{20,}` |
+| GCP Private Key ID | `"private_key_id"\s*:\s*"[a-f0-9]{40}"` |
 | 秘密鍵（PEM ヘッダー） | `-----BEGIN (RSA \|EC \|OPENSSH \|DSA \|PGP \|)PRIVATE KEY-----` |
 | Generic Bearer Token | `Bearer\s+[A-Za-z0-9\-_=]{20,}` |
-| Generic Password 代入（クォート任意） | `(?i)(password\|passwd\|secret\|api[-_]?key)\s*[:=]\s*["']?([^"'\s]{8,})["']?` |
+| Generic Password 代入（クォート任意、16+ 高エントロピー要件）| `(?i)(password\|passwd\|secret\|api[-_]?key)\s*[:=]\s*["']?[A-Za-z0-9+/=_\-\.]{16,}["']?` |
 | JWT | `eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+` |
 | Azure Storage Key | `DefaultEndpointsProtocol=https;AccountName=[A-Za-z0-9]+;AccountKey=[A-Za-z0-9+/=]+` |
-| Azure SAS Token | `sig=[A-Za-z0-9%]+(&|$)` |
+| Azure SAS Token | `sig=[A-Za-z0-9%]{20,}(&\|$)` |
 
 ## 3. 検出時の動作（fail-closed）
 

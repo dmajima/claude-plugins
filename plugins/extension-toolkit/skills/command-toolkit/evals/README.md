@@ -11,6 +11,7 @@
 | case-03 | 既存コマンドの改修 | 同名コマンド既存 |
 | case-04 | 命名衝突（既存コマンドファイル） | 配置先に同名 .md あり |
 | case-05 | `--non-interactive` モード（質問なしで生成） | `--non-interactive` フラグ |
+| case-06 | 非対話モード + 命名衝突の fail-closed | `--non-interactive` + 同名既存 |
 
 ## ケース追加ルール
 
