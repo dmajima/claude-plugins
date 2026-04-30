@@ -33,21 +33,26 @@
 
 最低 3 名の並列起動を満たす標準構成。コマンドが外部実行・危険操作を含まない場合は `security-engineer` を省略し 3 名構成にしてもよい。
 
-### 4. エージェント単体レビュー
+### 4. エージェント単体定義レビュー（個別 3 名並列、専用チームなし）
 
-| エージェント | 観点 |
-|------------|------|
-| `architect` | 役割の明確性・他エージェントとの差別化 |
-| `implementation-engineer` | 評価観点の具体性・出力フォーマット |
-| `project-leader` | 既存エージェント体系との整合 |
+| エージェント | 配布元 | 観点 |
+|------------|-------|------|
+| `plugin-structure-reviewer` | プラグイン同梱 | 規約準拠（frontmatter / 出力フォーマット定義） |
+| `description-trigger-reviewer` | プラグイン同梱 | description のトリガー精度 |
+| `architect` | グローバル | 役割の明確性・他エージェントとの差別化 |
 
-### 5. チームレビュー
+詳細は [evals/case-08](../evals/case-08_agent_definition_review.md) を参照。
 
-| エージェント | 観点 |
-|------------|------|
-| `architect`（リード） | 観点網羅性・サイズ妥当性 |
-| `project-leader` | リード選定・議論ラウンド設計 |
-| `implementation-engineer` | スポーンプロンプトの実装可能性 |
+### 5. チーム定義レビュー（個別 4 名並列、専用チームなし）
+
+| エージェント | 配布元 | 観点 |
+|------------|-------|------|
+| `plugin-structure-reviewer` | プラグイン同梱 | チーム情報テーブル・スポーンプロンプトの規約準拠 |
+| `description-trigger-reviewer` | プラグイン同梱 | チームの起動条件・命名のトリガー精度 |
+| `architect` | グローバル | チーム編成の妥当性・観点網羅性 |
+| `project-leader` | グローバル | メンバー相補性・サイズ妥当性・議論ラウンド設計 |
+
+エージェント単体定義に対し `project-leader` を追加。詳細は [evals/case-09](../evals/case-09_team_definition_review.md) を参照。
 
 ### 6. フックレビュー（セキュリティ重要）
 

@@ -2,11 +2,13 @@
 
 `extension-toolkit` プラグインの主要な設計判断とその根拠。
 
-## ADR-001: 8 スキル + 1 オーケストレータコマンドの 3 層構成
+## ADR-001: 8〜9 スキル + 1 オーケストレータコマンドの 3 層構成
+
+> 注: ADR-010 の environment-setup-toolkit 追加により現状は 9 スキル（toolkit 系 7 + reviewer 1 + publisher 1）。タイトルの「8〜9」は当初決定時 8 スキル → ADR-010 追加で 9 スキルになった経緯を保持するため。
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | `toolkit` 系 7（skill / plugin / command / agent / hook / readme / environment-setup）+ `reviewer` 1 + `publisher` 1 + オーケストレータ `/extension` の 3 層パイプラインで構成 |
+| 決定 | `toolkit` 系 7（skill / plugin / command / agent / hook / readme / environment-setup）+ `reviewer` 1 + `publisher` 1 = 9 スキル + オーケストレータ `/extension` の 3 層パイプラインで構成 |
 | 理由 | 1 スキル 1 責務（SRP）の徹底。各スキルが他スキルを Skill ツール経由で呼び出す疎結合。ユーザはオーケストレータ（`/extension`）または個別スキル（自然言語起動）の両方で利用可能 |
 | トレードオフ | スキル間連携のオーケストレーションが `/extension` と各 SKILL.md「引き渡し」表に分散する |
 | 代替案 | 単一の mega-skill で全機能提供 → SKILL.md 200 行制約に違反、却下 |

@@ -8,8 +8,8 @@
 |------|------|
 | 目的 | Claude Code フック設定（hooks.json または settings.json の hooks）が安全に運用できるかを評価する |
 | リード | `security-engineer`（グローバル） |
-| メンバー | `security-engineer` / `implementation-engineer`（グローバル） / `infrastructure-engineer`（グローバル） |
-| 人数 | 3 名 |
+| メンバー（リード以外） | `implementation-engineer`（グローバル） / `infrastructure-engineer`（グローバル） |
+| 人数 | 3 名（リード含む） |
 | 議論ラウンド | 最低 3、上限 5 |
 
 ## 起動条件
