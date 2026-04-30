@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "credentials-manager",
-      "description": "Manage authentication credentials (API keys, tokens, passwords) across Claude Code sessions. Stores credentials in a scope-aware JSON file (project-local when inside a git repo, user-global otherwise) and auto-applies them by URL/domain match.",
+      "description": "Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン",
       "category": "security",
       "source": "./plugins/credentials-manager",
       "author": {
@@ -19,7 +19,9 @@
         "secrets",
         "api-key",
         "token",
-        "auth"
+        "auth",
+        "url-match",
+        "auto-apply"
       ]
     },
     {
