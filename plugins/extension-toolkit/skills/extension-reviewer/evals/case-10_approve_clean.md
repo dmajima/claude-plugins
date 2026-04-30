@@ -55,7 +55,7 @@ Critical 0 + High 0 → **APPROVE**。
 
 ## 分岐の根拠
 
-Critical / High / Medium 指摘 0 件 → APPROVE。
+Critical 0 件 + High 0 件 → APPROVE（Medium / Low / Suggestion は判定に影響しない）。詳細は [`../references/review-perspectives.md`](../references/review-perspectives.md) の「総合判定ルール（SSOT）」を参照。
 
 ## 関連ケース
 

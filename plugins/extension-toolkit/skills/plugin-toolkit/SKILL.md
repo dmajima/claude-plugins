@@ -94,7 +94,7 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 
 ### 5. 既存ファイル更新時のエンコーディング維持
 
-既存ファイル更新時は元ファイルのエンコーディング・改行コードを維持する（`~/.claude/rules/common/file-encoding.md`）。Shift-JIS 等の非 UTF-8 ファイルは Edit/Write を直接使わず Python 経由で書き戻す。
+既存ファイル更新時は元ファイルのエンコーディング・改行コードを維持する（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）。Shift-JIS 等の非 UTF-8 ファイルは Edit/Write を直接使わず Python 経由で書き戻す。
 
 ### 6. パスポータビリティチェック
 

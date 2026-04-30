@@ -5,13 +5,14 @@ description: Claude Code プラグインマーケットプレイスへの公開�
 
 # Marketplace Publisher
 
-Claude Code プラグインマーケットプレイス（`.claude-plugin/marketplace.json`）への登録・更新・公開ワークフローを担当するスキル。新規登録時には既存プラグインとの **重複・マージ可能性チェック** を実施する。
+Claude Code プラグインの **公開ワークフロー**（重複検査・実体検証・シークレット混入スキャン・git push / PR 作成）を担当するスキル。`.claude-plugin/marketplace.json` の編集とマーケットプレイス README 同期は `marketplace-toolkit` に委譲する（ADR-020 準拠）。
 
 ## 責務
 
-- `.claude-plugin/marketplace.json` の `plugins[]` 更新（追加・変更・削除）
 - 既存プラグインとの **重複・マージチェック**（機能類似度・統合提案）
 - 整合性検証（プラグイン実体の存在・命名衝突・JSON valid）
+- **シークレット混入スキャン**（fail-closed、[references/secret-scan.md](references/secret-scan.md)）
+- `marketplace-toolkit` への委譲（`marketplace.json` 編集とマーケットプレイス README 同期）
 - 公開ワークフロー（ハンドオフ / フルオート選択）
 - フルオート時の `git add` → `commit` → `push` → PR 作成
 

@@ -94,7 +94,7 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 
 ### 6. 既存ファイル更新時のエンコーディング維持
 
-エンコーディング・改行コード維持（`~/.claude/rules/common/file-encoding.md`）。
+エンコーディング・改行コード維持（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）。
 
 ### 7. 検証
 

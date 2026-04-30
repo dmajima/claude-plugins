@@ -96,7 +96,7 @@ settings.json への追加の場合は既存 `hooks` を Read してマージ書
 
 ### 6. 既存ファイル更新時のエンコーディング維持
 
-`settings.json` を編集する場合、元ファイルのエンコーディング・改行コードを維持する（`~/.claude/rules/common/file-encoding.md`）。
+`settings.json` を編集する場合、元ファイルのエンコーディング・改行コードを維持する（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）。
 
 ### 7. 検証
 

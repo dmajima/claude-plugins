@@ -49,7 +49,7 @@
 | `security-engineer`（フック含有時） | `general-purpose` を `security-engineer` のプロンプトテンプレートで起動（[`../../agents/`](../../agents/) への将来同梱を予定） |
 | `evals-coverage-reviewer` / `marketplace-fit-reviewer` / `plugin-structure-reviewer` | プラグイン同梱、不在ケースは想定外（インストールで自動配備） |
 
-利用者は `marketplace-toolkit` でプラグインインストール後、すべての同梱エージェントが配備される。グローバルエージェント不在環境ではメイン Claude が上記マッピングに従って `subagent_type` を切り替える。
+利用者が `/plugin install extension-toolkit@dmajima-claude-plugins` でプラグインをインストールすると、すべての同梱エージェントが自動配備される。グローバルエージェント不在環境ではメイン Claude が上記マッピングに従って `subagent_type` を切り替える。
 
 ## スポーンプロンプト
 

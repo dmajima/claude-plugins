@@ -103,7 +103,7 @@ Claude Code のスキル（`SKILL.md` + `README.md` + `references/` + `scripts/`
 - SKILL.md 200 行超過禁止（超過時は references に分離）
 - `scripts/` 命名固定（`knowledge/` 不可）
 - `agents/` ディレクトリは重複理由で削除しない（プラグイン配布のため）
-- 既存ファイル更新時はエンコーディング・改行コード維持（`~/.claude/rules/common/file-encoding.md`）
+- 既存ファイル更新時はエンコーディング・改行コード維持（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
 - パスポータビリティチェック必須
 - 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
 - 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
