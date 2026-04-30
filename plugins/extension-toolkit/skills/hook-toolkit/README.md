@@ -10,6 +10,30 @@ Claude Code のフック設定（`hooks.json` または `settings.json` の `hoo
 
 フック設定ファイルの作成・改修のみ。`settings.json` からのフック抽出（プラグイン化）は `plugin-toolkit` の移管シナリオが担当。
 
+## 導入手順
+
+### 前提
+
+- Claude Code がインストール済み
+- `extension-toolkit` プラグインがインストール済み（[プラグイン README の導入手順](../../README.md) 参照）
+
+### 起動方法
+
+以下のフレーズで自動起動します:
+
+- 「PreToolUse フックで Bash 実行をログ」
+- 「Stop イベントで通知音」
+
+または `/extension hook <対象>` 経由で起動できます（[`/extension` コマンド](../../commands/extension.md)）。
+
+## 利用方法（最小例）
+
+ユーザ:
+> PreToolUse フックで Bash 実行をログ
+
+Claude（要約）:
+> イベント・matcher・command 設計 → テンプレート展開 → セキュリティ確認 → JSON 生成
+
 ## トリガー例
 
 - 「`PreToolUse` フックで Bash ログ」

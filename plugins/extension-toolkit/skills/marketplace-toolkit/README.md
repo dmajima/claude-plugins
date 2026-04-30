@@ -12,6 +12,30 @@ Claude Code のプラグインマーケットプレイスを **新規構築** �
 - 既存マーケットプレイスへのプラグイン追加・更新・削除（`marketplace.json` 編集 + README 同期）
 - マーケットプレイス直下 README の生成・同期（ADR-019 準拠）
 
+## 導入手順
+
+### 前提
+
+- Claude Code がインストール済み
+- `extension-toolkit` プラグインがインストール済み（[プラグイン README の導入手順](../../README.md) 参照）
+
+### 起動方法
+
+以下のフレーズで自動起動します:
+
+- 「新しいマーケットプレイス `acme-claude-plugins` を作って」
+- 「`marketplace.json` に `bar` プラグインを追加」
+
+または `/extension marketplace <対象>` 経由で起動できます（[`/extension` コマンド](../../commands/extension.md)）。
+
+## 利用方法（最小例）
+
+ユーザ:
+> 新しいマーケットプレイス `acme-claude-plugins` を作って
+
+Claude（要約）:
+> テンプレート展開 → marketplace.json + マーケットプレイス README 生成 → ADR-019 同期
+
 ## トリガー例
 
 - 「新しいマーケットプレイス `foo` を作って」

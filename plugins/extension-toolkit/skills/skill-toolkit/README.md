@@ -10,6 +10,30 @@ Claude Code のスキル一式（SKILL.md / README.md / references / scripts / e
 
 スキル単体の生成・改修のみ。プラグイン外形・コマンド・エージェント・フック・公開は他スキルが担当。
 
+## 導入手順
+
+### 前提
+
+- Claude Code がインストール済み
+- `extension-toolkit` プラグインがインストール済み（[プラグイン README の導入手順](../../README.md) 参照）
+
+### 起動方法
+
+以下のフレーズで自動起動します:
+
+- 「`code-formatter` スキルを作って」
+- 「`my-skill` を改修したい」
+
+または `/extension skill <対象>` 経由で起動できます（[`/extension` コマンド](../../commands/extension.md)）。
+
+## 利用方法（最小例）
+
+ユーザ:
+> 新しいスキル `code-formatter` を作って
+
+Claude（要約）:
+> テンプレートから外形作成 → ユーザに観点・分岐を確認 → SKILL.md 生成 → evals 雛形 → README
+
 ## トリガー例
 
 - 「新しいスキル `foo` を作って」

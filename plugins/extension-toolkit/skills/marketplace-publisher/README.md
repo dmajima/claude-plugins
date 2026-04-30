@@ -10,6 +10,30 @@ Claude Code プラグインの **公開ワークフロー**（重複検査・実
 
 公開ワークフローの実行（重複・マージチェック → 実体検証 → シークレット混入スキャン → `marketplace-toolkit` への委譲 → git push / PR 作成）。`marketplace.json` の編集ロジックとマーケットプレイス README 同期そのものは `marketplace-toolkit` の責務。
 
+## 導入手順
+
+### 前提
+
+- Claude Code がインストール済み
+- `extension-toolkit` プラグインがインストール済み（[プラグイン README の導入手順](../../README.md) 参照）
+
+### 起動方法
+
+以下のフレーズで自動起動します:
+
+- 「`extension-toolkit` を公開」
+- 「フルオートで公開」
+
+または `/extension publish <対象>` 経由で起動できます（[`/extension` コマンド](../../commands/extension.md)）。
+
+## 利用方法（最小例）
+
+ユーザ:
+> `extension-toolkit` プラグインを公開
+
+Claude（要約）:
+> 重複検査 → シークレットスキャン → marketplace-toolkit 委譲 → git push → PR 作成
+
 ## トリガー例
 
 - 「`dev-toolkit` プラグインを公開」
