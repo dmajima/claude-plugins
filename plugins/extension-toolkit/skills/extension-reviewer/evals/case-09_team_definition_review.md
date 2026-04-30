@@ -5,7 +5,7 @@
 | 項目 | 値 |
 |-----|---|
 | 起動フレーズ | "`skill-review-team` チーム定義をレビュー" |
-| 引数 | `teams/{name}.md` |
+| 引数 | `references/teams/{name}.md` |
 | フラグ | なし |
 | 既存状態 | チーム定義が単体ファイル |
 
@@ -13,7 +13,7 @@
 
 ### Phase 1: 対象判定
 
-`teams/{name}.md` → チーム定義レビューモード。
+`references/teams/{name}.md` → チーム定義レビューモード。
 
 ### Phase 2: 個別エージェント選定（4 名）
 

@@ -110,7 +110,7 @@ Claude（要約）:
 | `description-trigger-reviewer` | description のトリガー精度 |
 | `marketplace-fit-reviewer` | マーケットプレイス適合 |
 
-レビューチーム（`teams/`）:
+レビューチーム（`references/teams/`、ADR-002 / ADR-003 準拠）:
 
 | チーム | 用途 | リード |
 |-------|-----|-------|
@@ -135,7 +135,8 @@ Claude（要約）:
 | README 規約 | `references/readme-policy.md` |
 | エージェント活用方針 | `references/agent-utilization.md` |
 | 依存関係宣言ルール | `references/dependencies-policy.md` |
-| 推奨構成テンプレート | `templates/{種別}/` |
+| 推奨構成テンプレート | `references/templates/{種別}/` |
+| エージェントチーム定義 | `references/teams/{name}.md` |
 | 新拡張要素対応 | `skills/` 配下に新スキル追加、`references/conventions.md` 追記、`/extension` ルーティング追加 |
 
 ## 関連リンク
@@ -154,36 +155,36 @@ plugins/extension-toolkit/
 ├── commands/
 │   └── extension.md                 # /extension オーケストレータ
 ├── references/                      # SSOT（プラグイン横断の共通ナレッジ）
-│   ├── conventions.md
+│   ├── conventions.md               # 命名・配置・構造規約
 │   ├── ai-readability.md
 │   ├── description-guide.md
 │   ├── path-portability.md
 │   ├── eval-guide.md
 │   ├── validation-rules.md
 │   ├── architecture-decisions.md
-│   ├── versioning.md                # 追加要件: バージョン管理
-│   ├── completion-checklist.md      # 追加要件: 作業完了前チェック
-│   ├── user-interaction.md          # 追加要件: AskUserQuestion 優先
-│   ├── state-files.md               # 追加要件: 状態ファイル形式
-│   ├── readme-policy.md             # 追加要件: README 規約
-│   ├── agent-utilization.md         # 追加要件: エージェント活用
-│   └── dependencies-policy.md       # 追加要件: 依存関係宣言
-├── templates/                       # 推奨構成テンプレート
-│   ├── skill/
-│   ├── plugin/
-│   ├── command/
-│   ├── agent/
-│   ├── hook/
-│   └── readme/
-├── agents/                          # プラグイン同梱エージェント
+│   ├── versioning.md
+│   ├── completion-checklist.md
+│   ├── user-interaction.md
+│   ├── state-files.md
+│   ├── readme-policy.md
+│   ├── agent-utilization.md
+│   ├── dependencies-policy.md
+│   ├── teams/                       # エージェントチーム定義
+│   │   ├── plugin-review-team.md
+│   │   ├── skill-review-team.md
+│   │   └── hook-security-team.md
+│   └── templates/                   # 推奨構成テンプレート
+│       ├── skill/
+│       ├── plugin/
+│       ├── command/
+│       ├── agent/
+│       ├── hook/
+│       └── readme/
+├── agents/                          # プラグイン同梱エージェント（Claude Code 公式仕様）
 │   ├── plugin-structure-reviewer.md
 │   ├── evals-coverage-reviewer.md
 │   ├── description-trigger-reviewer.md
 │   └── marketplace-fit-reviewer.md
-├── teams/                           # エージェントチーム定義
-│   ├── plugin-review-team.md
-│   ├── skill-review-team.md
-│   └── hook-security-team.md
 └── skills/
     ├── skill-toolkit/
     ├── plugin-toolkit/
@@ -209,7 +210,7 @@ plugins/extension-toolkit/
 
 - **責務単一（1 スキル 1 責務）** — 各スキルは責務外を他スキルに委譲
 - **SSOT** — 共通ナレッジはプラグイン直下の `references/` に集約
-- **テンプレート明示管理** — 推奨構成は `templates/` で一元管理（生成物のムラ防止）
+- **テンプレート明示管理** — 推奨構成は `references/templates/` で一元管理（生成物のムラ防止）
 - **AI 誤認回避優先** — SKILL.md / references は AI が誤読しない断定表現を優先
 - **対話/非対話モード両対応** — 各スキルに `--non-interactive` モードあり
 - **動作分岐は evals 必須** — 条件分岐ありのスキルは `evals/` で期待動作を例示
@@ -219,4 +220,4 @@ plugins/extension-toolkit/
 
 ### アーキテクチャ判断
 
-詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) を参照（ADR-001〜008）。
+詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) を参照（ADR-001〜015）。

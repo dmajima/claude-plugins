@@ -14,7 +14,7 @@
 | case-06 | CONDITIONAL_APPROVE（High あり Critical なし） | High 指摘 1 件以上 + Critical 0 件 |
 | case-07 | コマンドレビュー（専用チームなし、個別エージェント並列） | 対象 = コマンド単体 |
 | case-08 | エージェント定義レビュー（個別 3 名並列） | 対象 = `agents/{name}.md` |
-| case-09 | チーム定義レビュー（個別 4 名並列） | 対象 = `teams/{name}.md` |
+| case-09 | チーム定義レビュー（個別 4 名並列） | 対象 = `references/teams/{name}.md` |
 | case-10 | APPROVE（指摘なし正常完了） | Critical / High / Medium = 0 |
 
 ## ケース追加ルール

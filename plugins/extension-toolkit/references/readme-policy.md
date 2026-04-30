@@ -133,7 +133,7 @@ Claude（要約）:
 
 - 9 スキル + 1 オーケストレータコマンド
 - SSOT (`references/`)
-- 推奨構成テンプレート (`templates/`)
+- 推奨構成テンプレート (`references/templates/`)
 
 ### 採用技術
 

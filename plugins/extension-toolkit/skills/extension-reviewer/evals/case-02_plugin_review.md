@@ -32,7 +32,7 @@
 
 ### Phase 3: チーム起動 + 機械チェック
 
-[`../../../teams/plugin-review-team.md`](../../../teams/plugin-review-team.md) のスポーンプロンプトに従い、メンバーを 1 メッセージ内で **並列 Agent 起動**。各スキル/コマンド/フックを横断的に機械チェック。
+[`../../../references/teams/plugin-review-team.md`](../../../references/teams/plugin-review-team.md) のスポーンプロンプトに従い、メンバーを 1 メッセージ内で **並列 Agent 起動**。各スキル/コマンド/フックを横断的に機械チェック。
 
 ### Phase 4: 結果統合
 

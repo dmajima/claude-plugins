@@ -13,6 +13,33 @@
 | `§` 記号の使用 | Medium | Grep `§` |
 | エンコーディング・改行コード保持 | Critical | バイト列比較 |
 | description 文字数 | Medium | 文字数カウント（[`description-guide.md`](description-guide.md) 参照） |
+| ディレクトリ構造の許可リスト遵守 | High | `conventions.md` 節 2.1 / 2.2 / 3.1 と照合 |
+
+### 1.1 ディレクトリ構造の許可リスト機械チェック
+
+[`conventions.md`](conventions.md) の許可リストを正典として、以下のチェックを実施する。
+
+| 階層 | 許可リスト | 違反時の重大度 |
+|-----|----------|------------|
+| プラグイン直下 | `.claude-plugin/` `README.md` `commands/` `skills/` `agents/` `hooks/` `mcp/` `references/` | High |
+| `references/` 直下 | `conventions.md` 等の SSOT ファイル群 + `teams/` + `templates/` | High |
+| スキル直下 | `SKILL.md` `README.md` `references/` `scripts/` `agents/` `evals/` | High |
+| `scripts/` 配下 | 業務単位サブフォルダ（`setup/` `input/` `output/` `deps/` `helpers/` 等） | Medium |
+
+許可リスト外のエントリを検出した場合は High 指摘とし、ADR で例外として明示されているか確認する。明示されていなければ修正必須。
+
+#### Bash でのチェック例
+
+```bash
+# プラグイン直下に許可されないディレクトリがあるか
+for d in plugins/{plugin-name}/*/; do
+  name=$(basename "$d")
+  case "$name" in
+    .claude-plugin|commands|skills|agents|hooks|mcp|references) ;;
+    *) echo "[High] Disallowed directory at plugin root: $d" ;;
+  esac
+done
+```
 
 ## 2. 種別別検証項目
 

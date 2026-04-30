@@ -27,7 +27,7 @@
 
 ### Phase 3: チーム起動 + 機械チェック
 
-[`../../../teams/skill-review-team.md`](../../../teams/skill-review-team.md) のスポーンプロンプトに従い、3 名を 1 メッセージ内で **並列 Agent 起動**。同時に機械チェック（[`automated-checks.md`](automated-checks.md)）を実行。
+[`../../../references/teams/skill-review-team.md`](../../../references/teams/skill-review-team.md) のスポーンプロンプトに従い、3 名を 1 メッセージ内で **並列 Agent 起動**。同時に機械チェック（[`automated-checks.md`](automated-checks.md)）を実行。
 
 ### Phase 4: 結果統合
 

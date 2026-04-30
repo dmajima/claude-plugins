@@ -27,7 +27,7 @@
 
 ### Phase 3: チーム起動 + 機械チェック
 
-[`../../../teams/hook-security-team.md`](../../../teams/hook-security-team.md) のスポーンプロンプトに従い、3 名を 1 メッセージ内で **並列 Agent 起動**。command フィールドの危険コマンド検出を重点的に実施。
+[`../../../references/teams/hook-security-team.md`](../../../references/teams/hook-security-team.md) のスポーンプロンプトに従い、3 名を 1 メッセージ内で **並列 Agent 起動**。command フィールドの危険コマンド検出を重点的に実施。
 
 ### Phase 4: セキュリティ指摘の扱い
 
