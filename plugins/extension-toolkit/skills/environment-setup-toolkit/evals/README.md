@@ -13,3 +13,4 @@
 | case-05 | check（状態確認） | 動作 = check |
 | case-06 | エラー系（範囲外パスでの teardown） | 安全装置作動 |
 | case-07 | setup（requirements.txt 不在 / 指定なし） | `--requirements` 省略 |
+| case-08 | 非対話モード（全パラメータ引数指定） | `--non-interactive` フラグ |

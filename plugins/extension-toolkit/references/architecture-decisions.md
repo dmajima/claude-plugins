@@ -2,9 +2,9 @@
 
 `extension-toolkit` プラグインの主要な設計判断とその根拠。
 
-## ADR-001: 8〜9 スキル + 1 オーケストレータコマンドの 3 層構成
+## ADR-001: 9 スキル + 1 オーケストレータコマンドの 3 層構成
 
-> 注: ADR-010 の environment-setup-toolkit 追加により現状は 9 スキル（toolkit 系 7 + reviewer 1 + publisher 1）。タイトルの「8〜9」は当初決定時 8 スキル → ADR-010 追加で 9 スキルになった経緯を保持するため。
+> 注: 当初決定時は 8 スキルだったが、ADR-010 で environment-setup-toolkit を追加し現在は 9 スキル（toolkit 系 7 + reviewer 1 + publisher 1）。
 
 | 項目 | 内容 |
 |------|------|
