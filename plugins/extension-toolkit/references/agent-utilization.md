@@ -243,7 +243,11 @@ Agent({ subagent_type: "evals-coverage-reviewer",
 |-----|---------|
 | 専門家エージェント・チーム設計 | [`../skills/agent-toolkit/references/team-design.md`](../skills/agent-toolkit/references/team-design.md) |
 | レビュー観点 | [`../skills/extension-reviewer/references/review-perspectives.md`](../skills/extension-reviewer/references/review-perspectives.md) |
-| グローバルルール | `~/.claude/rules/claude/agent-architecture.md` / `~/.claude/rules/claude/agent-teams.md` / `~/.claude/rules/claude/agent-usage.md` |
+| レビューフレッシュ起動原則 | [`review-freshness.md`](review-freshness.md)（ADR-021） |
+| 自己完結性ポリシー | [`self-containment.md`](self-containment.md)（ADR-022） |
+
+> **グローバルルール（`~/.claude/rules/claude/`）への参照について**:
+> 利用者環境にあるグローバルルール（`agent-architecture.md` / `agent-teams.md` / `agent-usage.md`）は **存在すれば追加情報として参照可能** だが、本プラグインは ADR-022 準拠で利用者環境に依存しない。本ファイルおよびプラグイン内 SSOT のみで完結する設計とし、グローバルルール不在時のフォールバック動作を必要としない。グローバルルールは「あれば便利」な参考情報の位置付け。
 
 ## 11. 禁止事項
 

@@ -16,7 +16,7 @@
 `.claude-plugin/marketplace.json` 含むリポジトリルートを検出。
 **プラグイン（`.claude-plugin/plugin.json`）と区別** し、マーケットプレイスレビューモードに切替。
 
-### Phase 2: チーム選定
+### Phase 2: チーム選定 + フォールバック判定
 
 [`../references/team-selection.md`](../references/team-selection.md) に従い、専用チームなし、個別 3 名並列:
 
@@ -26,9 +26,24 @@
 | `plugin-structure-reviewer` | プラグイン同梱 | 規約準拠（README + marketplace.json 構造） |
 | `architect` | グローバル | 構造妥当性 + 拡張性 |
 
-### Phase 3: 並列起動 + 機械チェック
+**グローバルエージェント不在時のフォールバック（ADR-022 準拠）**:
 
-3 名を 1 メッセージ内で並列 Agent 起動。並行して機械チェック:
+| 不在エージェント | フォールバック |
+|---------------|------------|
+| `architect` | `plugin-structure-reviewer`（同梱）が「全体構造観点」を兼任、または `general-purpose` を `architect` の専門性プロンプトで起動 |
+
+`marketplace-fit-reviewer` / `plugin-structure-reviewer` はプラグイン同梱のため、利用者環境に依らず常に利用可能。
+
+### Phase 3: 並列起動 + 機械チェック（フレッシュ起動・ADR-021 準拠）
+
+3 名を 1 メッセージ内で並列 Agent 起動。**フレッシュインスタンス**（過去議論・修正履歴を引き継がない）で起動し、各メンバーのスポーンプロンプトに以下を必ず含める:
+
+- 必須引き継ぎ事項（目的 / 役割 / ユーザー指摘 / 対象 / 観点 / 出力フォーマット）
+- 引き継ぎ禁止事項（過去レビュー結論・修正実装者の主観・「修正済み」等のメタ評価）
+
+詳細は [`../../../references/review-freshness.md`](../../../references/review-freshness.md) を参照。
+
+並行して機械チェック:
 
 | チェック | 対象 |
 |---------|-----|

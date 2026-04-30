@@ -38,7 +38,22 @@
 - 議論ラウンド最低 3 回。合意至らない項目はトレードオフを明示してユーザに判断を仰ぐ
 - 機械チェック結果を統合して優先度付きの最終レポート
 
+## グローバルエージェント不在時のフォールバック（ADR-022 準拠）
+
+`architect` / `implementation-engineer` / `security-engineer` はグローバルエージェント（`~/.claude/agents/`）に依存している。利用者環境に存在しない場合のフォールバックを以下に定義する:
+
+| 不在エージェント | フォールバック |
+|---------------|------------|
+| `architect` | `plugin-structure-reviewer`（同梱）にリード兼任。「全体構造観点」を `plugin-structure-reviewer` に追加プロンプトで指示 |
+| `implementation-engineer` | `plugin-structure-reviewer`（同梱）が「実装品質観点」を兼任。または `general-purpose` に観点別プロンプトで委譲 |
+| `security-engineer`（フック含有時） | `general-purpose` を `security-engineer` のプロンプトテンプレートで起動（[`../../agents/`](../../agents/) への将来同梱を予定） |
+| `evals-coverage-reviewer` / `marketplace-fit-reviewer` / `plugin-structure-reviewer` | プラグイン同梱、不在ケースは想定外（インストールで自動配備） |
+
+利用者は `marketplace-toolkit` でプラグインインストール後、すべての同梱エージェントが配備される。グローバルエージェント不在環境ではメイン Claude が上記マッピングに従って `subagent_type` を切り替える。
+
 ## スポーンプロンプト
+
+ADR-021（レビューフレッシュ起動原則）に従い、過去レビュー結論・修正履歴を引き継がず、必須引き継ぎ事項のみで起動する。
 
 ```text
 plugin-review-team チームを作成し、以下のプラグインを多角的に議論してください。
@@ -56,4 +71,7 @@ plugin-review-team チームを作成し、以下のプラグインを多角的�
 
 最低 3 回の議論ラウンドを経て、合意形成された総合判定（APPROVE / CONDITIONAL_APPROVE / REJECT）と
 重大度別指摘リストをレポートにまとめてください。合意至らない項目はトレードオフとして明記してください。
+
+注意: 過去の議論・修正履歴・他レビュアーの結論は与えていません。これらに依らず、対象を白紙で評価してください。
+「修正済み」「対応完了」等のメタ評価を前提とせず、現時点のファイル内容のみで判断してください。
 ```

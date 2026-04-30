@@ -74,7 +74,10 @@ description: {主目的の 1 文}。「{トリガーフレーズ例 1}」「{ト
 - {制約 1}
 - {制約 2}
 - パスポータビリティチェック必須（[`../../references/path-portability.md`](../../references/path-portability.md)）
-- 既存ファイル更新時のエンコーディング維持（`~/.claude/rules/common/file-encoding.md`）
+- 既存ファイル更新時のエンコーディング維持（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
+- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証を実施
 
 ## 参照
 
@@ -85,3 +88,8 @@ description: {主目的の 1 文}。「{トリガーフレーズ例 1}」「{ト
 | description 設計 | [`../../references/description-guide.md`](../../references/description-guide.md) |
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | evals ガイド | [`../../references/eval-guide.md`](../../references/eval-guide.md) |
+| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md) |
+| 完了チェックリスト | [`../../references/completion-checklist.md`](../../references/completion-checklist.md) |
+| ユーザ対話ルール | [`../../references/user-interaction.md`](../../references/user-interaction.md) |
+| バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md) |
+| 自己完結性 | [`../../references/self-containment.md`](../../references/self-containment.md) |
