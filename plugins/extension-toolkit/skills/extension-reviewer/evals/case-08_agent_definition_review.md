@@ -1,24 +1,21 @@
-# Case 08: エージェント / チーム定義レビュー
+# Case 08: エージェント定義レビュー（個別 3 名並列）
 
 ## 入力
 
 | 項目 | 値 |
 |-----|---|
-| 起動フレーズ | "`code-quality-reviewer` エージェント定義をレビュー" or "`skill-review-team` チーム定義をレビュー" |
-| 引数 | `agents/{name}.md` または `teams/{name}.md` |
+| 起動フレーズ | "`code-quality-reviewer` エージェント定義をレビュー" |
+| 引数 | `agents/{name}.md` |
 | フラグ | なし |
-| 既存状態 | エージェント / チーム定義が単体ファイル |
+| 既存状態 | エージェント定義が単体ファイル |
 
 ## 期待動作
 
 ### Phase 1: 対象判定
 
-| 検出 | 判定 |
-|-----|------|
-| `agents/{name}.md`（frontmatter `name` を識別） | エージェント定義レビュー |
-| `teams/{name}.md` | チーム定義レビュー |
+`agents/{name}.md`（frontmatter `name` を識別）→ エージェント定義レビューモード。
 
-### Phase 2: エージェント並列選定
+### Phase 2: 個別エージェント選定（3 名）
 
 [`../references/team-selection.md`](../references/team-selection.md) に従う。専用チームを設けず、以下を並列起動:
 
@@ -28,16 +25,14 @@
 | `description-trigger-reviewer` | プラグイン同梱 | description のトリガー精度 |
 | `architect` | グローバル | 役割の明確性・他エージェントとの差別化 |
 
-最低 3 名を並列起動。チーム定義レビューの場合は `project-leader`（メンバー相補性・サイズ妥当性）を加えて 4 名構成とする。
-
 ### Phase 3: 並列起動 + 機械チェック
 
 | 機械チェック | 内容 |
 |------------|------|
 | frontmatter | `name` `description` `model` `tools` の存在 |
 | 評価観点 | 3 つ以上の項目があるか |
-| 出力フォーマット | 定義済みか |
-| 必須要素（チーム） | リード指定・メンバー数（最低 3 名 or 観点固定で 2 名）・議論ラウンド数（最低 3） |
+| 出力フォーマット | 定義済みか（Critical / High / Medium / Low / 総合判定） |
+| プロンプトテンプレート | 存在するか |
 
 ### Phase 4: 結果統合 + 引き渡し
 
@@ -52,9 +47,10 @@
 
 ## 分岐の根拠
 
-対象 = エージェント or チーム定義（専用チームなし、個別エージェントの並列起動）。
+対象 = エージェント単体定義（`agents/{name}.md`）。専用チームなし、個別エージェント 3 名の並列起動。
 
 ## 関連ケース
 
 - `case-01_skill_review.md`（スキル単体）
 - `case-07_command_review.md`（コマンド単体、同様に専用チームなし）
+- `case-09_team_definition_review.md`（チーム定義レビュー、4 名構成）
