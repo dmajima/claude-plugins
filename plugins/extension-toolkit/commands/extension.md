@@ -55,6 +55,19 @@ description: Claude Code の拡張要素（スキル/プラグイン/コマン�
 
 何らかの選択をユーザに求める場合は `AskUserQuestion`（Claude UI）を原則として使用する。詳細は `references/user-interaction.md` を参照。
 
+## 破壊的フラグの段階的ゲート（必須）
+
+引数に以下の破壊的フラグが含まれる場合、対象スキルへ転送する **前に** オーケストレータ段階で `AskUserQuestion` による意思確認を必ず行うこと:
+
+| 検出パターン | 対応 |
+|-----------|------|
+| `--remove` / `--remove-plugin` / `--also-delete-files` | 削除対象・範囲を提示し「実行する / キャンセル」を確認 |
+| `--full-auto` | 「完全自動実行（git push / PR 作成）してよいか / ハンドオフに切り替えるか」を確認 |
+| `--confirm-destructive` 単独（他フラグなし）| エラーで返却（用途不明な場合の事故防止）|
+| 上記の複合（例: `--remove-plugin X --also-delete-files --confirm-destructive`）| 影響範囲を全て提示した上で **二重確認**（意図確認＋最終確認）|
+
+これらは利用者が誤ってコピペ実行することを防ぐためのオーケストレータ段階の安全装置。対象スキル側にも同等のゲートがあるが、`/extension` 段階で先に確認することで一段早く事故を止める。詳細は `references/review-freshness.md` の安全装置原則と整合。
+
 ## 共通の終了処理
 
 | 動作した最後のスキル | 提示者 | 提示内容 |

@@ -12,7 +12,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 
 | プラグイン | 説明 | バージョン | インストール |
 |----------|------|----------|----------|
-| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成からマーケットプレイス構築・公開まで支援 | 0.9.6 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
+| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成からマーケットプレイス構築・公開まで支援 | 0.9.7 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 
 ## マーケットプレイスの追加方法
 

@@ -83,5 +83,5 @@ git checkout {tag-or-branch}
 | 項目 | 内容 |
 |-----|-----|
 | ライセンス | {LICENSE 情報、または該当なし} |
-| メンテナ | {`{owner-name}`} |
+| メンテナ | `{owner-name}` |
 | 連絡先 | {URL or メール、該当時のみ} |
