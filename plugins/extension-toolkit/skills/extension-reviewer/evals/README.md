@@ -18,6 +18,7 @@
 | case-10 | APPROVE（指摘なし正常完了） | Critical / High / Medium = 0 |
 | case-11 | チーム機能不可環境でのフォールバック起動 | `TeamCreate` 利用不可（ADR-017） |
 | case-12 | `--non-interactive` モード（自動レビュー） | `--non-interactive` フラグ |
+| case-13 | プラグイン全体レビュー（フック未含有・5 名構成） | プラグイン対象 + フック非含有 |
 
 ## ケース追加ルール
 
