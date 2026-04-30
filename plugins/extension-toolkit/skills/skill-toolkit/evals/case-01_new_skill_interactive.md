@@ -24,7 +24,7 @@
 
 ### Phase 2: テンプレート展開
 
-`${CLAUDE_PLUGIN_ROOT}/templates/skill/` を配置先にコピーし、プレースホルダを置換。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/skill/` を配置先にコピーし、プレースホルダを置換。
 
 ### Phase 3: 検証
 

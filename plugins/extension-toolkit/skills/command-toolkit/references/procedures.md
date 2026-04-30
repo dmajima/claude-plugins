@@ -14,7 +14,7 @@
 
 ### 1. ベースコピー
 
-`${CLAUDE_PLUGIN_ROOT}/templates/command/command.md` を配置先にコピー。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/command/command.md` を配置先にコピー。
 
 ### 2. プレースホルダ置換
 

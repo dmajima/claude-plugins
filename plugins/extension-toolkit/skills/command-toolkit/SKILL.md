@@ -76,7 +76,7 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 
 ### 4. テンプレート展開
 
-`${CLAUDE_PLUGIN_ROOT}/templates/command/command.md` を配置先にコピーし、プレースホルダ置換。詳細は [references/procedures.md](references/procedures.md) を参照。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/command/command.md` を配置先にコピーし、プレースホルダ置換。詳細は [references/procedures.md](references/procedures.md) を参照。
 
 ### 5. プロンプト本体の充填
 

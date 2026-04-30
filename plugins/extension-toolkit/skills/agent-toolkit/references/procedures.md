@@ -26,7 +26,7 @@
 
 ### 2. テンプレート展開
 
-`${CLAUDE_PLUGIN_ROOT}/templates/agent/agent.md` を配置先にコピー、プレースホルダ置換。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/agent/agent.md` を配置先にコピー、プレースホルダ置換。
 
 | プレースホルダ | 置換値 |
 |--------------|-------|
@@ -93,7 +93,7 @@
 
 ### 3. テンプレート展開
 
-`${CLAUDE_PLUGIN_ROOT}/templates/agent/team.md` を `agents/teams/{team-name}.md` 等に配置。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/agent/team.md` を `agents/teams/{team-name}.md` 等に配置。
 
 ### 4. スポーンプロンプト充填
 

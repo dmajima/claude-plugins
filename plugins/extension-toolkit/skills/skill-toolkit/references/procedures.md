@@ -41,7 +41,7 @@
 
 ### 3. テンプレートコピー
 
-`${CLAUDE_PLUGIN_ROOT}/templates/skill/` を配置先にコピーする。コピー対象:
+`${CLAUDE_PLUGIN_ROOT}/references/templates/skill/` を配置先にコピーする。コピー対象:
 
 ```text
 SKILL.md

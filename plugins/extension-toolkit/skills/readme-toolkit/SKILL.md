@@ -64,7 +64,7 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 
 ### 3. テンプレート展開
 
-`${CLAUDE_PLUGIN_ROOT}/templates/readme/README.md`（または対象種別に応じたテンプレート）をベースに、スキャンした内容を反映する。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/readme/README.md`（または対象種別に応じたテンプレート）をベースに、スキャンした内容を反映する。
 
 ### 4. 各セクションの充填
 

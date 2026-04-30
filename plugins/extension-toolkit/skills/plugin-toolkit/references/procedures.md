@@ -32,7 +32,7 @@
 
 ### 3. テンプレート展開
 
-`${CLAUDE_PLUGIN_ROOT}/templates/plugin/` を配置先にコピーし、プレースホルダ置換。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/plugin/` を配置先にコピーし、プレースホルダ置換。
 
 | プレースホルダ | 置換値 |
 |--------------|-------|

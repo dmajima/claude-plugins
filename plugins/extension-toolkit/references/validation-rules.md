@@ -15,29 +15,46 @@
 | description 文字数 | Medium | 文字数カウント（[`description-guide.md`](description-guide.md) 参照） |
 | ディレクトリ構造の許可リスト遵守 | High | `conventions.md` 節 2.1 / 2.2 / 3.1 と照合 |
 
-### 1.1 ディレクトリ構造の許可リスト機械チェック
+### 1.1 ディレクトリ構造の許可リスト機械チェック（厳格対象のみ）
 
-[`conventions.md`](conventions.md) の許可リストを正典として、以下のチェックを実施する。
+[`conventions.md`](conventions.md) の許可リストを正典として、**厳格運用 2 階層** に対して機械チェックする。`references/` 直下と `scripts/` 直下は推奨例のため対象外（人間レビューで確認）。
 
-| 階層 | 許可リスト | 違反時の重大度 |
-|-----|----------|------------|
-| プラグイン直下 | `.claude-plugin/` `README.md` `commands/` `skills/` `agents/` `hooks/` `mcp/` `references/` | High |
-| `references/` 直下 | `conventions.md` 等の SSOT ファイル群 + `teams/` + `templates/` | High |
-| スキル直下 | `SKILL.md` `README.md` `references/` `scripts/` `agents/` `evals/` | High |
-| `scripts/` 配下 | 業務単位サブフォルダ（`setup/` `input/` `output/` `deps/` `helpers/` 等） | Medium |
+| 階層 | 厳格度 | 許可リスト | 違反時の重大度 |
+|-----|-------|----------|------------|
+| プラグイン直下 | **厳格** | `.claude-plugin/` `README.md` `commands/` `skills/` `agents/` `hooks/` `mcp/` `references/` | High |
+| スキル直下 | **厳格** | `SKILL.md` `README.md` `references/` `scripts/` `agents/` `evals/` | High |
+| `references/` 直下 | 推奨例 | （機械チェックなし、人間レビュー） | - |
+| `scripts/` 直下 | 推奨例 + 一部禁止 | 禁止項目（`knowledge/` `lib/` `bin/`、拡張子別サブフォルダ）のみ機械検出 | Medium |
 
-許可リスト外のエントリを検出した場合は High 指摘とし、ADR で例外として明示されているか確認する。明示されていなければ修正必須。
+許可リスト外のエントリ（厳格 2 階層）を検出した場合は High 指摘とし、ADR で例外として明示されているか確認する。明示されていなければ修正必須。
 
 #### Bash でのチェック例
 
 ```bash
-# プラグイン直下に許可されないディレクトリがあるか
-for d in plugins/{plugin-name}/*/; do
-  name=$(basename "$d")
-  case "$name" in
-    .claude-plugin|commands|skills|agents|hooks|mcp|references) ;;
-    *) echo "[High] Disallowed directory at plugin root: $d" ;;
-  esac
+# プラグイン直下に許可されないディレクトリ・ファイルがあるか
+ALLOWED_PLUGIN_ROOT=".claude-plugin commands skills agents hooks mcp references README.md"
+for entry in plugins/{plugin-name}/*; do
+  name=$(basename "$entry")
+  if ! echo "$ALLOWED_PLUGIN_ROOT" | grep -qw "$name"; then
+    echo "[High] Disallowed entry at plugin root: $entry"
+  fi
+done
+
+# スキル直下に許可されないエントリがあるか
+ALLOWED_SKILL_ROOT="SKILL.md README.md references scripts agents evals"
+for skill_dir in plugins/{plugin-name}/skills/*/; do
+  for entry in "$skill_dir"*; do
+    name=$(basename "$entry")
+    if ! echo "$ALLOWED_SKILL_ROOT" | grep -qw "$name"; then
+      echo "[High] Disallowed entry at skill root: $entry"
+    fi
+  done
+done
+
+# scripts/ 配下の禁止命名チェック
+for forbidden in knowledge lib bin py sh; do
+  find plugins/{plugin-name}/skills/*/scripts -maxdepth 1 -type d -name "$forbidden" 2>/dev/null \
+    | while read d; do echo "[Medium] Forbidden subfolder name: $d"; done
 done
 ```
 

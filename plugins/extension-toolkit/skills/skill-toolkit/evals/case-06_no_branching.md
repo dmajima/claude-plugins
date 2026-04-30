@@ -17,7 +17,7 @@
 
 ### Phase 2: テンプレート展開
 
-`templates/skill/` から `evals/` 関連ファイルをコピーしない。
+`references/templates/skill/` から `evals/` 関連ファイルをコピーしない。
 
 ### Phase 3: 検証
 

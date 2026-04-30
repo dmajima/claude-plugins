@@ -17,7 +17,7 @@
 
 ### Phase 2: テンプレート展開
 
-`templates/skill/` のうち `references/setup.md`（環境構築手順 + 依存パッケージリスト）と `scripts/deps/requirements.txt`（依存リストファイル、任意）をコピー。**venv 構築・撤去スクリプトはコピーしない**（`environment-setup-toolkit` に委譲）。
+`references/templates/skill/` のうち `references/setup.md`（環境構築手順 + 依存パッケージリスト）と `scripts/deps/requirements.txt`（依存リストファイル、任意）をコピー。**venv 構築・撤去スクリプトはコピーしない**（`environment-setup-toolkit` に委譲）。
 
 ### Phase 3: 依存リスト充填
 

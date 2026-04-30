@@ -5,14 +5,14 @@ description: Claude Code のスキル（SKILL.md・references・scripts・evals 
 
 # Skill Toolkit
 
-Claude Code のスキル（`SKILL.md` + `README.md` + `references/` + `scripts/` + `evals/`）を新規作成・改修するスキル。プラグイン横断テンプレート（`templates/skill/`）と SSOT（`references/`）に従って構造化された生成物を出力する。
+Claude Code のスキル（`SKILL.md` + `README.md` + `references/` + `scripts/` + `evals/`）を新規作成・改修するスキル。プラグイン横断テンプレート（`references/templates/skill/`）と SSOT（`references/`）に従って構造化された生成物を出力する。
 
 ## 責務
 
 - 新規スキルの一式生成（SKILL.md / README.md / references / scripts / evals）
 - 既存スキルの改修（差分追加・分割・整理）
 - 依存先プラグイン（`example-skills@anthropic-agent-skills`、`document-skills@anthropic-agent-skills`）の **参照**（必要時のみ）
-- プラグイン横断テンプレート（`templates/skill/`）のコピー・プレースホルダ置換
+- プラグイン横断テンプレート（`references/templates/skill/`）のコピー・プレースホルダ置換
 - 生成物の構造妥当性検証（行数・必須セクション・パスポータビリティ）
 
 ## 責務外（他スキルが担当）
@@ -66,7 +66,7 @@ Claude Code のスキル（`SKILL.md` + `README.md` + `references/` + `scripts/`
 
 ### 2. テンプレート展開（新規時）
 
-`templates/skill/` をコピーし、プレースホルダを置換する。詳細は [references/procedures.md](references/procedures.md) の「新規生成手順」を参照。
+`references/templates/skill/` をコピーし、プレースホルダを置換する。詳細は [references/procedures.md](references/procedures.md) の「新規生成手順」を参照。
 
 ### 3. 既存改修（改修時）
 

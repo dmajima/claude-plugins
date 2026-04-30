@@ -90,7 +90,7 @@ Claude Code のフック設定（`hooks.json`）を作成・改修するスキ�
 
 ### 5. テンプレート展開
 
-`${CLAUDE_PLUGIN_ROOT}/templates/hook/hooks.json` をベースに、選択したイベント・matcher・command を反映。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/hook/hooks.json` をベースに、選択したイベント・matcher・command を反映。
 
 settings.json への追加の場合は既存 `hooks` を Read してマージ書き戻し（既存エントリを破壊しないこと）。
 

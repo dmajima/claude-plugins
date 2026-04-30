@@ -91,8 +91,8 @@ Claude Code のサブエージェント単体・エージェントチームを�
 
 | モード | テンプレート |
 |-------|------------|
-| 単体エージェント | `${CLAUDE_PLUGIN_ROOT}/templates/agent/agent.md` |
-| チーム編成 | `${CLAUDE_PLUGIN_ROOT}/templates/agent/team.md` |
+| 単体エージェント | `${CLAUDE_PLUGIN_ROOT}/references/templates/agent/agent.md` |
+| チーム編成 | `${CLAUDE_PLUGIN_ROOT}/references/templates/agent/team.md` |
 
 プレースホルダ置換は [references/procedures.md](references/procedures.md) を参照。
 
