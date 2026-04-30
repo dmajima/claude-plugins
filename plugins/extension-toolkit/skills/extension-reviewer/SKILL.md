@@ -147,6 +147,7 @@ Claude Code の拡張要素（スキル・プラグイン・コマンド・エ�
 ## 重要な制約
 
 - **レビューはチーム単位で起動**（[`../../references/teams/`](../../references/teams/) のチーム定義に従う）
+- **レビューは必ずフレッシュ Agent インスタンスで起動**（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021 準拠）。修正実装と同一コンテキストでレビューを行わない。スポーンプロンプトに必須引き継ぎ事項（目的 / 役割 / ユーザー指摘 / 対象 / 観点 / フォーマット）を明記し、引き継ぎ禁止事項（過去レビュー結論等）を含めない
 - 標準は最低 3 名（観点が 2 つに固定の場合は 2 名でも可）
 - メンバーは並列起動（独立観点）
 - 自動修正は軽微な指摘のみ
@@ -165,6 +166,8 @@ Claude Code の拡張要素（スキル・プラグイン・コマンド・エ�
 | evals 設計 | [`../../references/eval-guide.md`](../../references/eval-guide.md) |
 | 検証ルール（SSOT） | [`../../references/validation-rules.md`](../../references/validation-rules.md)（全節） |
 | アーキテクチャ決定 | [`../../references/architecture-decisions.md`](../../references/architecture-decisions.md) |
+| レビューフレッシュ起動原則 | [`../../references/review-freshness.md`](../../references/review-freshness.md) |
+| 自己完結性ポリシー | [`../../references/self-containment.md`](../../references/self-containment.md) |
 | レビュー観点 | [`references/review-perspectives.md`](references/review-perspectives.md) |
 | チーム選定 | [`references/team-selection.md`](references/team-selection.md) |
 | 自動チェック | [`references/automated-checks.md`](references/automated-checks.md) |

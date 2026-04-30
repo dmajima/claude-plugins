@@ -22,6 +22,8 @@
 | 検証ルール | 種別別の検証項目 | [`validation-rules.md`](validation-rules.md) |
 | バージョン更新 | **必須**: 1 コミット 1 バージョン更新（マーケットプレイス自動更新検知のため）。スキル側で `plugin.json` の編集が発生した場合は必ず `version` を桁付きで更新する | [`versioning.md`](versioning.md) |
 | マーケットプレイス README 同期 | `marketplace.json` を編集した場合は **必ず同一コミット** でマーケットプレイス README を同期する（ADR-019 準拠） | [`readme-policy.md`](readme-policy.md) 節 11.1 |
+| レビューフレッシュ起動 | 第三者レビューは **新規 Agent インスタンス** で起動し、修正実装と同一コンテキストで評価しない（ADR-021 準拠）。必須引き継ぎ事項を明記し、引き継ぎ禁止事項（過去レビュー結論等）は伝えない | [`review-freshness.md`](review-freshness.md) |
+| 利用者環境非依存性 | グローバルルール / グローバルエージェント / 外部ツール前提などの依存箇所を棚卸しし、明示・同梱・フォールバックのいずれかで対処（ADR-022 準拠） | [`self-containment.md`](self-containment.md) |
 | ユーザ対話 | 選択は AskUserQuestion 優先 | [`user-interaction.md`](user-interaction.md) |
 | 状態ファイル形式 | 構造化データは JSON/YAML | [`state-files.md`](state-files.md) |
 | README 規約 | 人間向け明記・導入手順優先 | [`readme-policy.md`](readme-policy.md) |

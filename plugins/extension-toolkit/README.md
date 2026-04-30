@@ -204,6 +204,8 @@ Claude（要約）:
 | 状態ファイル形式 | `references/state-files.md` |
 | README 規約（プラグイン・スキル・マーケットプレイス共通） | `references/readme-policy.md` |
 | エージェント活用方針 | `references/agent-utilization.md` |
+| レビューフレッシュ起動原則（ADR-021） | `references/review-freshness.md` |
+| プラグイン自己完結性・利用者環境非依存（ADR-022） | `references/self-containment.md` |
 | 依存関係宣言ルール | `references/dependencies-policy.md` |
 | 推奨構成テンプレート | `references/templates/{種別}/` |
 | エージェントチーム定義 | `references/teams/{name}.md` |
@@ -238,6 +240,8 @@ plugins/extension-toolkit/
 │   ├── state-files.md
 │   ├── readme-policy.md
 │   ├── agent-utilization.md
+│   ├── review-freshness.md          # レビューフレッシュ起動原則（ADR-021）
+│   ├── self-containment.md          # プラグイン自己完結性（ADR-022）
 │   ├── dependencies-policy.md
 │   ├── teams/                       # エージェントチーム定義
 │   │   ├── plugin-review-team.md
