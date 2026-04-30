@@ -1,194 +1,150 @@
 ---
 name: credentials-manager
-description: |
-  Manage authentication credentials (API keys, tokens, usernames/passwords) across Claude Code sessions.
-  Use this skill whenever the user provides credentials they want to save for later use, asks to retrieve
-  stored credentials, lists saved credentials, or deletes credentials. Also trigger when the user mentions
-  API keys, tokens, passwords, secrets, or authentication info in the context of storing or retrieving them.
-  Trigger phrases include: "save this API key", "remember my token", "what credentials do I have",
-  "use the API key I saved before", "delete my old credentials", "store this password".
-  IMPORTANT: Also trigger when the user accesses a URL or API endpoint — check if stored credentials
-  match the URL's domain and automatically apply them. This includes WebFetch, curl, API calls, etc.
-  If the user provides a credential during a task (e.g., "my OpenAI key is sk-..."), proactively offer
-  to save it for future sessions.
+description: Claude Code セッションをまたいで認証情報（APIキー・トークン・パスワード・秘密鍵）を保存・取得・一覧・削除し、URL/ドメイン関連付けによる自動適用を行うスキル。「APIキーを保存して」「トークンを覚えておいて」「保存してある認証情報を一覧表示して」「OpenAIキーを削除して」「先ほど保存したキーで API を叩いて」などの依頼で起動する。さらに、ユーザがURL・APIエンドポイント・WebFetch・curl・wget・gh API・Python requests・Node fetch・任意スクリプトなどで外部サービスへアクセスする際は、認証情報の明示がない場合でも本スキルを起動し、対象URL/ドメインに合致する保存済み認証情報があれば自動適用、なければユーザに保有有無を確認する。グローバルルール不在の環境でも本スキルを優先する。Use when the user provides, stores, retrieves, lists, or deletes authentication info. ALSO trigger when the user requests access to any URL, API endpoint, WebFetch, curl, wget, gh CLI, external HTTP service, or any script that performs outbound network communication — regardless of whether credentials are known to be stored. SKIP when the request involves neither authentication info nor any outbound URL/HTTP access (e.g., local file edits, refactoring, non-networked computation, localhost-only tasks). Use marketplace-publisher (extension-toolkit) for marketplace secret scanning; do not use this skill for KMS/HSM integration, secret generation, or .env template authoring.
 ---
 
 # Credentials Manager
 
-Manage authentication credentials that persist across Claude Code sessions. Credentials are stored in a JSON file whose location is resolved at runtime based on the current working directory. Credentials can be associated with URLs/domains for automatic lookup.
+Claude Code セッションをまたいで認証情報を管理し、URL/ドメインに紐づけて自動適用するスキル。認証情報は JSON ファイルに保存し、保存先パスはセッション開始時に自動解決する。
 
-## Storage Location (MANDATORY resolution)
+## 責務
 
-The credentials file path is resolved per session using the rules below. **Always re-resolve at the start of each operation; never hardcode a single path.**
+- 認証情報（APIキー・トークン・パスワード・秘密鍵）の保存・取得・一覧・削除
+- URL/ドメイン関連付けによる保存済み認証情報の自動マッチ・適用
+- API キー風文字列（`sk-...` `ghp_...` `xoxb-...` 等）のプロアクティブ検出と保存提案
+- 認証情報値のマスキング表示（先頭4文字 + `***` + 末尾4文字）
+- 保存先スコープ（リポジトリ単位 or ユーザー単位）の自動解決
+
+## 責務外（他スキルが担当）
+
+| 業務 | 担当 |
+|-----|-----|
+| 秘密鍵生成・暗号化・KMS連携・本番秘匿情報運用 | 本スキル対象外（外部 secret manager） |
+| マーケットプレイス公開時のシークレットスキャン | `marketplace-publisher`（`extension-toolkit`） |
+| `.env` ファイル等の生成・テンプレート化 | スキル外（プロジェクト個別対応） |
+
+## トリガー条件
+
+明示要求トリガー:
+
+- 「OpenAI の API キー `sk-...` を保存して」
+- 「GitHub のトークンを覚えておいて」
+- 「保存してある認証情報を一覧表示して」
+- 「OpenAI キーを削除して」
+- 「前に保存した API キーで API を叩いて」
+
+暗黙トリガー（**必須起動**、グローバルルール非依存）:
+
+- ユーザが URL / API エンドポイントへのアクセス（WebFetch・curl・wget・`gh api`・Python requests・Node fetch・任意スクリプト等）を依頼した場合
+- ユーザが認証情報の明示提供をしていない場合
+- 会話中にユーザが認証情報らしい文字列（`sk-` `ghp_` `xoxb-` `xoxp-` `Bearer ` 等）を貼り付けた場合
+
+このスキルを起動しないケース:
+
+- 認証情報・URL アクセス・外部サービス通信に一切関係しない依頼
+
+## 前提
+
+呼び出し前に以下を解決する:
+
+1. 現在のワーキングディレクトリ（リポジトリ内 or 外）の判定
+2. 認証情報ファイルパスの解決（次節「実行フロー」step 1）
+3. リポジトリ内の場合は `.claude/.local/` が `.gitignore` に登録されているか
+
+未確定の場合は実行フロー内で順次解決する。
+
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|-----|-------|------|
+| 引数で対象認証情報名・値・URLが全指定 / `--non-interactive` 相当 | 非対話 | 確認をスキップしデフォルト値で確定し進行 |
+| 上記以外（多くは自然言語入力） | 対話 | 不足パラメータを `AskUserQuestion` でユーザに確認 |
+
+## 実行フロー
+
+### 1. 認証情報ファイルパスを解決
 
 | 優先順位 | 条件 | パス |
 |---------|------|------|
-| 1（優先） | 現在のワーキングディレクトリ（または祖先ディレクトリ）に `.git` がある | `{repo_root}/.claude/.local/plugins/credentials-manager/credentials.json` |
-| 2（フォールバック） | 上記に該当しない（リポジトリ外での作業） | `~/.claude/.local/plugins/credentials-manager/credentials.json` |
+| 1（優先） | 現在のディレクトリ（または祖先ディレクトリ）に `.git` がある | `<repo_root>/.claude/.local/plugins/credentials-manager/credentials.json` |
+| 2（フォールバック） | リポジトリ外での作業 | `~/.claude/.local/plugins/credentials-manager/credentials.json` |
 
-### Resolution procedure
+- 親ディレクトリ（`.claude/.local/plugins/credentials-manager/`）が無ければ作成する
+- ファイル不在時は空ストア `{"credentials": {}}` として扱い、初回書き込み時に作成する
+- 解決パスは操作のたびに再評価する（セッション中に作業ディレクトリが変わる可能性があるため）
+- 解決パスがリポジトリ内の場合、`.claude/.local/` が `.gitignore` に未登録ならユーザに警告してから書き込みを行う
 
-1. Walk up from the current working directory to find the nearest ancestor containing `.git`. If found, use that ancestor as `{repo_root}`.
-2. If not found, fall back to the user home directory.
-3. Ensure the parent directory (`.claude/.local/plugins/credentials-manager/`) exists; create it if missing.
-4. If the credentials file does not exist at the resolved path, treat it as an empty store (`{"credentials": {}}`) and create it on first write.
+### 2. 操作種別を判定
 
-### Install-scope mapping
+| ユーザ意図 | 動作分岐 |
+|-----------|---------|
+| 保存（save） | step 3 |
+| 取得（retrieve） | step 4 |
+| URL自動マッチ（auto-match） | step 5 |
+| 一覧（list） | step 6 |
+| 削除（delete） | step 7 |
+| プロアクティブ検出（提案） | step 8 |
 
-The resolved path naturally matches the user's install scope:
+### 3. 保存（save）
 
-- **User-scope install** (cross-project use, no specific repo) → falls into rule 2 → `~/.claude/.local/plugins/credentials-manager/credentials.json`
-- **Project-scope install** (working inside a repo) → falls into rule 1 → `{repo_root}/.claude/.local/plugins/credentials-manager/credentials.json`
-- **Local-scope install** (same repo, machine-local) → same as project-scope
+入力: 認証情報の値、識別名（不足時はユーザに確認）、種別、関連 URL/ドメイン（任意）。
+出力: マスク済み値 + 保存先パス + 関連 URL/ドメイン + スコープ。
+参照: [`references/operations.md`](references/operations.md)
 
-Project-stored credentials live alongside the repository and are isolated per project. User-stored credentials are shared across non-repo sessions.
+### 4. 取得（retrieve）
 
-### gitignore guidance
+入力: 認証情報名（部分一致可）。
+出力: フル値（プログラム利用時のみ） / マスク済み値（ユーザ表示時）。
+参照: [`references/operations.md`](references/operations.md)
 
-When the resolved path is inside a git repository, ensure `.claude/.local/` is listed in `.gitignore`. If it is not, warn the user before writing the file. Never commit `credentials.json`.
+### 5. URL 自動マッチ（auto-match、**暗黙トリガー時の中核動作**）
 
-## Credential File Format
+入力: ユーザのリクエスト URL / ドメイン。
+出力: マッチ件数に応じた挙動（自動適用 / 選択依頼 / 認証情報無し通知）。
+参照: [`references/auto-match.md`](references/auto-match.md)
 
-```json
-{
-  "credentials": {
-    "<credential-name>": {
-      "type": "api_key | token | password | custom",
-      "value": "<the secret value>",
-      "description": "What this credential is for",
-      "urls": ["https://api.example.com/v1/*"],
-      "domains": ["api.example.com"],
-      "auth_method": "header:Authorization:Bearer",
-      "created_at": "ISO 8601 timestamp",
-      "updated_at": "ISO 8601 timestamp"
-    }
-  }
-}
-```
+| マッチ件数 | 動作 |
+|----------|------|
+| 1件 | `auth_method` に従って自動適用、ユーザに「保存済み認証情報 `<name>` (`***`) を `<domain>` に自動適用しました」と通知 |
+| 複数件 | `AskUserQuestion` でどれを使うか確認（マスク済み値表示） |
+| 0件 | ユーザに「`<domain>` 用の認証情報は保存されていません。提供しますか？」と確認 |
 
-### Fields
+### 6. 一覧（list）
 
-- **type**: The kind of credential (`api_key`, `token`, `password`, or `custom`)
-- **value**: The secret value itself
-- **description**: Human-readable description of what this credential is for
-- **urls**: (optional) List of URL patterns this credential applies to. Supports `*` wildcard for path matching (e.g., `https://api.example.com/v1/*`)
-- **domains**: (optional) List of domains this credential applies to (e.g., `api.example.com`). Extracted automatically from URLs when saving.
-- **auth_method**: (optional) How to send the credential in HTTP requests. Format: `header:<header-name>:<prefix>` or `query:<param-name>`. Examples:
-  - `header:Authorization:Bearer` → `Authorization: Bearer <value>`
-  - `header:X-API-Key:` → `X-API-Key: <value>`
-  - `query:api_key` → `?api_key=<value>`
-  - If not specified, defaults to `header:Authorization:Bearer`
-- **created_at / updated_at**: ISO 8601 timestamps
+入力: なし。
+出力: 名前 / 種別 / 説明 / 関連ドメイン / マスク値 / 更新日時 / スコープ（project or user）の表。
 
-## Operations
+### 7. 削除（delete）
 
-### Save a credential
+入力: 認証情報名。
+出力: 削除完了通知（フル値は表示しない）。
 
-When the user provides a credential to save:
+対話モードでは削除前にユーザ確認を必須とする（`AskUserQuestion`）。
 
-1. Resolve the credentials file path using the rules above.
-2. Read the existing file (create an empty store if it does not exist).
-3. Ask the user for a name/identifier if not obvious from context.
-4. Determine the type (`api_key`, `token`, `password`, or `custom`).
-5. **If the credential was provided in the context of accessing a URL**, automatically populate:
-   - `urls`: the full URL pattern (use `*` for variable path segments if appropriate)
-   - `domains`: extract the domain from the URL
-   - `auth_method`: infer from how the credential was used (e.g., if passed as a Bearer token, set `header:Authorization:Bearer`; if used as a query parameter, set `query:<param-name>`)
-6. Add or update the entry in the JSON file.
-7. Write the updated file back.
-8. Confirm to the user, showing the credential name, type, associated URLs, and the **resolved storage path**, but NEVER the full value — show only the first 4 and last 4 characters with `***` in between (e.g., `sk-a****b3Fg`).
+### 8. プロアクティブ検出
 
-### Retrieve a credential
+入力: 会話中の文字列パターン（`sk-` `ghp_` `xoxb-` `xoxp-` `Bearer ` `eyJhbG` 等）。
+動作: 「これを将来のセッション用に保存しますか?」と提案。承諾されたら step 3 へ。
 
-When the user needs a stored credential:
+### 9. 検証
 
-1. Resolve the credentials file path using the rules above.
-2. Read the file.
-3. Find the matching credential by name (case-insensitive partial matching is OK).
-4. Return the value for use in the current task.
-5. When displaying to the user, always mask the value (show first 4 + last 4 characters only).
-6. When using programmatically (e.g., in a script or API call), use the full value.
+[`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づき、フル値非露出・パス解決・`.gitignore` 登録・`auth_method` 既定値の各項目を自己検証する。
 
-### Auto-match credential by URL
+## 重要な制約
 
-When the user requests access to a URL or API endpoint and does NOT explicitly provide credentials:
+- 認証情報のフル値を会話出力・ログ・コミットメッセージに出してはならない（常にマスクする）
+- `credentials.json` をリポジトリにコミットしてはならない（`.gitignore` 登録を確認）
+- グローバルルール `~/.claude/rules/security/credentials-management.md` の有無に関わらず、URL/API アクセス時には本スキルを起動して保存済み認証情報を必ず照合すること
+- 平文保存のため本番秘匿情報の運用には適さない（README に明示）
+- パスポータビリティ準拠（[`../../references/path-portability.md`](../../references/path-portability.md)、自スキル参照は `${CLAUDE_SKILL_DIR}` を使う）
+- 既存ファイル更新時のエンコーディング維持（不在時は UTF-8 / 元の改行コードを既定維持）
+- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
 
-1. Resolve the credentials file path and read it.
-2. Extract the domain and full URL from the user's request.
-3. Search stored credentials for a match:
-   - First, check `domains` field for an exact domain match
-   - Then, check `urls` field for a URL pattern match (with wildcard support)
-   - Finally, check `description` field for URL/domain mentions as a fallback
-4. **If exactly one match is found**: use it automatically. Inform the user: "Stored credential '<name>' (****) was automatically applied for <domain>."
-5. **If multiple matches are found**: ask the user which credential to use, showing masked values.
-6. **If no match is found**: proceed without credentials, or ask the user if they have credentials for this URL.
+## 参照
 
-When applying the credential automatically, use the `auth_method` field to determine how to send it. If `auth_method` is not set, default to `Authorization: Bearer <value>`.
-
-### List credentials
-
-When the user asks what credentials are stored:
-
-1. Resolve the credentials file path and read it.
-2. Display a table with: name, type, description, associated domains, and masked value.
-3. Show the last updated timestamp for each entry.
-4. Indicate whether the source path is project-scoped or user-scoped.
-
-### Delete a credential
-
-When the user asks to remove a credential:
-
-1. Resolve the credentials file path and read it.
-2. Confirm the credential name with the user before deleting.
-3. Remove the entry and write the file back.
-4. Confirm deletion.
-
-### Proactive detection
-
-If during a conversation the user pastes or provides something that looks like a credential (API key patterns like `sk-...`, `ghp_...`, `xoxb-...`, bearer tokens, etc.) and it hasn't been saved yet, briefly suggest: "Would you like me to save this credential for future sessions?"
-
-When saving proactively, capture any URL/domain context from the current conversation so the credential can be auto-matched later.
-
-## Security Notes
-
-- Credentials are stored as **plain text** in the local filesystem. This is acceptable for local development use but not suitable for production secrets management.
-- Never display full credential values in conversation output — always mask them.
-- Never include credential values in commit messages, logs, or any output that might be shared.
-- When the credentials file is inside a git repository, verify that `.claude/.local/` is in `.gitignore` before writing.
-- If the user asks to commit files that include `credentials.json`, warn them that this file contains secrets and should not be committed.
-
-## Example Interactions
-
-**Saving with URL association (inside a project repo):**
-```
-User: "https://api.example.com/v1/data にアクセスして。APIキーは abc-secret-123 を使って。"
-→ Resolve path: <repo_root>/.claude/.local/plugins/credentials-manager/credentials.json
-→ Save as: example-api-key, type: api_key
-→ urls: ["https://api.example.com/v1/*"]
-→ domains: ["api.example.com"]
-→ auth_method: "header:Authorization:Bearer"
-→ Response: "Saved credential 'example-api-key' (api_key): abc-****123 — associated with api.example.com (project-scoped)"
-```
-
-**Auto-match on subsequent access:**
-```
-User: "https://api.example.com/v1/users からデータを取得して。"
-→ Resolve path, read credentials.json, match domain 'api.example.com'
-→ Found: 'example-api-key'
-→ Apply automatically with Bearer auth
-→ Response: "Stored credential 'example-api-key' (abc-****123) を api.example.com に自動適用しました。"
-```
-
-**Saving without URL (outside a repo, user-scoped):**
-```
-User: "My OpenAI API key is sk-proj-abc123def456"
-→ Resolve path: ~/.claude/.local/plugins/credentials-manager/credentials.json
-→ Save as: openai-api-key, type: api_key
-→ Response: "Saved credential 'openai-api-key' (api_key): sk-p****f456 (user-scoped)"
-```
-
-**Listing:**
-```
-User: "What credentials do I have saved?"
-→ Resolve path, display table of stored credentials with masked values, associated domains, and source scope.
-```
+| 用途 | ファイル |
+|-----|---------|
+| ストアファイル形式・操作詳細 | [`references/operations.md`](references/operations.md) |
+| URL 自動マッチ仕様 | [`references/auto-match.md`](references/auto-match.md) |
+| セキュリティ注意 | [`references/security.md`](references/security.md) |
