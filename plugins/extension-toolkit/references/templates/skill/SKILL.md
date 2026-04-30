@@ -1,3 +1,10 @@
+<!--
+NOTE: このファイルはテンプレートです。
+本文中の `../../references/...` 等の相対リンクはテンプレート格納場所
+（`references/templates/skill/SKILL.md`）からは解決できませんが、これは設計上の意図です。
+スキル展開後（`skills/{skill-name}/SKILL.md` にコピー後）に正しく解決されます。
+レビュー時は本ファイルでのリンク切れを実害として扱わないでください。
+-->
 ---
 name: {skill-name}
 description: {主目的の 1 文}。「{トリガーフレーズ例 1}」「{トリガーフレーズ例 2}」「{トリガーフレーズ例 3}」などの依頼で起動する。Use when {english trigger condition}. SKIP when {skip condition} (use {related-skill} for {their responsibility}).

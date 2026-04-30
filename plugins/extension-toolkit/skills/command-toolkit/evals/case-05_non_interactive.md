@@ -60,5 +60,5 @@
 
 ## 関連ケース
 
-- `case-01_new_simple.md`（対話モード・新規作成）
-- `case-04_existing_collision.md`（命名衝突時の対話確認）
+- `case-01_new_command_interactive.md`（対話モード・新規作成）
+- `case-04_naming_collision.md`（命名衝突時の対話確認）

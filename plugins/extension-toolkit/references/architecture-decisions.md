@@ -74,7 +74,7 @@
 | 項目 | 内容 |
 |------|------|
 | 決定 | 各 `*-toolkit` の検証セクション と `extension-reviewer/references/automated-checks.md` で参照する検証ルールを `references/validation-rules.md` に集約。各参照元はチェックリストの該当節を指定して引用する |
-| 理由 | 検証ルールが 8 スキル + reviewer に散在すると更新時の整合性維持が困難（SSOT 違反） |
+| 理由 | 検証ルールが 10 スキル（toolkit 系 8 + extension-reviewer + marketplace-publisher）に散在すると更新時の整合性維持が困難（SSOT 違反） |
 | トレードオフ | 参照階層が深くなる |
 | 代替案 | 各スキル内に重複記述 → 更新コスト増、却下 |
 

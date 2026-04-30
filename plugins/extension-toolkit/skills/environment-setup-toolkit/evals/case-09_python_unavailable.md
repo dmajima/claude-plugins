@@ -59,6 +59,6 @@ Python が利用者環境にインストールされていません。以下の�
 
 ## 関連ケース
 
-- `case-01_setup_new.md`（正常系: Python あり）
+- `case-01_setup_new_venv.md`（正常系: Python あり）
 - `case-08_non_interactive.md`（非対話モード: 必須フラグ揃っていればエラー終了の挙動は同じ）
 - `case-06_safety_check.md`（teardown の安全装置）

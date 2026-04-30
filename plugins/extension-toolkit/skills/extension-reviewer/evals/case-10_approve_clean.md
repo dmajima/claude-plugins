@@ -60,4 +60,4 @@ Critical 0 件 + High 0 件 → APPROVE（Medium / Low / Suggestion は判定に
 ## 関連ケース
 
 - `case-05_critical_reject.md`（Critical あり、REJECT）
-- `case-06_conditional_approve.md`（High または Medium あり、CONDITIONAL_APPROVE）
+- `case-06_conditional_approve.md`（Critical 0 + High 1 件以上、CONDITIONAL_APPROVE）

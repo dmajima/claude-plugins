@@ -121,15 +121,16 @@ CONTENT_PATTERNS = {
     "stripe_key": r"sk_live_[0-9a-zA-Z]{24,}",
     "stripe_restricted_key": r"rk_(live|test)_[0-9a-zA-Z]{24,}",
     "anthropic_key": r"sk-ant-(api\d+-)?[A-Za-z0-9\-_]{20,}",
-    "openai_key": r"sk-[A-Za-z0-9]{48}",
+    "openai_key": r"sk-(?!proj-)(?!svcacct-)(?!ant-)[A-Za-z0-9]{48}",
     "openai_proj_key": r"sk-proj-[A-Za-z0-9_-]{20,}",
     "openai_svcacct_key": r"sk-svcacct-[A-Za-z0-9_-]{20,}",
     "private_key_pem": r"-----BEGIN (RSA |EC |OPENSSH |DSA |PGP |)PRIVATE KEY-----",
     "bearer_token": r"Bearer\s+[A-Za-z0-9\-_=]{20,}",
-    "generic_password": r"(?i)(password|passwd|secret|api[-_]?key)\s*[:=]\s*[\"']?[^\"'\s]{8,}[\"']?",
+    # Generic Password: 値長 16+ かつ高エントロピー要件あり（短いプレースホルダ・examplevalue 等の誤検出を抑制）
+    "generic_password": r"(?i)(password|passwd|secret|api[-_]?key)\s*[:=]\s*[\"']?[A-Za-z0-9+/=_\-\.]{16,}[\"']?",
     "jwt": r"eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+",
     "azure_storage": r"DefaultEndpointsProtocol=https;AccountName=[A-Za-z0-9]+;AccountKey=[A-Za-z0-9+/=]+",
-    "azure_sas_token": r"sig=[A-Za-z0-9%]+(?:&|$)",
+    "azure_sas_token": r"sig=[A-Za-z0-9%]{20,}(?:&|$)",
     "gcp_private_key_id": r'"private_key_id"\s*:\s*"[a-f0-9]{40}"',
 }
 
@@ -211,7 +212,8 @@ def scan(plugin_root: pathlib.Path) -> list[dict]:
 - `errors="strict"` + 例外時に他エンコーディングを試行することで、無効バイト破棄による検出漏れを防ぐ
 - バイナリファイルは `\x00` 検出でスキップ（読み込みコスト削減）。BOM（`\xef\xbb\xbf` UTF-8 / `\xff\xfe` UTF-16 LE / `\xfe\xff` UTF-16 BE）を持つ場合は対応エンコーディングで再評価する
 - プレースホルダ値（`${VAR}` / `{{template}}` / `<placeholder>` / `$(VAR)`）は誤検出抑制のため除外
-- 検出ログには **キーの先頭 8 文字** のみ記録し、フル値はログに残さない（情報露出防止）
+- 検出ログには **検出パターン名 + ファイルパス + 行番号** のみ記録する。値の prefix も残さない（CWE-532 情報露出防止）。値を確認したい場合は対話モードでユーザに直接ファイルを開かせる
+- ドキュメントファイル（`*.md` / `*.rst`）でかつコードフェンス（` ``` ` 区切り）の **外側** にあるパターンは Generic Password の検出から除外することを推奨（例: `password: hunter2` を解説する文書を誤検出しない）。実装は `re.finditer` で行ごとにコードフェンス境界を追跡する
 
 ## 5. 関連ルール
 

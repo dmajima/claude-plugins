@@ -1,0 +1,25 @@
+# Default: テキストファイルは LF に統一（Windows 環境でも LF 維持）
+* text=auto eol=lf
+
+# 明示的にテキスト + LF
+*.md text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+
+# シェルスクリプトは shebang を機能させるため必ず LF
+*.sh text eol=lf
+*.bash text eol=lf
+
+# バイナリファイル（誤って LF 変換されないよう明示）
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
