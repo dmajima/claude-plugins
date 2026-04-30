@@ -9,33 +9,65 @@ description: >
 
 # convert-html スキル
 
-MarkdownファイルをWikiデザインの自己完結型HTMLに変換する。
+Markdown ファイルを Wiki デザインの自己完結型 HTML に変換する。
 
-## 出力の特徴
+## 責務
 
-- HTMLファイル1つで完結（外部ファイル参照なし）
-- 画像をbase64埋め込み・クリックでライトボックスポップアップ表示（ズーム・パン対応）
-- mermaid図をSVG変換して埋め込み（横スクロール対応・クリックで拡大表示）
-- `~~打ち消し線~~` をHTMLの `<del>` タグに変換（GFM互換）
-- Pygmentsによるシンタックスハイライト
-- 本文先頭の手書き `## 目次` セクションを自動除去
-- 右スティッキーサイドバーに自動生成目次（リンクなしテキスト表示、H2〜H6対象）
-- Wikiトンマナのデザイン（ネイビー #003879 基調）
+- Markdown → 自己完結型 HTML への変換（外部参照なし、画像 base64・mermaid SVG インライン埋め込み）
+- CSS テンプレート（プラグイン共通 + スキル固有の合算）の選択と適用
+- JS 機能（features.json に登録されたもの）の選択と埋め込み
+- 自動目次生成（右スティッキーサイドバー）
+
+## 責務外（他スキルが担当）
+
+| 業務 | 担当スキル |
+|-----|----------|
+| HTML → PDF への変換 | `convert-pdf`（内部で本スキルを呼び出す） |
+| HTML → PPTX への変換 | `convert-pptx`（独自パイプライン） |
+| 画像生成・mermaid 描画基盤の構築 | 本スキル外（`mermaid.ink` 外部 API に依存） |
+
+## トリガー条件
+
+以下のいずれかに該当する場合に起動する。
+
+- 「MD を HTML に変換」「Markdown を HTML 化」「設計書を HTML で出力」等の自然言語依頼
+- `/convert-html` または `/convert-html-full` スラッシュコマンド
+- 他スキルからの `Skill(skill: "convert-html", ...)` 呼び出し
+
+このスキルを起動しないケース:
+
+- 既に HTML が指定されている場合（再変換不要）
+- PDF / PPTX への変換依頼（`convert-pdf` / `convert-pptx` へルーティング）
+
+## 前提
+
+- 入力 Markdown ファイルがローカルに存在し読み取り可能
+- Python 3.9+ が利用可能
+- 初回起動時はインターネット接続あり（Pillow / markdown 等のパッケージインストール用）
+- mermaid 図を含む場合は `mermaid.ink` への HTTPS 接続（オフライン時はエラーブロック出力にフォールバック）
+
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|-----|-------|------|
+| `/convert-html-full` | 非対話 | CSS / JS の対話プロンプトを出さず全機能有効で処理 |
+| 別スキルからの `Skill(...)` 呼び出し | 非対話 | `--js-features` 省略で全機能、CSS は first-existing |
+| `/convert-html` または自然言語依頼 | 対話 | CSS 複数なら選択 UI、JS 機能カタログがあれば除外選択 UI |
 
 ## 実行フロー
 
 1. **ワークディレクトリ作成**（`.claude/.local/work/yyyyMMdd_nn_convert_html/{inputs,workspace}`）
-2. **venv構築**（`workspace/.venv` 配下）→ 依存パッケージをインストール
-3. **変換スクリプト実行**
-4. **出力ファイルをユーザーに報告**（最終HTMLはセッションフォルダ直下）
-5. **venv削除**
+2. **venv 構築**（`workspace/.venv` 配下）→ 依存パッケージをインストール
+3. **CSS / JS の選択**（対話モード時のみ。詳細は [`references/css-js-selection.md`](references/css-js-selection.md)）
+4. **変換スクリプト実行**（`scripts/convert/convert.py`）
+5. **出力ファイルをユーザーに報告**（最終 HTML はセッションフォルダ直下）
+6. **venv 削除**
 
-詳細な実行手順は `references/procedures.md`、環境構築（venv・依存パッケージ）は `references/setup.md` を参照。
+詳細な実行手順は [`references/procedures.md`](references/procedures.md)、環境構築（venv・依存パッケージ）は [`references/setup.md`](references/setup.md) を参照。
 
 ## アセットの場所
 
 変換スクリプトは **スキル側の同名パスを優先** し、なければ **プラグイン共通** にフォールバックする。
-スキル固有にカスタマイズしたい場合は、対応する相対パスのファイルを `${CLAUDE_SKILL_DIR}/assets/...` に置けば上書きされる。
 
 | アセット | 既定の配置 | 分類 |
 |---------|-----------|------|
@@ -46,52 +78,23 @@ MarkdownファイルをWikiデザインの自己完結型HTMLに変換する。
 | 目次トグル JS | `${CLAUDE_SKILL_DIR}/assets/js/toc-toggle.js` | スキル固有（HTML 専用） |
 | JS 機能カタログ | `${CLAUDE_SKILL_DIR}/assets/js/features.json` | スキル固有（HTML 専用） |
 
-## CSSファイルの選択（複数存在する場合）
+スキル固有にカスタマイズしたい場合は、対応する相対パスのファイルを `${CLAUDE_SKILL_DIR}/assets/...` に置けば上書きされる。
 
-スキル実行前に `${CLAUDE_SKILL_DIR}/assets/css/` とフォールバック先の `${CLAUDE_PLUGIN_ROOT}/assets/css/` の `.css` ファイルを合算して確認し、**2つ以上存在する場合**は `AskUserQuestion` ツールで選択させる。同名ファイルはスキル側を優先する。
+## 重要な制約
 
-### 呼び出し方針
+- 中間生成物・venv は `workspace/` 配下に置き、最終 HTML はセッションフォルダ直下に配置する
+- 入力ファイルパスは `inputs/` 配下に置かれている場合は読み取り専用として扱う
+- `--js-features` で渡されるファイル名に `..` `/` `\` が含まれる場合は拒否する（パストラバーサル対策）
+- 画像 `src` がローカルパスの場合、解決後のパスが `base_dir` 配下であることを検証する（パストラバーサル対策）
+- mermaid.ink のレスポンスは Content-Type が `image/svg+xml` であり、かつ先頭が `<svg` または `<?xml` で始まることを検証してから埋め込む
+- mermaid 取得失敗時はエラー HTML（`html.escape` 済みの diagram code を含む）を出力して処理続行
 
-- `question`: `"適用するCSSを選択してください。"`
-- `header`: `"CSS"`
-- `multiSelect`: `false`（1つだけ選択）
-- `options`: 検出した `.css` ファイルを `{ label: ファイル名, description: "<由来> の <ファイル名> を使用" }` で列挙（由来は「スキル」または「プラグイン共通」）
+## 参照
 
-### 回答の処理
-
-- 選択されたファイルの **絶対パス** を `--css-template "<絶対パス>"` として渡す（由来に応じて `${CLAUDE_SKILL_DIR}/assets/css/...` または `${CLAUDE_PLUGIN_ROOT}/assets/css/...` を解決した結果）
-- 「Other」（カスタム指示）が入力された場合は、入力内容を指示として解釈して処理する
-- **回答受け取り後、確認なしでそのまま処理を続行する**
-
-### 制約
-
-- `AskUserQuestion` の options は最大4件（「Other」は自動付与のため実質3件）。CSS ファイルが4件以上の場合はテキストベースの選択に切り替える
-- `${CLAUDE_SKILL_DIR}/assets/css/` と `${CLAUDE_PLUGIN_ROOT}/assets/css/` の合算で `.css` ファイルが1つだけの場合は選択肢を提示せずにそのまま使用する（同名ファイルがある場合はスキル側を優先）
-
-## JS機能の選択
-
-スキル実行前に `${CLAUDE_SKILL_DIR}/assets/js/features.json` を読み込み、**1つ以上の機能が登録されている場合**は `AskUserQuestion` ツールで確認する。機能を省くことでファイルサイズを削減できるため、1機能のみでも必ず確認する。
-
-### 呼び出し方針
-
-デフォルトは全機能有効のため、**除外したい機能を選択する方式**で質問する。
-
-- `question`: `"除外するJS機能を選択してください。（何も選択しない → 全機能有効）"`
-- `header`: `"JS機能"`
-- `multiSelect`: `true`
-- `options`: features.json の各機能を `{ label: 機能名, description: 説明文 }` で列挙したあと、末尾に以下を追加する
-  - `{ label: "全て不要", description: "JSを一切埋め込まない" }`
-
-### 回答の処理
-
-1. 回答文字列を `,` で分割し、各要素を trim して**空文字・空白のみの要素は除外**する
-2. 「全て不要」が含まれる場合は `--js-features ""` を渡して処理を続行する
-3. それ以外は残った要素を除外対象の機能名リストとし、features.json の全機能から差し引いた機能のファイル名をカンマ結合して `--js-features` に渡す
-4. **回答受け取り後、確認なしでそのまま処理を続行する**
-
-### 制約
-
-- `AskUserQuestion` の options は最大4件（「全て不要」を含む）。features.json の機能が3件以上になる場合はテキストベースの選択に切り替える
-- **別スキルからの呼び出しなど対話が難しい場合は `--js-features` を省略して全機能を導入する**
-
-JS機能ファイルの作成・追加ルールは `references/js-authoring.md` を参照。
+| 用途 | ファイル |
+|-----|---------|
+| 環境構築（venv・依存パッケージ） | [`references/setup.md`](references/setup.md) |
+| 変換実行手順 | [`references/procedures.md`](references/procedures.md) |
+| CSS / JS 機能の対話選択ルール | [`references/css-js-selection.md`](references/css-js-selection.md) |
+| JS 機能の作成ルール | [`references/js-authoring.md`](references/js-authoring.md) |
+| 動作分岐の期待挙動ケース | [`evals/`](evals/) |

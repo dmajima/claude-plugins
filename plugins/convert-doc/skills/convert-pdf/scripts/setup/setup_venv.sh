@@ -25,8 +25,12 @@ if [ ! -f "$REQUIREMENTS" ]; then
   exit 1
 fi
 
-echo "venv を作成しています: $VENV_DIR"
-python -m venv "$VENV_DIR"
+if [ -d "$VENV_DIR" ] && [ -x "$VENV_DIR/Scripts/python" -o -x "$VENV_DIR/bin/python" ]; then
+  echo "venv が既に存在します。再利用します: $VENV_DIR"
+else
+  echo "venv を作成しています: $VENV_DIR"
+  python -m venv "$VENV_DIR"
+fi
 
 # Windows (Scripts/) / Unix (bin/) 両対応
 if [ -f "$VENV_DIR/Scripts/pip" ]; then

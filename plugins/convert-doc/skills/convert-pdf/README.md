@@ -4,7 +4,22 @@ Markdown を Wiki デザインの PDF に変換するスキル。`convert-doc` �
 
 ## このドキュメントについて
 
-このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。
+このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。スキル動作の本体は `SKILL.md` および `references/` 配下を参照してください。
+
+## 導入手順
+
+本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法はリポジトリルートの [`README.md`](../../../../README.md) を参照してください。
+
+```text
+/plugin install convert-doc@dmajima-claude-plugins
+```
+
+初回実行時に `scripts/setup/setup_venv.sh` が以下を自動で実行します。
+
+1. `playwright / markdown / Pygments / rcssmin / rjsmin / Pillow` のインストール
+2. `playwright install chromium` による Chromium バイナリのダウンロード（~120MB）
+
+`PLAYWRIGHT_BROWSERS_PATH` 環境変数で Chromium キャッシュを共有すると、再ダウンロードを避けられます。詳細は `references/setup.md` を参照。
 
 ## 仕組み
 

@@ -25,21 +25,38 @@ from typing import Optional
 def locate_convert_html_script() -> Path:
     """Return the path to the sibling convert-html skill's convert.py.
 
-    Layout (expected):
-      plugins/convert-doc/skills/convert-pdf/scripts/convert/convert_pdf.py  (this file)
-      plugins/convert-doc/skills/convert-html/scripts/convert/convert.py     (target)
+    Resolution order:
+      1. ``CONVERT_HTML_SCRIPT`` env var (explicit override)
+      2. ``CLAUDE_PLUGIN_ROOT`` env var (set by Claude Code at runtime) +
+         ``skills/convert-html/scripts/convert/convert.py``
+      3. Sibling-skill fallback derived from ``__file__`` (same plugin tree)
     """
+    explicit = os.environ.get("CONVERT_HTML_SCRIPT")
+    if explicit:
+        p = Path(explicit)
+        if p.exists():
+            return p
+
+    plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if plugin_root:
+        candidate = Path(plugin_root) / "skills" / "convert-html" / "scripts" / "convert" / "convert.py"
+        if candidate.exists():
+            return candidate
+
+    # Fallback: same-plugin sibling derived from this file's location
     this_file = Path(__file__).resolve()
-    # scripts/convert/ -> scripts/ -> skills/convert-pdf/ -> skills/ -> convert-html/scripts/convert/convert.py
+    # scripts/convert/ -> scripts/ -> skills/convert-pdf/
     skill_dir = this_file.parent.parent.parent
     sibling = skill_dir.parent / "convert-html" / "scripts" / "convert" / "convert.py"
-    if not sibling.exists():
-        print(
-            f"Error: sibling convert-html script not found: {sibling}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
-    return sibling
+    if sibling.exists():
+        return sibling
+
+    print(
+        "Error: convert-html script not found via $CONVERT_HTML_SCRIPT, "
+        "$CLAUDE_PLUGIN_ROOT, or sibling-skill fallback.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 
 def parse_margin(value: str) -> dict:
@@ -99,21 +116,23 @@ def render_pdf(
     print(f"[convert-pdf] launching chromium")
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        context = browser.new_context()
-        page = context.new_page()
-        page.goto(url, wait_until="networkidle")
-        # Ensure custom fonts and inline SVG are fully laid out before snapshot
-        page.wait_for_timeout(300)
-        output_pdf.parent.mkdir(parents=True, exist_ok=True)
-        page.pdf(
-            path=str(output_pdf),
-            format=paper_format,
-            landscape=landscape,
-            margin=margin,
-            print_background=print_background,
-            prefer_css_page_size=False,
-        )
-        browser.close()
+        try:
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto(url, wait_until="networkidle")
+            # Ensure custom fonts and inline SVG are fully laid out before snapshot
+            page.wait_for_timeout(300)
+            output_pdf.parent.mkdir(parents=True, exist_ok=True)
+            page.pdf(
+                path=str(output_pdf),
+                format=paper_format,
+                landscape=landscape,
+                margin=margin,
+                print_background=print_background,
+                prefer_css_page_size=False,
+            )
+        finally:
+            browser.close()
 
 
 def main() -> None:

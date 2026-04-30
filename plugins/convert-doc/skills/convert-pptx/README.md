@@ -4,7 +4,17 @@ Markdown を Wiki デザインの PowerPoint (PPTX) に変換するスキル。`
 
 ## このドキュメントについて
 
-このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。
+このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。スキル動作の本体は `SKILL.md` および `references/` 配下を参照してください。
+
+## 導入手順
+
+本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法はリポジトリルートの [`README.md`](../../../../README.md) を参照してください。
+
+```text
+/plugin install convert-doc@dmajima-claude-plugins
+```
+
+依存パッケージ（python-pptx / Pillow / requests / Pygments）は初回実行時に `scripts/setup/setup_venv.sh` が自動で venv を構築してインストールします。mermaid 図の取得には `mermaid.ink` への HTTPS 接続が必要です（オフライン環境ではテキストコードブロックにフォールバックします）。
 
 ## 仕組み
 

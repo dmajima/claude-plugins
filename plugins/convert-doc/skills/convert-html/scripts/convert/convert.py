@@ -8,6 +8,7 @@ Dependencies: markdown, Pygments, rcssmin, rjsmin, Pillow
 
 import argparse
 import base64
+import html as html_lib
 import io
 import json
 import mimetypes
@@ -46,14 +47,18 @@ def fetch_mermaid_svg(diagram_code: str, retries: int = 3, delay: float = 2.0) -
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "convert-html/1.0"})
             with urllib.request.urlopen(req, timeout=20) as resp:
+                ctype = resp.headers.get("Content-Type", "")
+                if "image/svg+xml" not in ctype and "text/xml" not in ctype:
+                    raise ValueError(f"unexpected Content-Type: {ctype}")
                 return resp.read().decode("utf-8")
         except Exception as e:
             last_err = e
             if attempt < retries - 1:
                 time.sleep(delay)
     return (
-        f'<div class="mermaid-error">Mermaid変換エラー ({retries}回試行): {last_err}'
-        f"<br><pre>{diagram_code}</pre></div>"
+        f'<div class="mermaid-error">Mermaid変換エラー ({retries}回試行): '
+        f"{html_lib.escape(str(last_err))}"
+        f"<br><pre>{html_lib.escape(diagram_code)}</pre></div>"
     )
 
 
@@ -82,17 +87,28 @@ def compress_image_bytes(img_path: Path, mime: str) -> Optional[bytes]:
         return None
 
 
+def _is_within(parent: Path, child: Path) -> bool:
+    """Return True if `child` resolves to a path inside (or equal to) `parent`."""
+    try:
+        parent_r = parent.resolve()
+        child_r = child.resolve()
+    except OSError:
+        return False
+    return child_r == parent_r or parent_r in child_r.parents
+
+
 def embed_image(src: str, base_dir: Path) -> str:
     """Embed a local image as base64 data URI.
     Images over IMAGE_COMPRESS_THRESHOLD bytes are compressed before encoding.
-    Returns original src if the image is remote or not found.
+    Returns original src if the image is remote, not found, or escapes base_dir.
     """
     if src.startswith("data:") or src.startswith("http://") or src.startswith("https://"):
         return src
-    img_path = base_dir / src
-    if not img_path.exists():
-        img_path = Path(src)
-    if not img_path.exists():
+    candidate = base_dir / src
+    if candidate.exists() and _is_within(base_dir, candidate):
+        img_path = candidate
+    else:
+        # `src` が絶対パス等で base_dir 外を指す場合は埋め込まずに元の src を返す
         return src
     mime, _ = mimetypes.guess_type(str(img_path))
     if not mime:
@@ -286,7 +302,9 @@ def process_mermaid_blocks(md_text: str) -> tuple:
         counter[0] += 1
         key = f"MERMAID_PLACEHOLDER_{counter[0]}_END"
         svg = fetch_mermaid_svg(code)
-        if svg.startswith("<svg") or svg.startswith("<?xml"):
+        # BOM・先頭空白を除いた先頭がSVG/XML宣言で始まることを厳格チェック
+        svg_stripped = svg.lstrip("﻿").lstrip()
+        if svg_stripped.startswith("<svg") or svg_stripped.startswith("<?xml"):
             # init ディレクティブに background が指定されている場合は注入しない
             background = None if has_background_in_init(code) else "#ffffff"
             svg = postprocess_svg(svg, background=background)
@@ -357,11 +375,20 @@ def load_js_features(js_dir: Path) -> list:
 def combine_js_assets(js_dir: Path, selected_files: list) -> str:
     """Read and concatenate selected JS feature files in order.
     Each file is wrapped with a comment header for traceability.
+    Filenames containing path separators or `..` are rejected to prevent
+    traversal outside js_dir.
     Returns a single JS string safe to embed in <script> tags.
     """
     parts = []
     for filename in selected_files:
+        # ファイル名に `/`・`\`・`..` が含まれる場合は拒否（パストラバーサル対策）
+        if "/" in filename or "\\" in filename or filename == ".." or filename.startswith(".."):
+            print(f"Warning: invalid JS feature filename rejected: {filename}", file=sys.stderr)
+            continue
         js_path = js_dir / filename
+        if not _is_within(js_dir, js_path):
+            print(f"Warning: JS feature path escapes assets dir: {filename}", file=sys.stderr)
+            continue
         content = read_js_asset(js_path)
         if content:
             parts.append(f"/* --- {filename} --- */\n{content}")

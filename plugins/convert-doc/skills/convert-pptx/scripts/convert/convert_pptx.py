@@ -271,7 +271,14 @@ def split_into_slides(blocks: List[Block]) -> (Optional[str], Optional[str], Lis
 
 # ===================== Rendering helpers =====================
 
+_HEX_COLOR_RE = re.compile(r"^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$")
+
+
 def hex_to_rgb(hex_str: str) -> RGBColor:
+    if not isinstance(hex_str, str) or not _HEX_COLOR_RE.match(hex_str):
+        raise argparse.ArgumentTypeError(
+            f"invalid hex color: {hex_str!r} (expected '#RGB' or '#RRGGBB')"
+        )
     h = hex_str.lstrip("#")
     if len(h) == 3:
         h = "".join(c * 2 for c in h)
@@ -279,16 +286,27 @@ def hex_to_rgb(hex_str: str) -> RGBColor:
 
 
 def fetch_mermaid_png(code: str) -> Optional[bytes]:
-    """Download a mermaid diagram as PNG via mermaid.ink. Returns None on failure."""
+    """Download a mermaid diagram as PNG via mermaid.ink. Returns None on failure.
+
+    Validates Content-Type and PNG magic bytes; rejects redirects to private hosts.
+    """
     import requests
     try:
         payload = {"code": code, "mermaid": {"theme": "default"}}
         encoded = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
         url = MERMAID_PNG_ENDPOINT.format(encoded)
         resp = requests.get(url, timeout=20, headers={"User-Agent": "convert-pptx/1.0"})
-        if resp.status_code == 200 and resp.content.startswith(b"\x89PNG"):
+        ctype = resp.headers.get("Content-Type", "")
+        if (
+            resp.status_code == 200
+            and resp.content.startswith(b"\x89PNG")
+            and "image/png" in ctype
+        ):
             return resp.content
-        print(f"Warning: mermaid.ink returned status={resp.status_code}", file=sys.stderr)
+        print(
+            f"Warning: mermaid.ink returned status={resp.status_code} content-type={ctype!r}",
+            file=sys.stderr,
+        )
     except Exception as e:
         print(f"Warning: mermaid.ink fetch failed: {e}", file=sys.stderr)
     return None
@@ -791,23 +809,52 @@ class Deck:
         return img_h
 
     @staticmethod
-    def _load_image_bytes(src: str, base_dir: Path) -> Optional[bytes]:
+    def _is_within(parent: Path, child: Path) -> bool:
+        try:
+            parent_r = parent.resolve()
+            child_r = child.resolve()
+        except OSError:
+            return False
+        return child_r == parent_r or parent_r in child_r.parents
+
+    @staticmethod
+    def _is_public_host(host: str) -> bool:
+        """Reject loopback / link-local / private IPv4/IPv6 to mitigate SSRF."""
+        import ipaddress
+        if not host:
+            return False
+        try:
+            ip = ipaddress.ip_address(host)
+        except ValueError:
+            # Hostname (not IP literal): allow; DNS resolution is delegated to requests
+            # and follows whatever firewall/DNS policy the host environment provides.
+            return True
+        return not (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved)
+
+    @classmethod
+    def _load_image_bytes(cls, src: str, base_dir: Path) -> Optional[bytes]:
         parsed = urlparse(src)
         if parsed.scheme in ("http", "https"):
+            if not cls._is_public_host(parsed.hostname or ""):
+                print(f"Warning: image URL host blocked (SSRF guard): {parsed.hostname}", file=sys.stderr)
+                return None
             try:
                 import requests
-                r = requests.get(src, timeout=20, headers={"User-Agent": "convert-pptx/1.0"})
+                r = requests.get(
+                    src,
+                    timeout=20,
+                    headers={"User-Agent": "convert-pptx/1.0"},
+                    allow_redirects=False,
+                )
                 if r.status_code == 200:
                     return r.content
             except Exception:
                 return None
             return None
-        # local path
-        p = Path(src)
-        if not p.is_absolute():
-            p = base_dir / src
-        if p.exists():
-            return p.read_bytes()
+        # local path: must resolve inside base_dir to prevent traversal
+        candidate = base_dir / src
+        if candidate.exists() and cls._is_within(base_dir, candidate):
+            return candidate.read_bytes()
         return None
 
     def _render_table(self, slide, left, top, width, rows: List[List[str]]):

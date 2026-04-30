@@ -38,7 +38,7 @@ mkdir -p "$SESSION_DIR/workspace"
 ### 2. venv 構築
 
 venv は `workspace/` 配下に作成する（`workspace/.venv/`）。
-スキル自身のスクリプトは `${CLAUDE_SKILL_DIR}` 経由で参照する（[portable-paths ルール](../../../rules/skills/portable-paths.md) 参照）。
+スキル自身のスクリプトは `${CLAUDE_SKILL_DIR}` 経由で参照する（インストール形態に依存しないポータブルパス記法）。
 
 ```bash
 bash "${CLAUDE_SKILL_DIR}/scripts/setup/setup_venv.sh" "$SESSION_DIR/workspace"

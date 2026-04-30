@@ -1,12 +1,23 @@
 # convert-html スキル
 
-> **このファイルはスキルの利用者・開発者向けの人間用リファレンスです。**
-> Claude のスキル動作では使用されません。
+## このドキュメントについて
+
+このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。スキル動作の本体は `SKILL.md` および `references/` 配下を参照してください。
 
 ## 概要
 
 Markdown ファイルを Wiki スタイルのデザインが適用された自己完結型 HTML ファイルに変換するスキル。
 変換後の HTML は外部ファイルへの依存なしに単体で機能し、要件定義資料・設計書・お客様向け提出物として使用できる。
+
+## 導入手順
+
+本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法はリポジトリルートの [`README.md`](../../../../README.md) を参照してください。
+
+```text
+/plugin install convert-doc@dmajima-claude-plugins
+```
+
+依存パッケージ（markdown / Pygments / rcssmin / rjsmin / Pillow）は初回実行時に `scripts/setup/setup_venv.sh` が自動で venv を構築してインストールします。
 
 ## 使い方
 
