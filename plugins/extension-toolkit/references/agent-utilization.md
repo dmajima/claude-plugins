@@ -147,7 +147,7 @@ Agent({ subagent_type: "description-trigger-reviewer", prompt: "..." })     # �
 | 例外（上限） | プラグイン全体レビュー（フック含有時の `plugin-review-team`）は 6 名まで許容 |
 | 最大 | 標準 5 名、例外条項該当時 6 名（議論調整コストの上限） |
 
-### 6.1 チーム機能が利用できない環境でのフォールバック
+### 6.1 チーム機能が利用できない環境でのフォールバック（ADR-017 準拠）
 
 エージェントチーム（`TeamCreate` / Agent Teams 機能）は Claude Code の特定バージョン・特定環境でのみ利用可能。利用できない環境では **Agent ツール（subagent_type 指定）でメンバーを個別並列起動** することで同等のレビュー体験を提供する。
 

@@ -1,6 +1,6 @@
 # ユーザ対話ルール（SSOT）
 
-ユーザに選択や入力を求める際の手段を統一する。**Claude Code の UI（AskUserQuestion）を原則として使用** する。
+ユーザに選択や入力を求める際の手段を統一する。**Claude Code の UI（AskUserQuestion）を原則として使用** する（ADR-013 準拠）。
 
 ## 1. 選択 UI 利用の原則
 
