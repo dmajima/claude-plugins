@@ -11,6 +11,10 @@
 | XR-4 | リトライ上限 | G-3 |
 | XR-5 | Unknown 警告閾値 | F-1 |
 
+> **SSOT 注記**: 本表が XR の Phase 適用先の **唯一の正典**。`phase-flow.md` の各 Phase 見出し副題に
+> 同等列挙が存在するが、それは実装者の便宜のための再掲であり、規範性は本表のみ持つ。差異が生じた
+> 場合は本表を信頼し `phase-flow.md` 側を更新する（ADR-PU-004 SSOT 配置原則準拠）。
+
 ---
 
 ## XR-1: 入力検証
@@ -46,6 +50,7 @@
 | `..` を含まない | 含めば拒否 |
 | 絶対パス | Windows: 正規表現 `^[A-Za-z]:[\\/]`、POSIX: 正規表現 `^/` |
 | 改行・null 文字を含まない | 含めば拒否 |
+| シェル特殊文字を含まない | `'`（シングルクォート）/ `"`（ダブルクォート）/ `` ` ``（バッククォート）/ `$` / `;` / `\|` / `&` / `<` / `>` を含めば拒否（POSIX のパスは合法だが PowerShell / Bash の文字列展開で脱出されるリスクを排除） |
 | UNC パスでない | Windows で `^\\\\` で始まる場合は拒否（リモート共有上の細工された settings.json 経由の攻撃面排除） |
 | シンボリックリンク・ジャンクションでない | Windows: PowerShell `Get-Item -LiteralPath '<repo>' \| Select-Object LinkType` で `null` でない場合は拒否（リパースポイント検出）。`-LiteralPath` を使い、`<repo>` は単一引用符でクォートして PowerShell プロバイダ構文（`Registry::` 等）への解釈を抑止。POSIX: `test -L <repo>` で真なら拒否 |
 | 実在ディレクトリ | Read ツールで存在確認できない場合は拒否 |
@@ -121,13 +126,13 @@ CLI 出力をユーザに表示する直前（テーブルセルに格納する�
 | パターン | 置換後 | 備考 |
 |---------|-------|------|
 | `(?i)(token\|password\|secret\|authorization\|bearer\|x-api-key)[:=\s]+\S+` | `<key>=***REDACTED***` | 汎用 key=value（空白区切りの `Bearer xxx` も捕捉） |
-| `[a-z][a-z0-9+.-]*://([^@/\s]+)@` | `<scheme>://***@` | URL 埋め込み認証（`http(s)/git/ssh/ftp` 等の任意スキーム、`user:pass@` / PAT 単独 `token@` / URL エンコード `%40` を含む形式を全て捕捉） |
+| `(?i)[a-z][a-z0-9+.-]*://([^@/\s]+)@` | `<scheme>://***@` | URL 埋め込み認証（`http(s)/git/ssh/ftp` 等の任意スキーム、大小文字スキームを問わず `user:pass@` / PAT 単独 `token@` / URL エンコード `%40` を含む形式を全て捕捉） |
 | `([a-zA-Z_][\w-]*)@([\w.-]+):` | `***@<host>:` | scp-like SSH URL（`git@github.com:user/repo.git` 形式の内部ホスト名・ユーザ名を伏字） |
 | `ghp_[A-Za-z0-9]{36,}` / `github_pat_[A-Za-z0-9_]{82,}` / `gho_[A-Za-z0-9]{36,}` / `ghs_[A-Za-z0-9]{36,}` / `ghu_[A-Za-z0-9]{36,}` | `***GITHUB_TOKEN***` | GitHub PAT |
 | `glpat-[A-Za-z0-9_-]{20,}` | `***GITLAB_TOKEN***` | GitLab PAT |
 | `AKIA[0-9A-Z]{16}` / `ASIA[0-9A-Z]{16}` | `***AWS_KEY_ID***` | AWS アクセスキー |
 | `xox[baprs]-[A-Za-z0-9-]{10,}` | `***SLACK_TOKEN***` | Slack トークン |
-| `eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}` | `***JWT***` | JWT |
+| `eyJ[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}` | `***JWT***` | JWT（実用 JWT のヘッダ・ペイロード・署名最小長を踏まえ各セグメント 16 字以上に制限し誤検知抑制） |
 | `AIza[0-9A-Za-z_-]{35}` | `***GOOGLE_API_KEY***` | Google API Key |
 | `sk_(live\|test)_[A-Za-z0-9]{24,}` | `***STRIPE_KEY***` | Stripe API Key |
 | `DefaultEndpointsProtocol=[^;]+;AccountKey=[^;]+` | `***AZURE_STORAGE***` | Azure ストレージ接続文字列 |
@@ -139,7 +144,7 @@ CLI 出力をユーザに表示する直前（テーブルセルに格納する�
 | `pypi-AgEIcH[A-Za-z0-9_-]{70,}` | `***PYPI_TOKEN***` | PyPI Token |
 | `https://discord(?:app)?\.com/api/webhooks/[0-9]+/[A-Za-z0-9_-]+` | `***DISCORD_WEBHOOK***` | Discord Webhook（Bot 投稿経路）|
 | `[0-9]{8,}:AA[A-Za-z0-9_-]{33}` | `***TELEGRAM_BOT_TOKEN***` | Telegram Bot Token |
-| `SK[a-f0-9]{32}` / `AC[a-f0-9]{32}` | `***TWILIO_KEY***` | Twilio Account SID / Secret |
+| `(?<![A-Za-z0-9])(SK\|AC)[a-f0-9]{32}(?![A-Za-z0-9])` | `***TWILIO_KEY***` | Twilio Account SID（`AC` + 32 hex）/ Auth Token（`SK` + 32 hex）。前後単語境界で誤検知抑制 |
 | `machine\s+\S+\s+login\s+\S+\s+password\s+\S+` | `<netrc-credential>` | .netrc 形式 |
 | `/[\w./-]+\.pem`、`id_rsa`、`id_ed25519` | `<ssh-key-path>` | SSH 鍵パス |
 | `C:\\Users\\[^\\]+` / `/Users/[^/]+` / `/home/[^/]+` | `<user-home>` | ローカルパス内のユーザ名 |
@@ -195,6 +200,8 @@ GitLab PAT・Stripe Key 等の具体パターン）で先処理されるため�
 | `error message: abcdef0123456789...（40+字）` | マスク（行末・空白文脈） |
 | プラグイン名 `extension-toolkit-long-name`（30+字、テーブル名前列） | マスクしない（列単位例外） |
 | 長さ 35 字（40 字未満）の任意トークン `abcdef0123456789abcdef0123456789abc` | マスクしない（40 字未満は規則ベース対象外なら素通り） |
+| プラグイン識別子 `extension-toolkit-long-name@dmajima-claude-plugins-marketplace`（合計 60+ 字、備考列に出現） | マスクしない（`@` 構造が識別子内文脈外判定で除外。XR-1 で各 64 字以下に制限済みのため安全） |
+| 備考列の `Twilio sid: ACabcdef...32hex` | マスク（`AC` + 32 hex の Twilio パターン、単語境界判定で誤検知抑制） |
 
 #### **重要な例外（テーブル列単位）**
 

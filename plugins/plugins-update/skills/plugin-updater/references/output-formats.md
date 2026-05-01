@@ -12,6 +12,10 @@
 
 `Missing` 列は B-1（マーケットプレイス更新）では現在の CLI が MP 単位の Missing を返さないため `-` 固定
 （将来 CLI が MP レベルで `not found` を返すようになった場合は仕様改訂）。
+**列名定義**: 「成功」= Updated（実際に更新が走ったエントリ）、「変更なし」= No change（既に最新版）、
+「Missing」= マーケットプレイスから消失（リトライ対象外）、「スキップ」= XR-1 不正値 / XR-2 サーキットブレーカー作動 /
+A-2 MP 未登録等で対象外、「失敗」= Failed（リトライ対象）、「Unknown」= exit code と出力解析で分類できなかった
+要手動確認エントリ。
 
 ```markdown
 ## 更新結果サマリ
@@ -147,7 +151,7 @@ AskUserQuestion({
     question: "<N> 件の更新失敗があります（マーケットプレイス: <M> 件 Failed / プラグイン: <P> 件 Failed）。どう対応しますか？",
     header: "更新失敗対応",
     options: [
-      { label: "全件リトライ", description: "Failed エントリをもう一度更新する" },
+      { label: "全件リトライ", description: "Failed エントリをもう一度更新する。マーケットプレイス Failed 時は Phase B を全件再実行するため、サーキットブレーカー作動中の MP も再試行され得る（XR-2 の設計上の許容事項）" },
       // N <= 5 のときのみ次の選択肢を含める
       { label: "個別に判断", description: "Failed エントリごとにリトライ / スキップを選択" },
       { label: "全件スキップ", description: "Failed エントリは諦めて完了する" }

@@ -45,7 +45,9 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 - **シークレット非接触**: `settings.json` 系の `enabledPlugins` 以外のキーをメインコンテキストに
   載せない（Grep ブロック終端検出 + フェイルクローズ。Phase A-Sec を厳守）
 - **Failed のみリトライ対象**: Missing は CLI リトライで回復しないため Phase G の対象外
-  （ADR-PU-007）
+  （ADR-PU-007）。**サーキットブレーカー（XR-2）作動中の MP は G-3 のプラグイン単位リトライから
+  除外** されるが、**Phase B 全件リトライの対象からは除外されない**（Phase B が MP 単位個別指定を
+  サポートしないための設計上の許容事項。詳細は phase-flow.md G-3 を参照）
 - **全文 Read 禁止**: `settings.json` 全文を Read することは禁止。Grep + ブロック終端検出で
   範囲を限定する
 
@@ -70,6 +72,8 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 ## 実行フロー（概要）
 
 詳細は [`references/phase-flow.md`](references/phase-flow.md) を参照。
+Phase 番号体系（`A-0-1` の 3 階層 / `A-1` の 2 階層 / `B-1` のサブフェーズ）の規約は
+[`references/architecture-decisions.md`](references/architecture-decisions.md) ADR-PU-003「Phase 番号体系」を参照。
 
 | Phase | 概要 |
 |-------|------|
