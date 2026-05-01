@@ -1,6 +1,6 @@
 {
   "name": "plugins-update",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "インストール済みマーケットプレイス・プラグインを全スコープ（User/Project/Local）で一括更新するコマンドプラグイン",
   "author": {
     "name": "dmajima"

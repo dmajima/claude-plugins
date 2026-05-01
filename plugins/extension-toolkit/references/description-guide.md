@@ -111,6 +111,31 @@ argument-hint: <種別> <対象名> [--non-interactive] [--full-auto]
 | `argument-hint: 引数を入力してください` | 補完で具体的に何を入れるか分からない | 必須引数を `<...>` で明示 |
 | `argument-hint` 不在 + 本文の `$ARGUMENTS` 利用 | `/` 補完で引数の存在に気付けない | frontmatter に追加 |
 | `description` に引数仕様を併記 | SSOT 違反・60 文字制限を圧迫 | `argument-hint` に集約 |
+| `argument-hint: [--dry-run] ...`（クォートなし） | YAML が `[...]` をフローシーケンスとして解析失敗 | 値全体をダブルクォートで囲む（次節参照） |
+
+#### 4.1.3 YAML エスケープ規則（必須）
+
+`argument-hint` の値が **YAML 特殊文字で始まる** 場合、ダブルクォートで囲まないと YAML パースエラーになる（GitHub プレビューや `frontmatter valid` 機械チェックで失敗）。
+
+| 値の先頭文字 | クォート要否 | 例 |
+|-----------|----------|---|
+| `<`（必須引数開始） | 不要 | `argument-hint: <入力ファイル> [--flag]` |
+| `[`（省略可引数 / フラグ開始） | **必須** | `argument-hint: "[--dry-run] [--scope user]"` |
+| `{` `&` `*` `?` `!` `\|` `>` `%` `@` `` ` `` で始まる | **必須** | `argument-hint: "{...}"` 等 |
+
+YAML 仕様上、行頭の `[` はフローシーケンス（配列）の開始記号として解釈される。
+値中に `|`（OR 区切り）や `:` を含む場合もクォート推奨。
+
+```yaml
+# NG: YAML パースエラー（[...] が配列リテラルとして解釈される）
+argument-hint: [--dry-run] [--scope user|project|local|all]
+
+# OK: 値全体をダブルクォートで囲む
+argument-hint: "[--dry-run] [--scope user|project|local|all]"
+```
+
+検証は `frontmatter valid`（[`validation-rules.md`](validation-rules.md) 節 1）で機械的に検出される。
+PR レビュー時には GitHub の Markdown プレビューで `Error in user YAML` が出ていないかを確認すること。
 
 ## 5. エージェントの description
 

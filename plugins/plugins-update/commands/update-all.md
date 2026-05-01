@@ -1,6 +1,6 @@
 ---
 description: 全マーケットプレイス・プラグインを順序付きで一括更新（User/Project/Local 個別処理）
-argument-hint: [--dry-run] [--scope user|project|local|all]
+argument-hint: "[--dry-run] [--scope user|project|local|all]"
 ---
 
 ユーザの引数: $ARGUMENTS
