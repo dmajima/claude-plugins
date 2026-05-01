@@ -7,9 +7,9 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 ## このドキュメントについて
 
 このファイルは **人間向けのリファレンス** です。Claude Code がプラグイン動作中に参照することはありません。
-本プラグインはスキルを持たずコマンドのみを提供するため、コマンドの動作本体は
-`commands/update-all.md` を参照してください。設計判断は `references/architecture-decisions.md` および
-`references/cross-cutting-rules.md` に記録しています。
+コマンド本体は `commands/update-all.md`（トリガーと引数解釈のみ）を、実作業手順は
+`skills/plugin-updater/SKILL.md` および同 `references/` 配下を参照してください。
+コマンドとスキルの責務分離は ADR-PU-008 を参照。
 
 ## 提供コマンド
 
@@ -164,7 +164,9 @@ OS パッケージマネージャ管理下に存在することを確認して�
 
 ## 動作概要
 
-`commands/update-all.md` で実装する Phase 構成の概略です（詳細はコマンド本体を参照）。
+`/update-all` コマンドはトリガー / 引数解釈のみを担当し、実作業は `plugin-updater` スキルへ
+委譲します（ADR-PU-008）。Phase 構成の概略は以下のとおり（詳細は
+`skills/plugin-updater/references/phase-flow.md` を参照）。
 
 | Phase | 処理内容 | 使用 CLI |
 |-------|---------|---------|
@@ -181,7 +183,8 @@ OS パッケージマネージャ管理下に存在することを確認して�
 
 ### 横断ルール
 
-各 Phase は以下 5 つの横断関心事に従います（規則本体・閾値・例外条項は `references/cross-cutting-rules.md` を参照）。
+各 Phase は以下 5 つの横断関心事に従います（規則本体・閾値・例外条項は
+`skills/plugin-updater/references/cross-cutting-rules.md` を参照）。
 
 | ID | ルール |
 |----|------|
@@ -204,13 +207,17 @@ OS パッケージマネージャ管理下に存在することを確認して�
 | exit code 一次判定 + Unknown 区分（Missing はリトライ対象外） | ADR-PU-005 |
 | サーキットブレーカー（MP 単位累計 3 件） | ADR-PU-006 |
 | 失敗対応の対話モデル（Failed のみリトライ・5 件閾値で個別判断除外） | ADR-PU-007 |
+| コマンドとスキルの責務分離（トリガー / 実作業） | ADR-PU-008 |
 
 ## 技術スタック・アーキテクチャ
 
 設計判断の詳細は次を参照してください:
 
-- [`references/architecture-decisions.md`](references/architecture-decisions.md) — ADR-PU-001〜007
-- [`references/cross-cutting-rules.md`](references/cross-cutting-rules.md) — XR-1〜XR-5 の SSOT
+- [`skills/plugin-updater/SKILL.md`](skills/plugin-updater/SKILL.md) — 実作業スキルの概要
+- [`skills/plugin-updater/references/architecture-decisions.md`](skills/plugin-updater/references/architecture-decisions.md) — ADR-PU-001〜008
+- [`skills/plugin-updater/references/cross-cutting-rules.md`](skills/plugin-updater/references/cross-cutting-rules.md) — XR-1〜XR-5 の SSOT
+- [`skills/plugin-updater/references/phase-flow.md`](skills/plugin-updater/references/phase-flow.md) — Phase A-0〜G 詳細手順
+- [`skills/plugin-updater/references/output-formats.md`](skills/plugin-updater/references/output-formats.md) — Phase F の出力フォーマット集
 
 ### バージョン同期方針
 
@@ -284,13 +291,18 @@ git checkout <commit-hash>
 ```text
 plugins-update/
 ├── .claude-plugin/
-│   └── plugin.json                       # プラグイン定義
-├── README.md                              # このファイル（人間向けリファレンス）
+│   └── plugin.json                              # プラグイン定義
+├── README.md                                     # このファイル（人間向けリファレンス）
 ├── commands/
-│   └── update-all.md                      # /update-all コマンド本体
-└── references/
-    ├── architecture-decisions.md          # ADR-PU-001〜007（設計判断記録）
-    └── cross-cutting-rules.md             # XR-1〜XR-5（横断ルール SSOT）
+│   └── update-all.md                             # /update-all コマンド本体（トリガー + 引数解釈のみ）
+└── skills/
+    └── plugin-updater/
+        ├── SKILL.md                              # 実作業スキル本体（Phase A-0〜G 概要）
+        └── references/
+            ├── phase-flow.md                     # Phase A-0〜G 詳細手順
+            ├── output-formats.md                 # Phase F のテーブル / 警告 / 質問文フォーマット
+            ├── cross-cutting-rules.md            # XR-1〜XR-5（横断ルール SSOT）
+            └── architecture-decisions.md         # ADR-PU-001〜008（設計判断記録）
 ```
 
 ## 関連プラグイン

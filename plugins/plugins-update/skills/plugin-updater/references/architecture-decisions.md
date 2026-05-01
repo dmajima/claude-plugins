@@ -12,6 +12,7 @@
 | ADR-PU-005 | exit code 一次判定 + Unknown 区分 | Accepted |
 | ADR-PU-006 | サーキットブレーカー閾値と粒度 | Accepted |
 | ADR-PU-007 | 失敗対応の対話モデル | Accepted |
+| ADR-PU-008 | コマンドとスキルの責務分離（トリガー / 実作業） | Accepted |
 
 ---
 
@@ -459,3 +460,72 @@ Phase G での失敗対応をどのような対話形式で実施するかを決
 将来的に AskUserQuestion がテーブル形式の選択 UI を提供したら、件数上限を緩和できる可能性がある。
 Missing の自動除外（`enabledPlugins` から削除する別フェーズ）を本プラグインに追加するかは
 ユーザの設定変更権限の観点で要検討（現状はユーザ手動対応に委ねる）。
+
+---
+
+## ADR-PU-008: コマンドとスキルの責務分離（トリガー / 実作業）
+
+### Context
+
+ADR-PU-001 では「スキル化を却下」と判断した（理由: スキルは AI が自動起動する単位だが、本機能は
+明示的なユーザートリガー前提のため）。しかし継続的なレビューで以下の構造的問題が浮上した:
+
+- コマンド本文が肥大化（460 行超）し、Phase 詳細・横断ルール参照・サニタイズ規則・ユーザ対話が
+  一つのファイルに集約されている
+- サブフェーズ番号体系（A-0-1 / B-1 / F-0）の混在で命名整合性が保てない
+- F-0 を独立サブフェーズから NOTE に再構成した結果、cross-cutting-rules.md の `F-0 サニタイズ規則本体`
+  という参照が宙吊りになる等、SSOT 階層の整合性が脆弱化
+- Phase 詳細を AI が読み解く際の認知負荷が高い
+
+ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー」の文脈で行われたが、本 ADR-PU-008 は
+「コマンド = ユーザートリガー / スキル = 実作業の SSOT」という別の責務分離軸での判断。
+両者は矛盾しない（ADR-PU-001 は配布単位の判断、ADR-PU-008 はプラグイン内の実装責務分離）。
+
+### Decision
+
+`/update-all` コマンドは **トリガーと引数解釈のみ** を担当し、実作業（Phase A-0〜G、横断ルール適用、
+ユーザ対話）は **`plugin-updater` スキルに委譲** する。
+
+- `commands/update-all.md`: 約 30 行。引数解釈 + Skill ツール呼び出しのみ。
+- `skills/plugin-updater/SKILL.md`: スキル概要 + Phase 全体像 + references への参照。
+- `skills/plugin-updater/references/`:
+  - `phase-flow.md`: Phase A-0〜G 詳細手順（コマンド本文から分離）
+  - `output-formats.md`: Phase F のテーブル / 警告 / 質問文フォーマット集約
+  - `cross-cutting-rules.md`: XR-1〜XR-5 SSOT（移管）
+  - `architecture-decisions.md`: ADR-PU-001〜008 SSOT（移管）
+
+### Rationale
+
+- **責務分離（SRP）**: コマンドは「ユーザー入力の解釈」、スキルは「Phase の実行」と責務を直交化
+- **SSOT 階層の純化**: Phase 詳細・サニタイズ規則・ADR が同一スキル配下に集約され、
+  `F-0` のような Phase 番号と SSOT 名称の混乱が構造的に排除される
+- **AI 解釈容易性**: スキルは AI が起動時に読み込む単位として設計されており、Phase 詳細を持つのに
+  自然な配置
+- **将来拡張への耐性**: 追加コマンド（例: `update-one`、`prune-all`）が同じスキルを共有可能
+- **コマンド本文の単純化**: 約 460 行 → 約 30 行で、レビューでの「肥大化指摘」が構造的に解消
+
+### Trade-offs
+
+- **ファイル数増**: 4 ファイル → 7 ファイル
+- **インストール容量増**: わずかに増加（数 KB 程度）
+- **コマンドとスキルで `description` の重複管理**: 軽微だが SSOT 違反の懸念あり
+- **スキル化により AI トリガー判定対象になる**: ただし `description` がスキル経由で起動される
+  ことを示す内容のため、自動起動による意図しない動作のリスクは小さい
+
+### Alternatives Considered
+
+- **コマンド本文に Phase 詳細を維持**: 旧 v2.x までの方式。レビューで継続的に「肥大化」指摘を
+  受けた。却下。
+- **スキルだけで配布（コマンドなし）**: `/update-all` の明示的トリガーが失われ、
+  ADR-PU-001 で却下した理由と同じ問題が再発。却下。
+- **Phase 詳細を `commands/` 配下のサブファイル（例: `commands/update-all-phases.md`）に分割**:
+  Claude Code の規約上、`commands/` 配下は単一スラッシュコマンドファイルが基本で、
+  サブファイル参照の慣行が確立していない。却下。
+
+### Future Direction
+
+- 追加メンテナンスコマンド（`uninstall-all` / `prune-all` 等）が登場した場合、`plugin-updater`
+  スキルから `update-one(scope, plugin, marketplace)` 抽象を切り出して共有する（ADR-PU-002 /
+  ADR-PU-003 Future Direction と連動）
+- スキル `description` がコマンドと重複する問題は、スキル側を「実作業の説明」に特化することで
+  軽減を継続検討
