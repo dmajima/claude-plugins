@@ -52,7 +52,7 @@
 | 改行・null 文字を含まない | 含めば拒否 |
 | シェル特殊文字を含まない | `'`（シングルクォート）/ `"`（ダブルクォート）/ `` ` ``（バッククォート）/ `$` / `;` / `\|` / `&` / `<` / `>` を含めば拒否（POSIX のパスは合法だが PowerShell / Bash の文字列展開で脱出されるリスクを排除） |
 | UNC パスでない | Windows で `^\\\\` で始まる場合は拒否（リモート共有上の細工された settings.json 経由の攻撃面排除） |
-| シンボリックリンク・ジャンクションでない | Windows: PowerShell `Get-Item -LiteralPath '<repo>' \| Select-Object LinkType` で `null` でない場合は拒否（リパースポイント検出）。`-LiteralPath` を使い、`<repo>` は単一引用符でクォート。**この時点で `<repo>` は前段「シェル特殊文字を含まない」検証で `'`（シングルクォート）含有が除外済み** のため、シングルクォートクォートはリテラル安全（順序制約は phase-flow.md A-Repo「検証順序の規範」を参照）。POSIX: `test -L <repo>` で真なら拒否 |
+| シンボリックリンク・ジャンクションでない | Windows: PowerShell `Get-Item -LiteralPath '<repo>' \| Select-Object LinkType` で `null` でない場合は拒否（リパースポイント検出）。`-LiteralPath` を使い、`<repo>` は単一引用符でクォート。**この時点で `<repo>` は前段「シェル特殊文字を含まない」検証で `'`（シングルクォート）含有が除外済み** のため、シングルクォートクォートはリテラル安全（順序制約は phase-flow.md A-Repo「検証順序の規範」を参照）。POSIX: `test -L <repo>` で真なら拒否（環境により `test -L` が組み込みで利用不可の場合は補助手段として `readlink -e <repo>` の戻り値が `<repo>` と異なる場合・`stat -c%F <repo>` の結果が `symbolic link` の場合に拒否） |
 | 実在ディレクトリ | Read ツールで存在確認できない場合は拒否 |
 
 判定不能な環境（必要なツールが利用できない等）では **フェイルクローズ**（スキップ + 理由 INFO 表示）。
@@ -161,7 +161,7 @@ CLI 出力をユーザに表示する直前（テーブルセルに格納する�
 | `(?<![A-Za-z0-9])(SK\|AC)[a-f0-9]{32}(?![A-Za-z0-9])` | `***TWILIO_KEY***` | Twilio Account SID（`AC` + 32 hex）/ Auth Token（`SK` + 32 hex）。前後単語境界で誤検知抑制 |
 | `machine\s+\S+\s+login\s+\S+\s+password\s+\S+` | `<netrc-credential>` | .netrc 形式 |
 | `/[\w./-]+\.pem`、`id_rsa`、`id_ed25519` | `<ssh-key-path>` | SSH 鍵パス |
-| `C:\\Users\\[^\\]+` / `/Users/[^/]+` / `/home/[^/]+` | `<user-home>` | ローカルパス内のユーザ名 |
+| `C:\\Users\\[^\\]+` / `/Users/[^/]+` / `/home/[^/]+` / `/var/lib/[^/]+` / `/data/users/[^/]+` / `/opt/[^/]+/users/[^/]+` | `<user-home>` | ローカルパス内のユーザ名（標準ユーザディレクトリ + エンタープライズ環境の非標準パスにも対応） |
 
 #### デフォルトマスク（テーブル備考列のみに適用）
 

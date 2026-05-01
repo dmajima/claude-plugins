@@ -136,8 +136,11 @@ Claude（要約）:
 /update-all --dry-run
 ```
 
-実行予定の CLI コマンド一覧のみ表示され、実際の更新は行われません。
-本番更新前の影響範囲確認に使えます。
+実行予定の CLI コマンド一覧のみ表示され、実際の **変更系 CLI**（`marketplace update` /
+`update`）は実行されません。本番更新前の影響範囲確認に使えます。
+**注意**: 対象収集のため `settings.json` の Grep 読み取り（A-Sec 全手順）と
+`claude plugin marketplace list`（読み取り専用 CLI）は dry-run でも実行されます。
+完全な「読み取りなし」モードではありません。
 
 #### スコープ限定更新
 

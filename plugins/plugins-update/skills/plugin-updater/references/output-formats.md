@@ -237,6 +237,9 @@ function truncate_with_mask_safety(text, limit=500):
     # 2. 山括弧マスク `<...>` の途中切断回避（UX 改善・ホワイトリスト方式必須）
     # CLI 自由形式テキスト中の `<n>` `<branch>` 等を誤切り戻ししないよう、
     # **既知マスク文言のみ** をホワイトリスト判定する
+    # 各エントリは XR-3 規則本体テーブルの「置換後」列に出現する固定マスク文言。
+    # `<scheme>` は単独ではなく `<scheme>://***@` 形式で出力されるが、切断位置が `<scheme>` の
+    # 部分（例: `<sc` `<sch` `<schem`）にかかる場合の前方一致切り戻しのために登録する。
     KNOWN_ANGLE_MASKS = ["<netrc-credential>", "<scheme>", "<ssh-key-path>", "<user-home>"]
     for mask in KNOWN_ANGLE_MASKS:
         # cut の末尾が mask の前方一致部分文字列（例: "<netrc-cred"）であれば切り戻す
