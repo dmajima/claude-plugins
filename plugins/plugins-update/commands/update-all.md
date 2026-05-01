@@ -1,5 +1,5 @@
 ---
-description: 公式 CLI でマーケットプレイス・プラグインを一括最新化（--dry-run/--scope）
+description: 公式 CLI でマーケットプレイス・プラグインを一括最新化
 argument-hint: "[--dry-run] [--scope <user|project|local>]"
 ---
 
@@ -10,6 +10,19 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 **マーケットプレイス更新 → User → Project → Local の固定順** で処理し、同一プラグインが
 複数スコープに存在する場合も **スコープごとに個別に更新** する。
 
+設計判断の詳細は [`../references/architecture-decisions.md`](../references/architecture-decisions.md) を参照。
+
+## 横断ルール（全 Phase 共通）
+
+各 Phase はここで定義された 4 つの横断関心事に従う。Phase 内で個別に再定義しない。
+
+| ID | ルール | 適用対象 |
+|----|------|---------|
+| **XR-1** 入力検証 | プラグイン名・マーケットプレイス名・スコープ名を正規表現 `^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$`（NFKC 正規化後）に照合し、合致しないエントリは Skipped（不正な名前）として除外。スコープ名は加えて `user\|project\|local` のホワイトリストにも合致させる | A-1 / B / C / D / E / G-3 |
+| **XR-2** タイムアウト | 個別 CLI 呼び出しは概ね 60 秒で打ち切り Failed として記録し次へ進む。全体実行は 30 分上限とし、超過時は残エントリを Skipped（全体タイムアウト）として終了 | B / C / D / E / G-3 |
+| **XR-3** 出力サニタイズ | CLI 出力をユーザに表示する前に、F-0 のサニタイズ規則を必ず適用 | F-2 / F-3 / G-2 / B-1 の例外行抽出時 |
+| **XR-4** リトライ上限 | リトライは元の失敗集合に対し最大 1 回（合計 2 試行）。リトライ中の新規失敗は記録のみで再 Phase G を起動しない | G-3 |
+
 ## 動作モード判定
 
 `--scope` 指定の有無にかかわらず、**Phase B（マーケットプレイス更新）は常に実行する**。
@@ -19,13 +32,13 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 |-----|-------|------|
 | 空 | 通常更新（全スコープ） | Phase A〜G を実行 |
 | `--dry-run` | 確認のみ | 実行予定のコマンド一覧を提示。実際の更新は行わない |
-| `--scope user` | スコープ限定 | Phase B（マーケットプレイス更新）を **必ず実行** した後、Phase C のみ実行 |
+| `--scope user` | スコープ限定 | Phase B を **必ず実行** した後、Phase C のみ実行 |
 | `--scope project` | スコープ限定 | Phase B を必ず実行した後、Phase D のみ実行 |
 | `--scope local` | スコープ限定 | Phase B を必ず実行した後、Phase E のみ実行 |
 | 指定なし | 通常更新 | `--scope` 省略時は全スコープが対象 |
 
 `--dry-run` と `--scope` は併用可能。併用時は指定スコープに限定したプレビューを表示する。
-不正な `--scope` 値（例: `--scope foo`）が渡された場合は処理を実行せず、以下の形式でエラーを返す:
+不正な `--scope` 値（例: `--scope foo`）が渡された場合は処理を実行せず以下の形式でエラーを返す:
 
 ```text
 エラー: 不正な --scope 値 "foo" が指定されました。有効な値は user / project / local です。
@@ -36,15 +49,13 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 | 原則 | 内容 |
 |-----|------|
 | **公式 CLI 経由** | `claude plugin marketplace update` / `claude plugin update` を呼び出す。`git fetch` / `git reset` 等の低レベル git 操作は行わない |
-| **固定順序** | マーケットプレイス → User → Project → Local の順序を厳守。順序を入れ替えない |
+| **固定順序** | マーケットプレイス → User → Project → Local の順序を厳守 |
 | **スコープ個別更新** | 同一プラグインが複数スコープにある場合、各スコープで個別に CLI を呼ぶ（`enabledPlugins` がスコープごとに独立 SSOT であるため） |
-| **継続実行** | 個別更新でエラーが発生しても処理を **中断せず** 次の対象へ進む。エラーは記録し最後に集計する |
-| **失敗対応の確認** | 全フェーズ完了後、失敗があれば結果報告に続けてユーザにリトライ・スキップの対応を確認する |
-| **exit code 一次判定** | CLI の成否は exit code を真実の源泉とし、出力テキストの解析は補助情報に降格する（CLI バージョン非依存性の確保） |
+| **継続実行** | 個別更新でエラーが発生しても処理を **中断せず** 次の対象へ進む |
+| **失敗対応の確認** | 全フェーズ完了後、失敗があれば Phase G で対応を確認 |
+| **exit code 一次判定** | CLI の成否は exit code を真実の源泉とし、出力テキスト解析は補助情報に降格 |
 
-順序の根拠:
-- マーケットプレイス更新を先に行う理由: マーケットプレイス本体が SSOT のため、最新化してからプラグイン更新を行わないと旧版のまま処理される。
-- スコープ順 (User → Project → Local) の理由: 上書き優先順位（より狭いスコープが優先される）の逆順で更新することで、より広いスコープから順に最新化する。
+順序の根拠は ADR-PU-003 を参照。
 
 ## 実行フロー
 
@@ -60,117 +71,160 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 `settings.json` 系の読み取りは **Read ツールで直接ファイルを読み込み、Claude 自身が JSON を解析** する。
 `jq` など外部ツールは使用しない（環境差異によるエラー回避のため）。
 
-`<repo>` は `git rev-parse --show-toplevel` の結果。git リポジトリ外で実行され、
-かつ `--scope project` または `--scope local` が **明示指定** された場合は、
-エラーメッセージを表示して処理を中断する。`--scope` 未指定時は Project / Local を黙って省略する。
+読み取った JSON の **`enabledPlugins` キー以外（`mcpServers` / `extraKnownMarketplaces` / `hooks` 等）は
+即座に破棄** し、Claude のメモ・結果報告に転記しない（シークレット二次経路の遮断）。
 
-各プラグインエントリは **(scope, plugin-name, marketplace-name)** の 3 つ組として記録し、
-スコープが異なれば同一 (plugin-name, marketplace-name) でも別エントリとして扱う。
-
-`enabledPlugins` の値が JSON の `false` または `null` のエントリはスキップする。
-それ以外（`true` / 文字列 / オブジェクト等）は有効として扱う。
-
-#### A-1. プラグイン名・マーケットプレイス名の入力検証
-
-抽出した各 (plugin-name, marketplace-name) について、以下の正規表現にマッチしないものは
-Phase F のサマリで「Skipped（不正な名前）」として除外し、CLI コマンドに渡さない:
+`<repo>` は `git rev-parse --show-toplevel` の結果。Read ツールに渡す際は **絶対パスをダブルクォートで括る**。
+結果が `..` を含む場合は拒否する。git リポジトリ外で実行され、かつ `--scope project` または
+`--scope local` が **明示指定** された場合はエラーを返して中断する。`--scope` 未指定時は
+Project / Local を省略するが、その旨を以下の INFO メッセージで明示する:
 
 ```text
-^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$
+INFO: git リポジトリ外で実行されたため Project / Local スコープを対象から除外しました。
 ```
 
-シェルメタ文字（`;` `|` `&` `` ` `` `$` `<` `>` 改行・空白）を含むエントリは即拒否する。
-これは悪意あるマーケットプレイスからの引数注入（CWE-78 / CWE-88）への防御。
+各プラグインエントリは **(scope, plugin-name, marketplace-name)** の 3 つ組として記録。
+スコープが異なれば同一 (plugin-name, marketplace-name) でも別エントリとして扱う。
+
+#### `enabledPlugins` のスキーマ例
+
+Claude Code の `enabledPlugins` は **キーがプラグイン識別子（`<plugin-name>@<marketplace-name>` 形式）、
+値がブール（または null）** のオブジェクト。`@` の左側が plugin-name、右側が marketplace-name。
+
+```json
+{
+  "enabledPlugins": {
+    "convert-doc@dmajima-claude-plugins": true,
+    "extension-toolkit@dmajima-claude-plugins": true,
+    "credentials-manager@dmajima-claude-plugins": false
+  }
+}
+```
+
+| 値 | 扱い |
+|----|------|
+| `true` / 文字列 / オブジェクト | 有効として処理対象に含める |
+| `false` / `null` | 明示的に無効化されているのでスキップ |
+
+### Phase A-1: 入力検証
+
+抽出した各エントリについて XR-1 を適用する。検証は **NFKC 正規化後** に正規表現照合。
+合致しないエントリは Phase F のサマリで「Skipped（不正な名前）」として除外し、
+CLI コマンドには絶対に渡さない（CWE-78 / CWE-88 防御）。
+
+CLI 引数の組み立ては **配列要素として渡し、文字列連結後にシェル展開しない**。
+`<plugin>@<marketplace>` 形式は `@` を 1 個のみ許容（複数あればエントリ拒否）。
+
+### Phase A-2: マーケットプレイス整合性検証
+
+`enabledPlugins` 内の `marketplace-name` のうち、Phase A で取得した `claude plugin marketplace list`
+の結果に **存在しないもの** は早期に Skipped（マーケットプレイス未登録）として除外する。
+Phase B 後に再度実施しても可（マーケットプレイス更新により参照可能になる場合がある）。
+
+これにより不要な CLI 呼び出しと Phase G の無用な失敗対応質問を抑制する。
 
 ### Phase B: マーケットプレイス更新（最初に必ず実行）
 
 `--scope` の値にかかわらず、本フェーズは常に実行する。
-公式 CLI でマーケットプレイス全件を一括更新する。
 
 ```bash
 claude plugin marketplace update
 ```
 
 このコマンドは Claude Code が内部で各マーケットプレイスのソース（`github` / `git` / `path`）に
-応じた更新処理を行う。手動の `git fetch` / `git reset --hard` は **不要かつ実行禁止**
-（ローカル変更の意図しない破壊・ロールバック手段の喪失を防ぐため）。
+応じた更新処理を行う。手動の `git fetch` / `git reset --hard` は **不要かつ実行禁止**。
 
-#### B-1. 結果判定（exit code 一次・出力解析は補助）
+#### B-1. 結果判定
 
-| exit code | 判定 |
-|----------|------|
-| 0 | 成功。出力中の `Failed:` / `Error:` 行があればその行から MP 名を抽出し失敗として記録、それ以外は OK |
-| 非 0 | 全体失敗として記録。Phase C 以降は警告付きで継続（CLI が古いインデックスでプラグイン更新を試みる可能性があるため停止しない） |
+XR-2（タイムアウト）と XR-3（出力サニタイズ）を適用する。
 
-出力の解析は補助情報であり、抽出不能な行は "Unknown（要手動確認）" として Phase F に残す。
-CLI が将来 `--output json` を提供した場合に備え、この箇所は拡張ポイントとして残す。
+| exit code + 出力 | 判定 | 備考 |
+|------------------|------|------|
+| exit 0 + 出力に `Failed:` / `Error:` 行なし | 全 OK | 何も問題なし |
+| exit 0 + 出力に `Failed:` / `Error:` 行あり | 部分失敗 | 該当行から MP 名を抽出（XR-3 サニタイズ後）。Phase C 以降は **警告付き継続** |
+| exit 0 + 出力解析で MP 名抽出不能 | Unknown（要手動確認） | Phase F に Unknown 区分で残す |
+| exit 非 0 | 全体失敗 | Phase C 以降は **警告付き継続**（CLI が古いインデックスでプラグイン更新を試みる可能性のため停止しない） |
 
-#### B-2. タイムアウト
-
-CLI 呼び出しは **概ね 60 秒** をタイムアウトの目安とする。超過時は当該呼び出しを Failed として記録し、
-次の処理へ進む（DoS 回避）。
+CLI が将来 `--output json` を提供した場合、JSON モードへ切り替える拡張ポイントとしてこの箇所を残す。
 
 ### Phase C: User スコープのプラグイン更新
 
 `--scope` が `user` または未指定の場合のみ実行（Phase B は別途常時実行済み）。
+XR-1 / XR-2 / XR-3 を適用する。
 
-User スコープの (plugin-name, marketplace-name) ごとに以下を実行する:
+User スコープの (plugin-name, marketplace-name) ごとに以下を実行:
 
 ```bash
 claude plugin update <plugin-name>@<marketplace-name> --scope user
 ```
 
-| 結果分類 | 判定基準（exit code 一次） |
-|---------|--------------------------|
-| Updated | exit 0 + 出力に `updated` 相当のメッセージ |
-| No change | exit 0 + 出力に `up-to-date` / `already latest` 相当 |
-| Missing | exit 非 0 + 出力に `not found` / `no such plugin` 相当（マーケットプレイスに不在） |
-| Failed | 上記以外の exit 非 0（ネットワーク・認証等） |
-| Unknown | exit 0 だがいずれの相当文字列も検出できない場合（要手動確認） |
+#### C-1. 結果分類（exit code 一次・出力解析は補助）
 
-例外発生時はエラー内容を記録し、次のエントリに進む（Phase B-2 のタイムアウトを適用）。
+| exit code + 出力 | 結果分類 |
+|------------------|---------|
+| exit 0 + `updated` 相当 | Updated |
+| exit 0 + `up-to-date` / `already latest` 相当 | No change |
+| exit 0 + `not found` / `no such plugin` 相当 | Missing（exit 0 で not-found を返す CLI 実装に対応） |
+| exit 非 0 + `not found` / `no such plugin` 相当 | Missing |
+| exit 非 0 + 上記以外（ネットワーク・認証等） | Failed |
+| exit 0 + いずれの相当文字列も検出不能 | Unknown（要手動確認） |
 
 ### Phase D: Project スコープのプラグイン更新
 
-`--scope` が `project` または未指定の場合、かつ git リポジトリ配下のときのみ実行。
-処理内容は Phase C と同等で `--scope project` を指定する。
+`--scope` が `project` または未指定、かつ git リポジトリ配下のときのみ実行。
+処理内容は Phase C と同等で `--scope project` を指定する。**XR-1 / XR-2 / XR-3 を適用**。
 
 ### Phase E: Local スコープのプラグイン更新
 
-`--scope` が `local` または未指定の場合、かつ git リポジトリ配下のときのみ実行。
-処理内容は Phase C と同等で `--scope local` を指定する。
+`--scope` が `local` または未指定、かつ git リポジトリ配下のときのみ実行。
+処理内容は Phase C と同等で `--scope local` を指定する。**XR-1 / XR-2 / XR-3 を適用**。
 
 ### Phase F: 結果報告
 
 すべての更新処理を完了した時点で、以下の構造で **必ず結果報告** を提示する。
 変数表記の `<count>` 等は Claude が実行時に実際の値に置き換える。
 
-#### F-0. CLI 出力のサニタイズ（必須）
+#### F-0. CLI 出力のサニタイズ（XR-3 の実装）
 
-Phase F-2 / F-3 / G-2 で CLI 出力を表示する際は、**事前に以下のサニタイズを必ず適用** する。
-ログ共有・スクリーンショット添付時の認証情報露出（CWE-209 / CWE-532）を防ぐため。
+Phase F-2 / F-3 / G-2 で CLI 出力を表示する際は事前に以下のサニタイズを必ず適用する。
+正規表現は CLI 出力の **値部分** に対して適用し、プラグイン名への誤適用は副作用として許容する。
 
-| パターン | 置換後 |
-|---------|-------|
-| `(?i)(token\|password\|secret\|authorization\|bearer\|x-api-key)[:=]\s*\S+` | `<key>=***REDACTED***` |
-| `https?://[^/\s]+:[^@\s]+@` | `https://***@` |
-| `/[\w./-]+\.pem`、`id_rsa`、`id_ed25519` 等の SSH 鍵パス | `<ssh-key-path>` |
+| パターン | 置換後 | 備考 |
+|---------|-------|------|
+| `(?i)(token\|password\|secret\|authorization\|bearer\|x-api-key)[:=]\s*\S+` | `<key>=***REDACTED***` | 汎用 key=value |
+| `https?://[^/\s]+:[^@\s]+@` | `https://***@` | URL 埋め込み認証 |
+| `ghp_[A-Za-z0-9]{36,}` / `github_pat_[A-Za-z0-9_]{82,}` / `gho_[A-Za-z0-9]{36,}` / `ghs_[A-Za-z0-9]{36,}` / `ghu_[A-Za-z0-9]{36,}` | `***GITHUB_TOKEN***` | GitHub Personal Access Token |
+| `glpat-[A-Za-z0-9_-]{20,}` | `***GITLAB_TOKEN***` | GitLab Personal Access Token |
+| `AKIA[0-9A-Z]{16}` / `ASIA[0-9A-Z]{16}` | `***AWS_KEY_ID***` | AWS アクセスキー ID |
+| `xox[baprs]-[A-Za-z0-9-]{10,}` | `***SLACK_TOKEN***` | Slack トークン |
+| `eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}` | `***JWT***` | JWT |
+| `/[\w./-]+\.pem`、`id_rsa`、`id_ed25519` 等 | `<ssh-key-path>` | SSH 鍵パス |
+| `C:\\Users\\[^\\]+` / `/Users/[^/]+` / `/home/[^/]+` | `<user-home>` | ローカルパス内のユーザ名 |
+
+**デフォルトはマスク優先**: 上記いずれにも合致しない長さ 30 字以上の `[A-Za-z0-9_\-]+` 連続トークンが
+URL 等の文脈外で出現した場合は `***POSSIBLE_SECRET***` でマスクする（過剰サニタイズ容認）。
+
+サニタイズ済み URL は誤展開を避けるため `<>` を文字参照化（`&lt;` / `&gt;`）する。
 
 #### F-1. サマリ
 
 ```markdown
 ## 更新結果サマリ
 
-| 区分 | 成功 | 変更なし | スキップ | 失敗 |
-|-----|-----|---------|---------|-----|
-| マーケットプレイス | <count> | <count> | <count> | <count> |
-| User プラグイン | <count> | <count> | <count> | <count> |
-| Project プラグイン | <count> | <count> | <count> | <count> |
-| Local プラグイン | <count> | <count> | <count> | <count> |
+| 区分 | 成功 | 変更なし | スキップ | 失敗 | Unknown |
+|-----|-----|---------|---------|-----|---------|
+| マーケットプレイス | <count> | <count> | <count> | <count> | <count> |
+| User プラグイン | <count> | <count> | <count> | <count> | <count> |
+| Project プラグイン | <count> | <count> | <count> | <count> | <count> |
+| Local プラグイン | <count> | <count> | <count> | <count> | <count> |
 ```
 
-「変更なし」は CLI が `up-to-date` 相当を返したケースを集計する。
-Unknown 区分は「失敗」と別に注記し、Phase F-2/F-3 の備考列で対象を明示する。
+Unknown 件数が **総件数の 20% を超える** 場合は明示的な警告メッセージを併記する:
+
+```text
+警告: Unknown 件数が全体の 20% を超えています。CLI 出力フォーマットが変わった可能性があるため、
+F-2/F-3 の備考列を確認し、必要なら個別に手動更新してください。
+```
 
 #### F-2. マーケットプレイス詳細
 
@@ -181,8 +235,6 @@ Unknown 区分は「失敗」と別に注記し、Phase F-2/F-3 の備考列で�
 |-----------------|-----|-----|
 | <name> | OK / Skipped / Failed / Unknown | <サニタイズ後の CLI 出力要約 or エラー> |
 ```
-
-`git` 操作を行わないため SHA は表示しない。詳細は `claude plugin marketplace list` で確認可能。
 
 #### F-3. スコープ別詳細
 
@@ -208,21 +260,24 @@ Unknown 区分は「失敗」と別に注記し、Phase F-2/F-3 の備考列で�
 ### 次のアクション
 
 - Claude Code を再起動するか `/reload-plugins` を実行して更新をセッションに反映する
-  （`claude plugin update` は **再起動が必要** と公式 CLI が明示している）
-- 新しい hooks / MCP サーバ / commands が追加された場合、次回起動時に自動実行される。
-  心配な場合は `claude plugin show <plugin>@<marketplace>` で内容を確認してから再起動する
-- 更新後に問題が発覚した場合のロールバック:
-  1. `claude plugin uninstall <plugin>@<marketplace>` で旧版含めアンインストール
-  2. マーケットプレイスの旧版タグへ切り替え（必要なら `git checkout <tag>` をローカル複製先で実施）
-  3. `claude plugin install <plugin>@<marketplace>` で再インストール
+- **重要**: 更新によって新しい hooks / MCP サーバ / commands / agents が追加された可能性があります。
+  再起動前に以下を必ず実施してください:
+
+  ```text
+  claude plugin show <plugin>@<marketplace>
+  ```
+
+  特に `hooks` セクションが新規追加・変更されている場合、次回起動時に自動実行されます。
+- Missing と判定されたエントリは `enabledPlugins` から除外することを検討（マーケットプレイスから消失）
+- 更新後に問題が発覚した場合のロールバックは README の「ロールバック手順」セクションを参照
 - （失敗があれば）次のリトライ・スキップ確認に応答する
 ```
 
 ### Phase G: 失敗対応の確認（失敗ありの場合のみ）
 
 Phase F の結果報告後、**失敗が 1 件以上ある場合** は `AskUserQuestion` で以下を確認する。
-質問文の `<N>` には失敗総数を、内訳には Phase B と Phase C〜E の失敗件数を入れる。
-Unknown 区分は失敗扱いに含めない（要手動確認として F-2/F-3 で表示するに留める）。
+失敗総数 `<N>` の定義は「Failed + Missing の合計」（Unknown は要手動確認のため除外）。
+内訳には Phase B と Phase C〜E の失敗件数を入れる。
 
 #### G-1. 全体方針の確認（疑似コード）
 
@@ -244,7 +299,7 @@ AskUserQuestion({
 
 #### G-2. 個別判断モードの場合
 
-失敗エントリ数が **5 件以下** の場合は各エントリについて 1 つずつ確認する:
+失敗エントリ数（Failed + Missing。Unknown は除外）が **5 件以下** の場合のみ各エントリについて確認する:
 
 ```text
 # pseudocode: Claude が AskUserQuestion ツールを呼び出すパターン
@@ -264,53 +319,65 @@ AskUserQuestion({
 失敗エントリ数が **6 件以上** の場合は連続質問が UX を著しく損なうため、
 G-1 の「全件リトライ / 全件スキップ」のみ提示し、個別判断モードはスキップする。
 
-#### G-3. リトライ実行（範囲限定）
+#### G-3. リトライ実行（範囲限定・XR-1/XR-2/XR-3/XR-4 を適用）
 
 リトライは失敗種別に応じて **必要最小限のフェーズのみ** 再実行する。
 
 | 失敗種別 | 再実行範囲 |
 |---------|-----------|
-| マーケットプレイス失敗 | `claude plugin marketplace update <name>` を当該マーケットプレイスのみ実行（CLI が引数で個別指定をサポートする場合）。サポートしない場合は全件リトライにフォールバック |
+| マーケットプレイス失敗 | **現状は全件リトライにフォールバック**（`claude plugin marketplace update <name>` 形式の引数指定サポートが CLI で確認できないため）。CLI が個別指定をサポートした際にこの箇所を更新する |
 | プラグイン更新失敗（C/D/E 由来） | `claude plugin update <plugin>@<marketplace> --scope <scope>` を当該エントリのみ実行 |
 
-リトライは **元の失敗集合に対してのみ** 行う（最大 1 回 = 合計 2 試行）。
-リトライ中に新たに発生した失敗は記録のみとし、再度 Phase G を起動しない（無限ループ防止）。
+XR-4 によりリトライは元の失敗集合に対し最大 1 回。リトライ中の新規失敗は記録のみ。
 
-#### G-4. リトライ完了後の最終報告
+同一マーケットプレイスで連続 3 件以上のプラグイン更新失敗が続いた場合は、
+当該マーケットプレイスの残エントリを自動 Skip（サーキットブレーカー）として時間浪費を抑制する。
 
-リトライ完了後、Phase F のサマリ・詳細テーブルを **再描画** する。
-再描画版を最終結果として確定する。新規失敗が増えた場合も同テーブル内に反映する。
+#### G-4. リトライ完了後の最終報告（追記出力）
+
+リトライ完了後、Phase F のサマリ・詳細テーブルを **同一フォーマットで再度出力** する
+（チャット UI では前の出力を上書きできないため、新たなセクションとして追記）。
+追記版が最終結果として確定する。新規失敗が増えた場合も同テーブル内に反映する。
 
 ## --dry-run モード時の挙動
 
 `--dry-run` 指定時は **実際の更新コマンドを一切実行せず**、以下のみ提示する。
 
-- Phase A の対象収集は通常通り実行（読み取りのみ。`claude plugin marketplace list` はローカルキャッシュを参照し外部通信なし）
+- Phase A の対象収集は通常通り実行（Read ツールで `settings.json` 系を読み込み、`claude plugin marketplace list` を実行。
+  `marketplace list` はキャッシュ参照のみで更新通信を行わないことが期待されるが、CLI バージョンにより異なる場合がある）
+- Phase A-1 / A-2 の検証も実行
 - Phase B / C / D / E の代わりに、実行予定の CLI コマンド一覧を Phase F と同形式のテーブルで表示
   - 「結果」列の代わりに「実行予定コマンド」列を表示
-- Phase F-4 はスキップ（再起動指示が不要なため）
-- Phase G はスキップ（失敗が発生しないため）
+- Phase F-4 / G はスキップ
 
-`--scope` と組み合わせた場合（例: `--dry-run --scope user`）は、
-指定スコープに限定したプレビューを表示する。
+**重要な制約**: `--dry-run` は **実行予定のコマンド一覧** のみを提示します。
+**各プラグインの変更内容（新規 hooks / MCP / agents の追加）は確認しません**。
+変更内容の確認には実行後 `claude plugin show <plugin>@<marketplace>` を別途実行する必要があります。
+
+`--scope` と組み合わせた場合（例: `--dry-run --scope user`）は、指定スコープに限定したプレビューを表示。
 
 ## 注意事項
 
 - 本コマンドは Claude Code 公式 CLI に処理を委譲するため、**ローカル変更の意図しない破壊や
   ブランチ強制移動は発生しない**（CLI 内部のロック制御・状態管理に依存）。
-- スコープ別更新で同一プラグインを複数回処理しても、CLI が冪等性を保証する（既に最新なら "No change"）。
+- スコープ別更新で同一プラグインを複数回処理しても、CLI が冪等性を保証する。
 - プライベートリポジトリのマーケットプレイスは Git credential helper / SSH キーの設定が前提。
-  認証エラー時の詳細は CLI 出力に依存する（Phase F-0 のサニタイズで認証情報を伏せる）。
-- `claude plugin update` は **再起動が必要** と公式が明示しているため、
-  本コマンド完了後は `/reload-plugins` か Claude Code 再起動を促す。
-- **サプライチェーンリスク**: 更新により新しい `hooks` / `commands` / `agents` / MCP サーバが
-  引き込まれた場合、次回 Claude Code 起動時に自動実行される可能性がある。信頼するマーケットプレイスのみで
-  本コマンドを使用すること。リスクを抑えたい場合は `--dry-run` で対象を確認してから実行する。
-- リトライは 1 回まで（合計 2 試行）。それでも解消しない場合はネットワーク・認証・対象ファイルの
+  認証エラー時の詳細は CLI 出力に依存する（XR-3 サニタイズで認証情報を伏せる）。
+- `claude plugin update` は **再起動が必要** と公式が明示しているため、本コマンド完了後は
+  `/reload-plugins` か Claude Code 再起動を促す。
+- **サプライチェーンリスク**: マーケットプレイス更新により新しい `hooks` / `commands` / `agents` /
+  MCP サーバが引き込まれた場合、次回 Claude Code 起動時に **自動実行** される。
+  - `--dry-run` で確認できるのは「実行する CLI コマンド」だけで、引き込まれる **新規 hooks の内容は
+    確認できない**。再起動前に `claude plugin show <plugin>@<marketplace>` で個別に確認すること。
+  - 信頼するマーケットプレイスのみで本コマンドを使用すること。
+  - `autoUpdate: true` セッション起動時自動更新と `/update-all` 手動更新が同時に走った場合、
+    CLI 内部のロック挙動に依存する（一方が待機する想定）。
+- リトライは 1 回まで（合計 2 試行・XR-4）。それでも解消しない場合はネットワーク・認証・対象ファイルの
   状態を個別に調査する必要がある。
 
 ## 関連
 
+- [`../references/architecture-decisions.md`](../references/architecture-decisions.md) — プラグイン固有 ADR
 - グローバルルール `~/.claude/rules/claude/plugin-auto-update.md`（自動更新ポリシー）
 - `extension-toolkit:marketplace-toolkit`（マーケットプレイス本体管理）
 - `extension-toolkit:marketplace-publisher`（マーケットプレイスへの公開）

@@ -27,7 +27,7 @@
     {
       "name": "extension-toolkit",
       "source": "./plugins/extension-toolkit",
-      "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成からマーケットプレイス構築・公開まで支援"
+      "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック・README）の作成・レビュー・マーケットプレイス公開まで統括支援"
     },
     {
       "name": "plugins-update",

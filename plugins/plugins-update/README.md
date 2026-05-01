@@ -7,7 +7,9 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 ## このドキュメントについて
 
 このファイルは **人間向けのリファレンス** です。Claude Code がプラグイン動作中に参照することはありません。
-本プラグインはスキルを持たずコマンドのみを提供するため、コマンドの動作本体は `commands/update-all.md` を参照してください。
+本プラグインはスキルを持たずコマンドのみを提供するため、コマンドの動作本体は
+`commands/update-all.md` を参照してください。設計判断の詳細は
+`references/architecture-decisions.md` に記録しています。
 
 ## 提供コマンド
 
@@ -24,12 +26,21 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 
 ## 導入手順
 
+### 前提
+
+- Claude Code がインストール済みで `claude plugin` サブコマンドが利用可能
+- Git CLI が PATH に通っている（マーケットプレイスを Git ソースで登録する場合）
+- 依存プラグインなし（`plugin.json` で `dependencies: []` を明示）
+
 ### A. マーケットプレイス経由でインストール（推奨）
 
 ```text
 /plugin marketplace add https://github.com/dmajima/claude-plugins
 /plugin install plugins-update@dmajima-claude-plugins
 ```
+
+リリースタグの GPG 署名検証を行いたい場合は `git tag -v <tag>` を併用してください
+（本リポジトリは現状署名運用なし）。
 
 ### B. ローカル複製でインストール（オフライン環境）
 
@@ -39,7 +50,7 @@ git clone https://github.com/dmajima/claude-plugins <local-path>
 
 # 2. リリースタグまたは main に切替
 cd <local-path>
-git checkout v2.0.1   # または main
+git checkout <tag-or-branch>   # 例: git checkout v2.1.0 / git checkout main
 ```
 
 ```text
@@ -88,9 +99,29 @@ Claude Code セッション起動時に本プラグインが自動更新され�
 | Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須 |
 | `/reload-plugins` | 本コマンド完了後、セッションへの反映に使用 |
 
-## 利用例
+### 動作確認
 
-### 通常更新
+インストール直後の確認には `--dry-run` を使用します:
+
+```text
+/update-all --dry-run
+```
+
+実行予定の CLI コマンド一覧が表示され、実際の更新は行われません。
+
+## 利用方法
+
+### 最小例
+
+ユーザ:
+> 全部のプラグインを最新にして
+
+Claude（要約）:
+> Phase A〜G を順次実行し、`claude plugin marketplace update` と `claude plugin update <plugin>@<marketplace> --scope <scope>` を呼び出して全マーケットプレイス・全スコープのプラグインを更新。結果サマリと「次のアクション」を提示し、`/reload-plugins` か再起動を促す。
+
+### 利用例
+
+#### 通常更新
 
 ```text
 /update-all
@@ -99,7 +130,7 @@ Claude Code セッション起動時に本プラグインが自動更新され�
 実行後、すべてのマーケットプレイスとプラグインが公式 CLI で最新化され、
 更新結果テーブルが表示されます。最後に `/reload-plugins` または Claude Code 再起動を促されます。
 
-### 確認のみ（dry-run）
+#### 確認のみ（dry-run）
 
 ```text
 /update-all --dry-run
@@ -108,7 +139,7 @@ Claude Code セッション起動時に本プラグインが自動更新され�
 実行予定の CLI コマンド一覧のみ表示され、実際の更新は行われません。
 本番更新前の影響範囲確認に使えます。
 
-### スコープ限定更新
+#### スコープ限定更新
 
 ```text
 /update-all --scope user
@@ -116,7 +147,7 @@ Claude Code セッション起動時に本プラグインが自動更新され�
 
 マーケットプレイス更新後、User スコープ（`~/.claude/settings.json` の有効プラグイン）のみを対象に更新します。
 
-### dry-run + スコープ限定
+#### dry-run + スコープ限定
 
 ```text
 /update-all --dry-run --scope project
@@ -131,23 +162,34 @@ Project スコープに限定した実行予定コマンドのみを表示しま
 | Phase | 処理内容 | 使用 CLI |
 |-------|---------|---------|
 | A | 対象収集（マーケットプレイス一覧 + 各スコープの `enabledPlugins`） | `claude plugin marketplace list` |
+| A-1 | プラグイン名・MP 名・スコープ名の入力検証（XR-1） | — |
+| A-2 | マーケットプレイス整合性検証（未登録 MP の早期除外） | — |
 | B | マーケットプレイス更新（`--scope` 指定時も常に実行） | `claude plugin marketplace update` |
 | C | User スコープのプラグイン更新 | `claude plugin update <plugin>@<marketplace> --scope user` |
 | D | Project スコープのプラグイン更新 | 同上 `--scope project` |
 | E | Local スコープのプラグイン更新 | 同上 `--scope local` |
-| F | 結果報告（サマリ + マーケットプレイス詳細 + スコープ別詳細） | — |
+| F | 結果報告（サニタイズ + サマリ + マーケットプレイス詳細 + スコープ別詳細） | — |
 | G | 失敗があれば `AskUserQuestion` でリトライ / スキップを確認 | — |
+
+### 横断ルール
+
+各 Phase は以下 4 つの横断関心事に従います（詳細は `commands/update-all.md` の「横断ルール」節）。
+
+| ID | ルール |
+|----|------|
+| XR-1 | 入力検証（プラグイン名・MP 名・スコープの正規表現照合 + ホワイトリスト） |
+| XR-2 | タイムアウト（個別呼び出し 60 秒・全体 30 分） |
+| XR-3 | 出力サニタイズ（GitHub PAT / AWS / GitLab / Slack / JWT / SSH 鍵 / ローカルパス等） |
+| XR-4 | リトライ上限（最大 1 回 = 合計 2 試行） |
 
 ### 振る舞いの原則
 
-- **公式 CLI 経由**: `git fetch` / `git reset --hard` 等の低レベル git 操作は行わない。
-  CLI 内部のロック制御・ロールバック制御に依存する
-- **固定順序**: マーケットプレイス → User → Project → Local（順序を入れ替えない）
+- **公式 CLI 経由**: `git fetch` / `git reset --hard` 等の低レベル git 操作は行わない（ADR-PU-002）
+- **固定順序**: マーケットプレイス → User → Project → Local（順序を入れ替えない・ADR-PU-003）
 - **スコープ個別更新**: 同一プラグインが複数スコープにあっても、スコープごとに独立した更新エントリとして処理
 - **継続実行**: 個別更新でエラーが発生しても処理を中断せず、エラーは記録して次へ進む
 - **exit code 一次判定**: CLI 出力テキストの解析は補助情報。判定不能時は "Unknown（要手動確認）" として残す
 - **失敗対応の確認**: 結果報告後、失敗があれば一括リトライ / 個別判断 / 全件スキップをユーザに確認
-- **二重リトライ防止**: リトライは最大 1 回（合計 2 試行）。リトライ中の新規失敗は記録のみで再 Phase G しない
 
 ## 注意事項
 
@@ -155,13 +197,18 @@ Project スコープに限定した実行予定コマンドのみを表示しま
   行わないため、マーケットプレイスのローカル複製で **手動編集や独自ブランチが意図せず破壊される心配はありません**。
 - プライベートリポジトリのマーケットプレイスは、Git credential helper / SSH キーの設定が前提です。
   認証エラー時の詳細メッセージは CLI 出力に依存しますが、Phase F の結果報告では認証情報・URL 埋め込み
-  トークン・SSH 鍵パス等を **マスクして表示** します。
-- **サプライチェーンリスク**: マーケットプレイス更新により新しい `hooks` / `commands` / `agents` /
-  MCP サーバが引き込まれた場合、次回 Claude Code 起動時に自動実行される可能性があります。信頼する
-  マーケットプレイスのみで本コマンドを使用してください。リスクを抑えたい場合は `--dry-run` で
-  対象を確認してから実行することを推奨します。
+  トークン・SSH 鍵パス・ローカルパス内のユーザ名等を **マスクして表示** します。
+- **サプライチェーンリスク**:
+  - マーケットプレイス更新により新しい `hooks` / `commands` / `agents` / MCP サーバが
+    引き込まれた場合、次回 Claude Code 起動時に **自動実行される** 可能性があります。
+  - `--dry-run` で確認できるのは「実行する CLI コマンド」だけで、引き込まれる **新規 hooks の内容は
+    確認できません**。再起動前に `claude plugin show <plugin>@<marketplace>` を個別に実行し、
+    `hooks` セクションの差分を必ず確認してください。
+  - 信頼するマーケットプレイスのみで本コマンドを使用してください。
 - `autoUpdate: true` で十分な場合、本プラグインを使う必要はありません（セッション起動時に自動更新されます）。
   本プラグインは「セッション中に最新版を取り込みたい」場面のために設計されています。
+  `autoUpdate: true` 起動時自動更新と `/update-all` 手動更新が同時に走った場合、CLI 内部のロック挙動に
+  依存します（一方が待機する想定）。
 - `claude plugin update` は **再起動が必要** と公式が明示しているため、本コマンド完了後は
   `/reload-plugins` か Claude Code 再起動が必要です。
 
@@ -171,23 +218,51 @@ Project スコープに限定した実行予定コマンドのみを表示しま
 
 1. `claude plugin uninstall <plugin>@<marketplace>` で問題のあるプラグインをアンインストール
 2. マーケットプレイスの旧版に戻す（必要な場合）
-   - リモートマーケットプレイス: ローカル複製を作成し `git checkout <旧タグ>` で固定 → `/plugin marketplace add <local-path>`
-   - ローカルマーケットプレイス: 該当ディレクトリで `git checkout <旧タグ>`
+   - **リモートマーケットプレイス**: ローカル複製を作成し旧タグへ固定
+     ```bash
+     git clone <marketplace-url> <local-path>
+     cd <local-path>
+     git checkout <旧タグ or 旧コミットハッシュ>
+     ```
+     その後 `/plugin marketplace add <local-path>` で別マーケットプレイスとして登録
+   - **ローカルマーケットプレイス**: 該当ディレクトリで `git checkout <旧タグ>`
 3. `claude plugin install <plugin>@<marketplace>` で旧版から再インストール
 4. `/reload-plugins` または Claude Code 再起動
 
-マーケットプレイス本体（`marketplace.json` / 構成プラグイン群）のロールバックは公式 CLI に
-専用手段がないため、上記のように **ローカル複製 + git checkout** での代替が現実的です。
+### タグ非存在時のフォールバック
+
+リリースタグが切られていないマーケットプレイスでは、過去の commit ハッシュを直接指定:
+
+```bash
+git log --oneline    # 復旧したい時点のハッシュを特定
+git checkout <commit-hash>
+```
+
+### マーケットプレイス本体が壊れた場合のリセット
+
+`marketplace.json` 不整合等で読み込み不能になった場合:
+
+```text
+/plugin marketplace remove <marketplace-name>
+/plugin marketplace add <url-or-local-path>
+```
+
+その後、必要なプラグインを再インストール。
+
+マーケットプレイス本体（`marketplace.json` / 構成プラグイン群）の自動ロールバック機能は公式 CLI に
+存在しないため、上記のように **ローカル複製 + git checkout** での代替が現実的です。
 
 ## ファイル構成
 
 ```text
 plugins-update/
 ├── .claude-plugin/
-│   └── plugin.json           # プラグイン定義
-├── README.md                  # このファイル（人間向けリファレンス）
-└── commands/
-    └── update-all.md          # /update-all コマンド本体
+│   └── plugin.json                       # プラグイン定義
+├── README.md                              # このファイル（人間向けリファレンス）
+├── commands/
+│   └── update-all.md                      # /update-all コマンド本体
+└── references/
+    └── architecture-decisions.md          # ADR-PU-001/002/003（設計判断記録）
 ```
 
 ## 関連プラグイン
