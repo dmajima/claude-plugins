@@ -241,6 +241,7 @@ references/
 ```markdown
 ---
 description: コマンドの 1 行説明（60 文字以内）
+argument-hint: <必須引数> [省略可引数] [--flag 値]
 ---
 
 実行内容のプロンプト。$ARGUMENTS でユーザ引数を受け取る。
@@ -249,7 +250,8 @@ description: コマンドの 1 行説明（60 文字以内）
 | ルール | 内容 |
 |-------|------|
 | frontmatter `description` | 60 文字以内 |
-| 引数仕様 | description ではなく本文に書く |
+| frontmatter `argument-hint` | 引数を受け取るコマンドは **必須**（ADR-023 / [`description-guide.md`](description-guide.md) 節 4.1） |
+| 引数仕様 | description ではなく `argument-hint` と本文に書く（`argument-hint` が SSOT） |
 
 ## 7. エージェントファイル構造
 

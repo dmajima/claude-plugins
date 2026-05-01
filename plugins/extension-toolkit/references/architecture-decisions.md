@@ -220,6 +220,18 @@
 | 詳細実装 | [`self-containment.md`](self-containment.md) を参照（依存箇所棚卸しガイド・自己検証項目・段階的同梱戦略） |
 | 代替案 | (1) グローバルルール / グローバルエージェントに依存 → 利用者環境差異で動作不一致、却下。(2) すべて利用者がセットアップ → サポート工数が爆発、却下。(3) 完全に自己完結化を最初から強制 → 既存資産が活かせない、現実的でない、却下。**段階的に自己完結度を上げる方針** を採用する |
 
+## ADR-023: スラッシュコマンドの `argument-hint` frontmatter 必須化
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | スラッシュコマンドファイル（`commands/{name}.md`）が引数を受け取る場合（本文で `$ARGUMENTS` を参照する、または引数ベースのルーティング表を持つ）、frontmatter に **`argument-hint` を必ず記載する**。引数を一切受け取らないコマンドは省略可。`argument-hint` は Claude Code が `/` 補完時に表示する 1 行の引数仕様文字列で、`<必須引数> [省略可引数] [--flag 値]` 形式で書く |
+| 理由 | (1) Claude Code の `/` 補完 UI は `argument-hint` を表示する公式メカニズムであり、利用者は **`description` を見ても引数の与え方が分からない**。(2) `description` は 60 文字以内かつ「引数仕様を含めない」と規定しており（[`description-guide.md`](description-guide.md) 節 4）、引数仕様の置き場所は `argument-hint` が SSOT となる。(3) 本文に `$ARGUMENTS` を書いただけでは利用者には伝わらず、誤った引数で呼び出されるサポート負荷が発生する。(4) 既存の `convert-doc` プラグインの全コマンドは既に `argument-hint` を採用しており、整合性を取る |
+| トレードオフ | (1) `argument-hint` の文字列設計が必要になるが、本文の引数解釈と二重管理になる。SSOT は `argument-hint` 側とし、本文では参照のみとする。(2) 既存コマンドへの遡及適用が必要 |
+| 適用範囲 | 本プラグインおよび本プラグインが生成するすべてのスラッシュコマンド。`commands/{name}.md` 形式のファイル全般（プロジェクト用 / グローバル / プラグイン同梱を問わない） |
+| 必須項目 | (a) frontmatter `argument-hint` の有無を `command-toolkit` 生成時の検証項目に組み込む、(b) `references/templates/command/command.md` テンプレートに `argument-hint` プレースホルダを含める、(c) `validation-rules.md` 節 2.3 に検証項目として追加、(d) `extension-reviewer` の `automated-checks.md` で機械チェック対象に含める |
+| 表記規則 | (i) 必須引数は `<...>`、省略可は `[...]`、フラグは `[--flag 値]` または `[--flag]`、(ii) 60 文字以内を目安、(iii) 改行禁止、(iv) `description` の文末で重複しない（引数仕様は `argument-hint` 側に集約） |
+| 代替案 | (1) 引数仕様を `description` 内に含める → `description` 60 文字制約で詰まる・SSOT 違反、却下。(2) 本文の `## 引数` セクションに任せる → `/` 補完 UI に表示されないため利用時に見えない、却下。(3) 任意項目に留める → 既存 `convert-doc` との整合が崩れ、利用者ごとの体験差異が発生、却下 |
+
 ## ADR の追加・更新
 
 新たな設計判断が発生した際は、本ファイルに ADR-XXX 形式で追記する。既存 ADR を変更する場合は **最新の決定のみを記載** する（変更前の判断・変更経緯は Git コミット履歴を参照する）。

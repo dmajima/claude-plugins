@@ -14,6 +14,7 @@
 | `§` 記号 | 全テキストファイル | Grep `§` | Medium |
 | 必須セクション存在 | `SKILL.md` | パターン検索 | High |
 | description 文字数 | frontmatter `description` | 文字数カウント | Medium |
+| コマンド `argument-hint` 必須（ADR-023） | `commands/*.md` の frontmatter | YAML キー存在 + 本文 `$ARGUMENTS` 有無の照合 | High |
 | `agents/` 削除痕跡 | 既存スキル更新時 | git diff | High |
 | エンコーディング保持 | 編集ファイル | バイト列比較 | Critical |
 | シークレット混入（`.env` / 鍵 / トークン文字列） | プラグイン全体 | ファイル名 + 内容パターン | Critical |
@@ -108,6 +109,35 @@ grep -E '^## (責務|責務外|トリガー条件|前提|実行フロー|重要�
 | エージェント `description` | 制限なし |
 
 超過時は Medium 指摘。
+
+### 7.5 コマンド `argument-hint` 必須化チェック（ADR-023）
+
+`commands/*.md` の frontmatter に `argument-hint` が含まれているか確認する。本文に `$ARGUMENTS` を参照していて `argument-hint` が無い場合は **High 指摘**。
+
+```python
+import yaml, re, pathlib
+
+def check_argument_hint(command_md: pathlib.Path) -> list[str]:
+    issues: list[str] = []
+    text = command_md.read_text(encoding='utf-8')
+    parts = text.split('---', 2)
+    if len(parts) < 3:
+        return [f"[High] frontmatter 不在: {command_md}"]
+    fm = yaml.safe_load(parts[1]) or {}
+    body = parts[2]
+    has_arguments = bool(re.search(r'\$ARGUMENTS', body))
+    has_routing = bool(re.search(r'^##\s*ルーティング', body, re.M))
+    needs_hint = has_arguments or has_routing
+    hint = fm.get('argument-hint')
+    if needs_hint and not hint:
+        issues.append(f"[High] argument-hint 欠落（ADR-023）: {command_md}")
+    if hint:
+        if '\n' in str(hint):
+            issues.append(f"[Medium] argument-hint に改行: {command_md}")
+        if len(str(hint)) > 60:
+            issues.append(f"[Medium] argument-hint 60 文字超過: {command_md}")
+    return issues
+```
 
 ### 8. `agents/` 削除痕跡（更新時）
 
