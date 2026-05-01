@@ -1,6 +1,6 @@
 {
   "name": "plugins-update",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化する",
   "author": {
     "name": "dmajima"
