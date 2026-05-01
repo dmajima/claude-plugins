@@ -32,7 +32,7 @@
     {
       "name": "plugins-update",
       "source": "./plugins/plugins-update",
-      "description": "インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化するメンテナンスコマンド",
+      "description": "インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化するメンテナンスプラグイン",
       "category": "maintenance",
       "author": {
         "name": "dmajima"

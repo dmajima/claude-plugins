@@ -2,14 +2,14 @@
 
 Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin update`）を経由して
 **マーケットプレイスとインストール済みプラグインを全スコープ（User / Project / Local）で一括更新**
-するメンテナンスコマンド。
+するメンテナンスプラグイン。
 
 ## このドキュメントについて
 
 このファイルは **人間向けのリファレンス** です。Claude Code がプラグイン動作中に参照することはありません。
 本プラグインはスキルを持たずコマンドのみを提供するため、コマンドの動作本体は
-`commands/update-all.md` を参照してください。設計判断の詳細は
-`references/architecture-decisions.md` に記録しています。
+`commands/update-all.md` を参照してください。設計判断は `references/architecture-decisions.md` および
+`references/cross-cutting-rules.md` に記録しています。
 
 ## 提供コマンド
 
@@ -24,12 +24,20 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 `--scope` 指定時も **マーケットプレイス更新（Phase B）は常に実行** されます。
 `--dry-run` と `--scope` は併用可能。
 
+## 動作要件
+
+| 動作要件 | 説明 |
+|---------|-----|
+| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須。Phase A-0 で存在チェックを行い、不在時はエラーで中断 |
+| Git CLI | マーケットプレイスを Git ソース（GitHub/git）で登録する場合に必要（Claude Code CLI 内部で利用） |
+| `/reload-plugins` | 本コマンド完了後、セッションへの反映に使用 |
+
 ## 導入手順
 
 ### 前提
 
-- Claude Code がインストール済みで `claude plugin` サブコマンドが利用可能
-- Git CLI が PATH に通っている（マーケットプレイスを Git ソースで登録する場合）
+- Claude Code がインストール済みで `claude plugin` サブコマンドが利用可能であること
+- 上記「動作要件」のツールが PATH に通っていること
 - 依存プラグインなし（`plugin.json` で `dependencies: []` を明示）
 
 ### A. マーケットプレイス経由でインストール（推奨）
@@ -50,7 +58,7 @@ git clone https://github.com/dmajima/claude-plugins <local-path>
 
 # 2. リリースタグまたは main に切替
 cd <local-path>
-git checkout <tag-or-branch>   # 例: git checkout v2.1.0 / git checkout main
+git checkout <tag-or-branch>   # 例: git checkout v2.2.0 / git checkout main
 ```
 
 ```text
@@ -93,11 +101,6 @@ Claude Code セッション起動時に本プラグインが自動更新され�
 
 依存プラグインなし（`dependencies: []` を `plugin.json` で明示）。
 個別インストール手順の追加は不要です。
-
-| 動作要件 | 説明 |
-|---------|-----|
-| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須 |
-| `/reload-plugins` | 本コマンド完了後、セッションへの反映に使用 |
 
 ### 動作確認
 
@@ -162,6 +165,7 @@ Project スコープに限定した実行予定コマンドのみを表示しま
 | Phase | 処理内容 | 使用 CLI |
 |-------|---------|---------|
 | A | 対象収集（マーケットプレイス一覧 + 各スコープの `enabledPlugins`） | `claude plugin marketplace list` |
+| A-0 | Claude Code CLI 存在チェック | `claude plugin --help` |
 | A-1 | プラグイン名・MP 名・スコープ名の入力検証（XR-1） | — |
 | A-2 | マーケットプレイス整合性検証（未登録 MP の早期除外） | — |
 | B | マーケットプレイス更新（`--scope` 指定時も常に実行） | `claude plugin marketplace update` |
@@ -173,23 +177,31 @@ Project スコープに限定した実行予定コマンドのみを表示しま
 
 ### 横断ルール
 
-各 Phase は以下 4 つの横断関心事に従います（詳細は `commands/update-all.md` の「横断ルール」節）。
+各 Phase は以下 4 つの横断関心事に従います（規則本体は `references/cross-cutting-rules.md`）。
 
 | ID | ルール |
 |----|------|
-| XR-1 | 入力検証（プラグイン名・MP 名・スコープの正規表現照合 + ホワイトリスト） |
-| XR-2 | タイムアウト（個別呼び出し 60 秒・全体 30 分） |
-| XR-3 | 出力サニタイズ（GitHub PAT / AWS / GitLab / Slack / JWT / SSH 鍵 / ローカルパス等） |
+| XR-1 | 入力検証（プラグイン名・MP 名・スコープの正規表現照合 + ホワイトリスト + NFKC 正規化） |
+| XR-2 | タイムアウト（個別 60 秒・全体 30 分・サーキットブレーカー） |
+| XR-3 | 出力サニタイズ（GitHub PAT / GitLab / AWS / Slack / JWT / Google API / Stripe / Azure / NPM / SSH 鍵 / ローカルパス + 40 字超デフォルトマスク） |
 | XR-4 | リトライ上限（最大 1 回 = 合計 2 試行） |
 
 ### 振る舞いの原則
 
-- **公式 CLI 経由**: `git fetch` / `git reset --hard` 等の低レベル git 操作は行わない（ADR-PU-002）
-- **固定順序**: マーケットプレイス → User → Project → Local（順序を入れ替えない・ADR-PU-003）
-- **スコープ個別更新**: 同一プラグインが複数スコープにあっても、スコープごとに独立した更新エントリとして処理
-- **継続実行**: 個別更新でエラーが発生しても処理を中断せず、エラーは記録して次へ進む
-- **exit code 一次判定**: CLI 出力テキストの解析は補助情報。判定不能時は "Unknown（要手動確認）" として残す
+- **公式 CLI 経由**（ADR-PU-002）
+- **固定順序**（ADR-PU-003）
+- **スコープ個別更新**（ADR-PU-001/002）
+- **継続実行**（ADR-PU-003）
+- **exit code 一次判定 + Unknown 区分**（ADR-PU-005）
+- **横断ルール SSOT 参照**（ADR-PU-004）
 - **失敗対応の確認**: 結果報告後、失敗があれば一括リトライ / 個別判断 / 全件スキップをユーザに確認
+
+## 技術スタック・アーキテクチャ
+
+設計判断の詳細は次を参照してください:
+
+- [`references/architecture-decisions.md`](references/architecture-decisions.md) — ADR-PU-001〜005
+- [`references/cross-cutting-rules.md`](references/cross-cutting-rules.md) — XR-1〜XR-4 の SSOT
 
 ## 注意事項
 
@@ -262,7 +274,8 @@ plugins-update/
 ├── commands/
 │   └── update-all.md                      # /update-all コマンド本体
 └── references/
-    └── architecture-decisions.md          # ADR-PU-001/002/003（設計判断記録）
+    ├── architecture-decisions.md          # ADR-PU-001〜005（設計判断記録）
+    └── cross-cutting-rules.md             # XR-1〜XR-4（横断ルール SSOT）
 ```
 
 ## 関連プラグイン
@@ -275,3 +288,7 @@ plugins-update/
 ## 関連ルール
 
 - 自動更新ポリシー: `~/.claude/rules/claude/plugin-auto-update.md`（`autoUpdate: true` 必須・週 1 回更新チェック）
+
+## ライセンス
+
+本プラグインは MIT License で配布されます。

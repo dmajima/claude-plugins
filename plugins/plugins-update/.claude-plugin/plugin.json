@@ -1,10 +1,13 @@
 {
   "name": "plugins-update",
-  "version": "2.1.0",
-  "description": "インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化するメンテナンスコマンド",
+  "version": "2.2.0",
+  "description": "インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化するメンテナンスプラグイン",
   "author": {
     "name": "dmajima"
   },
+  "homepage": "https://github.com/dmajima/claude-plugins/tree/main/plugins/plugins-update",
+  "repository": "https://github.com/dmajima/claude-plugins",
+  "license": "MIT",
   "category": "maintenance",
   "keywords": [
     "plugin",
