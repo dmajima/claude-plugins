@@ -1,6 +1,6 @@
 ---
 name: extension-reviewer
-description: Claude Code の拡張要素（スキル・プラグイン・マーケットプレイス・コマンド・エージェント・チーム・フック）を多角的に横断レビューするスキル。「foo スキルをレビュー」「bar プラグイン全体をチェック」「dmajima-claude-plugins マーケットプレイスをレビュー」「extension をレビュー」などの依頼で起動する。Use when the user wants a multi-perspective review of skills, plugins, marketplaces (marketplace.json + marketplace README), commands, agents, agent teams, or hooks before publishing or merging. SKIP when the user wants to create a new artifact (use the corresponding *-toolkit skill).
+description: Claude Code 拡張要素（スキル・プラグイン・マーケットプレイス・コマンド・エージェント・チーム・フック）を多角的に横断レビューするスキル。「foo スキルをレビュー」「bar プラグインを全体チェック」「マーケットプレイスをレビュー」等で起動する。Use when wanting a multi-perspective review before publishing/merging. SKIP when creating a new artifact (matching *-toolkit).
 ---
 
 # Extension Reviewer

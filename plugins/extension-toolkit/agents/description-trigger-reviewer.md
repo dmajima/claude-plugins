@@ -1,6 +1,6 @@
 ---
 name: description-trigger-reviewer
-description: スキル・エージェント・コマンド・プラグインの description フィールドが AI 自動トリガー判定に適しているかを評価する専門家。description-guide.md に従って必須要素（主目的・トリガーフレーズ・Use when・SKIP when）の網羅、文字数、責務外明示を確認する。スキル新規作成時・description 改修時のレビューで呼び出される。
+description: スキル・エージェント・コマンド・プラグインの description フィールドが AI 自動トリガー判定に適しているかを評価する専門家。description-guide.md に従って 5W1H 必須要素（What・Where・When・Why、必要に応じて How）の網羅、300 文字以内の文字数、責務外明示を確認する。スキル新規作成時・description 改修時のレビューで呼び出される。
 model: sonnet
 tools: Read, Grep, Glob
 ---
@@ -21,14 +21,17 @@ tools: Read, Grep, Glob
 
 ## 評価観点
 
-### スキルの description
+### スキルの description（5W1H + 300 文字以内）
 
-- [ ] 主目的の 1 文が含まれる
-- [ ] 日本語のトリガーフレーズ例 3 つ以上
-- [ ] 英語の Use when 句が含まれる
-- [ ] SKIP when（責務外）が含まれる
-- [ ] 関連スキル名の参照（`use {skill-name} for {their responsibility}`）あり
-- [ ] 抽象語のみではなく具体的なフレーズ
+- [ ] **What**: 何をするスキルかが 1 文で含まれる
+- [ ] **Where**: 対象成果物（ファイル/ディレクトリ）が明示されている
+- [ ] **When（日本語）**: トリガーフレーズ例 3 つ以上が具体的に列挙
+- [ ] **When（英語）**: `Use when ...` 句が含まれる
+- [ ] **Why**: `SKIP when ...` と関連スキル名（`use {skill-name}`）が明示されている
+- [ ] **How**: 動作形態が AI 判定に必要な場合のみ簡潔に含まれる（任意）
+- [ ] **文字数**: 300 文字以内（必須）
+- [ ] 抽象語（「包括的」「網羅的」「効率的」等）の装飾なし
+- [ ] ADR 番号・内部用語の羅列なし
 - [ ] 改行を含まない
 
 ### エージェントの description
@@ -58,10 +61,10 @@ tools: Read, Grep, Glob
 - {description 欠落・空文字、即時修正必須}
 
 ### High
-- {Use when / SKIP when 欠落、責務外明示なし、文字数大幅超過}
+- {5W1H 必須要素（What/Where/When/Why）の欠落、責務外明示なし、300 文字超過}
 
 ### Medium
-- {トリガーフレーズが抽象的、関連スキル参照なし}
+- {トリガーフレーズが抽象的、関連スキル参照なし、装飾語による冗長化、150 文字未満}
 
 ### Low / Suggestion
 - {より具体的な表現の提案}
