@@ -1,0 +1,31 @@
+{
+  "name": "extension-toolkit",
+  "version": "1.0.0",
+  "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成からマーケットプレイス構築・公開まで支援",
+  "author": {
+    "name": "dmajima"
+  },
+  "keywords": [
+    "skill-toolkit",
+    "plugin-toolkit",
+    "command-toolkit",
+    "agent-toolkit",
+    "hook-toolkit",
+    "readme-toolkit",
+    "environment-setup-toolkit",
+    "marketplace-toolkit",
+    "extension-reviewer",
+    "marketplace-publisher",
+    "scaffolding"
+  ],
+  "dependencies": [
+    {
+      "name": "example-skills",
+      "marketplace": "anthropic-agent-skills"
+    },
+    {
+      "name": "document-skills",
+      "marketplace": "anthropic-agent-skills"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "{tool-name-pattern}",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{コマンド本体}",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [],
+    "UserPromptSubmit": [],
+    "Stop": [],
+    "SessionStart": []
+  }
+}
