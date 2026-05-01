@@ -258,6 +258,18 @@
 | 既存プラグインの移行猶予 | 本 ADR 制定前から存在する既存プラグイン（`convert-doc` 等）に対しては、`extension-reviewer` の機械チェックは **検出のみ** を実施し（重大度 High で報告）、移行は別 PR として段階的に行う。本プラグイン（`extension-toolkit`）自身は本 ADR 制定と同時に完全準拠する。移行未完了プラグインの公開（マーケットプレイス更新）は、scripts-policy.md の指摘を解消した上で実施する |
 | 代替案 | (1) インラインを許可（旧運用）→ 文字化け再発・トークン消費増・レビュー対象外、却下。(2) 全コードブロック禁止 → 設定例・出力例まで失われ、ドキュメント機能が損なわれる、却下。(3) 言語別（python のみ禁止 / bash 許可）→ 同じ問題が bash でも発生する、却下。(4) スクリプトをプラグイン/スキル直下 `scripts/` に置く（旧 ADR-015 の許可リストに沿う） → トップレベル許可リストが肥大化し、references / scripts の責務が分散、却下 |
 
+## ADR-026: プラグイン/スキル領域への直接編集を `extension-toolkit` 経由に強制するフック導入
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | `extension-toolkit` プラグイン同梱の `hooks/hooks.json` で **PreToolUse Edit/Write/MultiEdit フック** を登録し、対象ファイルが `plugins/{name}/` 配下（`SKILL.md` / `commands/*.md` / `agents/*.md` / `hooks/*` / `references/*` / `evals/*` / `README.md` / `.claude-plugin/plugin.json`）に該当する場合、対応する `*-toolkit` スキルを経由するよう **exit code 2 でブロック** する。実スクリプトは ADR-025 に従い `references/scripts/hooks/enforce_toolkit_routing.sh` に配置する。`EXTENSION_TOOLKIT_BYPASS=1` 環境変数で抑制可能（フック自身の修正や緊急時の bypass 用）|
+| 理由 | (1) `extension-toolkit` の各 `*-toolkit` スキルは構造規約遵守・パスポータビリティ検査・バージョン更新・evals 整合・description トリガー設計などの品質ガードを内包する。直接 Edit/Write を許すとこれらが回避され、規約違反・退行を招く。(2) AI 自動トリガー（description 経由）だけでは、ユーザが明示的にファイル編集を依頼した場合に各 toolkit スキルが起動しないケースがある。フックで harness レベルでガードすることで「必ず toolkit 経由」を保証する。(3) フック中で推奨スキル名を提示することで、Claude が自動的に適切な toolkit を起動するよう誘導できる |
+| トレードオフ | (1) ブロック型のため、フック自身の修正・extension-toolkit core 実装変更・緊急対応時には bypass フラグが必要。(2) 利用者の作業ディレクトリ内に `.claude/.local/` `.git/` を含む場合の除外判定が必要（実装で明示）。(3) Python が PATH に無い環境では JSON パースが失敗し、フックは fail-open（exit 0、通過）する設計とした（厳密性より誤動作回避を優先）|
+| 適用範囲 | 本プラグインがインストールされた環境全体。本プラグイン自体および本プラグインがレビュー対象とするすべてのプラグイン |
+| 必須項目 | (a) `hooks/hooks.json` で `PreToolUse Edit/Write/MultiEdit` を `${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/enforce_toolkit_routing.sh` にルーティング、(b) 実スクリプトは `references/scripts/hooks/` 配下（ADR-025 配置義務）、(c) bypass フラグ `EXTENSION_TOOLKIT_BYPASS=1` のサポート、(d) `.claude/.local/` / `.git/` / `/tmp/` 配下は無条件に通過、(e) ファイルパス取得失敗時は fail-open（編集を妨げない） |
+| 推奨ルーティング | SKILL.md → `skill-toolkit` / commands/*.md → `command-toolkit` / agents/*.md → `agent-toolkit` / hooks/* → `hook-toolkit` / README.md → `readme-toolkit` / plugin.json → `plugin-toolkit` / references/scripts/setup/ → `environment-setup-toolkit` / 公開 → `marketplace-publisher` / レビュー → `extension-reviewer` |
+| 代替案 | (1) description / トリガー強化のみ → AI 判定の確実性に欠ける、却下。(2) Stop / Notification フックで事後通知 → 編集自体は通ってしまうため品質ガードにならない、却下。(3) settings.json でユーザ環境ごとに登録 → プラグイン同梱の自己完結性（ADR-022）に反する、却下 |
+
 ## ADR の追加・更新
 
 新たな設計判断が発生した際は、本ファイルに ADR-XXX 形式で追記する。既存 ADR を変更する場合は **最新の決定のみを記載** する（変更前の判断・変更経緯は Git コミット履歴を参照する）。ADR-010（スキル単位 venv）は ADR-024 で更新されたため、ADR-024 の内容が現行決定。

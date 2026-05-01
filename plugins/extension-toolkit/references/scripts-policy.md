@@ -242,12 +242,26 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
    - 「環境構築」節を「プラグイン直下スクリプトの呼び出し」に書き換え
    - スキル独自の Python バージョン要件等は `setup_venv.sh` 第 3 引数で渡す
 
-## 9. 関連ルール
+## 9. extension-toolkit 経由強制フック（ADR-026）
+
+プラグイン同梱フック `hooks/hooks.json` で `PreToolUse Edit/Write/MultiEdit` を捕捉し、対象ファイルが `plugins/{name}/` 配下に該当する場合は対応する `*-toolkit` を経由するよう **exit code 2 でブロック** する。直接編集を試みた場合、フックが推奨スキル名を提示し、Claude が自動的に該当 toolkit を起動するよう誘導する。
+
+| 項目 | 内容 |
+|-----|------|
+| フック設定 | `hooks/hooks.json` |
+| 実スクリプト | `references/scripts/hooks/enforce_toolkit_routing.sh`（本ポリシー節 2 の `references/scripts/` 配置義務に準拠） |
+| 除外パス | `.claude/.local/` / `.git/` / `/tmp/` 配下、ファイルパス取得失敗時 |
+| bypass | 環境変数 `EXTENSION_TOOLKIT_BYPASS=1`（フック自身・extension-toolkit core 修正用） |
+
+詳細は [`architecture-decisions.md`](architecture-decisions.md) ADR-026 を参照。
+
+## 10. 関連ルール
 
 | ルール | 関係 |
 |-------|------|
 | [`conventions.md`](conventions.md) | スクリプト配置の上位規約（本ポリシーで詳細化） |
 | [`validation-rules.md`](validation-rules.md) | 機械検証項目（本ポリシーの違反検出） |
-| [`architecture-decisions.md`](architecture-decisions.md) | ADR-024（プラグイン単位 venv）・ADR-025（インラインスクリプト禁止 + `references/scripts/` 配置義務） |
+| [`architecture-decisions.md`](architecture-decisions.md) | ADR-024（プラグイン単位 venv）・ADR-025（インラインスクリプト禁止 + `references/scripts/` 配置義務）・ADR-026（経由強制フック） |
 | [`path-portability.md`](path-portability.md) | スクリプト内のパス記述ルール |
 | 各スキルの `references/scripts/checks/run_checks.py`（extension-reviewer） | 本ポリシーの自動検出 |
+| `hooks/hooks.json` + `references/scripts/hooks/enforce_toolkit_routing.sh`（本プラグイン同梱） | プラグイン/スキル領域への直接編集を toolkit 経由に強制（ADR-026）|

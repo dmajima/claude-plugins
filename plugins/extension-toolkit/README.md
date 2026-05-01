@@ -175,6 +175,19 @@ Claude（要約）:
 | `extension-reviewer` | 拡張要素の多角レビュー（チーム起動） |
 | `marketplace-publisher` | プラグイン公開ワークフロー（git push / PR、`marketplace.json` 編集は `marketplace-toolkit` に委譲） |
 
+## 自動経由フック（v1.2.0+, ADR-026）
+
+本プラグインは **PreToolUse Edit/Write/MultiEdit フック** を同梱しており、`plugins/{name}/` 配下のファイル（SKILL.md / commands/*.md / agents/*.md / hooks/* / references/* / evals/* / README.md / plugin.json）への直接編集を検知して、対応する `*-toolkit` スキルを経由するよう **exit code 2 でブロック** します。
+
+| 配置 | 内容 |
+|-----|-----|
+| `hooks/hooks.json` | フック設定（`PreToolUse Edit\|Write\|MultiEdit`）|
+| `references/scripts/hooks/enforce_toolkit_routing.sh` | 検知ロジック（推奨スキル名の提示）|
+| 除外パス | `.claude/.local/` / `.git/` / `/tmp/` 配下 |
+| bypass | `EXTENSION_TOOLKIT_BYPASS=1` 環境変数（フック自身・extension-toolkit core 修正用）|
+
+これにより「プラグイン/スキルへの変更操作は必ず extension-toolkit 経由」という運用が利用者環境で自動的に保証されます。詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) ADR-026 を参照。
+
 ## エージェント・チーム
 
 プラグイン同梱の専門家エージェント（`agents/`）:
