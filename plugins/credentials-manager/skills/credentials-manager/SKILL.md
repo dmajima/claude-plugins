@@ -135,6 +135,7 @@ Claude Code セッションをまたいで認証情報を管理し、URL/ドメ�
 - 認証情報のフル値を会話出力・ログ・コミットメッセージに出してはならない（常にマスクする）
 - `credentials.json` をリポジトリにコミットしてはならない（`.gitignore` 登録を確認）
 - グローバルルール `~/.claude/rules/security/credentials-management.md` の有無に関わらず、URL/API アクセス時には本スキルを起動して保存済み認証情報を必ず照合すること
+- 本プラグイン同梱の `SessionStart` / `UserPromptSubmit` / `PreToolUse` フックから `additionalContext` で本スキルの最優先起動が指示された場合、他のスキル・ツール呼び出しに先立って必ず本スキルを起動すること
 - 平文保存のため本番秘匿情報の運用には適さない（README に明示）
 - パスポータビリティ準拠（[`../../references/path-portability.md`](../../references/path-portability.md)、自スキル参照は `${CLAUDE_SKILL_DIR}` を使う）
 - 既存ファイル更新時のエンコーディング維持（不在時は UTF-8 / 元の改行コードを既定維持）

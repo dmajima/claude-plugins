@@ -11,6 +11,9 @@ Claude Code セッションをまたいで認証情報（API キー・トーク�
 | 機能 | 種別 | 説明 |
 |-----|------|------|
 | `credentials-manager` | スキル | 認証情報の保存・取得・一覧・削除、URL/ドメインからの自動マッチ・自動適用 |
+| `install_rule_template.sh` | フック (SessionStart) | スコープ判定（user / project）に応じて最重要ルール `credentials-management.md` を `.claude/rules/security/` 配下へ自動配置（既存ファイルは温存） |
+| `preempt_credentials_check.sh` | フック (PreToolUse) | `WebFetch` / `WebSearch` / `mcp__*` / `Bash`（外部通信・認証付きクライアント・シークレット埋め込み・認証情報環境変数 export）/ `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit`（認証情報系ファイル・コンテンツ内シークレット）の実行前に Claude へ「`credentials-manager` を最優先で起動」と注意喚起 |
+| `detect_credentials_in_prompt.sh` | フック (UserPromptSubmit) | ユーザー入力に sk-* / ghp_* / xoxb-* / Bearer / Basic / JWT / PEM 秘密鍵等のシークレットパターンが含まれる場合、Claude へ「保存提案＋マスキング処理を最優先で実施」と通知 |
 
 ## 導入手順
 
@@ -105,6 +108,90 @@ Claude（要約）:
 
 本スキルは **明示要求がなくても、ユーザが URL / API エンドポイント / WebFetch / curl / 外部サービス通信を依頼した時点で自動起動** します。グローバルルール `~/.claude/rules/security/credentials-management.md` の有無に関わらず、SKILL.md の description が AI トリガー判定で参照されるため、利用者環境にグローバルルールが無くても問い合わせ先として機能します。
 
+さらに本プラグインは下記 2 つのフックで強制力を多重化しています。
+
+## 自動化機構（hooks）
+
+### SessionStart — 最重要ルールテンプレートの自動配置
+
+セッション開始時に `${CLAUDE_PLUGIN_ROOT}/templates/rules/security/credentials-management.md` を、プラグインのインストールスコープに応じた以下のディレクトリへコピーします。
+
+| スコープ判定 | 配置先 |
+|------------|-------|
+| `${CLAUDE_PLUGIN_ROOT}` が `${HOME}/.claude/` 配下にある（user スコープ） | `${HOME}/.claude/rules/security/credentials-management.md` |
+| 上記以外（project / local スコープ） | `${CLAUDE_PROJECT_DIR}/.claude/rules/security/credentials-management.md` |
+
+- 既に同名ファイルが存在する場合は **何もしません**（ユーザーの編集を尊重）
+- 配置時のみ `additionalContext` で Claude に通知します
+- 配置後は `CLAUDE.md` から `rules/security/credentials-management.md` を参照する 1 行を追記してください（既存運用と整合）
+
+### PreToolUse — 認証情報を扱い得る全ツール呼び出しの注意喚起
+
+以下のいずれかに該当するツール呼び出しを検出した時点で、`hookSpecificOutput.additionalContext` を介して Claude に「`credentials-manager` を最優先で起動して認証情報を照合せよ」と通知します。
+
+#### 1. ツール種別による検出
+
+| ツール / 条件 | 検出 |
+|-----------|------|
+| `WebFetch` / `WebSearch` | 常に対象 |
+| `mcp__*`（任意の MCP サーバ呼び出し） | 常に対象 |
+| `Bash` の `command` に対象コマンドを含む | 下記 2 / 3 のいずれか |
+| `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` の `file_path` が認証情報系 | 下記 4 のリストに該当 |
+| `Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 下記 5 のいずれか |
+
+#### 2. Bash matcher の外部通信 / 認証付きクライアント / IaC / シークレット管理 CLI
+
+```text
+curl / wget / http / httpie / aria2c
+ssh / scp / sftp / rsync / gh
+aws / az / gcloud / kubectl / doctl / heroku / firebase / vercel / netlify
+docker / podman / psql / mysql / mongosh / mongo / redis-cli
+terraform / tofu / ansible / ansible-playbook / helm / pulumi / packer
+vault / op / bw
+Invoke-WebRequest / Invoke-RestMethod / iwr / irm
+```
+
+#### 3. Bash matcher の認証情報環境変数設定
+
+```text
+export FOO_TOKEN=...      / set FOO_KEY=...
+export FOO_SECRET=...     / export FOO_PASSWORD=...
+export FOO_API_KEY=...    / export FOO_AUTH=...
+export FOO_CREDENTIAL=... / export FOO_BEARER=...
+```
+
+#### 4. 認証情報系ファイルパス（Read/Write/Edit 等で対象化）
+
+| 種別 | 対象 |
+|-----|------|
+| 環境変数定義 | `.env` / `.env.<name>`（`.env.example` `.sample` `.template` `.dist` `.test` は除外） |
+| 認証情報ストア | `credentials.json` / `credentials.yml` / `secrets.json` / `secret.json` 等 |
+| ツール設定 | `.npmrc` / `.netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` |
+| 秘密鍵 | `id_rsa` / `id_dsa` / `id_ecdsa` / `id_ed25519` / `id_xmss` |
+| クラウド認証 | `~/.aws/credentials` / `~/.aws/config` / `~/.docker/config.json` / `~/.kube/config` / `kubeconfig` / `serviceAccountKey.json` / `application_default_credentials.json` |
+| ディレクトリ全体 | `~/.ssh/*` / `~/.gnupg/*` |
+| 拡張子 | `*.pem` / `*.key` / `*.p12` / `*.pfx` / `*.jks` / `*.keystore` / `*.crt` / `*.cer` / `*.der` / `*.asc` / `*.gpg` |
+
+#### 5. シークレットパターン（Bash command / Write/Edit content）
+
+```text
+sk-*  ghp_*  gho_*  ghu_*  ghs_*  ghr_*
+xoxb-*  xoxp-*  xoxa-*  xoxr-*  xoxs-*
+AKIA<16>  AIza<35>  glpat-*  eyJ*.*.*  Bearer ...
+```
+
+ローカル完結の `ls` / `cat` / `git status` / `mkdir` / `grep` 等、無関係な `Read`/`Write` ファイル（`README.md` `package.json` 等）は通知対象外です。
+
+### UserPromptSubmit — ユーザー入力に含まれるシークレットの保存提案
+
+ユーザーがプロンプトに sk-* / ghp_* / xoxb-* / AKIA / AIza / glpat- / JWT / Bearer / Basic / PEM 秘密鍵等のパターンを含めた瞬間に検出し、Claude に対し「`credentials-manager` で保存提案 → 以降は保存名で参照 → 表示時はマスク値（先頭 4 + `***` + 末尾 4）に置換」を最優先で実施するよう通知します。
+
+会話中で平文の認証情報がそのまま復唱されることを防ぎ、保存ファイル経由で安全に扱えるようにします。
+
+### フックを無効化したい場合
+
+利用者プロジェクトの `.claude/settings.local.json` で hook を無効化、またはプラグイン本体をアンインストールしてください（プラグインスキル単体運用は SKILL.md の description で引き続き機能します）。
+
 ## 認証情報ファイルの保存先
 
 セッション開始時のワーキングディレクトリに応じて、以下の優先順位で解決されます。
@@ -129,6 +216,18 @@ plugins/credentials-manager/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── README.md
+├── hooks/
+│   └── hooks.json                              # SessionStart / PreToolUse フック登録
+├── references/
+│   └── scripts/
+│       └── hooks/
+│           ├── install_rule_template.sh        # SessionStart：テンプレート配置
+│           ├── preempt_credentials_check.sh    # PreToolUse：認証情報を扱い得る全ツール検出
+│           └── detect_credentials_in_prompt.sh # UserPromptSubmit：ユーザー入力のシークレット検出
+├── templates/
+│   └── rules/
+│       └── security/
+│           └── credentials-management.md       # 最重要ルールのテンプレート本体
 └── skills/
     └── credentials-manager/
         ├── SKILL.md

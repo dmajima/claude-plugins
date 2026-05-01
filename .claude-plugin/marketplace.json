@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "credentials-manager",
-      "description": "Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン",
+      "description": "Claude Code セッションをまたいで認証情報を保存・自動適用しつつ、SessionStart で最重要ルールを自動配置・PreToolUse で外部通信前に credentials-manager 起動を強制するプラグイン",
       "category": "security",
       "source": "./plugins/credentials-manager",
       "author": {
@@ -21,7 +21,11 @@
         "token",
         "auth",
         "url-match",
-        "auto-apply"
+        "auto-apply",
+        "hooks",
+        "rule-template",
+        "session-start",
+        "pre-tool-use"
       ]
     },
     {
