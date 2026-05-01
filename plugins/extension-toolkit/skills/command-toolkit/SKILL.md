@@ -97,11 +97,26 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 - 60 文字以内
 - 体言止め可
 - コマンドの効果 1 つ
-- 引数仕様は本文に書く（description には書かない）
+- 引数仕様は `argument-hint` に書く（description には書かない）
+
+### 6.5. argument-hint の必須化（ADR-023）
+
+引数を受け取るコマンド（本文に `$ARGUMENTS` を含む / ルーティング表を持つ）は frontmatter に `argument-hint` を **必ず記載** する。表記規則は [`../../references/description-guide.md`](../../references/description-guide.md) 節 4.1 を参照。
+
+| 区分 | 表記 |
+|------|------|
+| 必須引数 | `<引数名>` |
+| 省略可引数 | `[引数名]` |
+| フラグ（値あり） | `[--flag 値]` |
+| フラグ（値なし） | `[--flag]` |
+
+引数を一切受け取らないコマンド（`$ARGUMENTS` 不参照）は `argument-hint` を省略してよい。
 
 ### 7. 検証
 
 - [ ] frontmatter `description` あり、60 文字以内
+- [ ] frontmatter `argument-hint` あり（引数受取コマンドの場合）
+- [ ] `argument-hint` 60 文字以内・改行なし・表記規則順守
 - [ ] プレースホルダ `{...}` 残存なし
 - [ ] パスポータビリティ合格
 - [ ] 配置先パスが正しい
