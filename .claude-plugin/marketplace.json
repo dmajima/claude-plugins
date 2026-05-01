@@ -32,7 +32,7 @@
     {
       "name": "plugins-update",
       "source": "./plugins/plugins-update",
-      "description": "インストール済みマーケットプレイス・プラグインを全スコープ（User/Project/Local）で一括更新するコマンドプラグイン",
+      "description": "Claude Code 公式 CLI でマーケットプレイスとプラグインを一括最新化するコマンドプラグイン",
       "category": "maintenance",
       "author": {
         "name": "dmajima"
@@ -43,7 +43,8 @@
         "marketplace",
         "maintenance",
         "auto-update",
-        "command"
+        "command",
+        "cli"
       ]
     },
     {

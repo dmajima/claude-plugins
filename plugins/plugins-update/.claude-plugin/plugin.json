@@ -1,16 +1,19 @@
 {
   "name": "plugins-update",
-  "version": "1.0.2",
-  "description": "インストール済みマーケットプレイス・プラグインを全スコープ（User/Project/Local）で一括更新するコマンドプラグイン",
+  "version": "2.0.0",
+  "description": "Claude Code 公式 CLI でマーケットプレイスとプラグインを一括最新化するコマンドプラグイン",
   "author": {
     "name": "dmajima"
   },
+  "category": "maintenance",
   "keywords": [
     "plugin",
     "update",
     "marketplace",
     "maintenance",
     "auto-update",
-    "command"
-  ]
+    "command",
+    "cli"
+  ],
+  "dependencies": []
 }
