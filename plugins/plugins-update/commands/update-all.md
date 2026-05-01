@@ -22,7 +22,7 @@ argument-hint: "[--dry-run] [--scope <user|project|local>]"
 （スキル側でも検証されるが、コマンド側で早期失敗させる）:
 
 ```text
-エラー: 不正な --scope 値 "foo" が指定されました。有効な値は user / project / local です。
+エラー: 不正な --scope 値 "foo" が指定されました。有効な値は user / project / local / all です（all は省略時の既定値であり明示指定も可）。
 ```
 
 ## スキル委譲

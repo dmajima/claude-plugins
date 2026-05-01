@@ -63,6 +63,57 @@ scope=project 明示時は Phase A-0 で git リポジトリ存在を要求し�
 
 ---
 
+## Phase F（dry-run モード）
+
+`mode = dry-run` 時は Phase B / C / D / E を実行せず、以下フォーマットで「実行予定コマンド一覧」のみを
+提示する。F-4 / G はスキップ。
+
+### F-1（dry-run）. 実行予定サマリ
+
+```markdown
+## 実行予定サマリ（dry-run）
+
+| 区分 | 実行予定件数 | スキップ | （備考）|
+|-----|------------|---------|--------|
+| マーケットプレイス | <count> | - | 全 MP 対象 |
+| User プラグイン | <count> | <count> | scope=<scope> によりフィルタ |
+| Project プラグイン | <count> | <count> | 同上 / git リポジトリ外なら省略 |
+| Local プラグイン | <count> | <count> | 同上 |
+```
+
+### F-2（dry-run）. マーケットプレイス実行予定詳細
+
+```markdown
+### マーケットプレイス（実行予定コマンド）
+
+| マーケットプレイス | 実行予定コマンド |
+|-----------------|---------------|
+| <name> | `claude plugin marketplace update` |
+```
+
+（CLI が個別 MP 指定をサポートした際は `claude plugin marketplace update <name>` 形式に切替）
+
+### F-3（dry-run）. スコープ別実行予定詳細
+
+```markdown
+### User プラグイン（実行予定コマンド）
+
+| プラグイン | マーケットプレイス | 実行予定コマンド |
+|----------|-----------------|---------------|
+| <plugin> | <marketplace> | `claude plugin update <plugin>@<marketplace> --scope user` |
+
+### Project プラグイン（実行予定コマンド）
+（User と同形式。git リポジトリ外なら "リポジトリ外のため省略" を表示）
+
+### Local プラグイン（実行予定コマンド）
+（User と同形式）
+```
+
+dry-run 時の備考列は「（実行予定）」固定文言を入れ、サニタイズ対象の実エラー出力は発生しないため
+XR-3 適用は不要。
+
+---
+
 ## Phase F-4. 次のアクション提示
 
 `mode = dry-run` の場合は本セクションを **省略** する（実際の更新がないため）。
@@ -112,6 +163,34 @@ AskUserQuestion({
 
 質問テキストの `<error>` は XR-3 サニタイズ後の値。500 字を超える場合は「...（省略）」で切り詰める
 （マスクトークン `***...***` の途中で切らない）。
+
+### 切り詰めアルゴリズム（疑似コード）
+
+```text
+function truncate_with_mask_safety(text, limit=500):
+    if len(text) <= limit:
+        return text
+
+    cut = text[:limit]
+
+    # 末尾から走査して、未閉鎖の `***` ペア境界に到達するまで後退
+    # `***...***` パターンは固定マーカーで両端が `***` のため、
+    # cut 内の `***` 出現回数が **奇数** であれば最後の `***` ブロックが未完結
+    star_count = count_occurrences(cut, "***")
+    if star_count % 2 == 1:
+        # 最後の `***` 出現位置の手前まで切り戻す
+        last_star_pos = rfind(cut, "***")
+        cut = cut[:last_star_pos]
+
+    return cut + "...（省略）"
+```
+
+**設計意図**:
+- 既知マスクトークン（`***GITHUB_TOKEN***` / `***POSSIBLE_SECRET***` 等）は両端が `***` で固定。
+- `***` の出現回数が偶数なら全ペアが完結している。奇数なら最後の `***` ブロックが切れているため、
+  その手前まで戻すことで「機密が部分露出する事故」を回避する。
+- `<netrc-credential>` 等の山括弧マスクは部分露出しても秘匿性を破らないため、本アルゴリズムでは
+  追加処理しない（必要なら山括弧版も同等の偶奇判定で拡張可能）。
 
 ```text
 # pseudocode: Claude が AskUserQuestion ツールを呼び出すパターン

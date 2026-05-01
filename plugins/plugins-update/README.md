@@ -168,18 +168,21 @@ OS パッケージマネージャ管理下に存在することを確認して�
 委譲します（ADR-PU-008）。Phase 構成の概略は以下のとおり（詳細は
 `skills/plugin-updater/references/phase-flow.md` を参照）。
 
-| Phase | 処理内容 | 使用 CLI |
-|-------|---------|---------|
-| A | 対象収集（マーケットプレイス一覧 + 各スコープの `enabledPlugins`） | `claude plugin marketplace list` |
-| A-0 | Claude Code CLI 存在チェック | `claude plugin --help` |
-| A-1 | プラグイン名・MP 名・スコープ名の入力検証（XR-1） | — |
-| A-2 | マーケットプレイス整合性検証（未登録 MP の早期除外） | — |
-| B | マーケットプレイス更新（`--scope` 指定時も常に実行） | `claude plugin marketplace update` |
-| C | User スコープのプラグイン更新 | `claude plugin update <plugin>@<marketplace> --scope user` |
-| D | Project スコープのプラグイン更新 | 同上 `--scope project` |
-| E | Local スコープのプラグイン更新 | 同上 `--scope local` |
-| F | 結果報告（サニタイズ + サマリ + マーケットプレイス詳細 + スコープ別詳細） | — |
-| G | 失敗があれば `AskUserQuestion` でリトライ / スキップを確認 | — |
+テーブルは **実行順** に並んでいます（A-0 → A → A-1 → A-2 → B → C → D → E → F → G、ADR-PU-003 準拠）。
+
+| 実行順 | Phase | 処理内容 | 使用 CLI |
+|-------|-------|---------|---------|
+| 1 | A-0-1 | 引数バリデーション（`--scope` 値のホワイトリスト照合） | — |
+| 2 | A-0-2 | Claude Code CLI 存在チェック | `claude plugin --help` |
+| 3 | A | 対象収集（マーケットプレイス一覧 + 各スコープの `enabledPlugins`） | `claude plugin marketplace list` |
+| 4 | A-1 | プラグイン名・MP 名・スコープ名の入力検証（XR-1） | — |
+| 5 | A-2 | マーケットプレイス整合性検証（未登録 MP の早期除外） | — |
+| 6 | B | マーケットプレイス更新（`--scope` 指定時も常に実行） | `claude plugin marketplace update` |
+| 7 | C | User スコープのプラグイン更新 | `claude plugin update <plugin>@<marketplace> --scope user` |
+| 8 | D | Project スコープのプラグイン更新 | 同上 `--scope project` |
+| 9 | E | Local スコープのプラグイン更新 | 同上 `--scope local` |
+| 10 | F | 結果報告（サニタイズ + サマリ + マーケットプレイス詳細 + スコープ別詳細） | — |
+| 11 | G | 失敗があれば `AskUserQuestion` でリトライ / スキップを確認 | — |
 
 ### 横断ルール
 
@@ -221,9 +224,14 @@ OS パッケージマネージャ管理下に存在することを確認して�
 
 ### バージョン同期方針
 
-本プラグインのバージョンは `plugin.json` の `version` フィールドが **唯一の正典** です（ADR-019 準拠）。
-`marketplace.json` のエントリにはバージョンを持たせず、マーケットプレイス README のテーブルに表示される
-バージョンは `plugin.json` から手動同期します。差異検出時は `plugin.json` の値を信頼してください。
+本プラグインのバージョンは `plugin.json` の `version` フィールドが **唯一の正典** です
+（親マーケットプレイス側の `extension-toolkit:ADR-019`「marketplace.json の version 排除と
+plugin.json への一元化」準拠）。`marketplace.json` のエントリにはバージョンを持たせず、
+マーケットプレイス README のテーブルに表示されるバージョンは `plugin.json` から手動同期します。
+差異検出時は `plugin.json` の値を信頼してください。
+
+> 親マーケットプレイス側の ADR は `<repo-root>/marketplace-rules/` または `extension-toolkit`
+> プラグイン配下の `references/architecture-decisions.md` を参照してください。
 
 ## 注意事項
 

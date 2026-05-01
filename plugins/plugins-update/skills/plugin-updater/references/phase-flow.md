@@ -34,7 +34,9 @@ A-0 は Phase A の前に **以下の順序** で必ず実行する。
 
 サブコマンド一覧形式の正規表現は **行頭が空白で始まり、サブコマンド名が単語境界で終わる**
 パターンを採用。これにより、ヘルプ末尾の説明文中に `marketplace update` という単語が含まれる
-だけのシムは検出できる（説明文は通常インデントなしで開始されるため）。
+だけのシムは **この照合をすり抜けてしまう可能性がある** が、説明文は通常インデントなしで
+開始されるため、行頭空白パターンには通常ヒットしない。**精巧に偽装したシム**（行頭に空白を
+入れて偽のサブコマンド一覧行を捏造する等）はこの照合では検出できない点に留意する。
 
 いずれも満たさない場合は以下のエラーで処理を中断する:
 
@@ -44,7 +46,9 @@ Claude Code のインストール状況と PATH を確認してください。
 ```
 
 **注**: 出力照合は **ヒューリスティックな補助** であり、CLI バイナリ自体の真正性検証は
-OS のパッケージマネージャ署名検証に依存する（ADR-PU-002 Trade-offs 参照）。
+OS のパッケージマネージャ署名検証に依存する。具体的な検証コマンド例（`codesign -v` /
+`Get-AuthenticodeSignature` / `dpkg -V`）は [`architecture-decisions.md`](architecture-decisions.md)
+の ADR-PU-002 Trade-offs 表を参照。
 攻撃者がヘルプ出力を精巧に偽装したシムを作れば回避可能。`which claude` / `Get-Command claude`
 で実行バイナリの絶対パスを確認することをユーザに推奨（README「動作要件」参照）。
 
@@ -55,29 +59,38 @@ OS のパッケージマネージャ署名検証に依存する（ADR-PU-002 Tra
 | 項目 | 取得元 | 取得方法 |
 |-----|-------|---------|
 | マーケットプレイス一覧 | Claude Code CLI | `claude plugin marketplace list` |
-| User プラグイン | `~/.claude/settings.json` の `enabledPlugins` | Read ツールで読み込み Claude が JSON 解析 |
+| User プラグイン | `~/.claude/settings.json` の `enabledPlugins` | **Grep で `enabledPlugins` ブロックを抽出**（A-Sec 手順に従う） |
 | Project プラグイン | `<repo>/.claude/settings.json` の `enabledPlugins` | 同上 |
 | Local プラグイン | `<repo>/.claude/settings.local.json` の `enabledPlugins` | 同上 |
 
-`settings.json` 系の読み取りは **Read ツールで直接ファイルを読み込み、Claude 自身が JSON を解析** する。
-`jq` など外部ツールは使用しない。
+`settings.json` 系の読み取りは **必ず A-Sec 手順（Grep + ブロック終端検出）** で行う。
+**全文 Read ツールでの読み込みは禁止**（`mcpServers` / `extraKnownMarketplaces` / `hooks` /
+`apiKeyHelper` / `env` / `permissions` / `customApiKeyResponses` 等の機密キーがコンテキストに
+混入するため）。`jq` など外部ツールも使用しない。
 
 ### A-Sec. シークレット二次経路の遮断（必須手順）
 
-読み取った JSON の **`enabledPlugins` キー以外（`mcpServers` / `extraKnownMarketplaces` / `hooks` 等）は
+読み取った JSON の **`enabledPlugins` キー以外（`mcpServers` / `extraKnownMarketplaces` / `hooks` /
+`apiKeyHelper` / `env` / `permissions` / `awsAuthRefresh` / `customApiKeyResponses` 等の機密キー）は
 メインコンテキストに一切載せない**。以下の手順を **必ず順守**する:
 
 1. **第一手順（必須）**: `Grep` で `enabledPlugins` の開始ブロックを抽出（暫定範囲 500 行）:
    ```text
    Grep(pattern: '"enabledPlugins"', path: '<settings.json>', output_mode: 'content', -A: 500)
    ```
-2. **第二手順（必須）— 型ガード**: 抽出結果の `enabledPlugins` 直後の値が `{` で始まることを確認する。
+2. **第二手順（必須）— 型ガード**: 抽出結果から `"enabledPlugins"` キーに続く `:` の **直後の
+   非空白文字** が `{` であることを確認する（行単位ではなく、JSON 値の先頭文字での判定）。
    `[`（配列）や他の型の場合は当該スコープを「対象なし（不正なスキーマ）」として扱い、Phase F に
    その旨を備考付きで報告する。
 3. **第三手順（必須）— ブロック終端検出**: 抽出結果を Claude が走査し、`enabledPlugins` の値である
    `{` の対応する `}` を検出した時点で **それ以降のテキストを破棄** する。具体的には:
    - 値の `{` 位置から開始し、`{` でネストレベル +1、`}` でネストレベル -1 を計上
    - ネストレベルが 0 に戻った位置までを `enabledPlugins` ブロックとして保持し、それ以降は破棄
+   - **文字列リテラル内の `{` `}` は計上対象外**: `"..."` で囲まれた範囲内の波括弧はカウントしない。
+     エスケープシーケンス `\"` は文字列終端とみなさない（`"a\"b{c"` は文字列内）。
+     簡略化のため、より単純な実装として「`enabledPlugins` キーの **次に出現する非空ブロック開始
+     `{` から、ネストレベルが 0 に戻る最初の `}` まで** を抽出する」運用も可（ただし文字列リテラル
+     内 `}` の誤検出が起きうる旨を運用上の制約として認識すること）
 4. **第四手順（必須）— ブロック終端未検出時の倍々再 Grep**: 500 行内でネストレベルが 0 に戻らない
    場合、`-A` を倍にして再実行する（500 → 1000 → 2000 → 4000）。最大 4 回まで拡張し、それでも
    未検出ならエラーで処理を中断する（フェイルクローズ。**全文 Read は禁止**）:
@@ -89,10 +102,14 @@ OS のパッケージマネージャ署名検証に依存する（ADR-PU-002 Tra
    「対象なし」として扱い、Phase F に空テーブルで報告（エラー扱いにはしない）。
    **全文 Read は禁止**（`mcpServers` 等が直接コンテキストに乗るリスクがあるため）。
 6. **メインコンテキストの最終状態**: `enabledPlugins` 配下のキー・値のみが残ること。
-   `mcpServers` / `extraKnownMarketplaces` / `hooks` 等のキー名を含む行は、結果報告本文・
-   備考列・引き継ぎ要約のいずれにも一切出力しない。出力フィルタは「JSON 値部分の文字列照合」に
-   限定し、プラグイン名・MP 名・備考の自然言語に偶発的に含まれる単語（例: `mcp-config`）と
-   区別する。
+   機密キー名（`mcpServers` / `extraKnownMarketplaces` / `hooks` / `apiKeyHelper` / `env` /
+   `permissions` / `customApiKeyResponses` 等）を **JSON キー文字列形式**（前後ダブルクォート +
+   コロン形式 `"hooks":` / `"mcpServers":` 等）で検出した場合は、結果報告本文・備考列・引き継ぎ
+   要約のいずれにも一切出力しない（フェイルクローズ：当該行を破棄して継続、もしくは混入が継続する
+   場合はエラー終了）。**プラグイン名・MP 名・備考の自然言語に偶発的に含まれる単語**
+   （例: プラグイン名 `git-hooks-runner` の `hooks`、`mcp-config` の `mcp`）は **JSON キー形式
+   `"hooks":` ではない** ため、本フィルタの対象外。判定は **JSON キー構造（クォート + コロン）**
+   で行い、単語照合では行わない。
 
 ### A-Repo. `<repo>` の決定と検証
 
@@ -125,11 +142,12 @@ Claude Code の `enabledPlugins` は **キーがプラグイン識別子（`<plu
 }
 ```
 
-| 値 | 扱い |
-|----|------|
-| `true` | 有効として処理対象に含める |
-| `false` / `null` | 明示的に無効化されているのでスキップ |
-| 文字列 / オブジェクト等の異常値 | Skipped（不明な値型）として記録。Phase F 備考列には値そのものを表示せず「(不明な値型: \<型名のみ\>)」固定文言に置換 |
+| 値 | 扱い | 備考 |
+|----|------|------|
+| `true` | 有効として処理対象に含める | — |
+| `false` | 明示的に無効化されているのでスキップ | — |
+| `null` | スキップ（無効と同等扱い） | Claude Code CLI が `null` を「未設定 = 無効」と解釈する仕様に倣う。フェイルセーフとして無効扱いを採用（CLI 仕様変更時は要再評価） |
+| 文字列 / オブジェクト等の異常値 | Skipped（不明な値型）として記録 | Phase F 備考列には値そのものを表示せず「(不明な値型: \<型名のみ\>)」固定文言に置換 |
 
 ---
 
@@ -214,10 +232,11 @@ B-1 で MP Unknown 判定された MP 配下のエントリは除外する。
 出力フォーマット（サマリ表 / 詳細テーブル / 警告メッセージ / 次のアクション）は
 [`output-formats.md`](output-formats.md) を SSOT として参照する。
 
-> **NOTE（サニタイズ適用タイミング）**: F-1 / F-2 / F-3 / G-2 で備考列・質問文を生成する
-> **直前** に XR-3（[cross-cutting-rules.md](cross-cutting-rules.md)）のサニタイズを
-> 必ず適用する。規則本体・列単位の例外・「文脈外」判定の具体ルール・テストケース・適用順序は
-> すべて XR-3 SSOT を参照のこと。本ファイルは XR-3 を再定義しない。
+> **NOTE（サニタイズ適用タイミング）**: F-2 / F-3 / G-2 / B-1（例外行抽出時）で備考列・質問文・
+> 抽出 MP 名を生成する **直前** に XR-3（[cross-cutting-rules.md](cross-cutting-rules.md)）の
+> サニタイズを必ず適用する。**F-1 サマリ表は件数（整数）のみを表示するためサニタイズ対象外**。
+> 規則本体・列単位の例外・「文脈外」判定の具体ルール・テストケース・適用順序はすべて XR-3 SSOT を
+> 参照のこと。本ファイルは XR-3 を再定義しない。
 
 ---
 
@@ -259,7 +278,7 @@ XR-2 のサーキットブレーカー作動中の MP には適用しない。
 
 | 失敗種別 | 再実行範囲 |
 |---------|-----------|
-| マーケットプレイス Failed | **Phase B を引数なしで再度実行**（`claude plugin marketplace update` = 全マーケットプレイス対象）。`--scope` 指定の有無によらず Phase B は常に全 MP 対象（ADR-PU-003「Phase B を常に実行する理由」参照）。CLI が `claude plugin marketplace update <name>` の引数指定をサポートしていることが確認できたら個別 MP リトライに切り替える（ADR-PU-002 Future Direction 参照） |
+| マーケットプレイス Failed | **Phase B を引数なしで再度実行**（`claude plugin marketplace update` = 全マーケットプレイス対象）。`--scope` 指定の有無によらず Phase B は常に全 MP 対象（ADR-PU-003「Phase B を常に実行する理由」参照）。**サーキットブレーカー作動中の MP も Phase B 全件リトライでは再試行され得る**: Phase B は MP 単位個別指定をサポートしないため、XR-2 「サーキットブレーカー作動中の MP は G-3 のリトライ対象から除外」原則は **プラグイン単位（C/D/E）のリトライにのみ適用** され、MP 単位の Phase B 全件リトライには適用されない（設計上の許容事項）。CLI が `claude plugin marketplace update <name>` の引数指定をサポートしたら個別 MP リトライに切り替えてサーキットブレーカー除外を厳密化する（ADR-PU-002 Future Direction 参照） |
 | プラグイン Failed（C/D/E 由来） | `claude plugin update <plugin>@<marketplace> --scope <scope>` を当該エントリのみ実行 |
 
 XR-4 によりリトライは元の失敗集合に対し最大 1 回。リトライ中の新規失敗は記録のみ。

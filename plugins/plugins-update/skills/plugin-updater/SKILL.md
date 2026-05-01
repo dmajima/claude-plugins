@@ -65,7 +65,7 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 | Phase A-0〜G の固定順序・実行手順詳細 | [`references/phase-flow.md`](references/phase-flow.md) |
 | 横断ルール XR-1〜XR-5（入力検証 / タイムアウト / サニタイズ / リトライ / Unknown 警告） | [`references/cross-cutting-rules.md`](references/cross-cutting-rules.md) |
 | Phase F のテーブル / 警告 / 質問文フォーマット集 | [`references/output-formats.md`](references/output-formats.md) |
-| 設計判断記録（ADR-PU-001〜007） | [`references/architecture-decisions.md`](references/architecture-decisions.md) |
+| 設計判断記録（ADR-PU-001〜008） | [`references/architecture-decisions.md`](references/architecture-decisions.md) |
 
 ## 実行フロー（概要）
 
@@ -97,6 +97,7 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 | exit code 一次判定 + Unknown 区分（Missing はリトライ対象外） | ADR-PU-005 |
 | サーキットブレーカー（MP 単位累計 3 件 Failed で配下 Skip） | ADR-PU-006 |
 | 失敗対応の対話モデル（Failed のみリトライ・5 件閾値で個別判断除外） | ADR-PU-007 |
+| コマンドとスキルの責務分離（トリガー / 実作業） | ADR-PU-008 |
 
 ## 出力契約
 
