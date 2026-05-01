@@ -55,7 +55,7 @@ git clone https://github.com/dmajima/claude-plugins <local-path>
 
 # 2. リリースタグまたは main に切替
 cd <local-path>
-git checkout <tag-or-branch>   # 例: git checkout v2.2.0 / git checkout main
+git checkout <tag-or-branch>   # 例: git checkout v1.0.0 / git checkout main
 ```
 
 ```text
@@ -233,7 +233,7 @@ OS パッケージマネージャ管理下に存在することを確認して�
 ### homepage URL ポリシー
 
 `plugin.json` の `homepage` は **`main` ブランチ追従**（`tree/main/plugins/plugins-update`）を採用
-しています。リリースタグ固定（`tree/v3.x.x/...`）にしない理由は、(1) ドキュメント微修正（誤字訂正等）が
+しています。リリースタグ固定（`tree/v1.x.y/...`）にしない理由は、(1) ドキュメント微修正（誤字訂正等）が
 リリースタグを切らずに main に直接 push される運用のため、最新の README をユーザに参照させたい、
 (2) リリースタグごとに homepage URL を更新するリリース作業負荷を抑えたい、ためです。
 特定リリース時点のドキュメントを参照したい場合は、`/plugin update` 後に

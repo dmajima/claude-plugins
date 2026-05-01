@@ -11,14 +11,14 @@
 
 | 番号 | タイトル | 状態 | 最終 CLI 仕様確認日 | 最終 Future Direction 改訂日 |
 |------|---------|------|------------------|----------------------------|
-| ADR-PU-001 | 単一プラグイン化（vs marketplace-toolkit への統合 / vs スキル化） | Accepted | N/A | 2026-05-01 (v3.7.0) |
-| ADR-PU-002 | 公式 CLI 委譲（vs 低レベル git 操作 / vs 内部実装）— **Trigger ADR** | Accepted | 2026-05-01 (v3.7.0) | 2026-05-01 (v3.7.0) |
-| ADR-PU-003 | Phase A-0〜G 固定順序 | Accepted | 2026-05-01 | 2026-05-01 (v3.7.0) |
-| ADR-PU-004 | 横断ルール SSOT 配置（cross-cutting-rules.md への分離） | Accepted | N/A | 2026-05-01 (v3.0.0) |
-| ADR-PU-005 | exit code 一次判定 + Unknown 区分 | Accepted | 2026-05-01 | 2026-05-01 (v3.7.0) |
-| ADR-PU-006 | サーキットブレーカー閾値と粒度 | Accepted | N/A | 2026-05-01 (v3.5.0) |
-| ADR-PU-007 | 失敗対応の対話モデル | Accepted | N/A | 2026-05-01 (v3.0.0) |
-| ADR-PU-008 | コマンドとスキルの責務分離（トリガー / 実作業） | Accepted | N/A | 2026-05-01 (v3.7.0) |
+| ADR-PU-001 | 単一プラグイン化（vs marketplace-toolkit への統合 / vs スキル化） | Accepted | N/A | 2026-05-01 (v1.0.0) |
+| ADR-PU-002 | 公式 CLI 委譲（vs 低レベル git 操作 / vs 内部実装）— **Trigger ADR** | Accepted | 2026-05-01 (v1.0.0) | 2026-05-01 (v1.0.0) |
+| ADR-PU-003 | Phase A-0〜G 固定順序 | Accepted | 2026-05-01 (v1.0.0) | 2026-05-01 (v1.0.0) |
+| ADR-PU-004 | 横断ルール SSOT 配置（cross-cutting-rules.md への分離） | Accepted | N/A | 2026-05-01 (v1.0.0) |
+| ADR-PU-005 | exit code 一次判定 + Unknown 区分 | Accepted | 2026-05-01 (v1.0.0) | 2026-05-01 (v1.0.0) |
+| ADR-PU-006 | サーキットブレーカー閾値と粒度 | Accepted | N/A | 2026-05-01 (v1.0.0) |
+| ADR-PU-007 | 失敗対応の対話モデル | Accepted | N/A | 2026-05-01 (v1.0.0) |
+| ADR-PU-008 | コマンドとスキルの責務分離（トリガー / 実作業） | Accepted | N/A | 2026-05-01 (v1.0.0) |
 
 > **追従漏れ検知**: 「最終 CLI 仕様確認日」「最終 Future Direction 改訂日」列は ADR-PU-002（Trigger ADR）
 > の改訂時に追従が必要な ADR を可視化するため。本表が SSOT。CLI 仕様変更時は ADR-PU-002 の
@@ -29,6 +29,10 @@
 > ADR-PU-001（プラグイン配布単位）/ ADR-PU-004（SSOT 配置）/ ADR-PU-006（サーキットブレーカー
 > 閾値）/ ADR-PU-007（対話モデル）/ ADR-PU-008（責務分離）は CLI のサブコマンド仕様変更とは独立した
 > 設計判断のため、追従更新の対象外。CLI 仕様変更時に確認すべきは ADR-PU-002 / 003 / 005 のみ。
+>
+> **改訂日の更新基準**: 「最終 Future Direction 改訂日」列は **Future Direction 本文の改訂時のみ**
+> 更新する。テーブル列追加・項目並び替え・誤字訂正等のメタ改訂はカウントしない。これにより
+> 本表が「実質的な改訂履歴」として機能し、追従漏れ検知の精度を確保する。
 
 ---
 
@@ -264,6 +268,20 @@ ADR-PU-002 の Future Direction と連動する。
 （例: `NoOpExecutor` / `SequentialExecutor` / `ParallelExecutor`）への統合を検討する。これにより
 モード分岐が単一拡張ポイントに集約される。
 
+**A-Sec 第三手順の決定論的実装への移行（Future Direction）**: 現行版は Phase A-Sec 第三手順
+（ブロック終端検出）を Claude（LLM）の状態機械走査に依存している。LLM の取りこぼしリスクは
+構造上ゼロにできないため第四手順がバックストップとして機能するが、将来的には外部 Bash + Python
+の `json.loads` ベース抽出（決定論的実装）への移行を検討する。具体的な実装方針:
+
+- A-Sec 第一手順 Grep で抽出した範囲を一時ファイルに書き出し
+- `python -c "import json,sys; d=json.load(sys.stdin); print(json.dumps({'enabledPlugins': d.get('enabledPlugins', {})}))"` で
+  `enabledPlugins` のみを抽出して再シリアライズ
+- A-Sec 第二〜四手順を JSON パース成功 + キー名検証に置き換える
+
+移行の前提: Bash + Python が PATH にあること。本プラグインは Claude Code CLI のみを必須とし
+Python オプショナル化を維持する場合、LLM 走査と決定論的実装の両モード切替を XR-2 Future Direction の
+Strategy 抽象化と統合する形が望ましい。
+
 **Strategy 責務境界の予約**: Strategy 抽象は **`skills/plugin-updater/` 配下のスキル責務として配置** し、
 コマンド本文（`commands/update-all.md`）は引数解釈のみを継続維持する（ADR-PU-008 の責務分離原則を
 継承）。Strategy 導入時に以下の責務分担を採用する:
@@ -279,7 +297,7 @@ ADR-PU-002 の Future Direction と連動する。
   （`mode = normal → SequentialExecutor` / `mode = dry-run → NoOpExecutor`）。コマンドは
   `mode` 値を透過するのみで Executor を意識しない。
 
-> **現状補注（v3.8.0）**: 本セクションは **将来予約**。現行 v3.8.0 では Strategy / Executor /
+> **現状補注（v1.0.0）**: 本セクションは **将来予約**。v1.0.0 では Strategy / Executor /
 > Phase オーケストレータは独立エンティティとして実装されておらず、`phase-flow.md` の各 Phase
 > セクション記述が **暗黙の Phase オーケストレータ** として機能している。Phase G スキップ判定や
 > dry-run 時の変更系 CLI スキップは phase-flow.md の各セクション内記述（mode 値の参照）に依拠。
@@ -553,14 +571,14 @@ XR-2 のサーキットブレーカー（同一 MP に対する累計失敗で�
   全体タイムアウト 30 分（XR-2）を消費する可能性がある。
   **対策の SSOT**: 警告条件と警告文言は **output-formats.md「Phase G-1 質問文」の `<warn_breaker>`
   プレースホルダ仕様** が SSOT。本 ADR は概念説明のみを持ち、文言や条件式は再定義しない
-  （v3.6.0 で `<M> >= 1` 条件化）。CLI が `marketplace update <name>` 個別指定をサポートしたら
+  （v1.0.0 で `<M> >= 1` 条件化）。CLI が `marketplace update <name>` 個別指定をサポートしたら
   ADR-PU-002 Future Direction に従いサーキットブレーカー除外を厳密化し、本残余リスクを構造的に
   排除する。暫定対策として、Phase B 全件リトライ時のみ個別タイムアウトを 60 秒 → 30 秒に短縮する案も
   XR-2 拡張オプションとして検討余地がある（現状は実装複雑化を避けるため未採用）。
 
 ### Alternatives Considered
 
-- **連続失敗のみカウント**: v2.1.0 方式。非連続失敗パターンを見逃す。却下。
+- **連続失敗のみカウント**: 公開前開発時に検討。非連続失敗パターンを見逃す。却下。
 - **失敗率（5 件中 3 件）**: 母数が少ない場合に判定が不安定。却下。
 - **指数バックオフ**: ローカル CLI 委譲のため過剰。却下。
 - **プラグイン単位**: オーバーヘッド大、根本原因が MP に紐づくため意味薄。却下。
@@ -661,7 +679,7 @@ ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー�
 `/update-all` コマンドは **トリガーと引数解釈のみ** を担当し、実作業（Phase A-0〜G、横断ルール適用、
 ユーザ対話）は **`plugin-updater` スキルに委譲** する。
 
-- `commands/update-all.md`: **43 行**（v3.8.0 `wc -l` 実測値・**±5 行誤差を許容**: フロントマター
+- `commands/update-all.md`: **43 行**（v1.0.0 `wc -l` 実測値・**±5 行誤差を許容**: フロントマター
   4 行 + 本文 + 末尾「関連」セクション 7 行）/ 実装ロジックは約 33 行（フロントマター・コードフェンス・
   「関連」セクション除外）。引数解釈 + Skill ツール呼び出しのみ。新バージョンで `±5 行` 範囲超の
   肥大化が再発した場合は本 Decision の数値を更新し、原因を Trade-offs に追記する。
@@ -687,17 +705,19 @@ ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー�
 - **AI 解釈容易性**: スキルは AI が起動時に読み込む単位として設計されており、Phase 詳細を持つのに
   自然な配置
 - **将来拡張への耐性**: 追加コマンド（例: `update-one`、`prune-all`）が同じスキルを共有可能
-- **コマンド本文の単純化**: 約 460 行（v2.x 当時）→ 43 行（v3.8.0 `wc -l` 実測値・実装ロジックは
-  約 33 行）で、レビューでの「肥大化指摘」が構造的に解消（計測値の SSOT は本 ADR の Decision を参照）
+- **コマンド本文の単純化**: 公開前開発時の試作版で約 460 行に達していたコマンド本文を、v1.0.0 では
+  43 行（`wc -l` 実測値・実装ロジックは約 33 行）まで削減し、レビューでの「肥大化指摘」を構造的に
+  解消（計測値の SSOT は本 ADR の Decision を参照）
 
 ### Trade-offs
 
-- **ファイル数増**: 4 ファイル（v2.x: `plugin.json` + `README.md` + `commands/update-all.md` +
-  references 1 ファイル）→ 8 ファイル（v3.x: `plugin.json` + `README.md` + `commands/update-all.md`
+- **ファイル数**: v1.0.0 では 8 ファイル構成（`plugin.json` + `README.md` + `commands/update-all.md`
   + `skills/plugin-updater/SKILL.md` + references 4 ファイル `phase-flow.md` / `output-formats.md`
   / `cross-cutting-rules.md` / `architecture-decisions.md`）。**計測母数**: プラグインルート
   （`plugins/plugins-update/`）配下の全ドキュメント・スキル定義ファイル（`.claude-plugin/plugin.json`
-  と `README.md` と `commands/` 配下と `skills/` 配下を合算）
+  と `README.md` と `commands/` 配下と `skills/` 配下を合算）。公開前の試作段階では 4 ファイル
+  （`plugin.json` + `README.md` + `commands/update-all.md` + references 1 ファイル）構成だったが、
+  ADR-PU-008 のスキル委譲設計に伴い 8 ファイルに分割した
 - **インストール容量増**: わずかに増加（数 KB 程度）
 - **コマンドとスキルで `description` の重複管理**: 軽微だが SSOT 違反の懸念あり。
   当面の運用緩和策として、スキル側 SKILL.md「トリガー条件」セクションに「コマンド呼び出し経由のみ
@@ -708,8 +728,8 @@ ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー�
 
 ### Alternatives Considered
 
-- **コマンド本文に Phase 詳細を維持**: 旧 v2.x までの方式。レビューで継続的に「肥大化」指摘を
-  受けた。却下。
+- **コマンド本文に Phase 詳細を維持**: 公開前開発時の試作版で採用していた方式。レビューで継続的に
+  「肥大化」指摘を受けた。却下。
 - **スキルだけで配布（コマンドなし）**: `/update-all` の明示的トリガーが失われ、
   ADR-PU-001 で却下した理由と同じ問題が再発。却下。
 - **Phase 詳細を `commands/` 配下のサブファイル（例: `commands/update-all-phases.md`）に分割**:
@@ -726,8 +746,8 @@ ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー�
 
 ### Notes（解消済み歴史事項）
 
-- **F-0 参照宙吊り（v2.6.0 → v3.0.0 で解消）**: v2.x 時代に `cross-cutting-rules.md` に
+- **F-0 参照宙吊り（公開前開発時に解消）**: 公開前の試作段階で `cross-cutting-rules.md` に
   `F-0 サニタイズ規則本体` という Phase 番号付きセクションが存在したが、F-0 を独立サブフェーズから
-  Phase F の NOTE 形式に再構成した結果、参照が宙吊りになる問題が発生していた。v3.0.0 でセクション名を
-  Phase 番号を持たない `### サニタイズ規則本体` に改称し、本問題は構造的に解消済み。Context での
-  本 ADR 制定動機の一つとして記録する（現行版で参照宙吊りはない）。
+  Phase F の NOTE 形式に再構成した結果、参照が宙吊りになる問題が発生していた。v1.0.0 では
+  Phase 番号を持たない `### サニタイズ規則本体` への改称で本問題は構造的に解消済み。Context での
+  本 ADR 制定動機の一つとして記録する（v1.0.0 で参照宙吊りはない）。
