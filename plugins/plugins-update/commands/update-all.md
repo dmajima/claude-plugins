@@ -1,5 +1,5 @@
 ---
-description: 公式 CLI でマーケットプレイス・プラグインを一括最新化（公開は marketplace-publisher へ）
+description: 公式 CLI でマーケットプレイス・プラグインを一括最新化
 argument-hint: "[--dry-run] [--scope <user|project|local>]"
 ---
 
@@ -17,8 +17,8 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 
 ## 横断ルール
 
-横断ルール **XR-1〜XR-4** の SSOT は [`../references/cross-cutting-rules.md`](../references/cross-cutting-rules.md)。
-本コマンドでは各 Phase が下表のどの XR を適用するかのみを示す。規則本体は SSOT を参照のこと。
+横断ルール **XR-1〜XR-5** の SSOT は [`../references/cross-cutting-rules.md`](../references/cross-cutting-rules.md)。
+本コマンドでは各 Phase が下表のどの XR を適用するかのみを示す。規則本体・閾値・例外条項はすべて SSOT を参照のこと。
 
 | ID | ルール | 本コマンドでの適用 Phase |
 |----|------|----------------------|
@@ -26,6 +26,7 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 | XR-2 | タイムアウト + サーキットブレーカー | B / C / D / E / G-3 |
 | XR-3 | 出力サニタイズ | F-2 / F-3 / G-2 / B-1 例外行抽出時 |
 | XR-4 | リトライ上限（最大 1 回） | G-3 |
+| XR-5 | Unknown 警告閾値 | F-1 |
 
 ## 動作モード判定
 
@@ -34,11 +35,14 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 
 | 引数 | モード | 動作 |
 |-----|-------|------|
-| 空 | 通常更新（全スコープ） | Phase A〜G を実行 |
+| 空 | 通常更新（全スコープ） | Phase A-0〜G を実行 |
 | `--dry-run` | 確認のみ | 全 Phase（B/C/D/E）の実行予定 CLI を表示。実際の更新は行わない |
 | `--scope user` | スコープ限定 | Phase B を **必ず実行** した後、Phase C のみ実行 |
 | `--scope project` | スコープ限定 | Phase B を必ず実行した後、Phase D のみ実行 |
 | `--scope local` | スコープ限定 | Phase B を必ず実行した後、Phase E のみ実行 |
+| `--dry-run --scope user` | dry-run + 限定 | Phase B + Phase C の **実行予定 CLI のみ表示** |
+| `--dry-run --scope project` | dry-run + 限定 | Phase B + Phase D の実行予定 CLI のみ表示 |
+| `--dry-run --scope local` | dry-run + 限定 | Phase B + Phase E の実行予定 CLI のみ表示 |
 
 `--dry-run` と `--scope` は併用可能。併用時は指定スコープに限定したプレビューを表示する。
 不正な `--scope` 値（例: `--scope foo`）が渡された場合は処理を実行せず以下の形式でエラーを返す:
@@ -61,6 +65,23 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 
 ## 実行フロー
 
+実行順は **A-0 → A → A-1 → A-2 → B → C → D → E → F → G**。
+A-0 は Phase A の前に必ず実行する（CLI 不在時の早期失敗）。
+
+### Phase A-0: Claude Code CLI 存在チェック（最優先実行）
+
+`claude plugin --help` を実行し以下を満たすことを確認する:
+
+- exit code が 0
+- 出力に `marketplace` および `update` の両キーワードを含む（同名の悪意あるシム検出のため）
+
+いずれかを満たさない場合は以下のエラーで処理を中断する:
+
+```text
+エラー: claude plugin CLI が利用できません（または不正な実装の可能性）。
+Claude Code のインストール状況と PATH を確認してください。
+```
+
 ### Phase A: 対象収集（読み取りのみ）
 
 | 項目 | 取得元 | 取得方法 |
@@ -73,27 +94,28 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 `settings.json` 系の読み取りは **Read ツールで直接ファイルを読み込み、Claude 自身が JSON を解析** する。
 `jq` など外部ツールは使用しない。
 
-#### 重要: シークレット二次経路の遮断
+#### 重要: シークレット二次経路の遮断（必須手順）
 
 読み取った JSON の **`enabledPlugins` キー以外（`mcpServers` / `extraKnownMarketplaces` / `hooks` 等）は
-Read 直後にメインコンテキストから切り離す**。具体的手順:
+メインコンテキストに一切載せない**。以下の手順を **必ず順守**する:
 
-1. 可能なら `Grep` で `enabledPlugins` ブロックのみを抽出して Read 範囲を絞る
-2. 全文 Read が必要な場合、`enabledPlugins` の中身のみを抽出した JSON サマリを作業メモとして保持し、
-   生 Read 結果はメインコンテキストの作業文字列から削除（要約後に破棄）
-3. メインコンテキストには `enabledPlugins` 配下のキー・値のみを残し、後続セッションへの引き継ぎや
+1. **第一手順（必須）**: `Grep` で `enabledPlugins` の開始ブロックのみを `-A 200` 程度で抽出して、
+   Read 対象範囲を `enabledPlugins` セクションに限定する
+   ```text
+   Grep(pattern: '"enabledPlugins"', path: '<settings.json>', output_mode: 'content', -A: 200)
+   ```
+2. **フォールバック（Grep 失敗時のみ）**: 全文 Read を行うが、`enabledPlugins` 配下のキー・値のみを
+   作業メモに転記し、生 Read 結果文字列は **直後に破棄**（メインコンテキストの作業変数を上書き）
+3. **抽出失敗時の検知**: `enabledPlugins` キーが見つからない場合は当該スコープを「対象なし」として
+   扱い、Phase F に空テーブルで報告（エラー扱いにはしない）
+4. メインコンテキストには `enabledPlugins` 配下のキー・値のみを残し、後続セッションへの引き継ぎや
    結果報告に他キーが混入しないようにする
 
 #### `<repo>` の決定と検証
 
-`<repo>` は `git rev-parse --show-toplevel` の結果。Read ツールに渡す際は **絶対パスをダブルクォートで括る**。
-以下の追加検証をすべて満たさない場合は Project / Local 処理をスキップ（理由を INFO で表示）:
-
-- 結果に `..` を含まない
-- 絶対パス（Windows: `^[A-Za-z]:\\`、POSIX: `^/`）
-- 改行・null 文字を含まない
-- 実在ディレクトリ（Read ツールで存在確認）
-- Windows のシンボリックリンク・ジャンクション・UNC パス（`\\server\share`）は対象外
+`<repo>` は `git rev-parse --show-toplevel` の結果。検証ルールは XR-1 の「パス検証」セクション
+（[cross-cutting-rules.md](../references/cross-cutting-rules.md)）を参照。検証失敗時は Project / Local
+処理をスキップして INFO で理由を表示する（フェイルクローズ）。
 
 git リポジトリ外で実行され、かつ `--scope project` または `--scope local` が **明示指定** された場合は
 エラーを返して中断する。`--scope` 未指定時は Project / Local を省略するが、その旨を以下の INFO で明示する:
@@ -126,14 +148,6 @@ Claude Code の `enabledPlugins` は **キーがプラグイン識別子（`<plu
 | `false` / `null` | 明示的に無効化されているのでスキップ |
 | 文字列 / オブジェクト等の異常値 | Skipped（不明な値型）として記録し、Phase F 備考に明示 |
 
-### Phase A-0: Claude Code CLI 存在チェック
-
-`claude plugin --help` を実行し exit code 0 を確認する。失敗時は以下のエラーで処理を中断する:
-
-```text
-エラー: claude plugin CLI が利用できません。Claude Code のインストール状況を確認してください。
-```
-
 ### Phase A-1: 入力検証（XR-1 を適用）
 
 抽出した各エントリについて XR-1（[cross-cutting-rules.md](../references/cross-cutting-rules.md)）を適用。
@@ -161,40 +175,32 @@ claude plugin marketplace update
 
 #### B-1. 結果判定
 
-| exit code + 出力 | 判定 | 後続処理 |
-|------------------|------|---------|
-| exit 0 + 出力に `Failed:` / `Error:` 行なし | 全 OK | Phase C 以降を通常実行 |
-| exit 0 + 出力に `Failed:` / `Error:` 行あり | 部分失敗 | 該当行から MP 名を抽出（XR-3 サニタイズ後）。**警告付き継続** |
-| exit 0 + 出力解析で MP 名抽出不能 | Unknown | F-2 に Unknown 区分で残し、当該 MP 配下のプラグインは Skipped（MP Unknown）として Phase C/D/E から除外 |
-| exit 非 0 | 全体失敗 | Phase C 以降は **警告付き継続**（CLI が古いインデックスでプラグイン更新を試みる可能性のため停止しない） |
+結果分類テーブル（マーケットプレイス更新用）は ADR-PU-005 の「結果分類テーブル — マーケットプレイス更新（B-1）」
+セクション（[`../references/architecture-decisions.md`](../references/architecture-decisions.md)）を参照。
+例外行抽出パターン・Unknown 区分の扱いも ADR-PU-005 に集約されている。
 
-CLI が将来 `--output json` を提供した場合の拡張ポイント。
+### Phase C / D / E: スコープ別プラグイン更新（XR-1/XR-2/XR-3 を適用）
 
-### Phase C: User スコープのプラグイン更新（XR-1/XR-2/XR-3 を適用）
-
-`--scope` が `user` または未指定の場合のみ実行（Phase B は別途常時実行済み）。
-B-1 で MP Unknown 判定された MP 配下のエントリは除外。
-
-User スコープの (plugin-name, marketplace-name) ごとに以下を実行:
+各スコープの (plugin-name, marketplace-name) ごとに以下を実行する:
 
 ```bash
+# Phase C: User スコープ（--scope が user または未指定のとき）
 claude plugin update <plugin-name>@<marketplace-name> --scope user
+
+# Phase D: Project スコープ（--scope が project または未指定、かつ git リポジトリ配下のとき）
+claude plugin update <plugin-name>@<marketplace-name> --scope project
+
+# Phase E: Local スコープ（--scope が local または未指定、かつ git リポジトリ配下のとき）
+claude plugin update <plugin-name>@<marketplace-name> --scope local
 ```
 
-#### C-1. 結果分類（ADR-PU-005 に基づく）
+B-1 で MP Unknown 判定された MP 配下のエントリは除外する。
 
-結果分類テーブルは [`../references/architecture-decisions.md`](../references/architecture-decisions.md)
-の ADR-PU-005 を参照（Updated / No change / Missing / Failed / Unknown の 5 区分）。
+#### C-1 / D-1 / E-1. 結果分類（ADR-PU-005 に基づく）
 
-### Phase D: Project スコープのプラグイン更新（XR-1/XR-2/XR-3 を適用）
-
-`--scope` が `project` または未指定、かつ git リポジトリ配下のときのみ実行。
-処理内容は Phase C と同等で `--scope project` を指定。**結果分類は ADR-PU-005 を参照**。
-
-### Phase E: Local スコープのプラグイン更新（XR-1/XR-2/XR-3 を適用）
-
-`--scope` が `local` または未指定、かつ git リポジトリ配下のときのみ実行。
-処理内容は Phase C と同等で `--scope local` を指定。**結果分類は ADR-PU-005 を参照**。
+結果分類テーブル（プラグイン更新用）は ADR-PU-005 の「結果分類テーブル — プラグイン更新（C-1 / D-1 / E-1 共通）」
+セクションを参照（Updated / No change / Missing / Failed / Unknown の 5 区分）。
+3 スコープすべてで同一テーブルを適用する。
 
 ### Phase F: 結果報告
 
@@ -203,36 +209,30 @@ claude plugin update <plugin-name>@<marketplace-name> --scope user
 
 #### F-0. CLI 出力サニタイズ（XR-3 を参照）
 
-サニタイズ規則本体は [`../references/cross-cutting-rules.md`](../references/cross-cutting-rules.md) の
-XR-3 セクションに定義。本 Phase F-2 / F-3 / G-2 で備考列を生成する直前に必ず適用する。
-
-**重要な例外**: テーブルの `プラグイン名` 列・`マーケットプレイス名` 列・`結果` 列には
-**デフォルトマスク（40 字超ランダム文字列のマスク）を一切適用しない**
-（プラグイン名・コミットハッシュ・バージョン識別子の誤検知防止）。
-具体パターン（GitHub PAT 等）は備考列のみで適用。
+サニタイズ規則本体・列単位の例外・「文脈外」判定の具体ルールはすべて
+[`../references/cross-cutting-rules.md`](../references/cross-cutting-rules.md) の XR-3 セクションに定義。
+本 Phase F-2 / F-3 / G-2 で備考列を生成する直前に必ず適用する。
 
 #### F-1. サマリ
+
+`Missing` 列は B-1（マーケットプレイス更新）では現在の CLI が MP 単位の Missing を返さないため `-` 固定
+（将来 CLI が MP レベルで `not found` を返すようになった場合は仕様改訂）。
 
 ```markdown
 ## 更新結果サマリ
 
 | 区分 | 成功 | 変更なし | Missing | スキップ | 失敗 | Unknown |
 |-----|-----|---------|---------|---------|-----|---------|
-| マーケットプレイス | <count> | <count> | - | <count> | <count> | <count> |
+| マーケットプレイス | <count> | <count> | -（CLI 非対応）| <count> | <count> | <count> |
 | User プラグイン | <count> | <count> | <count> | <count> | <count> | <count> |
 | Project プラグイン | <count> | <count> | <count> | <count> | <count> | <count> |
 | Local プラグイン | <count> | <count> | <count> | <count> | <count> | <count> |
 ```
 
-#### F-1.1. Unknown 警告
+#### F-1.1. Unknown 警告（XR-5 を参照）
 
-Unknown 件数が **全体（マーケットプレイス + 全スコーププラグインの合計）の 20%** を超える場合、
-以下の警告を併記する:
-
-```text
-警告: Unknown 件数が全体の 20% を超えています（<U>/<T> 件）。CLI 出力フォーマットが変わった可能性が
-あるため、F-2/F-3 の備考列を確認し、必要なら個別に手動更新してください。
-```
+XR-5 の閾値（試行済み件数の 20%）を超える場合、cross-cutting-rules.md XR-5 セクションのフォーマットで
+警告を併記する。閾値の根拠と全体件数の定義は同セクションを参照。
 
 #### F-2. マーケットプレイス詳細
 
@@ -290,12 +290,14 @@ Phase F の結果報告後、**失敗が 1 件以上ある場合** に実行。
 
 ```text
 # pseudocode: Claude が AskUserQuestion ツールを呼び出すパターン
+# N > 5 の場合は options から「個別に判断」を除外する（連続質問による UX 劣化防止）
 AskUserQuestion({
   questions: [{
     question: "<N> 件の更新失敗があります（マーケットプレイス: <M> 件 / プラグイン: <P> 件）。どう対応しますか？",
     header: "更新失敗対応",
     options: [
       { label: "全件リトライ", description: "失敗した全エントリをもう一度更新する" },
+      // N <= 5 のときのみ次の選択肢を含める
       { label: "個別に判断", description: "失敗エントリごとにリトライ / スキップを選択" },
       { label: "全件スキップ", description: "失敗エントリは諦めて完了する" }
     ],
@@ -338,7 +340,7 @@ XR-2 のサーキットブレーカー作動中の MP には適用しない。
 
 | 失敗種別 | 再実行範囲 |
 |---------|-----------|
-| マーケットプレイス失敗 | **現状は全件リトライにフォールバック**（CLI が `claude plugin marketplace update <name>` の引数指定を確認できないため）。CLI が個別指定をサポートした際にこの箇所を更新する |
+| マーケットプレイス失敗 | **Phase B を再度実行する（全マーケットプレイス対象 = `claude plugin marketplace update` を引数なしで再実行）**。CLI が `claude plugin marketplace update <name>` の引数指定をサポートしていることが確認できたら個別 MP リトライに切り替える（ADR-PU-002 Future Direction 参照） |
 | プラグイン更新失敗（C/D/E 由来） | `claude plugin update <plugin>@<marketplace> --scope <scope>` を当該エントリのみ実行 |
 
 XR-4 によりリトライは元の失敗集合に対し最大 1 回。リトライ中の新規失敗は記録のみ。

@@ -14,7 +14,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 |----------|------|----------|----------|
 | `credentials-manager` | Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン（URL/ドメイン自動マッチ・グローバルルール非依存で自動トリガー） | 1.0.0 | `/plugin install credentials-manager@dmajima-claude-plugins` |
 | `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック・README）の作成・レビュー・マーケットプレイス公開まで統括支援 | 1.2.0 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
-| `plugins-update` | インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化するメンテナンスプラグイン | 2.2.0 | `/plugin install plugins-update@dmajima-claude-plugins` |
+| `plugins-update` | インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化するメンテナンスプラグイン | 2.3.0 | `/plugin install plugins-update@dmajima-claude-plugins` |
 | `convert-doc` | Markdown を HTML / PDF / PowerPoint（PPTX）に Wiki スタイルで一括変換できる 3 スキル + 4 コマンド同梱のドキュメント変換プラグイン | 1.0.0 | `/plugin install convert-doc@dmajima-claude-plugins` |
 
 ## マーケットプレイスの追加方法

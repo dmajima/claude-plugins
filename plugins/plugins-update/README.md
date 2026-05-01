@@ -24,20 +24,12 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 `--scope` 指定時も **マーケットプレイス更新（Phase B）は常に実行** されます。
 `--dry-run` と `--scope` は併用可能。
 
-## 動作要件
-
-| 動作要件 | 説明 |
-|---------|-----|
-| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須。Phase A-0 で存在チェックを行い、不在時はエラーで中断 |
-| Git CLI | マーケットプレイスを Git ソース（GitHub/git）で登録する場合に必要（Claude Code CLI 内部で利用） |
-| `/reload-plugins` | 本コマンド完了後、セッションへの反映に使用 |
-
 ## 導入手順
 
 ### 前提
 
 - Claude Code がインストール済みで `claude plugin` サブコマンドが利用可能であること
-- 上記「動作要件」のツールが PATH に通っていること
+- 後述「動作要件」のツールが PATH に通っていること
 - 依存プラグインなし（`plugin.json` で `dependencies: []` を明示）
 
 ### A. マーケットプレイス経由でインストール（推奨）
@@ -112,6 +104,14 @@ Claude Code セッション起動時に本プラグインが自動更新され�
 
 実行予定の CLI コマンド一覧が表示され、実際の更新は行われません。
 
+## 動作要件
+
+| 動作要件 | 説明 |
+|---------|-----|
+| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須。Phase A-0 で存在チェック + 出力キーワード照合を行い、不在または不正実装時はエラーで中断 |
+| Git CLI | マーケットプレイスを Git ソース（GitHub/git）で登録する場合に必要（Claude Code CLI 内部で利用） |
+| `/reload-plugins` | 本コマンド完了後、セッションへの反映に使用 |
+
 ## 利用方法
 
 ### 最小例
@@ -177,31 +177,41 @@ Project スコープに限定した実行予定コマンドのみを表示しま
 
 ### 横断ルール
 
-各 Phase は以下 4 つの横断関心事に従います（規則本体は `references/cross-cutting-rules.md`）。
+各 Phase は以下 5 つの横断関心事に従います（規則本体・閾値・例外条項は `references/cross-cutting-rules.md` を参照）。
 
 | ID | ルール |
 |----|------|
-| XR-1 | 入力検証（プラグイン名・MP 名・スコープの正規表現照合 + ホワイトリスト + NFKC 正規化） |
-| XR-2 | タイムアウト（個別 60 秒・全体 30 分・サーキットブレーカー） |
-| XR-3 | 出力サニタイズ（GitHub PAT / GitLab / AWS / Slack / JWT / Google API / Stripe / Azure / NPM / SSH 鍵 / ローカルパス + 40 字超デフォルトマスク） |
+| XR-1 | 入力検証（プラグイン名・MP 名・スコープの正規表現照合 + ホワイトリスト + NFKC 正規化 + パス検証） |
+| XR-2 | タイムアウト + サーキットブレーカー（個別 60 秒・全体 30 分・MP 単位累計 3 件 Failed で配下 Skip） |
+| XR-3 | 出力サニタイズ（GitHub PAT / GitLab / AWS / Slack / JWT / Google API / Stripe / Azure / NPM / Anthropic / OpenAI / .netrc / SSH 鍵 / ローカルパス + 40 字超デフォルトマスク） |
 | XR-4 | リトライ上限（最大 1 回 = 合計 2 試行） |
+| XR-5 | Unknown 警告閾値（試行済みの 20% 超で警告） |
 
 ### 振る舞いの原則
 
-- **公式 CLI 経由**（ADR-PU-002）
-- **固定順序**（ADR-PU-003）
-- **スコープ個別更新**（ADR-PU-001/002）
-- **継続実行**（ADR-PU-003）
-- **exit code 一次判定 + Unknown 区分**（ADR-PU-005）
-- **横断ルール SSOT 参照**（ADR-PU-004）
-- **失敗対応の確認**: 結果報告後、失敗があれば一括リトライ / 個別判断 / 全件スキップをユーザに確認
+設計判断の決定本文は `references/architecture-decisions.md` を参照してください。本一覧は ADR への索引です。
+
+| 原則 | 根拠 ADR |
+|-----|---------|
+| 公式 CLI 経由 | ADR-PU-002 |
+| Phase A-0〜G 固定順序 + スコープ個別更新 + 継続実行 | ADR-PU-003 |
+| 横断ルール SSOT 配置 | ADR-PU-004 |
+| exit code 一次判定 + Unknown 区分 | ADR-PU-005 |
+| サーキットブレーカー（MP 単位累計 3 件） | ADR-PU-006 |
+| 失敗対応の対話モデル（5 件閾値で個別判断除外） | ADR-PU-007 |
 
 ## 技術スタック・アーキテクチャ
 
 設計判断の詳細は次を参照してください:
 
-- [`references/architecture-decisions.md`](references/architecture-decisions.md) — ADR-PU-001〜005
-- [`references/cross-cutting-rules.md`](references/cross-cutting-rules.md) — XR-1〜XR-4 の SSOT
+- [`references/architecture-decisions.md`](references/architecture-decisions.md) — ADR-PU-001〜007
+- [`references/cross-cutting-rules.md`](references/cross-cutting-rules.md) — XR-1〜XR-5 の SSOT
+
+### バージョン同期方針
+
+本プラグインのバージョンは `plugin.json` の `version` フィールドが **唯一の正典** です（ADR-019 準拠）。
+`marketplace.json` のエントリにはバージョンを持たせず、マーケットプレイス README のテーブルに表示される
+バージョンは `plugin.json` から手動同期します。差異検出時は `plugin.json` の値を信頼してください。
 
 ## 注意事項
 
@@ -274,8 +284,8 @@ plugins-update/
 ├── commands/
 │   └── update-all.md                      # /update-all コマンド本体
 └── references/
-    ├── architecture-decisions.md          # ADR-PU-001〜005（設計判断記録）
-    └── cross-cutting-rules.md             # XR-1〜XR-4（横断ルール SSOT）
+    ├── architecture-decisions.md          # ADR-PU-001〜007（設計判断記録）
+    └── cross-cutting-rules.md             # XR-1〜XR-5（横断ルール SSOT）
 ```
 
 ## 関連プラグイン
