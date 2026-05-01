@@ -151,7 +151,9 @@ AskUserQuestion({
     question: "<N> 件の更新失敗があります（マーケットプレイス: <M> 件 Failed / プラグイン: <P> 件 Failed）。どう対応しますか？",
     header: "更新失敗対応",
     options: [
-      { label: "全件リトライ", description: "Failed エントリをもう一度更新する。マーケットプレイス Failed 時は Phase B を全件再実行するため、サーキットブレーカー作動中の MP も再試行され得る（XR-2 の設計上の許容事項）" },
+      { label: "全件リトライ", description: "Failed エントリをもう一度更新する。<warn_breaker>" },
+      // <warn_breaker> は MP 単位 Failed が 1 件以上ある場合に以下を埋め込む:
+      // 「マーケットプレイス Failed 時は Phase B を全件再実行するため、サーキットブレーカー作動中の MP（<bn> 件）も再試行され、悪意ある MP の応答遅延が累積し全体タイムアウト（30 分・XR-2）を消費する DoS リスクがあります。 <bn> > 0 の場合は『個別に判断』推奨」
       // N <= 5 のときのみ次の選択肢を含める
       { label: "個別に判断", description: "Failed エントリごとにリトライ / スキップを選択" },
       { label: "全件スキップ", description: "Failed エントリは諦めて完了する" }
@@ -177,24 +179,34 @@ function truncate_with_mask_safety(text, limit=500):
 
     cut = text[:limit]
 
-    # 末尾から走査して、未閉鎖の `***` ペア境界に到達するまで後退
+    # 1. 末尾から走査して、未閉鎖の `***` ペア境界に到達するまで後退
     # `***...***` パターンは固定マーカーで両端が `***` のため、
     # cut 内の `***` 出現回数が **奇数** であれば最後の `***` ブロックが未完結
-    star_count = count_occurrences(cut, "***")
+    # count_occurrences は **重複なしの非貪欲マッチ数**（Python の `re.findall(r'\*\*\*', cut)` と同等）
+    star_count = count_occurrences_nonoverlapping(cut, "***")
     if star_count % 2 == 1:
         # 最後の `***` 出現位置の手前まで切り戻す
         last_star_pos = rfind(cut, "***")
         cut = cut[:last_star_pos]
+
+    # 2. 山括弧マスク `<...>` の途中切断回避（UX 改善）
+    # 末尾に `<` があり対応する `>` が cut 内に存在しなければ、`<` の手前まで切り戻す
+    last_lt_pos = rfind(cut, "<")
+    last_gt_pos = rfind(cut, ">")
+    if last_lt_pos != -1 and last_lt_pos > last_gt_pos:
+        cut = cut[:last_lt_pos]
 
     return cut + "...（省略）"
 ```
 
 **設計意図**:
 - 既知マスクトークン（`***GITHUB_TOKEN***` / `***POSSIBLE_SECRET***` 等）は両端が `***` で固定。
-- `***` の出現回数が偶数なら全ペアが完結している。奇数なら最後の `***` ブロックが切れているため、
+  `***` の出現回数が偶数なら全ペアが完結している。奇数なら最後の `***` ブロックが切れているため、
   その手前まで戻すことで「機密が部分露出する事故」を回避する。
-- `<netrc-credential>` 等の山括弧マスクは部分露出しても秘匿性を破らないため、本アルゴリズムでは
-  追加処理しない（必要なら山括弧版も同等の偶奇判定で拡張可能）。
+- `count_occurrences_nonoverlapping` は **重複なしの非貪欲マッチ**（`***A******B***` のような
+  連続出現は 4 回として正しくカウント）。Python では `len(re.findall(r'\*\*\*', text))` 相当。
+- 山括弧マスク（`<netrc-credential>` / `<scheme>://***@` / `<ssh-key-path>` / `<user-home>` 等）は
+  部分露出しても秘匿性を破らないが、UX 改善のため山括弧途中切断も回避する（v3.3.0 で追加）。
 
 ```text
 # pseudocode: Claude が AskUserQuestion ツールを呼び出すパターン
@@ -214,6 +226,11 @@ AskUserQuestion({
 ---
 
 ## エラーメッセージ集約
+
+> **SSOT 注記**: 本セクションが本プラグインの全エラー文言の **唯一の正典**。
+> `commands/update-all.md` および `skills/plugin-updater/` 配下の `SKILL.md` / `references/`
+> 各ファイルは本セクションを参照し、独自にエラー文言を再定義しない。
+> 文言を変更する際は本セクションのみを編集し、他箇所は参照を維持する（ADR-PU-004 SSOT 配置原則準拠）。
 
 ### 不正な scope 値
 

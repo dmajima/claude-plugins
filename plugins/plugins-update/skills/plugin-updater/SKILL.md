@@ -45,9 +45,8 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 - **シークレット非接触**: `settings.json` 系の `enabledPlugins` 以外のキーをメインコンテキストに
   載せない（Grep ブロック終端検出 + フェイルクローズ。Phase A-Sec を厳守）
 - **Failed のみリトライ対象**: Missing は CLI リトライで回復しないため Phase G の対象外
-  （ADR-PU-007）。**サーキットブレーカー（XR-2）作動中の MP は G-3 のプラグイン単位リトライから
-  除外** されるが、**Phase B 全件リトライの対象からは除外されない**（Phase B が MP 単位個別指定を
-  サポートしないための設計上の許容事項。詳細は phase-flow.md G-3 を参照）
+  （ADR-PU-007）。サーキットブレーカー作動中の MP の扱い・Phase B 全件リトライへの非適用は
+  ADR-PU-006 が SSOT（本 SKILL.md は再定義しない）
 - **全文 Read 禁止**: `settings.json` 全文を Read することは禁止。Grep + ブロック終端検出で
   範囲を限定する
 

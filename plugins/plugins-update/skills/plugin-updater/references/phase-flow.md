@@ -60,6 +60,18 @@ Claude Code のインストール状況と PATH を確認してください。
 > ユーザは利用前に `which claude` / `Get-Command claude` で実行バイナリの絶対パスを確認し、
 > OS パッケージマネージャ管理下にあることを必ず確認すること（README「動作要件」参照）。
 
+#### A-0-2 検証成功時の INFO（毎回必須提示）
+
+A-0-2 が exit 0 + 必要サブコマンド検出の両条件を満たした場合、Phase A 開始前に以下の INFO を
+**毎回** 提示する（CLI バイナリ真正性が自動検証されていない事実をユーザに思い出させるため）:
+
+```text
+INFO: claude plugin CLI の存在を確認しました。バイナリ真正性は本コマンドでは検証していません。
+   PATH 改変・シム差し替え攻撃を防ぐには `which claude`（POSIX）/ `Get-Command claude`
+   （PowerShell）で実行バイナリの絶対パスを確認し、OS パッケージマネージャ管理下にあることを
+   ユーザー側で別途確認してください。
+```
+
 ---
 
 ## Phase A: 対象収集（読み取りのみ）
@@ -93,8 +105,12 @@ Claude Code のインストール状況と PATH を確認してください。
    - `[`（配列型）
    - `"`（文字列型）
    - 数字 / `-` / `+`（数値型）
-   - `t` / `f` / `n`（true / false / null リテラル先頭）
+   - `t` / `f` / `n`（true / false / null リテラル先頭。**`enabledPlugins: null` 自体は「スキーマ不正」**
+     扱いであり、後段の `enabledPlugins.{plugin}: null`（要素値の null = 「無効と同等扱い」）とは
+     **粒度が異なる** ことに注意）
    - `enabledPlugins` キー自体が存在しない（Grep が空結果を返した場合）
+
+   `{` が確認できた場合のみ **第三手順へ進む**（明示的な順序制約）。
 3. **第三手順（必須）— ブロック終端検出**: 抽出結果を Claude が走査し、`enabledPlugins` の値である
    `{` の対応する `}` を検出した時点で **それ以降のテキストを破棄** する。具体的には:
    - 値の `{` 位置から開始し、`{` でネストレベル +1、`}` でネストレベル -1 を計上
@@ -116,19 +132,46 @@ Claude Code のインストール状況と PATH を確認してください。
    **全文 Read は禁止**（`mcpServers` 等が直接コンテキストに乗るリスクがあるため）。
 6. **メインコンテキストの最終状態**: `enabledPlugins` 配下のキー・値のみが残ること。
    機密キー名（`mcpServers` / `extraKnownMarketplaces` / `hooks` / `apiKeyHelper` / `env` /
-   `permissions` / `customApiKeyResponses` 等）を **JSON キー文字列形式**（前後ダブルクォート +
-   コロン形式 `"hooks":` / `"mcpServers":` 等）で検出した場合は、結果報告本文・備考列・引き継ぎ
-   要約のいずれにも一切出力しない（フェイルクローズ：当該行を破棄して継続、もしくは混入が継続する
-   場合はエラー終了）。**プラグイン名・MP 名・備考の自然言語に偶発的に含まれる単語**
-   （例: プラグイン名 `git-hooks-runner` の `hooks`、`mcp-config` の `mcp`）は **JSON キー形式
-   `"hooks":` ではない** ため、本フィルタの対象外。判定は **JSON キー構造（クォート + コロン）**
-   で行い、単語照合では行わない。
+   `permissions` / `customApiKeyResponses` / `awsAuthRefresh` 等）を **JSON キー文字列形式**
+   （前後ダブルクォート + コロン形式 `"hooks":` / `"mcpServers":` 等）で検出した場合は、結果報告
+   本文・備考列・引き継ぎ要約のいずれにも一切出力しない。**プラグイン名・MP 名・備考の自然言語に
+   偶発的に含まれる単語**（例: プラグイン名 `git-hooks-runner` の `hooks`、`mcp-config` の `mcp`）は
+   **JSON キー形式 `"hooks":` ではない** ため、本フィルタの対象外。判定は **JSON キー構造
+   （クォート + コロン）** で行い、単語照合では行わない。
+
+7. **第七手順（必須）— 事後検証ガード（フェイルクローズ二重化）**: 第三手順のブロック終端検出後、
+   **保持テキスト** に対して以下のいずれかの機密キーが JSON キー形式（前後ダブルクォート + コロン）で
+   出現していないかを正規表現で検証する:
+
+   ```text
+   "(mcpServers|hooks|apiKeyHelper|env|permissions|customApiKeyResponses|awsAuthRefresh|extraKnownMarketplaces)"\s*:
+   ```
+
+   1 件でも検出された場合は **即座にエラー終了** する（行破棄継続は禁止。ブロック終端検出が
+   文字列リテラル内 `}` 等で誤動作した場合の最終防衛線）:
+
+   ```text
+   エラー: enabledPlugins ブロック内に機密キー（<検出キー名>）が混入しています。
+   A-Sec 第三手順のブロック終端検出に異常がある可能性があります。settings.json の構造を
+   確認し、再実行してください。
+   ```
+
+   本ガードは「Claude（LLM）が長文走査でステート（文字列内/外、エスケープ直後）を取りこぼす」
+   ケースに対する事後検証であり、第三手順の文字列リテラル考慮と二段防御を成す。
 
 ### A-Repo. `<repo>` の決定と検証
 
 `<repo>` は `git rev-parse --show-toplevel` の結果。検証ルールは XR-1 の「パス検証」セクション
-（[cross-cutting-rules.md](cross-cutting-rules.md)）を参照。検証失敗時は Project / Local
-処理をスキップして INFO で理由を表示する（フェイルクローズ）。
+（[cross-cutting-rules.md](cross-cutting-rules.md)）を参照。
+
+> ⚠️ **検証順序の規範**（必須）: XR-1 の「シェル特殊文字検証」「シンボリックリンク検出」等の
+> パス検証は **必ず以下の順序** で実施する:
+> 1. `<repo>` 文字列に対する正規表現ベース検証（`..` / 改行 / null 文字 / シェル特殊文字 /
+>    UNC パス等）→ XR-1 で全件パスしたもののみ次へ
+> 2. PowerShell `Get-Item -LiteralPath '<repo>'` 等の **外部コマンド呼び出しを伴う** 検証
+> （順序を逆にすると未検証の `<repo>` が PowerShell の文字列展開を経由して攻撃面を広げるため）
+
+検証失敗時は Project / Local 処理をスキップして INFO で理由を表示する（フェイルクローズ）。
 
 git リポジトリ外で実行され、かつ `--scope project` または `--scope local` が **明示指定** された場合は
 エラーを返して中断する。`--scope` 未指定時は Project / Local を省略するが、その旨を以下の INFO で明示する:
@@ -325,17 +368,23 @@ Missing は Phase G の対象としないため、リトライ後も Missing の
 
 ## --dry-run モード時の挙動
 
-呼び出し元から `mode = dry-run` で起動された場合、**実際の更新コマンドを一切実行せず**、以下のみ提示する。
+呼び出し元から `mode = dry-run` で起動された場合、**「マーケットプレイス／プラグインを変更する CLI
+（`claude plugin marketplace update` / `claude plugin update`）」のみを実行せず**、以下を提示する。
+**読み取り専用 CLI（`claude plugin --help` / `claude plugin marketplace list`）は対象収集のため
+通常通り実行する** 点に注意（dry-run の対象は破壊的操作 CLI のみ）。
 
+- Phase A-0-1 / A-0-2（読み取り専用）は通常実行
 - Phase A の対象収集は通常通り実行（A-Sec 手順による Grep + ブロック終端検出で `settings.json` 系を
   読み取り、`claude plugin marketplace list` を実行。`marketplace list` はキャッシュ参照のみで
   更新通信を行わないことが期待されるが、CLI バージョンにより異なる場合がある）
-- Phase A-0 / A-1 / A-2 の検証も実行
-- Phase B / C / D / E の代わりに、実行予定の CLI コマンド一覧を表示。フォーマットは
+- Phase A-1 / A-2 の検証も実行
+- Phase B / C / D / E（**変更系 CLI**）の代わりに、実行予定の CLI コマンド一覧を表示。フォーマットは
   [`output-formats.md`](output-formats.md) の **「Phase F（dry-run モード）」セクション**
   （F-1 / F-2 / F-3 dry-run 専用テーブル）を SSOT として参照する
-- **XR-3 サニタイズは適用不要**: dry-run 時は実際の CLI 実行が発生しないため、サニタイズ対象となる
-  CLI 出力（エラー文字列等）が存在しない（output-formats.md Phase F(dry-run) 末尾の注記参照）
+- **XR-3 サニタイズは Phase B/C/D/E の更新ログに対しては適用不要**: dry-run 時は変更系 CLI 出力が
+  発生しないため。ただし **Phase A の `claude plugin marketplace list` 出力** は通常モードでも
+  サニタイズ対象外（出力フォーマットが MP 名・URL 主体で機密性が低い）であり、dry-run でも同様の
+  扱い（output-formats.md Phase F(dry-run) 末尾の注記参照）
 - Phase F-4 / G はスキップ
 
 **重要な制約**: `--dry-run` は **実行予定のコマンド一覧** のみを提示します。

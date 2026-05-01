@@ -157,7 +157,7 @@ CLI が `--output json` 等の構造化出力モードを提供したら、ADR-P
 
 - **基本 Phase**: A / B / C / D / E / F / G の 1 文字。
 - **派生 Phase**（Phase 全体の前後に追加するもの）: `A-0` / `A-1` / `A-2` のようにハイフン枝番。
-- **サブフェーズ**（Phase 内のステップ）: `B-1` / `C-1` / `F-0` / `F-1` のようにハイフン枝番。
+- **サブフェーズ**（Phase 内のステップ）: `B-1` / `C-1` / `F-1` / `G-1` のようにハイフン枝番。
 - **混在の解決**: 派生 Phase は当該基本 Phase に **論理的に属する処理ステップ** であり、
   サブフェーズは「結果分類」「サマリ表示」等のステップ。番号衝突を避けるため、新規追加の際は
   本 ADR を更新して位置付けを明記する。
@@ -309,6 +309,17 @@ Failed: another-mp in branch main
 
 抽出した MP 名候補は XR-1 の正規表現に再照合し、合致しないものは Unknown として扱う。
 
+##### 例外抽出のテストケース
+
+| CLI 出力例 | 抽出グループ 2 | XR-1 再照合 | 最終分類 |
+|----------|--------------|-----------|---------|
+| `Failed: dmajima-claude-plugins` | `dmajima-claude-plugins` | 合致 | Failed（MP 名: dmajima-claude-plugins） |
+| `Error: my-mp at 14:35:00` | `my-mp` | 合致 | Failed（MP 名: my-mp） |
+| `Failed: another-mp in branch main` | `another-mp` | 合致 | Failed（MP 名: another-mp） |
+| `Failed: my-mp: connection refused` | `my-mp: connection refused` | 不合致（`:` を含む） | **Unknown**（XR-1 再照合の安全弁が発動） |
+| `Failed: timeout` | `timeout` | 合致（XR-1 通過する単純語） | Failed（MP 名: timeout）— 偽陽性の可能性あり、要 CLI バージョン仕様確認 |
+| `random log line not matching pattern` | （マッチなし） | — | 抽出なし（B-1 「Unknown」） |
+
 #### Unknown 件数の警告閾値
 
 XR-5 を参照（試行済み件数の 20% 超で警告）。
@@ -381,9 +392,22 @@ XR-2 のサーキットブレーカー（同一 MP に対する累計失敗で�
 
 - **粒度**: マーケットプレイス（MP）単位。
 - **閾値**: 同一 MP に対する **累計 3 件以上の Failed**。
-- **カウント方式**: 連続・非連続を問わない累計（フェーズ横断で B / C / D / E すべての Failed を集計）。
-- **作動時挙動**: 当該 MP 配下のプラグイン更新エントリ（残）を Skipped（サーキットブレーカー作動）として除外。
-  G-3 のリトライ対象からも除外。
+- **カウント方式**: 連続・非連続を問わない累計。集計対象は **ADR-PU-005 の各テーブルで `Failed` に
+  分類されたエントリ** に限定する。具体的には:
+  - Phase B-1 の **「部分失敗」分類で `Failed` として記録された MP**（カウント対象）
+  - Phase C/D/E の `Failed` エントリ（カウント対象）
+  - Phase B-1 の **「全体失敗」（exit 非 0）はカウント対象外**: 全体失敗は MP 個別の障害ではなく
+    CLI 自体の応答異常であり、サーキットブレーカーで「特定 MP 配下を遮断する」概念に当てはまらない
+  - Phase B-1 の **「Unknown」もカウント対象外**: 分類失敗であり Failed と区別する
+- **作動時挙動**:
+  - **C/D/E のプラグイン単位リトライ**: 当該 MP 配下のプラグイン更新エントリ（残）を Skipped
+    （サーキットブレーカー作動）として除外。G-3 プラグイン単位リトライ対象からも除外。
+  - **Phase B 全件リトライ**（G-3 で MP Failed が選択された場合）: **サーキットブレーカー作動中の
+    MP も再試行され得る**（Phase B が `marketplace update <name>` の MP 単位個別指定を CLI で
+    サポートしないため、現状は `marketplace update`（全 MP 一括）のみ。これは設計上の許容事項。
+    CLI が個別指定をサポートした際は ADR-PU-002 Future Direction に従って G-3 リトライ戦略を更新し
+    サーキットブレーカー除外を厳密化する）。SKILL.md / phase-flow.md / output-formats.md の関連
+    記述は本 ADR への参照のみを持ち、本 ADR が SSOT。
 
 ### Rationale
 
@@ -530,8 +554,8 @@ ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー�
 - **AI 解釈容易性**: スキルは AI が起動時に読み込む単位として設計されており、Phase 詳細を持つのに
   自然な配置
 - **将来拡張への耐性**: 追加コマンド（例: `update-one`、`prune-all`）が同じスキルを共有可能
-- **コマンド本文の単純化**: 約 460 行 → 約 46 行（実装ロジックは約 30 行）で、レビューでの
-  「肥大化指摘」が構造的に解消
+- **コマンド本文の単純化**: 約 460 行（v2.x 当時）→ 約 46 行（v3.x 現状・実装ロジックは約 30 行）で、
+  レビューでの「肥大化指摘」が構造的に解消
 
 ### Trade-offs
 

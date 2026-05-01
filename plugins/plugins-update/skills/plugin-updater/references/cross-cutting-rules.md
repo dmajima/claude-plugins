@@ -52,7 +52,7 @@
 | 改行・null 文字を含まない | 含めば拒否 |
 | シェル特殊文字を含まない | `'`（シングルクォート）/ `"`（ダブルクォート）/ `` ` ``（バッククォート）/ `$` / `;` / `\|` / `&` / `<` / `>` を含めば拒否（POSIX のパスは合法だが PowerShell / Bash の文字列展開で脱出されるリスクを排除） |
 | UNC パスでない | Windows で `^\\\\` で始まる場合は拒否（リモート共有上の細工された settings.json 経由の攻撃面排除） |
-| シンボリックリンク・ジャンクションでない | Windows: PowerShell `Get-Item -LiteralPath '<repo>' \| Select-Object LinkType` で `null` でない場合は拒否（リパースポイント検出）。`-LiteralPath` を使い、`<repo>` は単一引用符でクォートして PowerShell プロバイダ構文（`Registry::` 等）への解釈を抑止。POSIX: `test -L <repo>` で真なら拒否 |
+| シンボリックリンク・ジャンクションでない | Windows: PowerShell `Get-Item -LiteralPath '<repo>' \| Select-Object LinkType` で `null` でない場合は拒否（リパースポイント検出）。`-LiteralPath` を使い、`<repo>` は単一引用符でクォート。**この時点で `<repo>` は前段「シェル特殊文字を含まない」検証で `'`（シングルクォート）含有が除外済み** のため、シングルクォートクォートはリテラル安全（順序制約は phase-flow.md A-Repo「検証順序の規範」を参照）。POSIX: `test -L <repo>` で真なら拒否 |
 | 実在ディレクトリ | Read ツールで存在確認できない場合は拒否 |
 
 判定不能な環境（必要なツールが利用できない等）では **フェイルクローズ**（スキップ + 理由 INFO 表示）。
@@ -202,6 +202,8 @@ GitLab PAT・Stripe Key 等の具体パターン）で先処理されるため�
 | 長さ 35 字（40 字未満）の任意トークン `abcdef0123456789abcdef0123456789abc` | マスクしない（40 字未満は規則ベース対象外なら素通り） |
 | プラグイン識別子 `extension-toolkit-long-name@dmajima-claude-plugins-marketplace`（合計 60+ 字、備考列に出現） | マスクしない（`@` 構造が識別子内文脈外判定で除外。XR-1 で各 64 字以下に制限済みのため安全） |
 | 備考列の `Twilio sid: ACabcdef...32hex` | マスク（`AC` + 32 hex の Twilio パターン、単語境界判定で誤検知抑制） |
+| 短い JWT 風文字列「eyJ + `<5字>` + `.eyJ` + `<5字>` + `.<3字>`」（各セグメント 16 字未満） | マスクしない（v3.3.0 で各セグメント最小長を 16 字に引き上げたため、誤検知抑制） |
+| 大文字スキーム `Mailto:User:Pass@example.com` | マスク（URL 埋め込み認証パターンに `(?i)` 付与済、大小文字スキーム両対応） |
 
 #### **重要な例外（テーブル列単位）**
 

@@ -18,12 +18,10 @@ argument-hint: "[--dry-run] [--scope <user|project|local>]"
 | `--scope all` | `scope = all`（明示） |
 
 `--dry-run` と `--scope` は併用可能。
-不正な `--scope` 値（例: `--scope foo`）が渡された場合は処理を実行せず以下の形式でエラーを返す
-（スキル側でも検証されるが、コマンド側で早期失敗させる）:
-
-```text
-エラー: 不正な --scope 値 "foo" が指定されました。有効な値は user / project / local / all です（all は省略時の既定値であり明示指定も可）。
-```
+不正な `--scope` 値（例: `--scope foo`）が渡された場合は処理を実行せず、
+`skills/plugin-updater/references/output-formats.md` の「エラーメッセージ集約 → 不正な scope 値」
+セクション（SSOT）に定義されたフォーマットでエラーを返す（スキル側でも同形式で検証されるが、
+コマンド側で早期失敗させる）。本コマンドは独自エラー文言を再定義しない。
 
 ## スキル委譲
 

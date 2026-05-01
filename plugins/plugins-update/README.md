@@ -193,7 +193,7 @@ OS パッケージマネージャ管理下に存在することを確認して�
 |----|------|
 | XR-1 | 入力検証（プラグイン名・MP 名・スコープの正規表現照合 + ホワイトリスト + NFKC 正規化 + パス検証） |
 | XR-2 | タイムアウト + サーキットブレーカー（個別 60 秒・全体 30 分・MP 単位累計 3 件 Failed で配下 Skip） |
-| XR-3 | 出力サニタイズ（GitHub PAT / GitLab / AWS / Slack / JWT / Google API / Stripe / Azure / NPM / Anthropic / OpenAI / HuggingFace / Sentry DSN / PyPI / Discord webhook / Telegram / Twilio / .netrc / SSH 鍵 / ローカルパス + 40 字超デフォルトマスク。網羅的なパターン一覧は `cross-cutting-rules.md` を SSOT として参照） |
+| XR-3 | 出力サニタイズ（**主要パターン**: GitHub PAT / AWS / JWT / SSH URL / .netrc / SSH 鍵 / URL 埋め込み認証 等多数 + 40 字超デフォルトマスク。**網羅的なパターン一覧は `skills/plugin-updater/references/cross-cutting-rules.md` の XR-3 サニタイズ規則本体テーブルを SSOT として参照**。新規パターン追加時は SSOT のみを更新する） |
 | XR-4 | リトライ上限（最大 1 回 = 合計 2 試行） |
 | XR-5 | Unknown 警告閾値（試行済みの 20% 超で警告） |
 
