@@ -258,17 +258,17 @@
 | 既存プラグインの移行猶予 | 本 ADR 制定前から存在する既存プラグイン（`convert-doc` 等）に対しては、`extension-reviewer` の機械チェックは **検出のみ** を実施し（重大度 High で報告）、移行は別 PR として段階的に行う。本プラグイン（`extension-toolkit`）自身は本 ADR 制定と同時に完全準拠する。移行未完了プラグインの公開（マーケットプレイス更新）は、scripts-policy.md の指摘を解消した上で実施する |
 | 代替案 | (1) インラインを許可（旧運用）→ 文字化け再発・トークン消費増・レビュー対象外、却下。(2) 全コードブロック禁止 → 設定例・出力例まで失われ、ドキュメント機能が損なわれる、却下。(3) 言語別（python のみ禁止 / bash 許可）→ 同じ問題が bash でも発生する、却下。(4) スクリプトをプラグイン/スキル直下 `scripts/` に置く（旧 ADR-015 の許可リストに沿う） → トップレベル許可リストが肥大化し、references / scripts の責務が分散、却下 |
 
-## ADR-026: プラグイン/スキル領域への直接編集を `extension-toolkit` 経由に強制するフック導入
+## ADR-026: 経由促進・バージョン更新検証の 2 段フック構成
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | `extension-toolkit` プラグイン同梱の `hooks/hooks.json` で **PreToolUse Edit/Write/MultiEdit フック** を登録し、対象ファイルが `plugins/{name}/` 配下（`SKILL.md` / `commands/*.md` / `agents/*.md` / `hooks/*` / `references/*` / `evals/*` / `README.md` / `.claude-plugin/plugin.json`）に該当する場合、対応する `*-toolkit` スキルを経由するよう **exit code 2 でブロック** する。実スクリプトは ADR-025 に従い `references/scripts/hooks/enforce_toolkit_routing.sh` に配置する。`EXTENSION_TOOLKIT_BYPASS=1` 環境変数で抑制可能（フック自身の修正や緊急時の bypass 用）|
-| 理由 | (1) `extension-toolkit` の各 `*-toolkit` スキルは構造規約遵守・パスポータビリティ検査・バージョン更新・evals 整合・description トリガー設計などの品質ガードを内包する。直接 Edit/Write を許すとこれらが回避され、規約違反・退行を招く。(2) AI 自動トリガー（description 経由）だけでは、ユーザが明示的にファイル編集を依頼した場合に各 toolkit スキルが起動しないケースがある。フックで harness レベルでガードすることで「必ず toolkit 経由」を保証する。(3) フック中で推奨スキル名を提示することで、Claude が自動的に適切な toolkit を起動するよう誘導できる |
-| トレードオフ | (1) ブロック型のため、フック自身の修正・extension-toolkit core 実装変更・緊急対応時には bypass フラグが必要。(2) 利用者の作業ディレクトリ内に `.claude/.local/` `.git/` を含む場合の除外判定が必要（実装で明示）。(3) Python が PATH に無い環境では JSON パースが失敗し、フックは fail-open（exit 0、通過）する設計とした（厳密性より誤動作回避を優先）|
+| 決定 | `extension-toolkit` プラグイン同梱の `hooks/hooks.json` で 2 種類のフックを登録する。**(1) PreToolUse Edit/Write/MultiEdit フック（警告型）**: `plugins/{name}/` 配下への直接編集を検知して、対応する `*-toolkit` スキル名を stderr に提示する。**ブロックはせず exit 0 で通過** させ、Claude の自律判断に委ねる。**(2) Stop フック（バージョン更新検証）**: Claude のターン終了時に `plugins/{name}/` の未コミット変更を検知し、対応する `plugin.json` の `version` が main から更新されていない場合に stderr で警告する（fail-open、exit 0）。実スクリプトはいずれも ADR-025 に従い `references/scripts/hooks/` 配下に配置する |
+| 理由 | (1) ハードブロック型は **過剰制約** であり、(a) extension-toolkit 自身のセルフレビュー反復を阻害、(b) 軽微な編集（typo・1 行修正等）にも重い toolkit 起動を強制、(c) bypass フラグ運用が常態化して形骸化、というデメリットがある。(2) ハードブロックの本来の目的だった「バージョン更新漏れ防止」は **編集時ではなくコミット時の問題** であり、Stop フック / git pre-commit による事後検証の方が直接的に効く。(3) PreToolUse 警告でスキル候補を提示することで、Claude は編集規模に応じて自律的に toolkit 起動の要否を判断できる。(4) 軽微な編集を阻害しないことで、開発体験と AI 自動レビューサイクルの両立が可能 |
+| トレードオフ | (1) PreToolUse 警告型は「必ず toolkit を通す」という強制力を持たない。Claude が警告を無視して直接編集することがあり得る。これは (a) スキル description / 規約教育、(b) 開発者向けドキュメントでの周知、(c) extension-reviewer の事後レビュー、で補完する。(2) Stop フックは「すでに変更したあと」の検出のため、変更直後に修正が必要になる。これは「コミット直前」のタイミングで動くため、コミット作業の手戻りは最小限 |
 | 適用範囲 | 本プラグインがインストールされた環境全体。本プラグイン自体および本プラグインがレビュー対象とするすべてのプラグイン |
-| 必須項目 | (a) `hooks/hooks.json` で `PreToolUse Edit/Write/MultiEdit` を `${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/enforce_toolkit_routing.sh` にルーティング、(b) 実スクリプトは `references/scripts/hooks/` 配下（ADR-025 配置義務）、(c) bypass フラグ `EXTENSION_TOOLKIT_BYPASS=1` のサポート、(d) `.claude/.local/` / `.git/` / `/tmp/` 配下は無条件に通過、(e) ファイルパス取得失敗時は fail-open（編集を妨げない） |
+| 必須項目 | (a) `hooks/hooks.json` で `PreToolUse Edit/Write/MultiEdit` と `Stop` をそれぞれルーティング、(b) 実スクリプトは `references/scripts/hooks/` 配下（ADR-025 配置義務）、(c) PreToolUse は **常に exit 0**（fail-open）、(d) Stop は git 利用不可・リポジトリ外で **無音 exit 0**、(e) `.claude/.local/` / `.git/` / `/tmp/` 配下は無条件に通過、(f) Stop フック検出ロジックは `plugin.json` の `version` フィールドを sed で抽出し main ブランチと比較 |
 | 推奨ルーティング | SKILL.md → `skill-toolkit` / commands/*.md → `command-toolkit` / agents/*.md → `agent-toolkit` / hooks/* → `hook-toolkit` / README.md → `readme-toolkit` / plugin.json → `plugin-toolkit` / references/scripts/setup/ → `environment-setup-toolkit` / 公開 → `marketplace-publisher` / レビュー → `extension-reviewer` |
-| 代替案 | (1) description / トリガー強化のみ → AI 判定の確実性に欠ける、却下。(2) Stop / Notification フックで事後通知 → 編集自体は通ってしまうため品質ガードにならない、却下。(3) settings.json でユーザ環境ごとに登録 → プラグイン同梱の自己完結性（ADR-022）に反する、却下 |
+| 代替案 | (1) PreToolUse ハードブロック型 → 過剰制約・bypass 常態化、却下（旧設計）。(2) PreToolUse フック完全廃止 + Stop のみ → 軽微編集には適合するが、新規大規模変更時のスキル誘導も失う、却下。(3) git pre-commit のみで検証 → Claude のターン中に気付けず、コミット時点で大きな手戻りになる、却下。(4) settings.json でユーザ環境ごとに登録 → プラグイン同梱の自己完結性（ADR-022）に反する、却下 |
 
 ## ADR の追加・更新
 

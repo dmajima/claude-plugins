@@ -1,24 +1,32 @@
 #!/usr/bin/env bash
-# enforce_toolkit_routing.sh - PreToolUse Edit/Write フック
+# enforce_toolkit_routing.sh - PreToolUse Edit/Write フック（警告型、ADR-026 v2）
 #
 # 目的:
 #   プラグイン / スキル領域への直接 Edit/Write を検知し、適切な
 #   extension-toolkit のスキル（skill-toolkit, command-toolkit,
 #   agent-toolkit, hook-toolkit, readme-toolkit, environment-setup-toolkit,
-#   marketplace-toolkit, marketplace-publisher, extension-reviewer）を
-#   経由するよう強制する。
+#   marketplace-toolkit, marketplace-publisher, extension-reviewer）の
+#   利用を **推奨** する（ブロックはしない）。
+#
+#   ハードブロック型（旧設計）は (1) セルフレビューの反復を阻害、
+#   (2) 軽微な編集にも重い toolkit 起動を強制、(3) bypass 運用が常態化、
+#   といった過剰制約となるため警告型に変更（ADR-026 v2）。
+#
+#   バージョン更新漏れの防止は本フックではなく Stop フック
+#   `check_version_bump.sh` で別途担当する。
 #
 # 入力:
 #   stdin: Claude Code から渡される PreToolUse JSON（tool_name, tool_input 含む）
 #
 # 出力:
-#   - 該当外パス: exit 0（通過）
-#   - 該当パス + 経由なし: exit 2（ブロック） + stderr に推奨スキル案内
-#   - 該当パス + EXTENSION_TOOLKIT_BYPASS=1: exit 0（通過、警告のみ）
+#   - 該当外パス: exit 0（通過、無音）
+#   - 該当パス: exit 0（通過） + stderr に推奨スキル名を提示
 #
-# bypass:
-#   フック自身の修正・extension-toolkit の core 実装変更等、本フックを
-#   経由できないシナリオでは環境変数 EXTENSION_TOOLKIT_BYPASS=1 を設定する。
+# 設計上の決定:
+#   - 常に exit 0（編集をブロックしない）
+#   - Claude は stderr メッセージを見て、編集規模に応じて
+#     toolkit 起動の要否を自律判断する
+#   - bypass フラグは不要（廃止）
 
 set -euo pipefail
 
@@ -62,12 +70,6 @@ if [ "$IS_TARGET" -eq 0 ]; then
   exit 0
 fi
 
-# bypass フラグ
-if [ "${EXTENSION_TOOLKIT_BYPASS:-0}" = "1" ]; then
-  printf '[extension-toolkit hook] BYPASS detected — direct edit allowed: %s\n' "$FILE_PATH" >&2
-  exit 0
-fi
-
 # 推奨スキルの判定（ファイル種別から）
 RECOMMENDED=""
 case "$FILE_PATH" in
@@ -101,30 +103,24 @@ case "$FILE_PATH" in
 esac
 
 cat >&2 <<EOF
-[extension-toolkit hook] プラグイン/スキル領域への直接 Edit/Write を検知しました:
+[extension-toolkit hook] プラグイン/スキル領域への直接 Edit/Write を検知（情報提示のみ・編集は許可）:
   対象ファイル: $FILE_PATH
+  推奨スキル: ${RECOMMENDED}
 
-直接編集する代わりに、以下の extension-toolkit スキルを経由してください:
-  推奨: ${RECOMMENDED}
+新規作成・大規模改修・構造変更を伴う場合は、上記 toolkit を経由することで
+構造規約遵守・パスポータビリティ検査・evals 整合などの品質ガードが通ります。
+軽微な編集（typo / コメント / 1〜数行修正）は直接編集で問題ありません。
 
-ルーティング指針:
-  - SKILL.md          → skill-toolkit
-  - commands/*.md     → command-toolkit
-  - agents/*.md       → agent-toolkit
-  - hooks/*.json/*.sh → hook-toolkit
-  - README.md         → readme-toolkit
-  - plugin.json       → plugin-toolkit
-  - references/scripts/setup/ → environment-setup-toolkit
-  - 公開・PR 作成     → marketplace-publisher
-  - 多角レビュー      → extension-reviewer
+参考ルーティング:
+  SKILL.md → skill-toolkit / commands/*.md → command-toolkit /
+  agents/*.md → agent-toolkit / hooks/* → hook-toolkit /
+  README.md → readme-toolkit / plugin.json → plugin-toolkit /
+  references/scripts/setup/ → environment-setup-toolkit /
+  公開 → marketplace-publisher / レビュー → extension-reviewer
 
-理由:
-  extension-toolkit のスキル経由で編集することで、自動レビュー・構造規約遵守・
-  バージョン更新・パスポータビリティ検査などの品質ガードが必ず通る運用になります。
-
-bypass:
-  フック自身の修正や extension-toolkit core ファイルの修正など、本フック経由が
-  不適切な場面では環境変数 EXTENSION_TOOLKIT_BYPASS=1 を設定して再実行してください。
+なお、バージョン更新漏れは Stop フック (check_version_bump.sh) で
+セッション終了時に検出されます。
 EOF
 
-exit 2
+# 警告のみ。編集はブロックしない（ADR-026 v2、案 A 採用）
+exit 0

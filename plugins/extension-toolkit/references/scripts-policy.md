@@ -242,16 +242,19 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
    - 「環境構築」節を「プラグイン直下スクリプトの呼び出し」に書き換え
    - スキル独自の Python バージョン要件等は `setup_venv.sh` 第 3 引数で渡す
 
-## 9. extension-toolkit 経由強制フック（ADR-026）
+## 9. extension-toolkit 同梱フック（ADR-026）
 
-プラグイン同梱フック `hooks/hooks.json` で `PreToolUse Edit/Write/MultiEdit` を捕捉し、対象ファイルが `plugins/{name}/` 配下に該当する場合は対応する `*-toolkit` を経由するよう **exit code 2 でブロック** する。直接編集を試みた場合、フックが推奨スキル名を提示し、Claude が自動的に該当 toolkit を起動するよう誘導する。
+プラグイン同梱フック `hooks/hooks.json` で 2 種類のフックを登録する。**警告型 + コミット前 version 検証** の 2 段構成（ADR-026）。
+
+| フック | タイミング | スクリプト | 動作 |
+|-----|---------|---------|-----|
+| `PreToolUse Edit/Write/MultiEdit` | 編集直前 | `references/scripts/hooks/enforce_toolkit_routing.sh` | `plugins/{name}/` 配下なら推奨スキル名を stderr 提示、**exit 0**（ブロックしない） |
+| `Stop` | Claude ターン終了時 | `references/scripts/hooks/check_version_bump.sh` | `plugins/{name}/` の未コミット変更で `plugin.json` の version が main から未更新なら stderr 警告、**exit 0**（fail-open） |
 
 | 項目 | 内容 |
 |-----|------|
-| フック設定 | `hooks/hooks.json` |
-| 実スクリプト | `references/scripts/hooks/enforce_toolkit_routing.sh`（本ポリシー節 2 の `references/scripts/` 配置義務に準拠） |
-| 除外パス | `.claude/.local/` / `.git/` / `/tmp/` 配下、ファイルパス取得失敗時 |
-| bypass | 環境変数 `EXTENSION_TOOLKIT_BYPASS=1`（フック自身・extension-toolkit core 修正用） |
+| 除外パス | `.claude/.local/` / `.git/` / `/tmp/` 配下、git 利用不可環境、リポジトリ外、ファイルパス取得失敗時 |
+| 設計方針 | ハードブロック型ではなく警告型を採用。軽微な編集体験を妨げず、真因（バージョン更新漏れ）には Stop フックで直接対処 |
 
 詳細は [`architecture-decisions.md`](architecture-decisions.md) ADR-026 を参照。
 
@@ -264,4 +267,4 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
 | [`architecture-decisions.md`](architecture-decisions.md) | ADR-024（プラグイン単位 venv）・ADR-025（インラインスクリプト禁止 + `references/scripts/` 配置義務）・ADR-026（経由強制フック） |
 | [`path-portability.md`](path-portability.md) | スクリプト内のパス記述ルール |
 | 各スキルの `references/scripts/checks/run_checks.py`（extension-reviewer） | 本ポリシーの自動検出 |
-| `hooks/hooks.json` + `references/scripts/hooks/enforce_toolkit_routing.sh`（本プラグイン同梱） | プラグイン/スキル領域への直接編集を toolkit 経由に強制（ADR-026）|
+| `hooks/hooks.json` + `references/scripts/hooks/enforce_toolkit_routing.sh` + `check_version_bump.sh`（本プラグイン同梱） | toolkit 経由の推奨提示（PreToolUse 警告型）+ バージョン更新漏れ検証（Stop）、ADR-026 |
