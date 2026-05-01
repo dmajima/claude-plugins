@@ -104,7 +104,8 @@ dmajima-claude-plugins/
 └── plugins/                # プラグイン格納先
     ├── convert-doc/
     ├── credentials-manager/
-    └── extension-toolkit/
+    ├── extension-toolkit/
+    └── plugins-update/
 ```
 
 ## ライセンス・連絡先
