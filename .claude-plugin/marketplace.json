@@ -27,7 +27,25 @@
     {
       "name": "extension-toolkit",
       "source": "./plugins/extension-toolkit",
-      "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成からマーケットプレイス構築・公開まで支援"
+      "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック・README）の作成・レビュー・マーケットプレイス公開まで統括支援"
+    },
+    {
+      "name": "plugins-update",
+      "source": "./plugins/plugins-update",
+      "description": "インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化する",
+      "category": "maintenance",
+      "author": {
+        "name": "dmajima"
+      },
+      "keywords": [
+        "plugin",
+        "update",
+        "marketplace",
+        "maintenance",
+        "auto-update",
+        "command",
+        "cli"
+      ]
     },
     {
       "name": "convert-doc",
