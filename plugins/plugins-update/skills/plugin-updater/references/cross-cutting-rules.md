@@ -137,7 +137,7 @@ CLI 出力をユーザに表示する直前（テーブルセルに格納する�
 | `sk_(live\|test)_[A-Za-z0-9]{24,}` | `***STRIPE_KEY***` | Stripe API Key |
 | `DefaultEndpointsProtocol=[^;]+;AccountKey=[^;]+` | `***AZURE_STORAGE***` | Azure ストレージ接続文字列 |
 | `npm_[A-Za-z0-9]{36}` | `***NPM_TOKEN***` | NPM Token |
-| `sk-ant-api[0-9]{2}-[A-Za-z0-9_-]{32,}` | `***ANTHROPIC_API_KEY***` | Anthropic API Key |
+| `sk-ant-api[0-9]{2,3}-[A-Za-z0-9_-]{32,}` | `***ANTHROPIC_API_KEY***` | Anthropic API Key（API バージョン番号 2〜3 桁対応で将来拡張に追従） |
 | `sk-[A-Za-z0-9]{48}` | `***OPENAI_API_KEY***` | OpenAI API Key |
 | `hf_[A-Za-z0-9]{34}` | `***HUGGINGFACE_TOKEN***` | HuggingFace Token |
 | `https://[a-f0-9]{32}@[\w.-]*sentry\.io[^\s]*` | `***SENTRY_DSN***` | Sentry DSN |
@@ -178,6 +178,21 @@ GitLab PAT・Stripe Key 等の具体パターン）で先処理されるため�
 - 直後文字が空白 / 行末 / `,` / `)`
 - 上記「文脈内」のいずれにも該当しない
 
+#### URL 内クエリパラメータの副規則（文脈内例外の例外）
+
+「URL 内文脈はマスクしない」例外には以下の **副規則** を適用する。URL の `?key=value` /
+`&key=value` 部分のうち `key` が以下の正規表現にマッチする場合、`value` は **文脈外扱いで
+マスクする**（短いトークンの URL クエリ内露出を防止）:
+
+```text
+(?i)(token|key|secret|password|api[_-]?key|auth|sig|signature|access[_-]?token|refresh[_-]?token|bearer)
+```
+
+例:
+- `https://example.com/?api_key=shorttoken` → `https://example.com/?api_key=***POSSIBLE_SECRET***`
+- `https://github.com/repo?token=abc123` → `https://github.com/repo?token=***POSSIBLE_SECRET***`
+- `https://example.com/?id=12345`（`key` パターン非該当）→ マスクしない
+
 #### テストケース
 
 ##### テストケース記載ルール（MANDATORY）
@@ -203,7 +218,11 @@ GitLab PAT・Stripe Key 等の具体パターン）で先処理されるため�
 | プラグイン識別子 `extension-toolkit-long-name@dmajima-claude-plugins-marketplace`（合計 60+ 字、備考列に出現） | マスクしない（`@` 構造が識別子内文脈外判定で除外。XR-1 で各 64 字以下に制限済みのため安全） |
 | 備考列の `Twilio sid: ACabcdef...32hex` | マスク（`AC` + 32 hex の Twilio パターン、単語境界判定で誤検知抑制） |
 | 短い JWT 風文字列「eyJ + `<5字>` + `.eyJ` + `<5字>` + `.<3字>`」（各セグメント 16 字未満） | マスクしない（v3.3.0 で各セグメント最小長を 16 字に引き上げたため、誤検知抑制） |
+| 正常 JWT 形式「eyJ + `<20字>` + `.eyJ` + `<25字>` + `.<43字>`」（各セグメント 16 字以上） | マスク（規則ベース JWT パターンに合致） |
 | 大文字スキーム `Mailto:User:Pass@example.com` | マスク（URL 埋め込み認証パターンに `(?i)` 付与済、大小文字スキーム両対応） |
+| 引用符付き Bearer `"Bearer <40+字>"` | マスク（規則ベース汎用 key=value 先処理が引用符文脈内判定より優先・適用順序ルール） |
+| URL クエリ短トークン `https://example.com/?api_key=shorttok` | マスク（URL 内クエリパラメータ副規則：`api_key` が key パターンに合致するため `value` を文脈外扱い） |
+| URL クエリ識別子 `https://example.com/?id=12345`（key パターン非該当） | マスクしない（副規則の対象外） |
 
 #### **重要な例外（テーブル列単位）**
 

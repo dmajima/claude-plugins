@@ -98,7 +98,7 @@ Phase 番号体系（`A-0-1` の 3 階層 / `A-1` の 2 階層 / `B-1` のサブ
 | Phase A-0〜G 固定順序 + スコープ個別更新 + 継続実行 | ADR-PU-003 |
 | 横断ルール SSOT 配置（cross-cutting-rules.md） | ADR-PU-004 |
 | exit code 一次判定 + Unknown 区分（Missing はリトライ対象外） | ADR-PU-005 |
-| サーキットブレーカー（MP 単位累計 3 件 Failed で配下 Skip） | ADR-PU-006 |
+| サーキットブレーカー（MP 単位累計 3 件以上の Failed で配下 Skip。集計対象・Phase B 例外は ADR-PU-006 が SSOT） | ADR-PU-006 |
 | 失敗対応の対話モデル（Failed のみリトライ・5 件閾値で個別判断除外） | ADR-PU-007 |
 | コマンドとスキルの責務分離（トリガー / 実作業） | ADR-PU-008 |
 

@@ -154,7 +154,7 @@ Project スコープに限定した実行予定コマンドのみを表示しま
 
 | 動作要件 | 説明 |
 |---------|-----|
-| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須。Phase A-0-2 で存在チェック + 必要サブコマンドの連続文字列照合を行い、不在または不正実装時はエラーで中断 |
+| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須。Phase A-0-2 で存在チェック + 必要サブコマンドの **正規表現照合**（`^\s+marketplace\s+update\b` 等）を行い、不在または不正実装時はエラーで中断 |
 | Git CLI | マーケットプレイスを Git ソース（GitHub/git）で登録する場合に必要（Claude Code CLI 内部で利用） |
 | `/reload-plugins` | 本コマンド完了後、セッションへの反映に使用 |
 
@@ -193,7 +193,7 @@ OS パッケージマネージャ管理下に存在することを確認して�
 |----|------|
 | XR-1 | 入力検証（プラグイン名・MP 名・スコープの正規表現照合 + ホワイトリスト + NFKC 正規化 + パス検証） |
 | XR-2 | タイムアウト + サーキットブレーカー（個別 60 秒・全体 30 分・MP 単位累計 3 件 Failed で配下 Skip） |
-| XR-3 | 出力サニタイズ（**主要パターン**: GitHub PAT / AWS / JWT / SSH URL / .netrc / SSH 鍵 / URL 埋め込み認証 等多数 + 40 字超デフォルトマスク。**網羅的なパターン一覧は `skills/plugin-updater/references/cross-cutting-rules.md` の XR-3 サニタイズ規則本体テーブルを SSOT として参照**。新規パターン追加時は SSOT のみを更新する） |
+| XR-3 | 出力サニタイズ（**主要パターン**: GitHub PAT / AWS / JWT / SSH URL / .netrc / SSH 鍵 / URL 埋め込み認証 等多数 + 40 字超デフォルトマスク。**「主要」の選定基準** = SKILL.md / ADR で個別言及されているもの、または利用頻度上位（5〜7 例）。**網羅的なパターン一覧は `skills/plugin-updater/references/cross-cutting-rules.md` の XR-3 サニタイズ規則本体テーブルを SSOT として参照**。新規パターン追加時は SSOT のみを更新し、本 README の「主要」リストは SKILL.md / ADR 言及状況に応じて選別更新する） |
 | XR-4 | リトライ上限（最大 1 回 = 合計 2 試行） |
 | XR-5 | Unknown 警告閾値（試行済みの 20% 超で警告） |
 

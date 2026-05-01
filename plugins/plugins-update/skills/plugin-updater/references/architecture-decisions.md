@@ -126,6 +126,11 @@ CLI が `--output json` 等の構造化出力モードを提供したら、ADR-P
 並列実行のサポートが CLI 側で提供された場合は ADR-PU-003 と組み合わせて検討する。
 `marketplace update <name>` の個別 MP 指定が CLI で確認できた場合は G-3 のリトライ戦略を更新する。
 
+> **CLI 機能改善時のトリガー ADR**: 本 ADR-PU-002 を **CLI 仕様変更追従の起点 ADR**
+> （Trigger ADR）と位置付ける。CLI 仕様変更を検知したら、まず本 ADR の Future Direction を更新し、
+> その後に追従が必要な他 ADR（ADR-PU-003 / ADR-PU-005 / ADR-PU-006 / ADR-PU-008）の Future Direction
+> を順次改訂する。これにより SSOT 階層が「CLI 仕様 → 本 ADR → 他 ADR」と一方向化される。
+
 ---
 
 ## ADR-PU-003: Phase A-0〜G 固定順序
@@ -157,7 +162,15 @@ CLI が `--output json` 等の構造化出力モードを提供したら、ADR-P
 
 - **基本 Phase**: A / B / C / D / E / F / G の 1 文字。
 - **派生 Phase**（Phase 全体の前後に追加するもの）: `A-0` / `A-1` / `A-2` のようにハイフン枝番。
+  **判断基準**: 「対象 Phase の前後に並列で実行され、対象 Phase の本質的な責務（Phase A の場合は
+  対象収集）に直接含まれない検証・準備ステップ」を派生 Phase として番号付与する。例: `A-0`（事前検証）
+  は Phase A の前段として CLI 存在チェック等を担い、`A-1`（入力検証）/ `A-2`（MP 整合性検証）は
+  Phase A 直後の Phase A 抽出結果に対する後段検証ステップ。いずれも Phase A の対象収集ロジック
+  そのものではないため派生 Phase 扱い。
 - **サブフェーズ**（Phase 内のステップ）: `B-1` / `C-1` / `F-1` / `G-1` のようにハイフン枝番。
+  **判断基準**: 「対象 Phase の本質的責務を構成するステップ」をサブフェーズとして番号付与する。
+  例: `B-1`（マーケットプレイス更新の結果判定）は Phase B（マーケットプレイス更新）の本質的責務の
+  一部、`F-1`（サマリ）/ `F-2`（マーケットプレイス詳細）は Phase F（結果報告）の本質的責務の一部。
 - **混在の解決**: 派生 Phase は当該基本 Phase に **論理的に属する処理ステップ** であり、
   サブフェーズは「結果分類」「サマリ表示」等のステップ。番号衝突を避けるため、新規追加の際は
   本 ADR を更新して位置付けを明記する。
@@ -317,8 +330,24 @@ Failed: another-mp in branch main
 | `Error: my-mp at 14:35:00` | `my-mp` | 合致 | Failed（MP 名: my-mp） |
 | `Failed: another-mp in branch main` | `another-mp` | 合致 | Failed（MP 名: another-mp） |
 | `Failed: my-mp: connection refused` | `my-mp: connection refused` | 不合致（`:` を含む） | **Unknown**（XR-1 再照合の安全弁が発動） |
-| `Failed: timeout` | `timeout` | 合致（XR-1 通過する単純語） | Failed（MP 名: timeout）— 偽陽性の可能性あり、要 CLI バージョン仕様確認 |
+| `Failed: timeout` | `timeout` | 合致（XR-1 通過する単純語） | **A-2 整合性検証連携で Unknown 格上げ**（後述）— 偽陽性回避 |
 | `random log line not matching pattern` | （マッチなし） | — | 抽出なし（B-1 「Unknown」） |
+
+##### 偽陽性回避ルール（A-2 整合性検証連携）
+
+XR-1 を通過した汎用語（`timeout` / `error` / `warning` / `fatal` 等）が MP 名候補として抽出された
+場合、**Phase A で取得した `claude plugin marketplace list` の結果に該当 MP 名が存在するか** を再照合
+する（A-2 整合性検証の補助）。存在しない場合は **Unknown に格上げ**（Failed として Phase G リトライ
+対象に巻き込まない）。これにより `Failed: timeout` のような偽陽性を構造的に排除する。実装時の擬似処理:
+
+```text
+if mp_name_candidate in mp_list_from_phase_A:
+    分類 = Failed
+else:
+    分類 = Unknown  # 偽陽性回避の安全弁
+```
+
+このロジックは Phase B-1 の結果分類処理内で実施し、Phase G への引き渡し前に確定させる。
 
 #### Unknown 件数の警告閾値
 
@@ -429,9 +458,19 @@ XR-2 のサーキットブレーカー（同一 MP に対する累計失敗で�
   以降の正規プラグイン更新をスキップさせる DoS が理論的に可能。ただし以下により影響は限定的:
   (1) 既存インストール済みプラグインはそのまま動作するため可用性影響は更新の遅延のみ、
   (2) ユーザは Phase G で「全件リトライ」を選択することで再実行可能、
-  (3) 影響範囲は当該 MP 配下のみで他 MP には波及しない、
+  (3) **C/D/E プラグイン単位ではサーキットブレーカー作動 MP は除外されるため波及しない**、
   (4) 公式 CLI 委譲（ADR-PU-002）により認証情報・データ毀損には繋がらない。
   MP 提供者の信頼性確認は別レイヤ（マーケットプレイス追加時のユーザー同意）で担保する。
+- **Phase B 全件リトライ時の DoS 残余リスク**: G-3 で MP Failed が選択された場合、Phase B
+  （`marketplace update` 全件）が再実行され、サーキットブレーカー作動中の MP も含まれる。
+  悪意ある MP が応答遅延を仕掛けると個別タイムアウト 60 秒（XR-2）× 全 MP 件数が累積し、最悪
+  全体タイムアウト 30 分（XR-2）を消費する可能性がある。これは output-formats.md G-1 質問文の
+  description で **`<bn>`（サーキットブレーカー作動 MP 件数） > 0 の場合に警告を表示し**、
+  ユーザに「個別に判断」または「全件スキップ」を促すことで運用面で対策する。CLI が
+  `marketplace update <name>` 個別指定をサポートしたら ADR-PU-002 Future Direction に従い
+  サーキットブレーカー除外を厳密化し、本残余リスクを構造的に排除する。
+  暫定対策として、Phase B 全件リトライ時のみ個別タイムアウトを 60 秒 → 30 秒に短縮する案も
+  XR-2 拡張オプションとして検討余地がある（現状は実装複雑化を避けるため未採用）。
 
 ### Alternatives Considered
 
@@ -537,8 +576,9 @@ ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー�
 `/update-all` コマンドは **トリガーと引数解釈のみ** を担当し、実作業（Phase A-0〜G、横断ルール適用、
 ユーザ対話）は **`plugin-updater` スキルに委譲** する。
 
-- `commands/update-all.md`: 約 46 行（フロントマター + 関連リンク含む）/ 実装ロジックは約 30 行。
-  引数解釈 + Skill ツール呼び出しのみ。
+- `commands/update-all.md`: 約 46 行（フロントマター + 関連リンク含む・**v3.3.0 計測スナップショット**）/
+  実装ロジックは約 30 行。引数解釈 + Skill ツール呼び出しのみ。新バージョンで肥大化が再発した場合は
+  本 Decision の数値を更新し、原因を Trade-offs に追記する。
 - `skills/plugin-updater/SKILL.md`: スキル概要 + Phase 全体像 + references への参照。
 - `skills/plugin-updater/references/`:
   - `phase-flow.md`: Phase A-0〜G 詳細手順（コマンド本文から分離）
