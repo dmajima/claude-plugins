@@ -166,9 +166,16 @@ AskUserQuestion({
     header: "更新失敗対応",
     options: [
       { label: "全件リトライ", description: "Failed エントリをもう一度更新する。<warn_breaker>" },
-      // <warn_breaker> は MP 単位 Failed が 1 件以上ある場合（<bn> > 0）に以下を埋め込む:
-      // 「⚠️ マーケットプレイス Failed 時は Phase B を全件再実行するため、サーキットブレーカー作動中の MP（<bn> 件）も再試行され、悪意ある MP の応答遅延が累積し全体タイムアウト（30 分・XR-2）を消費する DoS リスクがあります。**サーキットブレーカー作動 MP がある場合は『個別に判断』または『全件スキップ』を推奨**（5 件以下の場合のみ個別判断利用可）」
-      // <bn> > 0 の場合、UI が対応するなら「全件リトライ」をデフォルト非選択にする（実装側で制御）
+      // <warn_breaker> は **MP 単位 Failed が 1 件以上ある場合（`<M> >= 1`）** に以下を埋め込む:
+      // （`<M> >= 1` を採用するのは、サーキットブレーカー作動前の「3 件未満の Failed MP が複数」状態
+      //  でも Phase B 全件リトライの DoS リスクは存在するため。`<bn> > 0` だと作動前に警告が出ない）
+      // 「⚠️ マーケットプレイス Failed が <M> 件あります。Phase B 全件再実行となるため、悪意ある MP
+      //  の応答遅延が累積し全体タイムアウト（30 分・XR-2）を消費する DoS リスクがあります。
+      //  **特にサーキットブレーカー作動中の MP（<bn> 件）も再試行されます**。
+      //  サーキットブレーカー作動 MP がある場合（`<bn> > 0`）は『個別に判断』または『全件スキップ』を
+      //  強く推奨（5 件以下の場合のみ個別判断利用可）」
+      // `<bn> > 0` の場合、UI が対応するなら「全件リトライ」をデフォルト非選択にする（実装側で制御）
+      // 本条件式と警告文言の SSOT は本箇所。ADR-PU-006 Trade-offs は概念説明のみ持ち、文言は本箇所を参照する
       // N <= 5 のときのみ次の選択肢を含める
       { label: "個別に判断", description: "Failed エントリごとにリトライ / スキップを選択" },
       { label: "全件スキップ", description: "Failed エントリは諦めて完了する" }
@@ -210,12 +217,20 @@ function truncate_with_mask_safety(text, limit=500):
         last_star_pos = rfind(cut, "***")
         cut = cut[:last_star_pos]
 
-    # 2. 山括弧マスク `<...>` の途中切断回避（UX 改善）
-    # 末尾に `<` があり対応する `>` が cut 内に存在しなければ、`<` の手前まで切り戻す
-    last_lt_pos = rfind(cut, "<")
-    last_gt_pos = rfind(cut, ">")
-    if last_lt_pos != -1 and last_lt_pos > last_gt_pos:
-        cut = cut[:last_lt_pos]
+    # 2. 山括弧マスク `<...>` の途中切断回避（UX 改善・ホワイトリスト方式必須）
+    # CLI 自由形式テキスト中の `<n>` `<branch>` 等を誤切り戻ししないよう、
+    # **既知マスク文言のみ** をホワイトリスト判定する
+    KNOWN_ANGLE_MASKS = ["<netrc-credential>", "<scheme>", "<ssh-key-path>", "<user-home>"]
+    for mask in KNOWN_ANGLE_MASKS:
+        # cut の末尾が mask の前方一致部分文字列（例: "<netrc-cred"）であれば切り戻す
+        for i in range(1, len(mask)):
+            prefix = mask[:i]
+            if cut.endswith(prefix):
+                cut = cut[:-i]
+                break
+        else:
+            continue
+        break
 
     return cut + "...（省略）"
 ```
@@ -232,15 +247,10 @@ function truncate_with_mask_safety(text, limit=500):
   「山括弧マスクは `<...>` 1 ペアで完結」を前提とする。`****` 4 連や `<<...>>` 2 重山括弧などの
   新フォーマットを追加する場合、本切り詰めロジックの偶奇判定 / 山括弧マッチングを更新する必要が
   ある。
-- **山括弧マッチングのホワイトリスト化推奨**: CLI 出力の自由形式テキストに `<` `>` が混入する
-  場合（例: `Failed: parse error at line <30>`）、`last_lt_pos > last_gt_pos` 判定が誤動作して
-  有用な情報まで切り戻す可能性がある（秘匿性は破らないが UX 影響）。実装時は山括弧マスク候補を
-  **既知のマスク文言のみに限定**して走査する形を推奨:
-  ```text
-  KNOWN_ANGLE_MASKS = ["<netrc-credential>", "<scheme>", "<ssh-key-path>", "<user-home>"]
-  # cut の末尾に上記いずれかの prefix（例: "<netrc-cred"）が部分一致する場合のみ切り戻す
-  ```
-  これにより CLI 自由形式テキスト内の `<...>` を誤って切り戻す事故を構造的に排除する。
+- **山括弧マッチングのホワイトリスト化（v3.6.0 で必須化）**: CLI 出力の自由形式テキストに `<` `>` が
+  混入する場合（例: `Failed: parse error at line <30>`）、未限定の `last_lt_pos > last_gt_pos` 判定は
+  誤動作する。上記疑似コードの **`KNOWN_ANGLE_MASKS` ホワイトリスト方式が SSOT**。新規山括弧マスク
+  追加時は本リストに追記する。
 
 ```text
 # pseudocode: Claude が AskUserQuestion ツールを呼び出すパターン
@@ -302,6 +312,23 @@ Claude Code のインストール状況と PATH を確認してください。
 エラー: enabledPlugins ブロック内にトップレベル相当キー（<検出キー名>）が混入しています。
 A-Sec 第三手順のブロック終端検出に異常がある可能性があります。settings.json の構造を
 確認し、再実行してください。
+```
+
+### enabledPlugins キーが Unicode エスケープで難読化されている（A-Sec 第一手順フェイルクローズ）
+
+```text
+エラー: settings.json の enabledPlugins キーが Unicode エスケープ（\u00XX 形式）で
+難読化されています。意図しない検出回避を防ぐため処理を中断します。
+対処方法: settings.json の enabledPlugins キー名を ASCII 文字列リテラル（"enabledPlugins"）で
+記述してください。
+```
+
+### A-Sec 第三手順 [ ] カウンタ異常検知
+
+```text
+エラー: enabledPlugins ブロックの構造解析で配列ネスト [ ] のカウンタ異常を検出しました
+（{ } ネストレベルが 0 に戻った時点で [ ] カウンタが 1 以上）。境界判定の安全性確保のため
+処理を中断します。settings.json の構造を確認してください。
 ```
 
 ### git リポジトリ外で project/local 明示時

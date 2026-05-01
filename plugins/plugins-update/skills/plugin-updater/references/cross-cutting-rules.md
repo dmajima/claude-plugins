@@ -122,14 +122,19 @@ CLI 出力をユーザに表示する直前（テーブルセルに格納する�
 
 1. **規則ベース**（下表）を **すべて適用**して秘匿トークンを置換する。
 2. **デフォルトマスク**（後述）を残余文字列に適用する。
+3. **置換後文字列は再スキャン対象外**: 規則ベース・デフォルトマスクの置換結果として生成された
+   マスク文言（`***GITHUB_TOKEN***` / `***POSSIBLE_SECRET***` / `<netrc-credential>` 等）は、
+   後続の正規表現マッチ対象に含めない（ワンパス適用とする。実装上は置換結果を別バッファに退避する
+   等で実現）。これにより、`***ANTHROPIC_API_KEY***` のような 22 字超のマスク文言が後段で別パターンに
+   誤マッチする事故を構造的に排除する。
 
 この順序により「引用符付きトークンは文脈内 = マスクしない」例外と「`Bearer xxx` は規則ベースで先処理」が
 矛盾なく成立する。
 
 | パターン | 置換後 | 備考 |
 |---------|-------|------|
-| `(?i)(token\|password\|secret\|authorization\|bearer\|x-api-key)[:=\s]+\S+` | `<key>=***REDACTED***` | 汎用 key=value（空白区切りの `Bearer xxx` も捕捉） |
-| `(?i)[a-z][a-z0-9+.-]*://([^@/\s]+)@` | `<scheme>://***@` | URL 埋め込み認証（`http(s)/git/ssh/ftp` 等の任意スキーム、大小文字スキームを問わず `user:pass@` / PAT 単独 `token@` / URL エンコード `%40` を含む形式を全て捕捉） |
+| `(?i)(token\|password\|secret\|authorization\|bearer\|x-api-key)[:=\s]+[^\s,;)\]\}"'<>]{1,256}` | `<key>=***REDACTED***` | 汎用 key=value（空白区切りの `Bearer xxx` も捕捉）。値部分は **構造境界文字（空白・`,`・`;`・`)`・`]`・`}`・`"`・`'`・`<`・`>`）を明示的に除外** + 長さ上限 256 字。`\S+` 過貪欲による JSON 風出力での後続フィールド食い込み・改行混在ケースの誤マスクを回避 |
+| `(?i)[a-z][a-z0-9+.-]*://([^/\s?#]+)@` | `<scheme>://***@` | URL 埋め込み認証（`http(s)/git/ssh/ftp` 等の任意スキーム、大小文字スキームを問わず `user:pass@` / PAT 単独 `token@` / URL エンコード `%40` を含む形式を全て捕捉）。**ユーザ部の許可文字を URL authority に許される文字に厳密化**（`/`/`?`/`#`/空白を含めない）し、`git+https://example.com/some/path?ref=main@deadbeef` 等の path/query 内 `@` 誤マッチを排除 |
 | `([a-zA-Z_][\w-]*)@([\w.-]+):` | `***@<host>:` | scp-like SSH URL（`git@github.com:user/repo.git` 形式の内部ホスト名・ユーザ名を伏字） |
 | `ghp_[A-Za-z0-9]{36,}` / `github_pat_[A-Za-z0-9_]{82,}` / `gho_[A-Za-z0-9]{36,}` / `ghs_[A-Za-z0-9]{36,}` / `ghu_[A-Za-z0-9]{36,}` | `***GITHUB_TOKEN***` | GitHub PAT |
 | `glpat-[A-Za-z0-9_-]{20,}` | `***GITLAB_TOKEN***` | GitLab PAT |
@@ -231,6 +236,10 @@ GitLab PAT・Stripe Key 等の具体パターン）で先処理されるため�
 | URL クエリ識別子 `https://example.com/?id=12345`（key パターン非該当） | マスクしない（副規則の対象外） |
 | ヘッダー文脈 `header[X-Custom-Auth]: <40+字>`（直前 `:` あり） | マスク（直前文字 `:` で文脈外条件成立、40+字でデフォルトマスク発動） |
 | `header[X-Custom-Auth]: <30字>`（40 字未満） | マスクしない（規則ベース非該当 + デフォルトマスク 40 字閾値未達） |
+| 置換後マスク `***ANTHROPIC_API_KEY***`（22 字）が単独で出現 | 再マスクしない（適用順序 3 = 置換後文字列は再スキャン対象外） |
+| JSON 風出力 `{"authorization":"Bearer abc...","next":"..."}` | `<key>=***REDACTED***` で `Bearer abc...` のみマスク、`,"next":"..."` は影響なし（`\S+` を構造境界除外パターンに変更したため） |
+| 改行混在 `Bearer\n  ghp_xxx` | マスク（`[:=\s]+` で改行を含むため正常検出） |
+| path 内 `@` 含む URL `git+https://example.com/some/path?ref=main@deadbeef` | マスクしない（authority 限定で `?ref=main@deadbeef` の `@` を誤マッチしない） |
 
 #### **重要な例外（テーブル列単位）**
 
@@ -306,3 +315,4 @@ CLI 出力フォーマットが変わった可能性があるため、F-2/F-3 �
 - ADR-PU-005（exit code 一次判定 + Unknown 区分）— XR-3 サニタイズと連動
 - ADR-PU-006（サーキットブレーカー閾値と粒度）— XR-2 補助の根拠
 - ADR-PU-007（失敗対応の対話モデル）— G-2 件数上限の根拠
+- ADR-PU-008（コマンドとスキルの責務分離）— 本ファイルが skills/plugin-updater/references/ 配下に配置される根拠

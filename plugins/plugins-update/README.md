@@ -16,7 +16,7 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 | コマンド | 効果 |
 |---------|-----|
 | `/update-all` | 全マーケットプレイスとプラグインを最新版に更新し、再起動を促す |
-| `/update-all --dry-run` | 実行予定の CLI コマンド一覧のみ表示。実際の更新は行わない |
+| `/update-all --dry-run` | 実行予定の CLI コマンド一覧のみ表示。実際の **変更系 CLI**（`marketplace update` / `update`）は実行しないが、対象収集のため `settings.json` の Grep 読み取りと `claude plugin marketplace list`（読み取り専用 CLI）は実行する |
 | `/update-all --scope user` | マーケットプレイス更新後、User スコープのプラグインのみ更新 |
 | `/update-all --scope project` | マーケットプレイス更新後、Project スコープのプラグインのみ更新 |
 | `/update-all --scope local` | マーケットプレイス更新後、Local スコープのプラグインのみ更新 |
@@ -30,7 +30,12 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 
 - Claude Code がインストール済みで `claude plugin` サブコマンドが利用可能であること
 - 後述「動作要件」のツールが PATH に通っていること
-- 依存プラグインなし（`plugin.json` で `dependencies: []` を明示）
+- Claude Code の Read / Bash / Grep / AskUserQuestion ツールが利用可能であること
+  （詳細は `skills/plugin-updater/SKILL.md` の「前提」節を参照）
+- 依存プラグインなし（`plugin.json` で `dependencies: []` を明示）。
+  README で関連プラグインとして言及している `extension-toolkit:marketplace-toolkit` /
+  `extension-toolkit:marketplace-publisher` は **未インストールでも `/update-all` は動作する**
+  （案内目的の参照のみで、実行時依存ではない）
 
 ### A. マーケットプレイス経由でインストール（推奨）
 
@@ -193,7 +198,7 @@ OS パッケージマネージャ管理下に存在することを確認して�
 |----|------|
 | XR-1 | 入力検証（プラグイン名・MP 名・スコープの正規表現照合 + ホワイトリスト + NFKC 正規化 + パス検証） |
 | XR-2 | タイムアウト + サーキットブレーカー（個別 60 秒・全体 30 分・MP 単位累計 3 件 Failed で配下 Skip） |
-| XR-3 | 出力サニタイズ（**主要パターン**: GitHub PAT / AWS / JWT / SSH URL / .netrc / SSH 鍵 / URL 埋め込み認証 等多数 + 40 字超デフォルトマスク。**「主要」の選定基準** = SKILL.md / ADR で個別言及されているもの、または利用頻度上位（5〜7 例）。**網羅的なパターン一覧は `skills/plugin-updater/references/cross-cutting-rules.md` の XR-3 サニタイズ規則本体テーブルを SSOT として参照**。新規パターン追加時は SSOT のみを更新し、本 README の「主要」リストは SKILL.md / ADR 言及状況に応じて選別更新する） |
+| XR-3 | 出力サニタイズ（**主要パターン**: GitHub PAT / AWS / JWT / SSH URL / .netrc / SSH 鍵 / URL 埋め込み認証 等多数 + 40 字超デフォルトマスク。**「主要」の選定基準** = Claude Code エコシステムでの一般的な秘匿性高さ（GitHub PAT・AWS キー・JWT 等の業界標準的な高機密トークン）と SKILL.md / ADR での個別言及。**網羅的なパターン一覧は `skills/plugin-updater/references/cross-cutting-rules.md` の XR-3 サニタイズ規則本体テーブルを SSOT として参照**。新規パターン追加時は SSOT のみを更新する） |
 | XR-4 | リトライ上限（最大 1 回 = 合計 2 試行） |
 | XR-5 | Unknown 警告閾値（試行済みの 20% 超で警告） |
 
@@ -221,6 +226,15 @@ OS パッケージマネージャ管理下に存在することを確認して�
 - [`skills/plugin-updater/references/cross-cutting-rules.md`](skills/plugin-updater/references/cross-cutting-rules.md) — XR-1〜XR-5 の SSOT
 - [`skills/plugin-updater/references/phase-flow.md`](skills/plugin-updater/references/phase-flow.md) — Phase A-0〜G 詳細手順
 - [`skills/plugin-updater/references/output-formats.md`](skills/plugin-updater/references/output-formats.md) — Phase F の出力フォーマット集
+
+### homepage URL ポリシー
+
+`plugin.json` の `homepage` は **`main` ブランチ追従**（`tree/main/plugins/plugins-update`）を採用
+しています。リリースタグ固定（`tree/v3.x.x/...`）にしない理由は、(1) ドキュメント微修正（誤字訂正等）が
+リリースタグを切らずに main に直接 push される運用のため、最新の README をユーザに参照させたい、
+(2) リリースタグごとに homepage URL を更新するリリース作業負荷を抑えたい、ためです。
+特定リリース時点のドキュメントを参照したい場合は、`/plugin update` 後に
+`https://github.com/dmajima/claude-plugins/tree/v<x.y.z>/plugins/plugins-update` を直接開いてください。
 
 ### バージョン同期方針
 

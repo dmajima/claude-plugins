@@ -9,16 +9,21 @@
 > と明記する。Michael Nygard 形式（Context / Decision / Rationale / Trade-offs / Alternatives /
 > Future Direction）を全 ADR で踏襲する。
 
-| 番号 | タイトル | 状態 |
-|------|---------|------|
-| ADR-PU-001 | 単一プラグイン化（vs marketplace-toolkit への統合 / vs スキル化） | Accepted |
-| ADR-PU-002 | 公式 CLI 委譲（vs 低レベル git 操作 / vs 内部実装） | Accepted |
-| ADR-PU-003 | Phase A-0〜G 固定順序 | Accepted |
-| ADR-PU-004 | 横断ルール SSOT 配置（cross-cutting-rules.md への分離） | Accepted |
-| ADR-PU-005 | exit code 一次判定 + Unknown 区分 | Accepted |
-| ADR-PU-006 | サーキットブレーカー閾値と粒度 | Accepted |
-| ADR-PU-007 | 失敗対応の対話モデル | Accepted |
-| ADR-PU-008 | コマンドとスキルの責務分離（トリガー / 実作業） | Accepted |
+| 番号 | タイトル | 状態 | 最終 CLI 仕様確認日 | 最終 Future Direction 改訂日 |
+|------|---------|------|------------------|----------------------------|
+| ADR-PU-001 | 単一プラグイン化（vs marketplace-toolkit への統合 / vs スキル化） | Accepted | — | 2026-05-01 (v3.0.0) |
+| ADR-PU-002 | 公式 CLI 委譲（vs 低レベル git 操作 / vs 内部実装）— **Trigger ADR** | Accepted | 2026-05-01 (v3.6.0) | 2026-05-01 (v3.6.0) |
+| ADR-PU-003 | Phase A-0〜G 固定順序 | Accepted | 2026-05-01 | 2026-05-01 (v3.6.0) |
+| ADR-PU-004 | 横断ルール SSOT 配置（cross-cutting-rules.md への分離） | Accepted | — | 2026-05-01 (v3.0.0) |
+| ADR-PU-005 | exit code 一次判定 + Unknown 区分 | Accepted | 2026-05-01 | 2026-05-01 (v3.6.0) |
+| ADR-PU-006 | サーキットブレーカー閾値と粒度 | Accepted | — | 2026-05-01 (v3.5.0) |
+| ADR-PU-007 | 失敗対応の対話モデル | Accepted | — | 2026-05-01 (v3.0.0) |
+| ADR-PU-008 | コマンドとスキルの責務分離（トリガー / 実作業） | Accepted | — | 2026-05-01 (v3.6.0) |
+
+> **追従漏れ検知**: 「最終 CLI 仕様確認日」「最終 Future Direction 改訂日」列は ADR-PU-002（Trigger ADR）
+> の改訂時に追従が必要な ADR を可視化するため。本表が SSOT。CLI 仕様変更時は ADR-PU-002 の
+> 確認日を更新し、追従改訂が必要な他 ADR の改訂日も更新する。プラグインバージョンを括弧で付記する
+> ことでリリース対応関係を追跡可能にする。
 
 ---
 
@@ -236,6 +241,15 @@ ADR-PU-002 の Future Direction と連動する。
 を導入する際は **dry-run / 本番 / 並列の 3 戦略を同一インタフェースで切り替える Strategy パターン**
 （例: `NoOpExecutor` / `SequentialExecutor` / `ParallelExecutor`）への統合を検討する。これにより
 モード分岐が単一拡張ポイントに集約される。
+
+**Strategy 責務境界の予約**: Strategy 抽象は **`skills/plugin-updater/` 配下のスキル責務として配置** し、
+コマンド本文（`commands/update-all.md`）は引数解釈のみを継続維持する（ADR-PU-008 の責務分離原則を
+継承）。Strategy 導入時に以下の責務分担を採用する:
+- `NoOpExecutor`: dry-run モード（出力フォーマット差し替えのみ・A-0-2 INFO は通常出力）
+- `SequentialExecutor`: 通常モード（現行実装相当）
+- `ParallelExecutor`: 将来 CLI 並列対応時（XR-2 サーキットブレーカーの並列セッション間集計が必要）
+- Phase G スキップは Executor ではなく Phase オーケストレータが mode を見て判定（Executor は
+  「実行する／しない」のみを担い、フロー制御は持たない）
 
 ---
 
@@ -493,12 +507,12 @@ XR-2 のサーキットブレーカー（同一 MP に対する累計失敗で�
 - **Phase B 全件リトライ時の DoS 残余リスク**: G-3 で MP Failed が選択された場合、Phase B
   （`marketplace update` 全件）が再実行され、サーキットブレーカー作動中の MP も含まれる。
   悪意ある MP が応答遅延を仕掛けると個別タイムアウト 60 秒（XR-2）× 全 MP 件数が累積し、最悪
-  全体タイムアウト 30 分（XR-2）を消費する可能性がある。これは output-formats.md G-1 質問文の
-  description で **`<bn>`（サーキットブレーカー作動 MP 件数） > 0 の場合に警告を表示し**、
-  ユーザに「個別に判断」または「全件スキップ」を促すことで運用面で対策する。CLI が
-  `marketplace update <name>` 個別指定をサポートしたら ADR-PU-002 Future Direction に従い
-  サーキットブレーカー除外を厳密化し、本残余リスクを構造的に排除する。
-  暫定対策として、Phase B 全件リトライ時のみ個別タイムアウトを 60 秒 → 30 秒に短縮する案も
+  全体タイムアウト 30 分（XR-2）を消費する可能性がある。
+  **対策の SSOT**: 警告条件と警告文言は **output-formats.md「Phase G-1 質問文」の `<warn_breaker>`
+  プレースホルダ仕様** が SSOT。本 ADR は概念説明のみを持ち、文言や条件式は再定義しない
+  （v3.6.0 で `<M> >= 1` 条件化）。CLI が `marketplace update <name>` 個別指定をサポートしたら
+  ADR-PU-002 Future Direction に従いサーキットブレーカー除外を厳密化し、本残余リスクを構造的に
+  排除する。暫定対策として、Phase B 全件リトライ時のみ個別タイムアウトを 60 秒 → 30 秒に短縮する案も
   XR-2 拡張オプションとして検討余地がある（現状は実装複雑化を避けるため未採用）。
 
 ### Alternatives Considered
@@ -605,13 +619,14 @@ ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー�
 `/update-all` コマンドは **トリガーと引数解釈のみ** を担当し、実作業（Phase A-0〜G、横断ルール適用、
 ユーザ対話）は **`plugin-updater` スキルに委譲** する。
 
-- `commands/update-all.md`: 約 43 行（**v3.5.0 計測スナップショット**: フロントマター 4 行 +
-  本文 + 末尾「関連」セクション 7 行）/ 実装ロジックは約 30 行（フロントマター・コードフェンス・
-  「関連」セクション除外）。引数解釈 + Skill ツール呼び出しのみ。新バージョンで肥大化が再発した
-  場合は本 Decision の数値を更新し、原因を Trade-offs に追記する。
+- `commands/update-all.md`: 約 43 行（**v3.6.0 計測スナップショット** ± 5 行誤差を許容: フロントマター
+  4 行 + 本文 + 末尾「関連」セクション 7 行）/ 実装ロジックは約 33 行（フロントマター・コードフェンス・
+  「関連」セクション除外）。引数解釈 + Skill ツール呼び出しのみ。新バージョンで `±5 行` 範囲超の
+  肥大化が再発した場合は本 Decision の数値を更新し、原因を Trade-offs に追記する。
   **計測規約**: `wc -l` での総行数を「総行数」とし、フロントマター（YAML 区切り `---` で囲まれた
-  範囲）と末尾「関連」セクション（次見出しがない最終セクション）を除外した残りを「実装ロジック」
-  と定義する。
+  範囲）と末尾「関連」セクション（最終 H2 セクション）を除外した残りを「実装ロジック」と定義する。
+  **CI 自動化**: 将来は `wc -l` ベースの自動チェックを CI に追加し、誤差超過時に警告する仕組みを
+  検討（ADR-PU-002 Future Direction の検知運用と組み合わせ）。
 - `skills/plugin-updater/SKILL.md`: スキル概要 + Phase 全体像 + references への参照。
 - `skills/plugin-updater/references/`:
   - `phase-flow.md`: Phase A-0〜G 詳細手順（コマンド本文から分離）
