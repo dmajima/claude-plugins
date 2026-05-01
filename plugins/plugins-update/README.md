@@ -154,9 +154,13 @@ Project スコープに限定した実行予定コマンドのみを表示しま
 
 | 動作要件 | 説明 |
 |---------|-----|
-| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須。Phase A-0 で存在チェック + 出力キーワード照合を行い、不在または不正実装時はエラーで中断 |
+| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須。Phase A-0-2 で存在チェック + 必要サブコマンドの連続文字列照合を行い、不在または不正実装時はエラーで中断 |
 | Git CLI | マーケットプレイスを Git ソース（GitHub/git）で登録する場合に必要（Claude Code CLI 内部で利用） |
 | `/reload-plugins` | 本コマンド完了後、セッションへの反映に使用 |
+
+**セキュリティ推奨**: PATH 改変攻撃（同名シムによる差し替え）を防ぐため、利用前に `which claude`
+（POSIX）/ `Get-Command claude`（Windows PowerShell）で実行バイナリの絶対パスを確認し、
+OS パッケージマネージャ管理下に存在することを確認してください。
 
 ## 動作概要
 
