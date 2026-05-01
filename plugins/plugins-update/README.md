@@ -2,12 +2,12 @@
 
 Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin update`）を経由して
 **マーケットプレイスとインストール済みプラグインを全スコープ（User / Project / Local）で一括更新**
-するコマンドプラグイン。
+するメンテナンスコマンド。
 
 ## このドキュメントについて
 
 このファイルは **人間向けのリファレンス** です。Claude Code がプラグイン動作中に参照することはありません。
-コマンドの実体は `commands/update-all.md` にあります。
+本プラグインはスキルを持たずコマンドのみを提供するため、コマンドの動作本体は `commands/update-all.md` を参照してください。
 
 ## 提供コマンド
 
@@ -15,36 +15,12 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 |---------|-----|
 | `/update-all` | 全マーケットプレイスとプラグインを最新版に更新し、再起動を促す |
 | `/update-all --dry-run` | 実行予定の CLI コマンド一覧のみ表示。実際の更新は行わない |
-| `/update-all --scope user` | User スコープのみ更新（マーケットプレイスは常に更新） |
-| `/update-all --scope project` | Project スコープのみ更新 |
-| `/update-all --scope local` | Local スコープのみ更新 |
+| `/update-all --scope user` | マーケットプレイス更新後、User スコープのプラグインのみ更新 |
+| `/update-all --scope project` | マーケットプレイス更新後、Project スコープのプラグインのみ更新 |
+| `/update-all --scope local` | マーケットプレイス更新後、Local スコープのプラグインのみ更新 |
 
+`--scope` 指定時も **マーケットプレイス更新（Phase B）は常に実行** されます。
 `--dry-run` と `--scope` は併用可能。
-
-## 動作概要
-
-**マーケットプレイス → User → Project → Local の固定順** で処理し、
-同一プラグインが複数スコープに存在する場合も **スコープごとに個別** に更新します。
-
-| Phase | 処理内容 | 使用 CLI |
-|-------|---------|---------|
-| A | 対象収集（マーケットプレイス一覧 + 各スコープの `enabledPlugins`） | `claude plugin marketplace list` |
-| B | マーケットプレイス更新 | `claude plugin marketplace update` |
-| C | User スコープのプラグイン更新 | `claude plugin update <plugin>@<marketplace> --scope user` |
-| D | Project スコープのプラグイン更新 | 同上 `--scope project` |
-| E | Local スコープのプラグイン更新 | 同上 `--scope local` |
-| F | 結果報告（サマリ + マーケットプレイス詳細 + スコープ別詳細） | — |
-| G | 失敗があれば `AskUserQuestion` でリトライ / スキップを確認 | — |
-
-### 振る舞いの原則
-
-- **公式 CLI 経由**: `git fetch` / `git reset --hard` 等の低レベル git 操作は行わない。
-  CLI 内部のロック制御・ロールバック制御に依存する
-- **固定順序**: マーケットプレイス → User → Project → Local（順序を入れ替えない）
-- **スコープ個別更新**: 同一プラグインが複数スコープにあっても、スコープごとに独立した更新エントリとして処理
-- **継続実行**: 個別更新でエラーが発生しても処理を中断せず、エラーは記録して次へ進む
-- **失敗対応の確認**: 結果報告後、失敗があれば一括リトライ / 個別判断 / 全件スキップをユーザに確認
-- **二重リトライ防止**: リトライは最大 1 回（合計 2 試行）。リトライ中の新規失敗は記録のみで再 Phase G しない
 
 ## 導入手順
 
@@ -63,7 +39,7 @@ git clone https://github.com/dmajima/claude-plugins <local-path>
 
 # 2. リリースタグまたは main に切替
 cd <local-path>
-git checkout v2.0.0   # または main
+git checkout v2.0.1   # または main
 ```
 
 ```text
@@ -93,16 +69,23 @@ Claude Code セッション起動時に本プラグインが自動更新され�
 }
 ```
 
+`autoUpdate: false` の場合や未設定時は、以下を手動実行することで最新化できます:
+
+```text
+/plugin update plugins-update@dmajima-claude-plugins
+```
+
 `autoUpdate: true` の状態でも、本プラグインの `/update-all` を **任意タイミングで手動実行** することで、
 セッション中に最新化したい場合に対応できます。
 
 ### D. 依存関係
 
-依存マーケットプレイス・プラグインなし。Claude Code CLI（`claude` コマンド）が PATH に通っていれば動作します。
+依存プラグインなし（`dependencies: []` を `plugin.json` で明示）。
+個別インストール手順の追加は不要です。
 
 | 動作要件 | 説明 |
 |---------|-----|
-| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するために必須 |
+| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須 |
 | `/reload-plugins` | 本コマンド完了後、セッションへの反映に使用 |
 
 ## 利用例
@@ -141,16 +124,60 @@ Claude Code セッション起動時に本プラグインが自動更新され�
 
 Project スコープに限定した実行予定コマンドのみを表示します。
 
+## 動作概要
+
+`commands/update-all.md` で実装する Phase 構成の概略です（詳細はコマンド本体を参照）。
+
+| Phase | 処理内容 | 使用 CLI |
+|-------|---------|---------|
+| A | 対象収集（マーケットプレイス一覧 + 各スコープの `enabledPlugins`） | `claude plugin marketplace list` |
+| B | マーケットプレイス更新（`--scope` 指定時も常に実行） | `claude plugin marketplace update` |
+| C | User スコープのプラグイン更新 | `claude plugin update <plugin>@<marketplace> --scope user` |
+| D | Project スコープのプラグイン更新 | 同上 `--scope project` |
+| E | Local スコープのプラグイン更新 | 同上 `--scope local` |
+| F | 結果報告（サマリ + マーケットプレイス詳細 + スコープ別詳細） | — |
+| G | 失敗があれば `AskUserQuestion` でリトライ / スキップを確認 | — |
+
+### 振る舞いの原則
+
+- **公式 CLI 経由**: `git fetch` / `git reset --hard` 等の低レベル git 操作は行わない。
+  CLI 内部のロック制御・ロールバック制御に依存する
+- **固定順序**: マーケットプレイス → User → Project → Local（順序を入れ替えない）
+- **スコープ個別更新**: 同一プラグインが複数スコープにあっても、スコープごとに独立した更新エントリとして処理
+- **継続実行**: 個別更新でエラーが発生しても処理を中断せず、エラーは記録して次へ進む
+- **exit code 一次判定**: CLI 出力テキストの解析は補助情報。判定不能時は "Unknown（要手動確認）" として残す
+- **失敗対応の確認**: 結果報告後、失敗があれば一括リトライ / 個別判断 / 全件スキップをユーザに確認
+- **二重リトライ防止**: リトライは最大 1 回（合計 2 試行）。リトライ中の新規失敗は記録のみで再 Phase G しない
+
 ## 注意事項
 
 - 本コマンドは Claude Code 公式 CLI に処理を委譲します。`git reset --hard` 等の低レベル操作は
   行わないため、マーケットプレイスのローカル複製で **手動編集や独自ブランチが意図せず破壊される心配はありません**。
 - プライベートリポジトリのマーケットプレイスは、Git credential helper / SSH キーの設定が前提です。
-  認証エラー時の詳細メッセージは CLI 出力に依存します。
+  認証エラー時の詳細メッセージは CLI 出力に依存しますが、Phase F の結果報告では認証情報・URL 埋め込み
+  トークン・SSH 鍵パス等を **マスクして表示** します。
+- **サプライチェーンリスク**: マーケットプレイス更新により新しい `hooks` / `commands` / `agents` /
+  MCP サーバが引き込まれた場合、次回 Claude Code 起動時に自動実行される可能性があります。信頼する
+  マーケットプレイスのみで本コマンドを使用してください。リスクを抑えたい場合は `--dry-run` で
+  対象を確認してから実行することを推奨します。
 - `autoUpdate: true` で十分な場合、本プラグインを使う必要はありません（セッション起動時に自動更新されます）。
   本プラグインは「セッション中に最新版を取り込みたい」場面のために設計されています。
 - `claude plugin update` は **再起動が必要** と公式が明示しているため、本コマンド完了後は
   `/reload-plugins` か Claude Code 再起動が必要です。
+
+## ロールバック手順
+
+更新後に問題が発覚した場合の復旧手順:
+
+1. `claude plugin uninstall <plugin>@<marketplace>` で問題のあるプラグインをアンインストール
+2. マーケットプレイスの旧版に戻す（必要な場合）
+   - リモートマーケットプレイス: ローカル複製を作成し `git checkout <旧タグ>` で固定 → `/plugin marketplace add <local-path>`
+   - ローカルマーケットプレイス: 該当ディレクトリで `git checkout <旧タグ>`
+3. `claude plugin install <plugin>@<marketplace>` で旧版から再インストール
+4. `/reload-plugins` または Claude Code 再起動
+
+マーケットプレイス本体（`marketplace.json` / 構成プラグイン群）のロールバックは公式 CLI に
+専用手段がないため、上記のように **ローカル複製 + git checkout** での代替が現実的です。
 
 ## ファイル構成
 

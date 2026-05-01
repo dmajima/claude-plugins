@@ -32,7 +32,7 @@
     {
       "name": "plugins-update",
       "source": "./plugins/plugins-update",
-      "description": "Claude Code 公式 CLI でマーケットプレイスとプラグインを一括最新化するコマンドプラグイン",
+      "description": "インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化するメンテナンスコマンド",
       "category": "maintenance",
       "author": {
         "name": "dmajima"
