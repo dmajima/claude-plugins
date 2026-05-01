@@ -68,12 +68,25 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 実行順は **A-0 → A → A-1 → A-2 → B → C → D → E → F → G**。
 A-0 は Phase A の前に必ず実行する（CLI 不在時の早期失敗）。
 
-### Phase A-0: Claude Code CLI 存在チェック（最優先実行）
+### Phase A-0: 引数バリデーション + Claude Code CLI 存在チェック（最優先実行）
+
+A-0 は Phase A の前に **以下の順序** で必ず実行する。
+
+#### A-0-1. 引数バリデーション
+
+- `--scope` 値が指定されていれば `user` / `project` / `local` のいずれかと完全一致することを確認。
+- 不正値の場合は以下の形式でエラーを返して処理を中断する（後続フェーズには進まない）:
+
+```text
+エラー: 不正な --scope 値 "<value>" が指定されました。有効な値は user / project / local です。
+```
+
+#### A-0-2. CLI 存在チェック
 
 `claude plugin --help` を実行し以下を満たすことを確認する:
 
 - exit code が 0
-- 出力に `marketplace` および `update` の両キーワードを含む（同名の悪意あるシム検出のため）
+- 出力に `marketplace` および `update` の両キーワードを含む
 
 いずれかを満たさない場合は以下のエラーで処理を中断する:
 
@@ -81,6 +94,9 @@ A-0 は Phase A の前に必ず実行する（CLI 不在時の早期失敗）。
 エラー: claude plugin CLI が利用できません（または不正な実装の可能性）。
 Claude Code のインストール状況と PATH を確認してください。
 ```
+
+**注**: 出力キーワード照合は **ヒューリスティックな補助** であり、CLI バイナリ自体の真正性検証は
+OS のパッケージマネージャ署名検証に依存する（ADR-PU-002 Trade-offs 参照）。
 
 ### Phase A: 対象収集（読み取りのみ）
 
@@ -99,17 +115,21 @@ Claude Code のインストール状況と PATH を確認してください。
 読み取った JSON の **`enabledPlugins` キー以外（`mcpServers` / `extraKnownMarketplaces` / `hooks` 等）は
 メインコンテキストに一切載せない**。以下の手順を **必ず順守**する:
 
-1. **第一手順（必須）**: `Grep` で `enabledPlugins` の開始ブロックのみを `-A 200` 程度で抽出して、
-   Read 対象範囲を `enabledPlugins` セクションに限定する
+1. **第一手順（必須）**: `Grep` で `enabledPlugins` の開始ブロックを抽出（暫定範囲）:
    ```text
-   Grep(pattern: '"enabledPlugins"', path: '<settings.json>', output_mode: 'content', -A: 200)
+   Grep(pattern: '"enabledPlugins"', path: '<settings.json>', output_mode: 'content', -A: 500)
    ```
-2. **フォールバック（Grep 失敗時のみ）**: 全文 Read を行うが、`enabledPlugins` 配下のキー・値のみを
-   作業メモに転記し、生 Read 結果文字列は **直後に破棄**（メインコンテキストの作業変数を上書き）
-3. **抽出失敗時の検知**: `enabledPlugins` キーが見つからない場合は当該スコープを「対象なし」として
-   扱い、Phase F に空テーブルで報告（エラー扱いにはしない）
-4. メインコンテキストには `enabledPlugins` 配下のキー・値のみを残し、後続セッションへの引き継ぎや
-   結果報告に他キーが混入しないようにする
+2. **第二手順（必須）**: 抽出結果を Claude が走査し、`enabledPlugins` の対応する `}` を検出した
+   時点で **それ以降のテキストを破棄** する（`mcpServers` 等が `-A` 範囲内に含まれた場合の
+   情報漏洩防止）。具体的には:
+   - 抽出結果の最初の `{` の位置から開始し、`{` でネストレベル +1、`}` でネストレベル -1 を計上
+   - ネストレベルが 0 に戻った位置までを `enabledPlugins` ブロックとして保持し、それ以降は破棄
+3. **抽出失敗時のフォールバック**: `enabledPlugins` キーが見つからない場合は当該スコープを
+   「対象なし」として扱い、Phase F に空テーブルで報告（エラー扱いにはしない）。
+   **全文 Read は禁止**（`mcpServers` 等が直接コンテキストに乗るリスクがあるため）
+4. **メインコンテキストの最終状態**: `enabledPlugins` 配下のキー・値のみが残ること。
+   `mcpServers` / `extraKnownMarketplaces` / `hooks` 等のキー名を含む行は、結果報告本文・
+   備考列・引き継ぎ要約のいずれにも一切出力しない（F-0 サニタイズ前にフィルタする）
 
 #### `<repo>` の決定と検証
 
@@ -159,11 +179,24 @@ Claude Code の `enabledPlugins` は **キーがプラグイン識別子（`<plu
 `enabledPlugins` 内の `marketplace-name` のうち、Phase A で取得した `claude plugin marketplace list`
 の結果に **存在しないもの** を Skipped（マーケットプレイス未登録）として除外する。
 
-#### 二重実施の挙動
+#### 二重実施の挙動と A→B 間ドリフト
 
-A-2 は **Phase A 直後に 1 回のみ実施** する。Phase B 後の再実施は行わない（仕様簡素化のため）。
-Phase B でマーケットプレイスが新規追加されるケースは現実的に稀で、その場合は次回実行時に
-反映される（即時性は不要）。
+A-2 は **Phase A 直後に 1 回のみ実施** する。Phase B 後の再実施は行わない（ADR-PU-003 / ADR-PU-002 参照）。
+
+**ドリフト影響**: Phase B でマーケットプレイスが新規追加された場合、当該 MP 配下の `enabledPlugins`
+エントリは A-2 時点で「未登録」と判定されているため Skipped 扱いのまま当該セッションでは更新されない。
+このケースを検知したら Phase F-4 の前に以下の INFO を表示する:
+
+```text
+INFO: Phase B でマーケットプレイス <name> が新規登録されましたが、当該 MP 配下のプラグインは
+A-2 時点で未登録判定により Skipped 扱いのため、本セッションでは更新されません。
+次回 /update-all 実行時に反映されます。
+```
+
+#### A-2 と XR-2 の役割分担
+
+A-2 は **Phase B 実行前の静的検証**（marketplace list と enabledPlugins の差集合チェック）。
+B 実行後の MP 失敗による配下プラグインの動的制御は **XR-2 サーキットブレーカー** が担う。
 
 ### Phase B: マーケットプレイス更新（最初に必ず実行・XR-1/XR-2/XR-3 を適用）
 
@@ -207,11 +240,12 @@ B-1 で MP Unknown 判定された MP 配下のエントリは除外する。
 すべての更新処理を完了した時点で、以下の構造で **必ず結果報告** を提示する。
 変数表記の `<count>` 等は Claude が実行時に実際の値に置き換える。
 
-#### F-0. CLI 出力サニタイズ（XR-3 を参照）
+#### F-0. サニタイズ適用タイミング宣言（規則本体は XR-3）
 
-サニタイズ規則本体・列単位の例外・「文脈外」判定の具体ルールはすべて
+本ステップは **適用タイミングの宣言** であり、サニタイズ規則本体は持たない。
+規則本体・列単位の例外・「文脈外」判定の具体ルール・テストケースはすべて
 [`../references/cross-cutting-rules.md`](../references/cross-cutting-rules.md) の XR-3 セクションに定義。
-本 Phase F-2 / F-3 / G-2 で備考列を生成する直前に必ず適用する。
+F-2 / F-3 / G-2 で備考列・質問文を生成する **直前** に XR-3 のサニタイズを必ず適用する。
 
 #### F-1. サマリ
 
@@ -254,10 +288,12 @@ XR-5 の閾値（試行済み件数の 20%）を超える場合、cross-cutting-
 | <plugin> | <marketplace> | Updated / No change / Missing / Failed / Unknown | <サニタイズ後の備考> |
 
 ### Project プラグイン
-（User と同形式。git リポジトリ外なら "リポジトリ外のため省略" を表示）
+（User と同形式。git リポジトリ外かつ `--scope` 未指定なら "リポジトリ外のため省略" を表示。
+`--scope project` 明示時は Phase A-0 で git リポジトリ存在を要求し、不在ならエラー中断するため
+本テーブルには到達しない）
 
 ### Local プラグイン
-（User と同形式。git リポジトリ外なら "リポジトリ外のため省略" を表示）
+（User と同形式。同様に `--scope` 未指定時のみ "リポジトリ外のため省略" を表示）
 ```
 
 #### F-4. 次のアクション提示
@@ -283,8 +319,16 @@ XR-5 の閾値（試行済み件数の 20%）を超える場合、cross-cutting-
 
 ### Phase G: 失敗対応の確認（失敗ありの場合のみ）
 
-Phase F の結果報告後、**失敗が 1 件以上ある場合** に実行。
-失敗総数 `<N>` の定義は「Failed + Missing の合計」（Unknown は要手動確認のため除外）。
+Phase F の結果報告後、**Failed が 1 件以上ある場合** に実行。
+失敗総数 `<N>` の定義は **「Failed のみ」**（ADR-PU-007 参照）:
+
+- `<M>`: Phase B-1 で Failed と判定されたマーケットプレイスの件数（Missing は CLI が MP 単位で
+  返さないため存在しない）
+- `<P>`: Phase C/D/E で Failed と判定されたプラグインの件数（Missing は除外）
+- `<N> = <M> + <P>`
+
+Missing エントリは Phase G の対象としない。Phase F-4 で「`enabledPlugins` から除外を検討」と
+ユーザに案内する。Unknown も対象外（要手動確認）。
 
 #### G-1. 全体方針の確認（疑似コード）
 
@@ -293,13 +337,13 @@ Phase F の結果報告後、**失敗が 1 件以上ある場合** に実行。
 # N > 5 の場合は options から「個別に判断」を除外する（連続質問による UX 劣化防止）
 AskUserQuestion({
   questions: [{
-    question: "<N> 件の更新失敗があります（マーケットプレイス: <M> 件 / プラグイン: <P> 件）。どう対応しますか？",
+    question: "<N> 件の更新失敗があります（マーケットプレイス: <M> 件 Failed / プラグイン: <P> 件 Failed）。どう対応しますか？",
     header: "更新失敗対応",
     options: [
-      { label: "全件リトライ", description: "失敗した全エントリをもう一度更新する" },
+      { label: "全件リトライ", description: "Failed エントリをもう一度更新する" },
       // N <= 5 のときのみ次の選択肢を含める
-      { label: "個別に判断", description: "失敗エントリごとにリトライ / スキップを選択" },
-      { label: "全件スキップ", description: "失敗エントリは諦めて完了する" }
+      { label: "個別に判断", description: "Failed エントリごとにリトライ / スキップを選択" },
+      { label: "全件スキップ", description: "Failed エントリは諦めて完了する" }
     ],
     multiSelect: false
   }]
@@ -313,7 +357,7 @@ AskUserQuestion({
 
 #### G-2. 個別判断モード（G-1 で「個別に判断」が選択された場合のみ実行）
 
-失敗エントリ数（Failed + Missing。Unknown は除外）が **5 件以下の場合のみ** 各エントリについて確認する。
+失敗エントリ数（G-1 で定義した N、つまり Failed のみ）が **5 件以下の場合のみ** 各エントリについて確認する。
 6 件以上の場合は G-1 で本モードは選択肢から除外する（実装側で制御）。
 
 質問テキストの `<error>` は XR-3 サニタイズ後の値。500 字を超える場合は「...（省略）」で切り詰める。
@@ -340,8 +384,8 @@ XR-2 のサーキットブレーカー作動中の MP には適用しない。
 
 | 失敗種別 | 再実行範囲 |
 |---------|-----------|
-| マーケットプレイス失敗 | **Phase B を再度実行する（全マーケットプレイス対象 = `claude plugin marketplace update` を引数なしで再実行）**。CLI が `claude plugin marketplace update <name>` の引数指定をサポートしていることが確認できたら個別 MP リトライに切り替える（ADR-PU-002 Future Direction 参照） |
-| プラグイン更新失敗（C/D/E 由来） | `claude plugin update <plugin>@<marketplace> --scope <scope>` を当該エントリのみ実行 |
+| マーケットプレイス Failed | **Phase B を引数なしで再度実行**（`claude plugin marketplace update` = 全マーケットプレイス対象）。`--scope` 指定の有無によらず Phase B は常に全 MP 対象（ADR-PU-003「Phase B を常に実行する理由」参照）。CLI が `claude plugin marketplace update <name>` の引数指定をサポートしていることが確認できたら個別 MP リトライに切り替える（ADR-PU-002 Future Direction 参照） |
+| プラグイン Failed（C/D/E 由来） | `claude plugin update <plugin>@<marketplace> --scope <scope>` を当該エントリのみ実行 |
 
 XR-4 によりリトライは元の失敗集合に対し最大 1 回。リトライ中の新規失敗は記録のみ。
 
@@ -353,7 +397,10 @@ XR-4 によりリトライは元の失敗集合に対し最大 1 回。リトラ
 各エントリの **備考列** にリトライ前後の状態変化を記載する:
 - `Failed → Updated（リトライ成功）`
 - `Failed → Failed（リトライ失敗）`
-- `Missing → No change（CLI 側で見つかった）`
+- `Failed → No change（既に最新版に到達）`
+
+Missing は Phase G の対象としないため、リトライ後も Missing のまま F-4 アクションでユーザに
+`enabledPlugins` 除外を促す。
 
 追記版が最終結果として確定する。
 

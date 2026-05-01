@@ -104,14 +104,6 @@ Claude Code セッション起動時に本プラグインが自動更新され�
 
 実行予定の CLI コマンド一覧が表示され、実際の更新は行われません。
 
-## 動作要件
-
-| 動作要件 | 説明 |
-|---------|-----|
-| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須。Phase A-0 で存在チェック + 出力キーワード照合を行い、不在または不正実装時はエラーで中断 |
-| Git CLI | マーケットプレイスを Git ソース（GitHub/git）で登録する場合に必要（Claude Code CLI 内部で利用） |
-| `/reload-plugins` | 本コマンド完了後、セッションへの反映に使用 |
-
 ## 利用方法
 
 ### 最小例
@@ -158,6 +150,14 @@ Claude（要約）:
 
 Project スコープに限定した実行予定コマンドのみを表示します。
 
+## 動作要件
+
+| 動作要件 | 説明 |
+|---------|-----|
+| Claude Code CLI | `claude plugin marketplace update` / `claude plugin update` を実行するため必須。Phase A-0 で存在チェック + 出力キーワード照合を行い、不在または不正実装時はエラーで中断 |
+| Git CLI | マーケットプレイスを Git ソース（GitHub/git）で登録する場合に必要（Claude Code CLI 内部で利用） |
+| `/reload-plugins` | 本コマンド完了後、セッションへの反映に使用 |
+
 ## 動作概要
 
 `commands/update-all.md` で実装する Phase 構成の概略です（詳細はコマンド本体を参照）。
@@ -193,12 +193,13 @@ Project スコープに限定した実行予定コマンドのみを表示しま
 
 | 原則 | 根拠 ADR |
 |-----|---------|
+| 単一プラグイン化（独立配布・依存ゼロ） | ADR-PU-001 |
 | 公式 CLI 経由 | ADR-PU-002 |
 | Phase A-0〜G 固定順序 + スコープ個別更新 + 継続実行 | ADR-PU-003 |
 | 横断ルール SSOT 配置 | ADR-PU-004 |
-| exit code 一次判定 + Unknown 区分 | ADR-PU-005 |
+| exit code 一次判定 + Unknown 区分（Missing はリトライ対象外） | ADR-PU-005 |
 | サーキットブレーカー（MP 単位累計 3 件） | ADR-PU-006 |
-| 失敗対応の対話モデル（5 件閾値で個別判断除外） | ADR-PU-007 |
+| 失敗対応の対話モデル（Failed のみリトライ・5 件閾値で個別判断除外） | ADR-PU-007 |
 
 ## 技術スタック・アーキテクチャ
 

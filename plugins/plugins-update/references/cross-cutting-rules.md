@@ -110,7 +110,7 @@ CLI 出力をユーザに表示する直前（テーブルセルに格納する�
 | パターン | 置換後 | 備考 |
 |---------|-------|------|
 | `(?i)(token\|password\|secret\|authorization\|bearer\|x-api-key)[:=]\s*\S+` | `<key>=***REDACTED***` | 汎用 key=value |
-| `https?://[^/\s]+:[^@\s]+@` | `https://***@` | URL 埋め込み認証 |
+| `https?://([^@/\s:]+(?::[^@\s]+)?)@` | `https://***@` | URL 埋め込み認証（`user:pass@` および PAT 単独 `token@` の両方を捕捉） |
 | `ghp_[A-Za-z0-9]{36,}` / `github_pat_[A-Za-z0-9_]{82,}` / `gho_[A-Za-z0-9]{36,}` / `ghs_[A-Za-z0-9]{36,}` / `ghu_[A-Za-z0-9]{36,}` | `***GITHUB_TOKEN***` | GitHub PAT |
 | `glpat-[A-Za-z0-9_-]{20,}` | `***GITLAB_TOKEN***` | GitLab PAT |
 | `AKIA[0-9A-Z]{16}` / `ASIA[0-9A-Z]{16}` | `***AWS_KEY_ID***` | AWS アクセスキー |
@@ -122,6 +122,9 @@ CLI 出力をユーザに表示する直前（テーブルセルに格納する�
 | `npm_[A-Za-z0-9]{36}` | `***NPM_TOKEN***` | NPM Token |
 | `sk-ant-api[0-9]{2}-[A-Za-z0-9_-]{32,}` | `***ANTHROPIC_API_KEY***` | Anthropic API Key |
 | `sk-[A-Za-z0-9]{48}` | `***OPENAI_API_KEY***` | OpenAI API Key |
+| `hf_[A-Za-z0-9]{34}` | `***HUGGINGFACE_TOKEN***` | HuggingFace Token |
+| `https://[a-f0-9]{32}@[\w.-]*sentry\.io[^\s]*` | `***SENTRY_DSN***` | Sentry DSN |
+| `pypi-AgEIcH[A-Za-z0-9_-]{70,}` | `***PYPI_TOKEN***` | PyPI Token |
 | `machine\s+\S+\s+login\s+\S+\s+password\s+\S+` | `<netrc-credential>` | .netrc 形式 |
 | `/[\w./-]+\.pem`、`id_rsa`、`id_ed25519` | `<ssh-key-path>` | SSH 鍵パス |
 | `C:\\Users\\[^\\]+` / `/Users/[^/]+` / `/home/[^/]+` | `<user-home>` | ローカルパス内のユーザ名 |
@@ -154,10 +157,12 @@ CLI 出力をユーザに表示する直前（テーブルセルに格納する�
 | 入力（抜粋） | 期待挙動 |
 |------------|---------|
 | `key=abcdef0123456789...（40+字）` | マスク（key=value 文脈、規則ベースで先にマスクされる場合あり） |
-| `https://example.com/abcdef0123456789...（40+字）/path` | マスクしない（URL 内） |
+| `https://example.com/abcdef0123456789...（40+字）/path` | マスクしない（URL の path/query 内） |
+| `https://ghp_<36字>@github.com/user/repo`（PAT 単独形式） | マスク（規則ベース GitHub PAT で先処理、URL 埋め込み認証規則も拡張済） |
 | `Bearer abcdef0123456789...（40+字）` | マスク（規則ベース汎用 key=value で先処理、`Bearer` を key とみなす） |
 | `commit-hash abc1234` | マスクしない（7 字、40 字未満） |
 | `error message: abcdef0123456789...（40+字）` | マスク（行末・空白文脈） |
+| プラグイン名 `extension-toolkit-long-name`（30+字、テーブル名前列） | マスクしない（列単位例外） |
 
 #### **重要な例外（テーブル列単位）**
 
@@ -184,7 +189,8 @@ CLI 出力をユーザに表示する直前（テーブルセルに格納する�
 
 ### 適用詳細
 
-- 「失敗集合」とは Phase F 時点の Failed + Missing エントリ。Unknown は要手動確認のため除外。
+- 「失敗集合」とは Phase F 時点の **Failed エントリのみ**。Missing は CLI リトライで回復しないため
+  対象外（Phase F-4 でユーザに `enabledPlugins` 除外を促す）。Unknown は要手動確認のため対象外。
 - リトライは G-3 で実施。サーキットブレーカー作動中の MP には適用しない。
 - 2 回目失敗時は G-4 で最終結果として追記出力する。
 
