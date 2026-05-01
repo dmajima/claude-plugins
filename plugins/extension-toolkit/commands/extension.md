@@ -1,5 +1,5 @@
 ---
-description: Claude Code の拡張要素（スキル/プラグイン/コマンド/エージェント/フック）作成・公開を支援
+description: Claude Code 拡張要素（スキル/プラグイン/コマンド/エージェント/フック）の作成・レビュー・公開を統括
 argument-hint: <種別> <対象名> [--non-interactive] [--full-auto]
 ---
 

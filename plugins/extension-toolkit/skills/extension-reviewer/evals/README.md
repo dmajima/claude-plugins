@@ -21,6 +21,8 @@
 | case-13 | プラグイン全体レビュー（フック未含有・5 名構成） | プラグイン対象 + フック非含有 |
 | case-14 | マーケットプレイス本体レビュー（個別 3 名並列） | 対象 = マーケットプレイス（marketplace.json） |
 | case-15 | `--non-interactive` + `--auto-fix` 同時指定（CI 自動修正） | 両フラグ検出 |
+| case-16 | 機械チェック target 不在による中断 | `run_checks.py` exit 2、JSON 未生成 |
+| case-17 | 機械チェック scope 違反による fail-closed 中断 | `assert_in_scope` ValueError、JSON 未生成 |
 
 ## 実行確認方法
 

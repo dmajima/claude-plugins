@@ -53,8 +53,14 @@ Claude（要約）:
 | `SKILL.md` | スキル定義とトリガー条件 |
 | `references/procedures.md` | setup / teardown / refresh / check の詳細手順 |
 | `references/python-venv.md` | Python venv の構造・互換性 |
-| `scripts/setup/setup_venv.sh` | venv 構築スクリプト |
-| `scripts/setup/teardown_venv.sh` | venv 撤去スクリプト |
+
+実スクリプトは ADR-024 に基づきプラグイン直下に集約:
+
+| ファイル | 配置 |
+|---------|------|
+| `setup_venv.sh` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh` |
+| `teardown_venv.sh` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh` |
+| `requirements.txt` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt` |
 
 ## 技術スタック・アーキテクチャ
 
@@ -68,4 +74,4 @@ Claude（要約）:
 
 - venv は **必ずセッション作業領域**（`.claude/.local/work/{yyyyMMdd_nn_summary}/workspace/.venv`）に作成
 - スキル / プラグインのソース内には venv を作らない
-- venv 構築・撤去は本スキルが責務単一として担当（各スキルは依存リストのみ保有）
+- venv 構築・撤去スクリプトはプラグイン直下に集約（ADR-024）。本スキルはオーケストレータとして機能

@@ -1,29 +1,30 @@
 # 環境構築
 
-このファイルはスキル `{skill-name}` が動作するための環境構築手順を記述する。Python venv 等の構築は `environment-setup-toolkit` スキルに委譲する（責務の単一化）。
+このファイルはスキル `{skill-name}` が動作するための環境構築手順を記述する。Python venv 等の構築は `environment-setup-toolkit` スキルに委譲する（責務の単一化、ADR-024）。
 
-## 依存パッケージ
+## 依存パッケージの登録先（ADR-024）
+
+スキルが利用する Python 依存パッケージは、**プラグイン直下** の `references/scripts/setup/requirements.txt` に統合する。スキルごとの個別 `requirements.txt` は禁止。
 
 ```text
-{パッケージ名 1}=={バージョン}
-{パッケージ名 2}=={バージョン}
+plugins/{plugin-name}/references/scripts/setup/requirements.txt
 ```
 
-これらをスキル内 `references/setup.md` に列挙し、または `scripts/deps/requirements.txt` として保管する。
+このスキルが新規パッケージを必要とする場合は、上記ファイルに追記する（既存依存と競合しないか確認）。
 
 ## venv 構築手順
 
 `environment-setup-toolkit` を **`Skill` ツール経由で呼び出す** のを第一推奨とする。スキルがどう配布されているか（プラグイン同梱 / スタンドアロン）に依存せず動作する:
 
 ```text
-Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --requirements ${CLAUDE_SKILL_DIR}/scripts/deps/requirements.txt")
+Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --requirements ${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt")
 ```
 
-`Skill` ツールが利用できない場面でのみ直接スクリプト呼び出しを検討する。配置先により呼び出し方法が異なる:
+`Skill` ツールが利用できない場面でのみ直接スクリプト呼び出しを検討する:
 
 | 配置先 | 呼び出し例 | 備考 |
 |-------|----------|------|
-| プラグイン同梱（`extension-toolkit` インストール済） | `bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/setup/setup_venv.sh" "<work_dir>" "${CLAUDE_SKILL_DIR}/scripts/deps/requirements.txt"` | `${CLAUDE_PLUGIN_ROOT}` は同プラグイン由来のスキル/コマンド/フック実行時に Claude Code が解決 |
+| プラグイン同梱（同一プラグイン由来） | `bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" "<work_dir>" "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"` | `${CLAUDE_PLUGIN_ROOT}` は同プラグイン由来のスキル/コマンド/フック実行時に Claude Code が解決 |
 | スタンドアロン（`<repo>/.claude/skills/{name}/`、または `~/.claude/skills/{name}/`） | 直接呼び出し不可。`Skill` ツール経由のみ | `${CLAUDE_PLUGIN_ROOT}` が未定義のため。プラグイン非依存の単体スキルは Skill ツール経由を必須とする |
 
 `<work_dir>` は `.claude/.local/work/{yyyyMMdd_nn_summary}/workspace/` を推奨する。グローバルルール `~/.claude/rules/claude/work-directory.md` は **存在すれば追加参照** として有用だが必須ではない（ADR-022、不在時は上記推奨のみで動作）。
@@ -48,6 +49,7 @@ Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>"
 
 | 用途 | ファイル（テンプレート配備後は相対パスで解決される） |
 |-----|---------|
+| スクリプト記述・配置ポリシー | `${CLAUDE_PLUGIN_ROOT}/references/scripts-policy.md`（プラグイン直下） |
 | 環境構築スキル | `environment-setup-toolkit`（同一プラグイン内、配備後は `../../environment-setup-toolkit/`） |
 | Python venv 仕様 | `environment-setup-toolkit/references/python-venv.md`（配備後は `../../environment-setup-toolkit/references/python-venv.md`） |
 

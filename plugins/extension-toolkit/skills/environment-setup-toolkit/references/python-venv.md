@@ -61,20 +61,16 @@ optional_pkg                # バージョン指定なし（最新）
 | 互換範囲を許容 | `>=1.0,<2.0` |
 | 最新を許容 | バージョン指定なし |
 
-### 4.3 各スキル固有の requirements
+### 4.3 依存パッケージはプラグイン直下に統合（ADR-024）
 
-各スキルが独自の依存を持つ場合、スキル内に置く:
+各スキルの依存もすべて **プラグイン直下** の `references/scripts/setup/requirements.txt` に統合する。スキルごとの個別 `requirements.txt` は禁止:
 
 ```
-plugins/extension-toolkit/skills/{skill-name}/
+plugins/{plugin-name}/
 └── references/
-    └── setup.md          # 依存パッケージリスト
-```
-
-または:
-
-```
-plugins/extension-toolkit/skills/{skill-name}/scripts/deps/requirements.txt
+    └── scripts/
+        └── setup/
+            └── requirements.txt    # 全スキルの依存をマージ
 ```
 
 ## 5. venv の独立性
@@ -102,7 +98,7 @@ plugins/extension-toolkit/skills/{skill-name}/scripts/deps/requirements.txt
 
 ## 7. teardown の安全性
 
-`teardown_venv.sh` の安全装置は 3 段構成。詳細は実装（[`../scripts/setup/teardown_venv.sh`](../scripts/setup/teardown_venv.sh)）を参照。要点のみ記載:
+`teardown_venv.sh` の安全装置は 3 段構成。詳細は実装（プラグイン直下 `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh`）を参照。要点のみ記載:
 
 | 段 | 内容 |
 |---|------|
@@ -144,13 +140,15 @@ plugins/extension-toolkit/skills/{skill-name}/scripts/deps/requirements.txt
 `setup_venv.sh` は第 3 引数で **最小 Python バージョン要件** を受け付ける:
 
 ```bash
-bash setup_venv.sh <work_dir> [<requirements_path>] [<min_python_version>]
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
+  <work_dir> [<requirements_path>] [<min_python_version>]
 ```
 
 例: Python 3.10 以上を要求する場合
 
 ```bash
-bash setup_venv.sh "${WORK_DIR}" "${REQ_PATH}" "3.10"
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
+  "${WORK_DIR}" "${REQ_PATH}" "3.10"
 ```
 
 要件を満たさない場合はエラー終了し、ユーザに pyenv 等での切替を案内する。要件未指定時はチェックをスキップする。

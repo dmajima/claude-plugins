@@ -82,4 +82,32 @@ Claude（要約）:
 | `references/review-perspectives.md` | 対象別レビュー観点とエージェント選定 |
 | `references/team-selection.md` | 対象別チーム / エージェントの採用ルール |
 | `references/automated-checks.md` | 機械的チェック項目とその実行方法 |
+| `references/scripts/checks/run_checks.py` | 機械的チェック一括実行スクリプト（Bash + venv 経由で起動） |
 | `evals/` | 動作分岐の期待挙動 |
+
+venv 構築・撤去スクリプトと依存パッケージはプラグイン直下（ADR-024）に集約:
+
+| ファイル | 配置 |
+|---------|------|
+| `setup_venv.sh` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh` |
+| `teardown_venv.sh` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh` |
+| `requirements.txt` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt`（PyYAML 含む全スキルの依存統合） |
+
+## 機械チェックの実行（手動実行例）
+
+```bash
+SESSION_DIR=".claude/.local/work/$(date +%Y%m%d)_01_extension_review"
+mkdir -p "$SESSION_DIR/workspace"
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
+  "$SESSION_DIR/workspace" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
+"$SESSION_DIR/workspace/.venv/Scripts/python" \
+  "${CLAUDE_SKILL_DIR}/references/scripts/checks/run_checks.py" \
+  --target plugins/foo --scope-root . \
+  --output "$SESSION_DIR/workspace/checks.json"
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
+  "$SESSION_DIR/workspace"
+```
+
+> **重要**: PowerShell から `python` を直接起動すると Claude Code の stdout 解釈と
+> 衝突して文字化け（`â€` パターン）が発生するため、必ず Bash 経由で起動してください。

@@ -2,102 +2,124 @@
 
 `extension-reviewer` が並列で実施する機械的チェックの一覧と実行方法。
 
+## 実行方式（MANDATORY）
+
+機械チェックは **必ず Bash 経由 + venv 内 Python + JSON ファイル出力** で実施すること。
+PowerShell から Python を直接起動することは禁止する。
+
+### 禁止事項（文字化け防止）
+
+以下の組み合わせは Claude Code の stdout 解釈と衝突し、UTF-8 → Latin-1 mojibake
+（`â€` パターン等）を発生させるため **使用禁止**:
+
+- `PowerShell` から `python` を直接起動（`pwsh -c "python ..."` など）
+- `chcp 65001` / `[Console]::OutputEncoding=[Text.Encoding]::UTF8` の手動切り替え
+- Python スクリプトから日本語を **stdout に書き出す**（必ずファイルに書く）
+- `$env:PYTHONIOENCODING='utf-8'` の手動付与による回避策
+
+これらは PowerShell サブプロセスのコンソール CP が親ターミナルへ伝播・干渉するため、
+Python 側で `sys.stdout.reconfigure(encoding='utf-8')` を入れても根本解決にならない。
+
+### 正しい起動方法
+
+すべてのチェックは `references/scripts/checks/run_checks.py` に統合済み。Bash 経由で起動する。
+venv 関連スクリプトはプラグイン直下（ADR-024）。
+
+```bash
+SESSION_DIR=".claude/.local/work/{yyyyMMdd_nn_summary}"
+
+# 1. venv 構築（初回のみ・プラグイン共通）
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
+  "$SESSION_DIR/workspace" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
+
+# 2. レビュー対象ごとに run_checks.py を実行（出力は JSON ファイル）
+"$SESSION_DIR/workspace/.venv/Scripts/python" \
+  "${CLAUDE_SKILL_DIR}/references/scripts/checks/run_checks.py" \
+  --target "<レビュー対象パス>" \
+  --scope-root "<スコープルート（パストラバーサル防止）>" \
+  --output "$SESSION_DIR/workspace/checks_<対象名>.json"
+
+# 3. 結果は JSON ファイルから Read ツールで読み取って統合する
+#    （標準出力には進捗ログのみ・日本語ログも Bash 経由なので mojibake は発生しない）
+
+# 4. 作業完了後の venv 削除（プラグイン共通）
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
+  "$SESSION_DIR/workspace"
+```
+
+詳細な引数仕様は `references/scripts/checks/run_checks.py --help` を参照すること。
+
 ## チェック項目一覧
 
-| 項目 | 対象 | 方法 | 違反時の重大度 |
-|-----|-----|------|--------------|
-| SKILL.md 200 行制約 | 各 `SKILL.md` | `wc -l` | High |
-| パスポータビリティ | 全テキストファイル | Grep（NG パターン） | Critical or High |
-| プレースホルダ残存 | 全テキストファイル | Grep `\{[a-z-]+\}` | High |
-| frontmatter valid | `*.md` の frontmatter | YAML パース | High |
-| JSON valid | `*.json` | JSON パース | Critical |
-| `§` 記号 | 全テキストファイル | Grep `§` | Medium |
-| 必須セクション存在 | `SKILL.md` | パターン検索 | High |
-| description 文字数 | frontmatter `description` | 文字数カウント | Medium |
-| コマンド `argument-hint` 必須（ADR-023） | `commands/*.md` の frontmatter | YAML キー存在 + 本文 `$ARGUMENTS` 有無の照合 | High |
-| `agents/` 削除痕跡 | 既存スキル更新時 | git diff | High |
-| エンコーディング保持 | 編集ファイル | バイト列比較 | Critical |
-| シークレット混入（`.env` / 鍵 / トークン文字列） | プラグイン全体 | ファイル名 + 内容パターン | Critical |
+| # | 項目 | 対象 | 違反時の重大度 | 実装関数 |
+|---|-----|-----|--------------|--------|
+| 1 | SKILL.md 200 行制約 | 各 `SKILL.md` | High | `check_skill_md_line_count` |
+| 2 | パスポータビリティ | 全テキストファイル | High | `check_path_portability` |
+| 3 | プレースホルダ残存 | `*.md` / `*.json` | High | `check_placeholders` |
+| 4a | frontmatter valid | `SKILL.md` / `commands/*.md` / `agents/*.md` | High | `check_frontmatter_valid` |
+| 4b | JSON valid | `*.json` | Critical | `check_json_valid` |
+| 5 | `§` 記号 | 全テキストファイル | Medium | `check_section_symbol` |
+| 6 | 必須セクション存在 | `SKILL.md` | High | `check_required_sections` |
+| 7 | description 文字数 | `plugin.json` / `commands/*.md` | Medium | `check_description_length` |
+| 7.5 | コマンド `argument-hint` 必須（ADR-023） | `commands/*.md` | High | `check_argument_hint` |
+| 8 | エンコーディング保持 | 編集ファイル（差分）| Critical | （`run_checks.py` 対象外。`Edit`/`Write` ツール側 + ルール `~/.claude/rules/common/file-encoding.md` で担保） |
+| 9 | シークレット混入 | プラグイン全体 | Critical | `check_secrets`（`marketplace-publisher` の `secret-scan.md` と同等） |
 
-## 実行方法
+`run_checks.py` の出力 JSON 構造:
 
-> **シェル例の安全な扱い（CWE-78 / CWE-88 対策）**:
-> 以下の例で `{target_dir}` はテンプレート変数。実行時には **必ずダブルクォートで囲む**（`"{target_dir}"` または `"$TARGET_DIR"`）こと。スペース・`;` ・ `$(...)` を含むパス、シェルメタ文字を含む値が混入するとコマンド注入につながる。
-> 機械チェック呼び出し前に「9. エンコーディング保持」節の `assert_in_scope` 関数で、対象がレビュー対象ディレクトリ配下であることを **必ず検証** すること。
-
-### 1. 行数チェック（SKILL.md 200 行）
-
-```bash
-TARGET_DIR="{target_dir}"   # ← レビュー対象パス。事前に assert_in_scope で検証する
-find "$TARGET_DIR" -name "SKILL.md" -exec wc -l {} \;
+```json
+{
+  "target": "plugins/foo",
+  "scope_root": ".",
+  "issue_count": 3,
+  "by_severity": {"Critical": 0, "High": 2, "Medium": 1, "Low": 0},
+  "issues": [
+    {"severity": "High", "item": "...", "file": "...", "line": 42, "detail": "..."}
+  ]
+}
 ```
 
-200 行超過のファイルを High 指摘として記録。
+## 各チェックの詳細
 
-### 2. パスポータビリティ Grep
+### 1. SKILL.md 200 行制約
 
-```bash
-# Windows ドライブレター
-grep -rn "[A-Za-z]:[\\/]" "$TARGET_DIR"
+`SKILL.md` の行数が 200 行を超えていれば High 指摘。詳細を `references/` に分割すべきタイミング。
 
-# Unix ユーザディレクトリ
-grep -rn "/home/\|/Users/\|/root/" "$TARGET_DIR"
+### 2. パスポータビリティ
 
-# Windows 環境変数
-grep -rn "%USERPROFILE%\|%APPDATA%\|%LOCALAPPDATA%" "$TARGET_DIR"
+[`../../../references/path-portability.md`](../../../references/path-portability.md) に
+列挙された NG パターン（Windows ドライブレター・Unix ユーザディレクトリ・環境変数・
+HOME 変数・UNC パス）を Grep で検出する。
 
-# シェル HOME 変数
-grep -rn '\$HOME\|\${HOME}' "$TARGET_DIR"
+`run_checks.py` は以下を **検査対象から除外** する:
 
-# UNC パス
-grep -rn '\\\\[A-Za-z0-9._-]\+\\' "$TARGET_DIR"
-```
-
-検出結果を [`../../../references/path-portability.md`](../../../references/path-portability.md) の分類（NG / 例外候補 / OK）に振り分け。
+- マークダウンのフェンス付きコードブロック (` ``` ... ``` `) 内
+- マークダウンのインラインバッククォート (`` `...` ``) 内
+- シェル / Python / PowerShell の行頭コメント (`# ...`)
+- 自己参照ファイル（`run_checks.py` / `path-portability.md` / `secret-scan.md` 自身）
+- `evals/` `templates/` 配下
 
 ### 3. プレースホルダ残存
 
-```bash
-grep -rn '{[a-z][a-z0-9-]*}' "$TARGET_DIR" --include="*.md" --include="*.json"
-```
-
-`{plugin-name}` `{skill-name}` 等のテンプレートプレースホルダが残存していれば High 指摘。
+`{kebab-case}` パターンを Grep。テンプレート系ファイル（`templates/` 配下）は除外。
+コードブロック・バッククォート内も除外する（`run_checks.py` 実装）。
 
 ### 4. frontmatter / JSON valid
 
-Python で YAML / JSON パース。エラー時は Critical 指摘。
-
-```python
-import yaml, json
-
-# frontmatter
-with open(skill_md, 'r', encoding='utf-8') as f:
-    content = f.read()
-parts = content.split('---', 2)
-yaml.safe_load(parts[1])  # 失敗で Critical
-
-# JSON
-with open(plugin_json, 'r', encoding='utf-8') as f:
-    json.load(f)  # 失敗で Critical
-```
+YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は frontmatter 完備でない
+設計のため除外する。
 
 ### 5. `§` 記号検出
 
-```bash
-grep -rn '§' "$TARGET_DIR"
-```
-
-検出時は Medium 指摘 + 代替表現の提案。
+[`~/.claude/rules/common/document-rules.md`](https://github.com/dmajima/claude-plugins) の
+禁止記号ルールに基づく検出。Medium 指摘 + 代替表現を提案。
 
 ### 6. 必須セクション存在チェック
 
-`SKILL.md` に以下のセクションが存在するか確認:
-
-```bash
-grep -E '^## (責務|責務外|トリガー条件|前提|実行フロー|重要な制約)' "$SKILL_MD"
-```
-
-欠落時は High 指摘。
+`SKILL.md` に「責務 / 責務外 / トリガー条件 / 前提 / 実行フロー / 重要な制約」が
+すべて存在するか確認。**見出しの先頭一致** で判定する（`## 責務外（他スキルが担当）`
+は `責務外` にマッチ）。
 
 ### 7. description 文字数チェック
 
@@ -110,82 +132,44 @@ grep -E '^## (責務|責務外|トリガー条件|前提|実行フロー|重要�
 
 超過時は Medium 指摘。
 
-### 7.5 コマンド `argument-hint` 必須化チェック（ADR-023）
+### 7.5. コマンド `argument-hint` 必須化チェック（ADR-023）
 
-`commands/*.md` の frontmatter に `argument-hint` が含まれているか確認する。本文に `$ARGUMENTS` を参照していて `argument-hint` が無い場合は **High 指摘**。
+`commands/*.md` の frontmatter に `argument-hint` が含まれているか確認する。本文に
+`$ARGUMENTS` を参照していて `argument-hint` が無い場合は **High 指摘**。
+`argument-hint` の値に改行が含まれる、または 60 文字を超える場合は Medium 指摘。
 
-```python
-import yaml, re, pathlib
+### 8. エンコーディング保持
 
-def check_argument_hint(command_md: pathlib.Path) -> list[str]:
-    issues: list[str] = []
-    text = command_md.read_text(encoding='utf-8')
-    parts = text.split('---', 2)
-    if len(parts) < 3:
-        return [f"[High] frontmatter 不在: {command_md}"]
-    fm = yaml.safe_load(parts[1]) or {}
-    body = parts[2]
-    has_arguments = bool(re.search(r'\$ARGUMENTS', body))
-    has_routing = bool(re.search(r'^##\s*ルーティング', body, re.M))
-    needs_hint = has_arguments or has_routing
-    hint = fm.get('argument-hint')
-    if needs_hint and not hint:
-        issues.append(f"[High] argument-hint 欠落（ADR-023）: {command_md}")
-    if hint:
-        if '\n' in str(hint):
-            issues.append(f"[Medium] argument-hint に改行: {command_md}")
-        if len(str(hint)) > 60:
-            issues.append(f"[Medium] argument-hint 60 文字超過: {command_md}")
-    return issues
-```
+`run_checks.py` の対象外。編集前後でバイト列を比較するチェックは `Edit`/`Write`
+ツール呼び出しと同期して実施する必要があり、別経路で運用する
+（[`~/.claude/rules/common/file-encoding.md`](https://github.com/dmajima/claude-plugins)
+を参照）。
 
-### 8. `agents/` 削除痕跡（更新時）
+### 9. シークレット混入チェック
 
-```bash
-git diff HEAD -- "$TARGET_DIR/*/agents/"
-```
-
-スキル内 `agents/` が削除されていたら High 指摘（プラグイン配布のため保持必須）。
-
-### 9. エンコーディング保持
-
-編集前後でバイト列を比較し、文字コード変換が起きていないか確認。
-
-`file_path` は **必ずレビュー対象ディレクトリ配下であることを呼び出し前に検証**（パストラバーサル対策）。
-スコープ外のシステムファイルに対して `file` コマンドを実行しないこと。
-
-```python
-import subprocess, pathlib
-
-def assert_in_scope(target_dir: pathlib.Path, file_path: pathlib.Path) -> None:
-    target_resolved = target_dir.resolve()
-    file_resolved = file_path.resolve()
-    if target_resolved not in file_resolved.parents and file_resolved != target_resolved:
-        raise ValueError(f"out of scope: {file_path}")
-
-assert_in_scope(target_dir, pathlib.Path(file_path))
-
-# 編集前のエンコーディング
-before = subprocess.run(['file', '--mime-encoding', file_path],
-                        capture_output=True, shell=False).stdout
-
-# 編集後
-after = subprocess.run(['file', '--mime-encoding', file_path],
-                       capture_output=True, shell=False).stdout
-
-if before != after:
-    # Critical 指摘
-    pass
-```
-
-### 10. シークレット混入チェック
-
-詳細パターンと検出ロジックは [`../../marketplace-publisher/references/secret-scan.md`](../../marketplace-publisher/references/secret-scan.md) を参照。`extension-reviewer` 起動時にも公開前のラストガードとして同チェックを実施する。検出時は **Critical 指摘**（公開フローを中断、ユーザの明示的な対応を要求）。
+詳細パターンと検出ロジックは
+[`../../marketplace-publisher/references/secret-scan.md`](../../marketplace-publisher/references/secret-scan.md)
+を参照。`run_checks.py` の `check_secrets` 関数で同等のロジックを実装している。
+検出時は **Critical 指摘**（公開フローを中断）。
 
 ## 指摘出力フォーマット
 
+JSON ファイル内の各 issue:
+
+```json
+{
+  "severity": "High",
+  "item": "パスポータビリティ違反: Windows ドライブレター",
+  "file": "plugins/foo/scripts/setup_venv.sh",
+  "line": 42,
+  "detail": "対象行のスニペット（200 文字まで）"
+}
+```
+
+レビューレポートに転記する際の人間可読フォーマット:
+
 ```markdown
-### {重大度}: {チェック項目}
+### {重大度}: {項目}
 
 - ファイル: `{path}:{line}`
 - 検出: `{検出内容}`
@@ -203,7 +187,25 @@ if before != after:
 | `§` 記号 | 可（代替表現に置換） |
 | 必須セクション存在 | 不可 |
 | description 文字数 | 不可 |
-| `agents/` 削除痕跡 | 可（復元） |
+| argument-hint | 不可（適切な短縮表現の判断要） |
 | エンコーディング保持 | 不可（バックアップ必要） |
+| シークレット混入 | 不可（必ずユーザ確認） |
 
 `--auto-fix` フラグありでも、自動修正可否欄が「不可」の項目はユーザに修正を委ねる。
+
+## 既知の制約
+
+- `iter_inspectable_lines()` は CommonMark 準拠でフェンス長を厳密に追跡するため、
+  外側 4 バッククォート + 内側 3 バッククォートのネストフェンス（PR テンプレート等）も
+  正しく解釈する。ただしマークダウン側で `~~~` と ` ``` ` を混在ネストしている等の
+  非典型ケースは想定外。
+- `run_checks.py` は **動的な振る舞い**（実行時の挙動）はチェックしない。
+  動作確認は別途エージェント並列レビューで担当する。
+- 失敗系の検出（target 不在 / scope 違反 / 巨大ファイル）は exit code と stderr
+  プレフィックスでの通知のみで、JSON 出力は生成されない。`extension-reviewer` 側で
+  exit code を確認し、エージェント起動を抑制すること（evals: case-16 / case-17 参照）。
+- 失敗系のセキュリティログは **stderr の `[ERROR]` プレフィックス行** がそのまま記録対象となる
+  （別途のログファイルは生成しない）。`extension-reviewer` 側で stderr を捕捉し、
+  進捗管理ファイル（`progress.md`）の「ブロッカー・懸念事項」節に転記する運用を推奨する。
+  attacker による意図的な scope 違反試行を検知したい場合は、本スクリプト自体ではなく
+  呼び出し元の hook 等で stderr 監視を実装する。
