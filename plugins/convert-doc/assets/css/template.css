@@ -1,0 +1,888 @@
+/*
+  convert-html CSS Template
+  Wiki 記事スタイルをベースにした企業向けドキュメントスタイル
+*/
+
+/* ===== Google Fonts インポート ===== */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;600;700&display=swap');
+
+/* ===== Reset & Base ===== */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 62.5%; /* 1rem = 10px */
+}
+
+body {
+    font-family: 'Lato', "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ",
+                 Meiryo, "ＭＳ Ｐゴシック", "MS PGothic", sans-serif;
+    font-weight: 400;
+    font-size: 1.6rem;
+    line-height: 2;
+    color: #333333;
+    background: #FFFFFF;
+    margin: 0;
+    padding: 0;
+    -webkit-text-size-adjust: 100%;
+}
+
+a {
+    color: #003879;
+    text-decoration: underline;
+    transition: opacity 0.3s ease;
+}
+a:hover {
+    opacity: 0.6;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    border: 0;
+}
+
+/* ===== ページレイアウト ===== */
+#wrap {
+    width: 100%;
+    padding: 4rem 0 8rem;
+}
+
+/* ===== メインコンテンツ ===== */
+#main-content {
+    width: 100%;
+    max-width: calc(1200px + 4rem);
+    margin: 0 auto;
+    padding: 0 4rem 8rem;
+}
+
+/* ===== 記事タイトル ===== */
+.doc-title {
+    display: block;
+    font-size: 2.8rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #333333;
+    margin: 0 0 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 3px solid #003879;
+}
+
+/* ===== 目次トグルボタン（画面右端固定） ===== */
+#toc-toggle-btn {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2rem;
+    min-height: 8rem;
+    background: #003879;
+    border-radius: 4px 0 0 4px;
+    z-index: 101;
+    color: #FFFFFF;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    writing-mode: vertical-rl;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+#toc-toggle-btn:hover {
+    background: #00509e;
+}
+
+/* ===== 目次サイドバー（画面右端に固定） ===== */
+#toc-sidebar {
+    position: fixed;
+    right: 2.4rem;
+    top: 2rem;
+    width: 24rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    z-index: 100;
+    transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+/* 折りたたみ状態 */
+#toc-sidebar.toc-collapsed {
+    transform: translateX(calc(100% + 2.4rem));
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* スクロールバーを細く */
+#toc-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+#toc-sidebar::-webkit-scrollbar-track {
+    background: #F5F5F5;
+}
+#toc-sidebar::-webkit-scrollbar-thumb {
+    background: #C0C0C0;
+    border-radius: 2px;
+}
+
+/* python-markdown の TOC 出力対応 */
+#toc-sidebar div.toc,
+div.toc {
+    padding: 1.5rem 2rem;
+    border: 1px solid #003879;
+    border-radius: 4px;
+    background: #FFFFFF;
+    box-shadow: 0 2px 12px rgba(0, 56, 121, 0.15);
+}
+
+#toc-sidebar div.toc::before,
+div.toc::before {
+    content: '目次';
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    color: #333333;
+}
+
+#toc-sidebar div.toc ul,
+div.toc ul {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 0;
+}
+
+#toc-sidebar div.toc ul li,
+div.toc ul li {
+    display: block;
+    padding-left: 1.2em;
+    font-size: 1.4rem;
+    line-height: 1.7;
+    position: relative;
+}
+
+#toc-sidebar div.toc ul li + li,
+div.toc ul li + li {
+    margin-top: 0.2em;
+}
+
+/* ネストした目次はやや小さく */
+#toc-sidebar div.toc ul ul li,
+div.toc ul ul li {
+    font-size: 1.3rem;
+}
+
+#toc-sidebar div.toc ul li::before,
+div.toc ul li::before {
+    content: '■';
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: #003879;
+    font-size: 0.7em;
+    line-height: 1.9;
+}
+
+#toc-sidebar div.toc ul li a,
+div.toc ul li a {
+    text-decoration: none;
+    color: #555555;
+}
+
+#toc-sidebar div.toc ul li a:hover,
+div.toc ul li a:hover {
+    color: #003879;
+    opacity: 1;
+    text-decoration: underline;
+}
+
+/* ===== 本文エリア ===== */
+.article-body {
+    display: block;
+    font-size: 1.6rem;
+    line-height: 2;
+    text-align: left;
+}
+
+/* ===== 見出し ===== */
+
+/* H1: ネイビー背景 + 白文字 */
+.article-body h1,
+h1 {
+    display: block;
+    padding: 1rem 2rem;
+    margin: 4rem 0 3rem;
+    background: #003879;
+    font-size: 2.8rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 2px;
+}
+
+/* H2: 太いネイビー下線 */
+.article-body h2,
+h2 {
+    display: block;
+    padding: 0 0 1rem;
+    margin: 5rem 0 2rem;
+    border-bottom: 4px solid #053A77;
+    font-size: 2.8rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #333333;
+}
+
+/* H3: 細いグレー下線 */
+.article-body h3,
+h3 {
+    display: block;
+    padding: 0 0 1rem;
+    margin: 4.5rem 0 2rem;
+    border-bottom: 1px solid #A2A2A2;
+    font-size: 2.4rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #333333;
+}
+
+/* H4: 左のネイビー正方形インジケータ */
+.article-body h4,
+h4 {
+    display: block;
+    margin: 3.5rem 0 2rem;
+    padding-left: 3rem;
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #333333;
+    position: relative;
+}
+.article-body h4::before,
+h4::before {
+    content: '';
+    display: block;
+    width: 1.8rem;
+    height: 1.8rem;
+    background: #003879;
+    position: absolute;
+    left: 0;
+    top: 0.6rem;
+}
+
+/* H5: 左のネイビー丸インジケータ */
+.article-body h5,
+h5 {
+    display: block;
+    margin: 3rem 0 1.5rem;
+    padding-left: 2rem;
+    font-size: 1.8rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #333333;
+    position: relative;
+}
+.article-body h5::before,
+h5::before {
+    content: '';
+    display: block;
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    background: #003879;
+    position: absolute;
+    left: 0;
+    top: 1rem;
+}
+
+/* H6 */
+.article-body h6,
+h6 {
+    display: block;
+    margin: 2.5rem 0 1rem;
+    font-size: 1.8rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #333333;
+}
+
+/* ===== テキスト要素 ===== */
+.article-body p,
+p {
+    margin: 1.2em 0;
+}
+
+.article-body strong,
+.article-body b,
+strong, b {
+    font-weight: 700;
+}
+
+.article-body em,
+em {
+    font-style: italic;
+}
+
+.article-body del,
+del {
+    text-decoration: line-through;
+    color: #999;
+}
+
+/* ===== リスト ===== */
+.article-body ul,
+ul {
+    list-style: disc;
+    padding-left: 2.5em;
+    margin: 1em 0;
+}
+
+.article-body ol,
+ol {
+    list-style: decimal;
+    padding-left: 2.5em;
+    margin: 1em 0;
+}
+
+.article-body li,
+li {
+    margin: 0.3em 0;
+}
+
+.article-body ul ul,
+ul ul {
+    list-style: circle;
+}
+
+.article-body ul ul ul,
+ul ul ul {
+    list-style: square;
+}
+
+/* ===== 引用ブロック ===== */
+.article-body blockquote,
+blockquote {
+    margin: 2rem 0;
+    padding: 1.5rem 2rem;
+    border-left: 4px solid #053A77;
+    background: #F0F4FA;
+    color: #555555;
+    font-size: 1.5rem;
+}
+
+.article-body blockquote p,
+blockquote p {
+    margin: 0;
+}
+
+/* ===== コード・プリ ===== */
+.article-body code,
+code {
+    font-family: "Consolas", "Courier New", "Lucida Console", monospace;
+    font-size: 0.9em;
+    background: #F5F6F7;
+    border: 1px solid #E0E0E0;
+    border-radius: 3px;
+    padding: 0.1em 0.4em;
+    color: #c7254e;
+}
+
+.article-body pre,
+pre {
+    background-color: #F5F6F7;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    overflow: auto;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    font-size: 1.4rem;
+    line-height: 1.7;
+}
+
+.article-body pre code,
+pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: inherit;
+    color: inherit;
+    border-radius: 0;
+}
+
+/* ===== シンタックスハイライト (Pygments .highlight クラス) ===== */
+.highlight {
+    background: #F5F6F7;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+    overflow: auto;
+}
+
+.highlight pre {
+    background: none;
+    border: none;
+    margin: 0;
+    padding: 1.5rem 2rem;
+}
+
+/* ===== テーブル ===== */
+/* ラッパーdiv（Pythonが自動挿入）で横スクロールを実現。
+   tableにdisplay:blockを使わないことで列幅の自然な計算を維持する */
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 2rem 0;
+}
+
+.article-body table,
+table {
+    border-collapse: collapse;
+    text-align: left;
+    line-height: 1.5;
+    font-size: 1.5rem;
+}
+
+.article-body table th,
+table th {
+    font-weight: 600;
+    background: #E5EAF1;
+    font-size: 1.5rem;
+    padding: 1.5rem 2rem;
+    border: 1px solid #A2A2A2;
+    white-space: nowrap;
+}
+
+.article-body table td,
+table td {
+    padding: 1.2rem 2rem;
+    border: 1px solid #A2A2A2;
+}
+
+.article-body table tr:nth-child(even),
+table tr:nth-child(even) {
+    background: #F8F8F8;
+}
+
+.article-body table tr:nth-child(odd),
+table tr:nth-child(odd) {
+    background: #FFFFFF;
+}
+
+/* ===== 水平線 ===== */
+.article-body hr,
+hr {
+    border: none;
+    border-top: 1px solid #E0E0E0;
+    margin: 4rem 0;
+}
+
+/* ===== Mermaid図 ===== */
+.mermaid-figure {
+    margin: 3rem 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* SVGはmax-widthで縮小しない（文字切れ防止）。横スクロールで対応 */
+/* 注: foreignObject内テキストのクリップ修正は convert.py の postprocess_svg() で
+   SVGに <style> を直接注入することで対応している。
+   ここでの font-size 指定は mermaid SVG 内部の ID セレクタ (#mermaid-svg specificity=1,0,0)
+   に負けるため効果がなく、Python 側の修正が正解。 */
+.mermaid-figure svg {
+    display: block;
+    height: auto;
+    /* width="100%" はSVG属性として保持 */
+}
+
+.mermaid-error {
+    background: #FFF3F3;
+    border: 1px solid #FFAAAA;
+    border-radius: 4px;
+    padding: 1.5rem;
+    color: #CC0000;
+    font-size: 1.3rem;
+}
+
+/* ===== ライトボックス ===== */
+#lb-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    z-index: 9000;
+    align-items: center;
+    justify-content: center;
+}
+
+#lb-box {
+    transform-origin: center center;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    will-change: transform;
+}
+
+#lb-box:active {
+    cursor: grabbing;
+}
+
+#lb-box img,
+#lb-box svg {
+    display: block;
+    pointer-events: none;
+}
+
+#lb-close {
+    position: fixed;
+    top: 1.6rem;
+    right: 2rem;
+    width: 4.4rem;
+    height: 4.4rem;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 50%;
+    color: #FFFFFF;
+    font-size: 2.8rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 9001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+#lb-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+#lb-hint {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.2rem;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 9001;
+}
+
+/* ===== 脚注 ===== */
+.footnote {
+    font-size: 1.3rem;
+    color: #666;
+    border-top: 1px solid #E0E0E0;
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+}
+
+/* ===== 定義リスト ===== */
+.article-body dl,
+dl {
+    margin: 1.5rem 0;
+}
+
+.article-body dt,
+dt {
+    font-weight: 700;
+    margin-top: 1rem;
+}
+
+.article-body dd,
+dd {
+    padding-left: 2em;
+    margin: 0.3em 0;
+}
+
+/* ===== キーボード ===== */
+kbd {
+    background: #EFEFEF;
+    border: 1px solid #AAAAAA;
+    border-radius: 3px;
+    padding: 0.1em 0.5em;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+/* ===== モバイルヘッダー（JSが目次機能ON時に動的生成） ===== */
+#toc-mobile-header {
+    display: none; /* デフォルト非表示、モバイルのみ表示 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5rem;
+    background: #003879;
+    color: #ffffff;
+    z-index: 200;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.6rem;
+    gap: 1.2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+#toc-hamburger-btn {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 2.4rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+#toc-hamburger-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+#toc-mobile-header-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== モバイルTOCオーバーレイ背景 ===== */
+#toc-mobile-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 250;
+}
+#toc-mobile-overlay.active {
+    display: block;
+}
+
+/* ===== レスポンシブ ===== */
+@media screen and (max-width: 1024px) {
+    /* ベースフォントサイズをモバイル向けに縮小（9px基準 → 本文1.6rem = 14.4px） */
+    /* scroll-padding-top: 固定ヘッダー（5rem）分の余白をアンカー遷移時に確保 */
+    html {
+        font-size: 56.25%;
+        scroll-padding-top: 6rem;
+    }
+
+    /* デスクトップのトグルボタンを非表示 */
+    #toc-toggle-btn {
+        display: none;
+    }
+
+    /* モバイルヘッダーを表示 */
+    #toc-mobile-header {
+        display: flex;
+    }
+
+    /* ヘッダー分の余白 */
+    #wrap {
+        padding-top: 5rem;
+    }
+
+    /* コンテンツ幅を最大限活用する最小余白 */
+    #main-content {
+        padding: 0 1.2rem 4rem;
+    }
+
+    /* ヘッダーにタイトルが表示されるため本文側のタイトルは非表示 */
+    .doc-title {
+        display: none;
+    }
+
+    /* 横スクロール防止（テーブル・コードブロックは個別にautoを維持） */
+    body {
+        overflow-x: hidden;
+    }
+
+    .article-body {
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    /* TOCをドロワー形式に（右からスライドイン） */
+    #toc-sidebar {
+        position: fixed;
+        right: 0;
+        top: 0;
+        width: min(80vw, 32rem);
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow-y: auto;
+        z-index: 300;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        opacity: 1;
+        pointer-events: none;
+        padding: 2rem;
+        background: #ffffff;
+        border-left: 2px solid #003879;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
+    }
+
+    #toc-sidebar.toc-mobile-open {
+        transform: translateX(0);
+        pointer-events: auto;
+    }
+
+    /* デスクトップのcollapsed状態を無効化 */
+    #toc-sidebar.toc-collapsed {
+        transform: translateX(100%);
+        opacity: 1;
+    }
+
+    /* ドロワー内のTOCパネルはドロワー自体にborder/backgroundを設定するため除去 */
+    #toc-sidebar div.toc {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+    }
+
+    /* モバイルTOCのフォントをメインコンテンツと同サイズに統一 */
+    #toc-sidebar div.toc::before {
+        font-size: 1.6rem;
+    }
+
+    #toc-sidebar div.toc ul li,
+    #toc-sidebar div.toc ul ul li {
+        font-size: 1.6rem;
+        line-height: 1.6;
+    }
+
+    /* タップミス防止のため項目間を広げる */
+    #toc-sidebar div.toc ul li + li {
+        margin-top: 0.6em;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    /* ヘッダー分のtop余白のみ（左右はmain-contentが管理） */
+    #wrap {
+        padding: 5rem 0 4rem;
+    }
+
+    .doc-title {
+        font-size: 2.2rem;
+    }
+
+    h1, .article-body h1 {
+        font-size: 2.2rem;
+    }
+
+    h2, .article-body h2 {
+        font-size: 2rem;
+    }
+
+    h3, .article-body h3 {
+        font-size: 1.8rem;
+    }
+}
+
+/* ===== プリント対応 ===== */
+@media print {
+    body {
+        font-size: 10pt;
+    }
+
+    #wrap {
+        padding: 0;
+    }
+
+    #toc-toggle-btn,
+    #toc-mobile-header,
+    #toc-mobile-overlay {
+        display: none;
+    }
+
+    #toc-sidebar {
+        position: static;
+        width: auto;
+        height: auto;
+        max-height: none;
+        box-shadow: none;
+        margin-bottom: 2rem;
+        transform: none !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    h1, .article-body h1 {
+        page-break-after: avoid;
+    }
+
+    h2, h3, h4, .article-body h2, .article-body h3, .article-body h4 {
+        page-break-after: avoid;
+    }
+
+    pre, blockquote, table {
+        /* Avoid page breaks inside blocks that fit on a single page. Large
+           blocks must still be allowed to flow across pages — otherwise the
+           whole block is clipped. */
+        page-break-inside: auto;
+        break-inside: auto;
+    }
+
+    /* Preserve background colors / syntax highlight in print (Chromium/WebKit). */
+    body,
+    pre, code, .highlight,
+    th, td,
+    .task-list-item input,
+    .mermaid-figure svg,
+    .mermaid-figure svg rect {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    /* Long code blocks: wrap rather than clip. */
+    pre, pre code, .highlight pre {
+        white-space: pre-wrap !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+        overflow: visible !important;
+        max-width: 100% !important;
+    }
+
+    /* Tables: never hide overflow behind a scroller. Let the content wrap. */
+    .table-scroll {
+        overflow: visible !important;
+        -webkit-overflow-scrolling: auto !important;
+    }
+    table {
+        table-layout: auto;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    th, td {
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        white-space: normal !important;
+    }
+
+    a {
+        color: #003879;
+        text-decoration: underline;
+    }
+}
+
+/* ===== GFM タスクリスト ===== */
+/* `- [ ]` / `- [x]` を HTML にプリプロセスした結果のスタイル。
+   画面・印刷どちらにも適用する。*/
+.article-body li:has(> .task-list-item),
+.article-body li .task-list-item {
+    list-style: none;
+}
+.article-body ul:has(> li > .task-list-item) {
+    padding-left: 0.2em;
+}
+.task-list-item input[type="checkbox"] {
+    appearance: auto;
+    margin: 0 0.5em 0 0;
+    transform: translateY(1px);
+    accent-color: #003879;
+}
