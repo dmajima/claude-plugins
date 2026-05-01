@@ -16,7 +16,7 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 | コマンド | 効果 |
 |---------|-----|
 | `/update-all` | 全マーケットプレイスとプラグインを最新版に更新し、再起動を促す |
-| `/update-all --dry-run` | 実行予定の CLI コマンド一覧のみ表示。実際の **変更系 CLI**（`marketplace update` / `update`）は実行しないが、対象収集のため `settings.json` の Grep 読み取りと `claude plugin marketplace list`（読み取り専用 CLI）は実行する |
+| `/update-all --dry-run` | 実行予定の CLI コマンド一覧のみ表示。実際の **変更系 CLI**（`marketplace update` / `update`）は実行しないが、対象収集のため `settings.json` の Grep 読み取り（**A-Sec 全手順を含む**）と `claude plugin marketplace list`（読み取り専用 CLI）は実行する |
 | `/update-all --scope user` | マーケットプレイス更新後、User スコープのプラグインのみ更新 |
 | `/update-all --scope project` | マーケットプレイス更新後、Project スコープのプラグインのみ更新 |
 | `/update-all --scope local` | マーケットプレイス更新後、Local スコープのプラグインのみ更新 |
@@ -31,7 +31,7 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 - Claude Code がインストール済みで `claude plugin` サブコマンドが利用可能であること
 - 後述「動作要件」のツールが PATH に通っていること
 - Claude Code の Read / Bash / Grep / AskUserQuestion ツールが利用可能であること
-  （詳細は `skills/plugin-updater/SKILL.md` の「前提」節を参照）
+  （**SSOT**: 詳細は `skills/plugin-updater/SKILL.md` の「前提」節を参照。本 README は人間向け要約）
 - 依存プラグインなし（`plugin.json` で `dependencies: []` を明示）。
   README で関連プラグインとして言及している `extension-toolkit:marketplace-toolkit` /
   `extension-toolkit:marketplace-publisher` は **未インストールでも `/update-all` は動作する**
