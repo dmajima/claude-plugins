@@ -226,26 +226,50 @@ def _strip_backtick_spans(line: str) -> str:
     return re.sub(r"`[^`]*`", lambda m: " " * len(m.group(0)), line)
 
 
+_FENCE_PATTERN = re.compile(r"^(`{3,}|~{3,})(.*)$")
+
+
 def iter_inspectable_lines(path: pathlib.Path, text: str):
     """ファイル種別に応じて検査対象行を yield する共通ヘルパ。
 
     - マークダウン (.md): フェンス付きコードブロック (``` / ~~~) 内・インライン
-      バッククォート内は検査対象外
+      バッククォート内は検査対象外。CommonMark 仕様に従いフェンス長を厳密追跡し、
+      ネストフェンス（外側 4 個 + 内側 3 個など）も正しく解釈する
     - シェル / Python / PowerShell: 行頭コメント（# / // など）は検査対象外
     - その他: 全行を検査
 
     yield: (line_num, original_line, sanitized_text)
     """
     suffix = path.suffix
-    in_code_block = False
+    fence_open_len = 0  # 0 = 非フェンス内、>0 = 開フェンスのバッククォート/チルダ数
+    fence_char: str | None = None  # '`' または '~'
     for line_num, line in enumerate(text.splitlines(), start=1):
         if suffix == ".md":
             stripped = line.lstrip()
-            if stripped.startswith("```") or stripped.startswith("~~~"):
-                in_code_block = not in_code_block
-                continue
-            if in_code_block:
-                continue
+            match = _FENCE_PATTERN.match(stripped)
+            if match:
+                marker = match.group(1)
+                marker_char = marker[0]
+                marker_len = len(marker)
+                rest = match.group(2).strip()
+                if fence_open_len == 0:
+                    # 新規にフェンスを開く
+                    fence_open_len = marker_len
+                    fence_char = marker_char
+                    continue
+                else:
+                    # フェンス内。CommonMark の閉フェンス条件: 同じ文字 + 開以上の長さ + 後続なし
+                    if (
+                        marker_char == fence_char
+                        and marker_len >= fence_open_len
+                        and rest == ""
+                    ):
+                        fence_open_len = 0
+                        fence_char = None
+                    # 閉条件を満たさない場合は in fence のまま（内部フェンスとして扱う）
+                    continue
+            if fence_open_len > 0:
+                continue  # フェンス内はスキップ
             yield line_num, line, _strip_backtick_spans(line)
         elif suffix in {".sh", ".py", ".ps1", ".yaml", ".yml"}:
             stripped = line.lstrip()

@@ -284,7 +284,7 @@ plugins/extension-toolkit/
 ### 採用技術
 
 - Markdown / JSON / YAML
-- Python 3.10+（一部スクリプト：`environment-setup-toolkit/scripts/setup/`）
+- Python 3.10+（一部スクリプト：プラグイン直下 `references/scripts/setup/`、ADR-024）
 - Bash（クロスプラットフォーム対応：Windows `Scripts/` / Unix `bin/`）
 - Claude Code Plugins / Skills / Agents API
 

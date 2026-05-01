@@ -31,7 +31,28 @@ case-01 と同じ手順で `dev-toolkit` 外形を作成。`skills/` サブデ�
 
 - 元 `code-formatter` ディレクトリが無傷
 - 移管後の `SKILL.md` の `name` がディレクトリ名と一致
-- `references/` `scripts/` `agents/` の構造が維持されている
+- `references/` `agents/` の構造が維持されている
+
+### Phase 5.5: ADR-024 / ADR-025 準拠化（移管元が旧構造の場合）
+
+移管元スキルが旧構造（スキル直下 `scripts/` または `requirements.txt`）を持つ場合、新ルールへ自動変換する。下表の左列はいずれも **旧構造（ADR-024/025 で廃止済）** であり、新規スキルでは使用しない:
+
+| 旧構造（廃止済・移管元検出時のみ） | 変換後（新ルール） |
+|------------------------------|------------------|
+| `code-formatter/scripts/{業務}/*.py` | `code-formatter/references/scripts/{業務}/*.py` |
+| `code-formatter/scripts/setup/setup_venv.sh` | 削除（プラグイン直下 `dev-toolkit/references/scripts/setup/` に統合 / 既存があれば差分マージ） |
+| `code-formatter/scripts/deps/requirements.txt` または `code-formatter/scripts/setup/requirements.txt` | プラグイン直下 `dev-toolkit/references/scripts/setup/requirements.txt` にマージ（バージョン競合あればユーザ確認） |
+| 旧スキル単位 venv 構築前提のドキュメント記述 | プラグイン直下スクリプトを呼ぶ表現に書き換え |
+
+#### バージョン競合時のユーザ判断分岐
+
+`requirements.txt` マージで同名パッケージのバージョン競合を検出した場合:
+
+| ユーザ選択 | 期待動作 |
+|-----------|--------|
+| 新版で上書き | プラグイン直下 requirements.txt の該当行を新版に更新、移管元 requirements.txt は削除 |
+| 既存版を維持 | プラグイン直下 requirements.txt は **変更しない**、移管元 requirements.txt も削除し、ユーザに「移管スキルが要求するバージョンが異なる旨」を警告 |
+| キャンセル | 移管全体をロールバック: (1) 移管先 `plugins/dev-toolkit/skills/code-formatter/` を **削除**、(2) プラグイン直下 `requirements.txt` は **変更しない**、(3) 元の `code-formatter` ディレクトリは無傷のまま、(4) ユーザに「移管をキャンセルした旨」と「依存競合の詳細（パッケージ名・要求バージョン・既存バージョン）」を提示 |
 
 ### Phase 6: 引き渡し
 

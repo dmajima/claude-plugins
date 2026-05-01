@@ -15,6 +15,7 @@
 | case-07 | setup（requirements.txt 不在 / 指定なし） | `--requirements` 省略 |
 | case-08 | 非対話モード（全パラメータ引数指定） | `--non-interactive` フラグ |
 | case-09 | setup 失敗系（Python 未インストール） | `python3` / `python` PATH 不在 |
+| case-10 | 他スキルからのオーケストレータ起点呼び出し（ADR-024） | プラグイン直下 `references/scripts/setup/` を起動 |
 
 ## 実行確認方法
 
@@ -24,3 +25,7 @@
 2. `environment-setup-toolkit` を起動（自然言語フレーズ or `/extension setup`）
 3. ケースの「期待動作」「期待出力」と実動作が一致することを確認
 4. 不整合があれば指摘として記録
+
+## ケース追加ルール
+
+新しい分岐ロジックを追加した時は、対応するケースファイルを必ず追加し、本 README のケース一覧に登録する。詳細は [`../../../references/eval-guide.md`](../../../references/eval-guide.md) を参照。

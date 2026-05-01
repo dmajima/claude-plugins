@@ -1,6 +1,6 @@
 ---
 name: environment-setup-toolkit
-description: Claude Code のスキル/プラグインの実行環境（Python venv・依存パッケージ・環境変数）を構築・撤去するスキル。「venv 作って」「Python 環境セットアップ」「foo スキルの venv 構築」「環境を片付けて」などの依頼で起動する。Use when the user wants to create, refresh, or tear down a Python virtual environment for a skill or plugin's working directory. SKIP when the user wants to build skill body, plugin shell, command, agent, or hook (use the corresponding *-toolkit).
+description: Claude Code のスキル/プラグインの実行環境（Python venv・依存パッケージ・環境変数）を構築・撤去するスキル。**自前で setup ロジックを持たず**、対象プラグイン直下 `references/scripts/setup/` に事前ビルドされた `setup_venv.sh` / `teardown_venv.sh` を起動するだけのオーケストレータとして動作する（ADR-024）。「venv 作って」「Python 環境セットアップ」「foo プラグインの venv 構築」「環境を片付けて」などの依頼で起動する。Use when the user wants to create, refresh, or tear down a Python virtual environment for a plugin's working directory; this skill delegates actual venv logic to the target plugin's setup scripts and does not contain its own setup implementation. SKIP when the user wants to build skill body, plugin shell, command, agent, or hook (use the corresponding *-toolkit), or wants to author/modify the setup_venv.sh script itself (edit it directly under the target plugin's references/scripts/setup/).
 ---
 
 # Environment Setup Toolkit

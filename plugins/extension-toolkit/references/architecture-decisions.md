@@ -87,11 +87,11 @@
 | トレードオフ | リネームによる参照置換ミスのリスクがあり、規約遵守時はレビューによる検証が必要 |
 | 代替案 | 一部スキルのみリネーム → 命名規則の不統一、却下 |
 
-## ADR-010: 環境構築スキル `environment-setup-toolkit` を分離
+## ADR-010: 環境構築スキル `environment-setup-toolkit` を分離（ADR-024 で更新済）
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | Python venv 構築・撤去スクリプトを `environment-setup-toolkit` に集約。各スキルは依存リスト（`scripts/deps/requirements.txt` または `references/setup.md`）のみを保有し、venv ライフサイクルは委譲する |
+| 決定 | **本 ADR は ADR-024 で更新済**。現行決定は ADR-024（プラグイン単位 venv + プラグイン直下 `references/scripts/setup/` 配置）を参照。本 ADR は当初「Python venv 構築・撤去スクリプトを `environment-setup-toolkit` に集約し、各スキルは依存リストのみを保有する」と決定したが、スキル単位 venv の重複構築や `requirements.txt` の分散による依存競合という課題が顕在化したため ADR-024 で再設計した |
 | 理由 | 各スキルが個別に setup_venv.sh を持つと（1）スクリプトの重複、（2）改善時の同期コスト、（3）「責務単一」の規約違反、を招く |
 | トレードオフ | 各スキル内に直接スクリプトを置けば自己完結性が上がるが、責務単一化を優先 |
 | 代替案 | 各スキル個別保有 → 重複・SSOT 違反、却下 |
