@@ -59,9 +59,11 @@ Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>"
 
 ### シェル直叩き（プラグイン同梱配布時のみ動作、位置引数）
 
+ADR-024 に基づき、setup スクリプトは **対象プラグインの `references/scripts/setup/`** に配置されている。`environment-setup-toolkit` 自身は実スクリプトを保有しない:
+
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/setup/setup_venv.sh" <work_dir> [<requirements_path>] [<min_python_version>]
-bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/setup/teardown_venv.sh" <work_dir>
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" <work_dir> [<requirements_path>] [<min_python_version>]
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" <work_dir>
 ```
 
 位置引数の順序は上記のまま固定。`<requirements_path>` を省略して `<min_python_version>` だけ指定する場合は、空文字列 `""` を第 2 引数に渡す:
@@ -86,30 +88,32 @@ Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --r
 直接スクリプト呼び出しが必要な場合（プラグイン同梱配布時のみ動作）:
 
 \`\`\`bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/environment-setup-toolkit/scripts/setup/setup_venv.sh" <work_dir> <requirements>
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
+  "$WORK_DIR" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
 \`\`\`
 
 `${CLAUDE_PLUGIN_ROOT}` は **当該プラグイン由来のスキル/コマンド/フック実行時のみ** Claude Code が解決する。スタンドアロン配布のスキル（`<repo>/.claude/skills/{name}/` 等）からは未定義となるため `Skill` ツール経由を選ぶこと。
 ```
 
-## requirements.txt の配置
+## requirements.txt の配置（ADR-024）
 
-各スキルが固有の依存を持つ場合、そのスキル内の `references/setup.md` または `scripts/` 配下に `requirements.txt` を置き、`environment-setup-toolkit` 呼び出し時にパスを渡す。
-
-```
-plugins/extension-toolkit/skills/{skill-name}/
-├── SKILL.md
-└── references/
-    └── setup.md           # 依存パッケージリスト・インストール手順を文書化
-```
-
-または:
+`requirements.txt` はプラグイン単位で 1 つ、`plugins/{name}/references/scripts/setup/requirements.txt` に統合する。スキル固有のスクリプトが利用する依存もここに含める。スキルごとの個別 `requirements.txt` は禁止:
 
 ```
-plugins/extension-toolkit/skills/{skill-name}/
-└── scripts/
-    └── deps/
-        └── requirements.txt
+plugins/{plugin-name}/
+├── references/
+│   └── scripts/
+│       └── setup/
+│           ├── setup_venv.sh
+│           ├── teardown_venv.sh
+│           └── requirements.txt    # 全スキルの依存をマージ
+└── skills/
+    └── {skill-name}/
+        └── references/
+            └── scripts/
+                └── {業務}/         # スキル固有スクリプト（依存はプラグイン直下に統合）
+                    └── ...
 ```
 
 ## 環境構築可否のチェック
@@ -124,7 +128,7 @@ setup 実行前のチェック項目:
 | ディスク空き容量 | 200MB 以上推奨 | 警告 |
 | 既存 venv | 既存があれば再利用 or refresh | ユーザ確認 |
 
-**Python コマンドの解決順序（setup_venv.sh 内）**: `python3` を優先検出、未存在の場合のみ `python` にフォールバック。両方未存在の場合はエラー終了。
+**Python コマンドの解決順序（setup_venv.sh 内）**: `python` → `python3` → `py` の順で `-m venv --help` の実行可否を検証して候補を採用する。pyenv-win 環境では `python3` shim が `-m venv` 実行時に WinError 2 を返す既知の問題があるため、`python` を優先候補としている。すべて利用不可の場合はエラー終了。
 
 **バージョン引数の安全性**: `<min_python_version>` は `^[0-9]+(\.[0-9]+){0,2}$` の正規表現でバリデーションされ、Python 側へは環境変数経由で渡される（bash 文字列補間によるコード注入を排除）。
 

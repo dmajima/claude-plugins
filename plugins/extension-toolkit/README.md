@@ -175,6 +175,24 @@ Claude（要約）:
 | `extension-reviewer` | 拡張要素の多角レビュー（チーム起動） |
 | `marketplace-publisher` | プラグイン公開ワークフロー（git push / PR、`marketplace.json` 編集は `marketplace-toolkit` に委譲） |
 
+## 同梱フック（v1.2.0+, ADR-026）
+
+本プラグインは 2 種類のフックを同梱します。**ハードブロック型ではなく警告型** に設計されており、軽微な編集体験を妨げず、真の問題（バージョン更新漏れ）には Stop フックで直接対処します。
+
+| フック | タイミング | 動作 | 目的 |
+|-----|---------|-----|-----|
+| **PreToolUse Edit/Write/MultiEdit** | 編集直前 | exit 0 + stderr に推奨スキル名提示（**ブロックしない**） | Claude の自律判断材料、新規・大規模変更時に適切な `*-toolkit` を選択させる |
+| **Stop** | Claude のターン終了時 | `plugins/{name}/` の未コミット変更があり `plugin.json` の version が main から未更新の場合に stderr で警告（fail-open） | バージョン更新漏れの直接的な検出（コミット前に気付ける） |
+
+| 配置 | 内容 |
+|-----|-----|
+| `hooks/hooks.json` | フック設定（`PreToolUse Edit\|Write\|MultiEdit` + `Stop`）|
+| `references/scripts/hooks/enforce_toolkit_routing.sh` | PreToolUse: 推奨スキル名の提示 |
+| `references/scripts/hooks/check_version_bump.sh` | Stop: version 更新検証 |
+| 除外パス | `.claude/.local/` / `.git/` / `/tmp/` 配下、git 利用不可環境、リポジトリ外 |
+
+「軽微な編集（typo・1〜数行修正）は直接編集 OK / 新規・大規模変更時は toolkit 経由」という運用バランスを取り、コミット前に必ずバージョン更新が促される設計です。詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) ADR-026 を参照。
+
 ## エージェント・チーム
 
 プラグイン同梱の専門家エージェント（`agents/`）:
@@ -284,7 +302,7 @@ plugins/extension-toolkit/
 ### 採用技術
 
 - Markdown / JSON / YAML
-- Python 3.10+（一部スクリプト：`environment-setup-toolkit/scripts/setup/`）
+- Python 3.10+（一部スクリプト：プラグイン直下 `references/scripts/setup/`、ADR-024）
 - Bash（クロスプラットフォーム対応：Windows `Scripts/` / Unix `bin/`）
 - Claude Code Plugins / Skills / Agents API
 

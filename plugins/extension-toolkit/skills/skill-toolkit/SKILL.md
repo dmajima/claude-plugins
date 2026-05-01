@@ -1,15 +1,15 @@
 ---
 name: skill-toolkit
-description: Claude Code のスキル（SKILL.md・references・scripts・evals 一式）を新規作成または既存改修するスキル。「新しいスキル foo を作って」「skill foo を更新」「○○用のスキルが欲しい」「既存スキル bar に機能追加」などの依頼で起動する。Use when the user wants to create, scaffold, refactor, or enhance a Claude Code skill. SKIP when the user asks for a plugin shell (use plugin-toolkit), a slash command (use command-toolkit), an agent (use agent-toolkit), or a hook (use hook-toolkit).
+description: Claude Code のスキル（SKILL.md・references・evals 一式）を新規作成または既存改修するスキル。「新しいスキル foo を作って」「skill foo を更新」「○○用のスキルが欲しい」「既存スキル bar に機能追加」などの依頼で起動する。Use when the user wants to create, scaffold, refactor, or enhance a Claude Code skill. SKIP when the user asks for a plugin shell (use plugin-toolkit), a slash command (use command-toolkit), an agent (use agent-toolkit), a hook (use hook-toolkit), or wants to edit/move existing scripts only (this skill scaffolds the skill envelope, not arbitrary script edits).
 ---
 
 # Skill Toolkit
 
-Claude Code のスキル（`SKILL.md` + `README.md` + `references/` + `scripts/` + `evals/`）を新規作成・改修するスキル。プラグイン横断テンプレート（`references/templates/skill/`）と SSOT（`references/`）に従って構造化された生成物を出力する。
+Claude Code のスキル一式（`SKILL.md` + `README.md` + `references/` + `evals/`）を新規作成・改修するスキル。プラグイン横断テンプレート（`references/templates/skill/`）と SSOT（`references/`）に従って構造化された生成物を出力する。スキル固有の実行スクリプトが必要な場合は ADR-025 に従い `references/scripts/{業務単位}/` に配置する（スキル直下 `scripts/` は禁止）。
 
 ## 責務
 
-- 新規スキルの一式生成（SKILL.md / README.md / references / scripts / evals）
+- 新規スキルの一式生成（SKILL.md / README.md / references / evals。実行スクリプトは references/scripts/{業務}/）
 - 既存スキルの改修（差分追加・分割・整理）
 - 依存先プラグイン（`example-skills@anthropic-agent-skills`、`document-skills@anthropic-agent-skills`）の **参照**（必要時のみ）
 - プラグイン横断テンプレート（`references/templates/skill/`）のコピー・プレースホルダ置換
@@ -86,8 +86,8 @@ Claude Code のスキル（`SKILL.md` + `README.md` + `references/` + `scripts/`
 - [ ] frontmatter `name` がディレクトリ名と一致
 - [ ] description が [`../../references/description-guide.md`](../../references/description-guide.md) の方針に準拠
 - [ ] パスポータビリティチェック合格（[`../../references/path-portability.md`](../../references/path-portability.md)）
-- [ ] `scripts/` の業務単位サブフォルダ構造が正しい
-- [ ] Python 利用時、依存リストが `scripts/deps/requirements.txt` または `references/setup.md` に保管され、venv 構築は `environment-setup-toolkit` への委譲が明記されている
+- [ ] スキル固有スクリプトは `references/scripts/{業務}/` に配置されている（スキル直下 `scripts/` は ADR-025 で禁止）
+- [ ] Python 利用時、依存はプラグイン直下 `references/scripts/setup/requirements.txt` に統合され、venv 構築は `environment-setup-toolkit` への委譲が明記されている（ADR-024）
 - [ ] `agents/` を重複理由で削除していない
 - [ ] 動作分岐がある場合 `evals/` が存在する
 
@@ -101,7 +101,7 @@ Claude Code のスキル（`SKILL.md` + `README.md` + `references/` + `scripts/`
 ## 重要な制約
 
 - SKILL.md 200 行超過禁止（超過時は references に分離）
-- `scripts/` 命名固定（`knowledge/` 不可）
+- スキル直下 `scripts/` 禁止、`references/scripts/{業務}/` に配置（ADR-025、`knowledge/` `lib/` `bin/` 不可）
 - `agents/` ディレクトリは重複理由で削除しない（プラグイン配布のため）
 - 既存ファイル更新時はエンコーディング・改行コード維持（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
 - パスポータビリティチェック必須

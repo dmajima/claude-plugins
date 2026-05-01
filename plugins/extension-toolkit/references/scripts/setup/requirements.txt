@@ -1,0 +1,6 @@
+# extension-toolkit プラグイン共通の Python 依存（ADR-024）
+# 各スキル個別の requirements.txt は禁止。本ファイルに依存をマージする。
+#
+# 現在の利用スキル:
+#   - extension-reviewer/scripts/checks/run_checks.py: yaml
+PyYAML==6.0.2

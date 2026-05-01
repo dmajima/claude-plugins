@@ -87,11 +87,11 @@
 | トレードオフ | リネームによる参照置換ミスのリスクがあり、規約遵守時はレビューによる検証が必要 |
 | 代替案 | 一部スキルのみリネーム → 命名規則の不統一、却下 |
 
-## ADR-010: 環境構築スキル `environment-setup-toolkit` を分離
+## ADR-010: 環境構築スキル `environment-setup-toolkit` を分離（ADR-024 で更新済）
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | Python venv 構築・撤去スクリプトを `environment-setup-toolkit` に集約。各スキルは依存リスト（`scripts/deps/requirements.txt` または `references/setup.md`）のみを保有し、venv ライフサイクルは委譲する |
+| 決定 | **本 ADR は ADR-024 で更新済**。現行決定は ADR-024（プラグイン単位 venv + プラグイン直下 `references/scripts/setup/` 配置）を参照。本 ADR は当初「Python venv 構築・撤去スクリプトを `environment-setup-toolkit` に集約し、各スキルは依存リストのみを保有する」と決定したが、スキル単位 venv の重複構築や `requirements.txt` の分散による依存競合という課題が顕在化したため ADR-024 で再設計した |
 | 理由 | 各スキルが個別に setup_venv.sh を持つと（1）スクリプトの重複、（2）改善時の同期コスト、（3）「責務単一」の規約違反、を招く |
 | トレードオフ | 各スキル内に直接スクリプトを置けば自己完結性が上がるが、責務単一化を優先 |
 | 代替案 | 各スキル個別保有 → 重複・SSOT 違反、却下 |
@@ -232,6 +232,44 @@
 | 表記規則 | (i) 必須引数は `<...>`、省略可は `[...]`、フラグは `[--flag 値]` または `[--flag]`、(ii) 60 文字以内を目安、(iii) 改行禁止、(iv) `description` の文末で重複しない（引数仕様は `argument-hint` 側に集約） |
 | 代替案 | (1) 引数仕様を `description` 内に含める → `description` 60 文字制約で詰まる・SSOT 違反、却下。(2) 本文の `## 引数` セクションに任せる → `/` 補完 UI に表示されないため利用時に見えない、却下。(3) 任意項目に留める → 既存 `convert-doc` との整合が崩れ、利用者ごとの体験差異が発生、却下 |
 
+## ADR-024: プラグイン単位 venv 採用と `references/scripts/` 配置（ADR-010 の更新）
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | Python venv は **プラグイン単位で 1 つ** とし、関連スクリプト（`setup_venv.sh` / `teardown_venv.sh` / `requirements.txt`）を **プラグイン直下** の `references/scripts/setup/` に配置する。複数スキルが Python を利用する場合も同一 venv を共有する。スキル固有のスクリプトはスキル直下 `references/scripts/{業務単位}/` に配置するが、依存パッケージ（`requirements.txt`）はプラグイン直下に統合する。`environment-setup-toolkit` はプラグイン直下スクリプトの **オーケストレータ** に役割変更する（自前の setup 実装を持たず、プラグイン直下スクリプトの起動を案内する）。Python を一切使用しないプラグインでは venv 関連スクリプトの設置は不要 |
+| 理由 | (1) スキル単位 venv は同じプラグイン内で重複構築を引き起こし、複数スキル協業時にどの venv を使うか判断ロジックが必要になる。(2) `requirements.txt` がスキルごとに分散すると依存解決の競合・重複が発生する。(3) プラグインは「インストール単位 = 配布単位 = 環境単位」とすべき設計原則と整合する。(4) `environment-setup-toolkit` がスキル配下に setup スクリプトを保有していると、利用側スキルから「どの setup を呼ぶか」が曖昧になる。プラグイン直下を SSOT にすることで参照経路を一意にできる |
+| トレードオフ | (1) `requirements.txt` を全スキル分マージするため、特定スキルしか使わない依存も常にインストールされる。これは venv 共有の代償として許容する（不要時はプラグインを分割する）。(2) スキル固有のスクリプトと依存リストが別階層に分かれるため、新規スキル作成時に「依存はプラグイン直下、スクリプトはスキル直下」という配置を周知する必要がある |
+| 適用範囲 | 本プラグインおよび本プラグインが生成・レビューするすべてのプラグイン |
+| 必須項目 | (a) プラグインに `.py` ファイルが 1 つでもあり、かつ標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.sh` `teardown_venv.sh` `requirements.txt` をプラグイン直下に置く、(b) スキル直下に `references/scripts/setup/setup_venv.sh` 等を置かない、(c) スキルごとの個別 `requirements.txt` を作らない（全依存をプラグイン直下にマージ）、(d) `environment-setup-toolkit` はプラグイン直下スクリプトの呼び出し方を案内する役割に限定する |
+| 詳細実装 | [`scripts-policy.md`](scripts-policy.md) 節 5 を参照 |
+| 代替案 | (1) スキル単位 venv 維持（ADR-010） → 重複構築・依存競合、却下。(2) `environment-setup-toolkit` のスキル配下スクリプトを SSOT として維持 → 「どこを呼ぶか」が曖昧になり、ADR-022 の自己完結性原則と整合しない、却下。(3) ホーム配下に共有 venv → セッション独立性破壊、却下 |
+
+## ADR-025: 実行スクリプトのインライン記載禁止と `references/scripts/` 配置義務化
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | `references/`・`SKILL.md`・`README.md` 等の Markdown ファイルに、**実行を意図したスクリプト**（Python・Bash・PowerShell・Node 等）をコードブロックで直接記載することを禁止する。実行可能スクリプトは必ず `references/scripts/{業務単位}/{name}.{py,sh,ps1,js}` に切り出してファイル化し、md からはパス参照と呼び出し例（5 行以下）のみを記載する。単発のシェルコマンド（`mkdir` `git status` 等、5 行以下・1 責務・制御構造なし）は例外として md 直接記載を許可する。スクリプトの配置はプラグイン直下（`plugins/{name}/references/scripts/`）が共通リソース、スキル直下（`plugins/{name}/skills/{skill}/references/scripts/`）がスキル固有 |
+| 理由 | (1) インラインスクリプトは「Claude が毎回 workspace に書き出して実行」する運用になり、トークン消費・実行時間・再現性すべてに悪影響。(2) インラインだとレビュー対象（テスト・lint・型チェック）から外れ、品質保証ができない。(3) PowerShell + chcp 65001 + on-the-fly Python の組み合わせで文字化けが再発した（`extension-reviewer` の旧実装、ADR-024 と同じ文脈）。(4) スクリプトを `references/scripts/` 配下に集約することで「ナレッジとスクリプトを同階層で管理」「許可リストの簡素化（プラグイン/スキル直下のトップレベルディレクトリ最小化）」が実現できる。(5) 設定ファイル例・出力例・ディレクトリ構造図は表示専用で本ルールの対象外（誤解を防ぐため scripts-policy.md に明記）|
+| トレードオフ | (1) スクリプトファイル数が増え、ディレクトリ構造が複雑化する。これは業務単位サブフォルダ化（`references/scripts/setup/`・`references/scripts/checks/` 等）で吸収する。(2) インライン記載の方が「ドキュメントを読むだけで実装が分かる」という利点を失う。これは `references/scripts/` への明示的なリンク・呼び出し例で補う。(3) [`conventions.md`](conventions.md) 節 2.1 / 3.1 のプラグイン直下・スキル直下の許可リストから `scripts/` を削除する必要がある（互換性破壊）|
+| 適用範囲 | 本プラグインおよび本プラグインが生成・レビューするすべての拡張要素（スキル・コマンド・エージェント・フック）|
+| 必須項目 | (a) `references/` 配下の md は実行ロジックを直接持たない、(b) 実行スクリプトは `references/scripts/{業務単位}/` 配下にファイル化、(c) md には `references/scripts/` 内ファイルの呼び出し例（最大 5 行）のみ記載、(d) [`scripts-policy.md`](scripts-policy.md) の OK/NG 例に従う、(e) `extension-reviewer` の `run_checks.py` で違反を機械検出する、(f) トップレベル `scripts/`（プラグイン直下・スキル直下とも）に実スクリプトを置かない |
+| 判定基準 | 行数 6 行以上 / 制御構造（if/for/while/function） / 引数を取る / 複数責務 / 例外処理を含む — のいずれかで NG。詳細は [`scripts-policy.md`](scripts-policy.md) 節 3 を参照 |
+| 例外 | (a) YAML / JSON 設定ファイルのサンプル（`description:` `name:` 等）、(b) エラーメッセージ・出力フォーマットの例、(c) 構造ツリー（ディレクトリ図）、(d) 動作の解説に必要な短い疑似コード（`# pseudocode:` 等の明示要） |
+| 既存プラグインの移行猶予 | 本 ADR 制定前から存在する既存プラグイン（`convert-doc` 等）に対しては、`extension-reviewer` の機械チェックは **検出のみ** を実施し（重大度 High で報告）、移行は別 PR として段階的に行う。本プラグイン（`extension-toolkit`）自身は本 ADR 制定と同時に完全準拠する。移行未完了プラグインの公開（マーケットプレイス更新）は、scripts-policy.md の指摘を解消した上で実施する |
+| 代替案 | (1) インラインを許可（旧運用）→ 文字化け再発・トークン消費増・レビュー対象外、却下。(2) 全コードブロック禁止 → 設定例・出力例まで失われ、ドキュメント機能が損なわれる、却下。(3) 言語別（python のみ禁止 / bash 許可）→ 同じ問題が bash でも発生する、却下。(4) スクリプトをプラグイン/スキル直下 `scripts/` に置く（旧 ADR-015 の許可リストに沿う） → トップレベル許可リストが肥大化し、references / scripts の責務が分散、却下 |
+
+## ADR-026: 経由促進・バージョン更新検証の 2 段フック構成
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | `extension-toolkit` プラグイン同梱の `hooks/hooks.json` で 2 種類のフックを登録する。**(1) PreToolUse Edit/Write/MultiEdit フック（警告型）**: `plugins/{name}/` 配下への直接編集を検知して、対応する `*-toolkit` スキル名を stderr に提示する。**ブロックはせず exit 0 で通過** させ、Claude の自律判断に委ねる。**(2) Stop フック（バージョン更新検証）**: Claude のターン終了時に `plugins/{name}/` の未コミット変更を検知し、対応する `plugin.json` の `version` が main から更新されていない場合に stderr で警告する（fail-open、exit 0）。実スクリプトはいずれも ADR-025 に従い `references/scripts/hooks/` 配下に配置する |
+| 理由 | (1) ハードブロック型は **過剰制約** であり、(a) extension-toolkit 自身のセルフレビュー反復を阻害、(b) 軽微な編集（typo・1 行修正等）にも重い toolkit 起動を強制、(c) bypass フラグ運用が常態化して形骸化、というデメリットがある。(2) ハードブロックの本来の目的だった「バージョン更新漏れ防止」は **編集時ではなくコミット時の問題** であり、Stop フック / git pre-commit による事後検証の方が直接的に効く。(3) PreToolUse 警告でスキル候補を提示することで、Claude は編集規模に応じて自律的に toolkit 起動の要否を判断できる。(4) 軽微な編集を阻害しないことで、開発体験と AI 自動レビューサイクルの両立が可能 |
+| トレードオフ | (1) PreToolUse 警告型は「必ず toolkit を通す」という強制力を持たない。Claude が警告を無視して直接編集することがあり得る。これは (a) スキル description / 規約教育、(b) 開発者向けドキュメントでの周知、(c) extension-reviewer の事後レビュー、で補完する。(2) Stop フックは「すでに変更したあと」の検出のため、変更直後に修正が必要になる。これは「コミット直前」のタイミングで動くため、コミット作業の手戻りは最小限 |
+| 適用範囲 | 本プラグインがインストールされた環境全体。本プラグイン自体および本プラグインがレビュー対象とするすべてのプラグイン |
+| 必須項目 | (a) `hooks/hooks.json` で `PreToolUse Edit/Write/MultiEdit` と `Stop` をそれぞれルーティング、(b) 実スクリプトは `references/scripts/hooks/` 配下（ADR-025 配置義務）、(c) PreToolUse は **常に exit 0**（fail-open）、(d) Stop は git 利用不可・リポジトリ外で **無音 exit 0**、(e) `.claude/.local/` / `.git/` / `/tmp/` 配下は無条件に通過、(f) Stop フック検出ロジックは `plugin.json` の `version` フィールドを sed で抽出し main ブランチと比較 |
+| 推奨ルーティング | SKILL.md → `skill-toolkit` / commands/*.md → `command-toolkit` / agents/*.md → `agent-toolkit` / hooks/* → `hook-toolkit` / README.md → `readme-toolkit` / plugin.json → `plugin-toolkit` / references/scripts/setup/ → `environment-setup-toolkit` / 公開 → `marketplace-publisher` / レビュー → `extension-reviewer` |
+| 代替案 | (1) PreToolUse ハードブロック型 → 過剰制約・bypass 常態化、却下（旧設計）。(2) PreToolUse フック完全廃止 + Stop のみ → 軽微編集には適合するが、新規大規模変更時のスキル誘導も失う、却下。(3) git pre-commit のみで検証 → Claude のターン中に気付けず、コミット時点で大きな手戻りになる、却下。(4) settings.json でユーザ環境ごとに登録 → プラグイン同梱の自己完結性（ADR-022）に反する、却下 |
+
 ## ADR の追加・更新
 
-新たな設計判断が発生した際は、本ファイルに ADR-XXX 形式で追記する。既存 ADR を変更する場合は **最新の決定のみを記載** する（変更前の判断・変更経緯は Git コミット履歴を参照する）。
+新たな設計判断が発生した際は、本ファイルに ADR-XXX 形式で追記する。既存 ADR を変更する場合は **最新の決定のみを記載** する（変更前の判断・変更経緯は Git コミット履歴を参照する）。ADR-010（スキル単位 venv）は ADR-024 で更新されたため、ADR-024 の内容が現行決定。

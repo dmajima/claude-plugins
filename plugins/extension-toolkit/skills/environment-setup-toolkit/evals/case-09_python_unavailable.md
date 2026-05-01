@@ -5,7 +5,7 @@
 | 項目 | 値 |
 |-----|---|
 | 起動フレーズ | "venv 構築" |
-| 引数 | `setup --work-dir .claude/.local/work/test/workspace --requirements scripts/deps/requirements.txt` |
+| 引数 | `setup --work-dir .claude/.local/work/test/workspace --requirements ${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt` |
 | フラグ | なし |
 | 既存状態 | 利用者環境に `python3` も `python` もインストールされていない |
 

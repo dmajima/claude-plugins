@@ -85,6 +85,10 @@ Claude Code の拡張要素（スキル・プラグイン・コマンド・エ�
 `TeamCreate` 機能が利用できない環境では、Agent ツールでメンバーを個別並列起動する **フォールバック** に切り替える。手順は [`../../references/agent-utilization.md`](../../references/agent-utilization.md) の「6.1 チーム機能が利用できない環境でのフォールバック」と [references/team-selection.md](references/team-selection.md) の「フォールバック起動」を参照。
 
 機械チェック（[references/automated-checks.md](references/automated-checks.md)）を並行して実行する。
+**実行は必ず Bash 経由 + venv 内 Python + JSON ファイル出力**（`references/scripts/checks/run_checks.py`）。
+venv はプラグイン直下 `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/` の事前ビルドスクリプトに委譲する（ADR-024）。
+PowerShell から `python` を直接起動すると Claude Code の stdout 解釈と衝突して
+文字化け（`â€` パターン）が発生するため禁止。
 
 ### 4. 共通自動チェック
 
@@ -92,15 +96,36 @@ Claude Code の拡張要素（スキル・プラグイン・コマンド・エ�
 
 | チェック | 方法 |
 |---------|------|
-| SKILL.md 200 行以下 | `wc -l` |
-| パスポータビリティ | Grep（[`../../references/path-portability.md`](../../references/path-portability.md)） |
-| プレースホルダ残存（`{...}`） | Grep |
-| frontmatter valid | YAML パース |
-| JSON valid | JSON パース |
-| `§` 記号の使用 | Grep |
-| 必須セクション（責務 / 責務外 / トリガー条件 等）の存在 | パターン検索 |
+| SKILL.md 200 行以下 | `references/scripts/checks/run_checks.py` |
+| パスポータビリティ | 同上（[`../../references/path-portability.md`](../../references/path-portability.md) 準拠） |
+| プレースホルダ残存（`{...}`） | 同上 |
+| frontmatter valid | 同上（PyYAML パース） |
+| JSON valid | 同上 |
+| `§` 記号の使用 | 同上 |
+| 必須セクション（責務 / 責務外 / トリガー条件 等）の存在 | 同上 |
+| description 文字数 / `argument-hint`（ADR-023） | 同上 |
+| シークレット混入 | 同上（[`../marketplace-publisher/references/secret-scan.md`](../marketplace-publisher/references/secret-scan.md) と同等） |
 
-詳細は [references/automated-checks.md](references/automated-checks.md) を参照。
+実行は **必ず Bash 経由 + venv** で行う。venv 関連はプラグイン直下スクリプト（ADR-024）に委譲。
+**PowerShell + `chcp` + `[Console]::OutputEncoding` の組み合わせは文字化けの原因となるため禁止**。
+詳細手順と禁止事項は [references/automated-checks.md](references/automated-checks.md) を参照。
+
+```bash
+# 1. venv 構築（初回のみ・プラグイン共通）
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
+  "$SESSION_DIR/workspace" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
+
+# 2. チェック実行（出力は JSON ファイル）
+"$SESSION_DIR/workspace/.venv/Scripts/python" \
+  "${CLAUDE_SKILL_DIR}/references/scripts/checks/run_checks.py" \
+  --target "<対象パス>" --scope-root "<スコープルート>" \
+  --output "$SESSION_DIR/workspace/checks_result.json"
+
+# 3. 完了後の venv 削除（プラグイン共通）
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
+  "$SESSION_DIR/workspace"
+```
 
 ### 5. 結果統合
 
