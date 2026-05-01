@@ -74,6 +74,10 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 Phase 番号体系（`A-0-1` の 3 階層 / `A-1` の 2 階層 / `B-1` のサブフェーズ）の規約は
 [`references/architecture-decisions.md`](references/architecture-decisions.md) ADR-PU-003「Phase 番号体系」を参照。
 
+> **SSOT 注記**: 以下の Phase 表は **概要であり実行順序の規範ではない**。実行順序の SSOT は
+> `references/phase-flow.md` 冒頭の固定順記述および ADR-PU-003 が担う。本表は迅速な俯瞰用途
+> であり、差異が生じた場合は phase-flow.md / ADR-PU-003 を信頼する。
+
 | Phase | 概要 |
 |-------|------|
 | A-0-1 | 引数バリデーション（`--scope` ホワイトリスト照合） |

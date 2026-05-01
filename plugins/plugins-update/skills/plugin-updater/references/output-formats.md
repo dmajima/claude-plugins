@@ -143,6 +143,20 @@ XR-3 適用は不要。
 
 ## Phase G-1 質問文（疑似コード）
 
+### 変数定義（SSOT）
+
+質問文で使用する変数:
+
+| 変数 | 定義 | 集計タイミング | 出典 |
+|------|------|--------------|------|
+| `<N>` | 失敗総数（Failed のみ。Missing / Unknown は含まない） | Phase F-1 集計時点 | ADR-PU-007 |
+| `<M>` | Phase B-1 で Failed と判定されたマーケットプレイスの件数 | Phase B-1 完了時点 | ADR-PU-007 |
+| `<P>` | Phase C/D/E で Failed と判定されたプラグインの件数 | Phase C/D/E 完了時点 | ADR-PU-007 |
+| `<bn>` | **サーキットブレーカー作動 MP 件数**（同一 MP 累計 3 件以上 Failed で作動済みの MP の数。`<M>` とは別カウント。`<M>` は B-1 単独の Failed、`<bn>` は B-1/C/D/E 横断累計が閾値到達したもの） | Phase F-1 集計時点で確定 | ADR-PU-006 |
+
+`<N> = <M> + <P>`。`<bn>` は `<M>` の部分集合ではなく、**B-1 / C/D/E すべての Failed を MP 単位で
+横断集計した結果として 3 件以上に達した MP の件数**であり、独立した変数。
+
 ```text
 # pseudocode: Claude が AskUserQuestion ツールを呼び出すパターン
 # N > 5 の場合は options から「個別に判断」を除外する（連続質問による UX 劣化防止）
@@ -217,7 +231,16 @@ function truncate_with_mask_safety(text, limit=500):
 - **将来マスク文言を変更する際の注意**: 本アルゴリズムは「マスクトークン両端が `***` 3 連で固定」
   「山括弧マスクは `<...>` 1 ペアで完結」を前提とする。`****` 4 連や `<<...>>` 2 重山括弧などの
   新フォーマットを追加する場合、本切り詰めロジックの偶奇判定 / 山括弧マッチングを更新する必要が
-  ある（CLI 出力の自由形式テキストに `>` が混入する場合も `last_gt_pos` 誤検出の可能性あり）。
+  ある。
+- **山括弧マッチングのホワイトリスト化推奨**: CLI 出力の自由形式テキストに `<` `>` が混入する
+  場合（例: `Failed: parse error at line <30>`）、`last_lt_pos > last_gt_pos` 判定が誤動作して
+  有用な情報まで切り戻す可能性がある（秘匿性は破らないが UX 影響）。実装時は山括弧マスク候補を
+  **既知のマスク文言のみに限定**して走査する形を推奨:
+  ```text
+  KNOWN_ANGLE_MASKS = ["<netrc-credential>", "<scheme>", "<ssh-key-path>", "<user-home>"]
+  # cut の末尾に上記いずれかの prefix（例: "<netrc-cred"）が部分一致する場合のみ切り戻す
+  ```
+  これにより CLI 自由形式テキスト内の `<...>` を誤って切り戻す事故を構造的に排除する。
 
 ```text
 # pseudocode: Claude が AskUserQuestion ツールを呼び出すパターン
@@ -261,6 +284,24 @@ Claude Code のインストール状況と PATH を確認してください。
 ```text
 エラー: <scope> スコープの enabledPlugins ブロックが 4000 行を超えるため、
 情報漏洩防止のため処理を中断します。settings.json の構造を確認してください。
+```
+
+### enabledPlugins ブロック内 Unicode エスケープ検出（A-Sec 第三手順フェイルクローズ）
+
+```text
+エラー: enabledPlugins ブロック内に Unicode エスケープ（\u00XX 形式）が含まれています。
+境界判定の安全性確保のため処理を中断します。
+対処方法: settings.json の enabledPlugins 内の文字列リテラルから Unicode エスケープを
+除去し、直接対応する文字（例: - → -）に変換してから再実行してください。
+プラグイン名・マーケットプレイス名は ASCII 範囲のみで構成されることが推奨されます。
+```
+
+### enabledPlugins ブロック内に他キー混入（A-Sec 第四手順フェイルクローズ）
+
+```text
+エラー: enabledPlugins ブロック内にトップレベル相当キー（<検出キー名>）が混入しています。
+A-Sec 第三手順のブロック終端検出に異常がある可能性があります。settings.json の構造を
+確認し、再実行してください。
 ```
 
 ### git リポジトリ外で project/local 明示時

@@ -3,6 +3,12 @@
 `plugins-update` プラグイン固有の設計判断記録。プラグイン横断の規約は親マーケットプレイス側
 （`extension-toolkit/references/architecture-decisions.md`）を参照。
 
+> **Status 管理規約**: 各 ADR の Status は冒頭表で `Accepted` / `Proposed` / `Superseded` の
+> いずれかで管理する。`Superseded` は「Superseded by ADR-PU-XXX」のように後継 ADR を明示する。
+> 既存 ADR を後継で置き換える場合、置き換え先 ADR の Context に「ADR-PU-XXX を superseded する」
+> と明記する。Michael Nygard 形式（Context / Decision / Rationale / Trade-offs / Alternatives /
+> Future Direction）を全 ADR で踏襲する。
+
 | 番号 | タイトル | 状態 |
 |------|---------|------|
 | ADR-PU-001 | 単一プラグイン化（vs marketplace-toolkit への統合 / vs スキル化） | Accepted |
@@ -130,6 +136,18 @@ CLI が `--output json` 等の構造化出力モードを提供したら、ADR-P
 > （Trigger ADR）と位置付ける。CLI 仕様変更を検知したら、まず本 ADR の Future Direction を更新し、
 > その後に追従が必要な他 ADR（ADR-PU-003 / ADR-PU-005 / ADR-PU-006 / ADR-PU-008）の Future Direction
 > を順次改訂する。これにより SSOT 階層が「CLI 仕様 → 本 ADR → 他 ADR」と一方向化される。
+>
+> **CLI バージョン変更の検知運用**:
+> 1. **A-0-2 由来の自動検知シグナル**: A-0-2 で `^\s+marketplace\s+update\b` / `^\s+update\b`
+>    のいずれもマッチしないケースが新規発生した場合、CLI 出力フォーマット変更の可能性が高い
+>    → ADR-PU-002 のレビュー候補とする
+> 2. **XR-5 警告由来のシグナル**: F-1 サマリで Unknown 件数が試行済みの 20% を超える場合、
+>    出力解析の誤分類が増加している兆候 → 同様にレビュー候補
+> 3. **本プラグイン定期メンテナンス時**: `/update-all` 自体のリリース前に、`claude plugin --help`
+>    と `claude plugin marketplace --help` を採取し、前回採取結果（CHANGELOG 等で履歴管理）との
+>    diff を確認する
+> 4. **Claude Code 公式リリースノート確認**: `plugin` 関連サブコマンドの追加・削除・引数変更を
+>    リリースノートで定期確認
 
 ---
 
@@ -162,11 +180,11 @@ CLI が `--output json` 等の構造化出力モードを提供したら、ADR-P
 
 - **基本 Phase**: A / B / C / D / E / F / G の 1 文字。
 - **派生 Phase**（Phase 全体の前後に追加するもの）: `A-0` / `A-1` / `A-2` のようにハイフン枝番。
-  **判断基準**: 「対象 Phase の前後に並列で実行され、対象 Phase の本質的な責務（Phase A の場合は
-  対象収集）に直接含まれない検証・準備ステップ」を派生 Phase として番号付与する。例: `A-0`（事前検証）
-  は Phase A の前段として CLI 存在チェック等を担い、`A-1`（入力検証）/ `A-2`（MP 整合性検証）は
-  Phase A 直後の Phase A 抽出結果に対する後段検証ステップ。いずれも Phase A の対象収集ロジック
-  そのものではないため派生 Phase 扱い。
+  **判断基準**: 「対象 Phase の本質的責務（Phase A の場合は対象収集）の **前後に位置し、
+  その本質的責務には直接含まれない** 検証・準備・後処理ステップ」を派生 Phase として番号付与する。
+  例: `A-0`（事前検証）は Phase A の前段として CLI 存在チェック等を担い、`A-1`（入力検証）/
+  `A-2`（MP 整合性検証）は Phase A 直後の Phase A 抽出結果に対する後段検証ステップ。いずれも
+  Phase A の対象収集ロジックそのものではないため派生 Phase 扱い。
 - **サブフェーズ**（Phase 内のステップ）: `B-1` / `C-1` / `F-1` / `G-1` のようにハイフン枝番。
   **判断基準**: 「対象 Phase の本質的責務を構成するステップ」をサブフェーズとして番号付与する。
   例: `B-1`（マーケットプレイス更新の結果判定）は Phase B（マーケットプレイス更新）の本質的責務の
@@ -212,6 +230,12 @@ CLI が `--output json` 等の構造化出力モードを提供したら、ADR-P
 
 CLI が並列実行を公式サポートしたら、Phase C/D/E を `update-one` 抽象化して並列戦略に切り替える。
 ADR-PU-002 の Future Direction と連動する。
+
+**dry-run と本番実行の Strategy 統一**: 現在 dry-run は「Phase B/C/D/E 直前に変更系 CLI 実行を
+スキップする」モードパラメータとして実装されているが、`update-one(scope, plugin, marketplace)` 抽象
+を導入する際は **dry-run / 本番 / 並列の 3 戦略を同一インタフェースで切り替える Strategy パターン**
+（例: `NoOpExecutor` / `SequentialExecutor` / `ParallelExecutor`）への統合を検討する。これにより
+モード分岐が単一拡張ポイントに集約される。
 
 ---
 
@@ -348,6 +372,11 @@ else:
 ```
 
 このロジックは Phase B-1 の結果分類処理内で実施し、Phase G への引き渡し前に確定させる。
+
+**A-2 単一実施との関係（ADR-PU-003 Trade-offs 連動）**: Phase A 取得時点と Phase B-1 結果分類時点で
+`marketplace list` がドリフトする可能性は低い（Phase B より前に collisions を A-2 で検出済みであり、
+Phase B 自体は MP 一覧の追加・削除のみで既存エントリ名は変わらない）。よって本偽陽性回避ルールでの
+再照合に Phase A の `marketplace list` 結果（A-2 時点のスナップショット）を再利用することは安全。
 
 #### Unknown 件数の警告閾値
 
@@ -576,9 +605,13 @@ ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー�
 `/update-all` コマンドは **トリガーと引数解釈のみ** を担当し、実作業（Phase A-0〜G、横断ルール適用、
 ユーザ対話）は **`plugin-updater` スキルに委譲** する。
 
-- `commands/update-all.md`: 約 46 行（フロントマター + 関連リンク含む・**v3.3.0 計測スナップショット**）/
-  実装ロジックは約 30 行。引数解釈 + Skill ツール呼び出しのみ。新バージョンで肥大化が再発した場合は
-  本 Decision の数値を更新し、原因を Trade-offs に追記する。
+- `commands/update-all.md`: 約 43 行（**v3.5.0 計測スナップショット**: フロントマター 4 行 +
+  本文 + 末尾「関連」セクション 7 行）/ 実装ロジックは約 30 行（フロントマター・コードフェンス・
+  「関連」セクション除外）。引数解釈 + Skill ツール呼び出しのみ。新バージョンで肥大化が再発した
+  場合は本 Decision の数値を更新し、原因を Trade-offs に追記する。
+  **計測規約**: `wc -l` での総行数を「総行数」とし、フロントマター（YAML 区切り `---` で囲まれた
+  範囲）と末尾「関連」セクション（次見出しがない最終セクション）を除外した残りを「実装ロジック」
+  と定義する。
 - `skills/plugin-updater/SKILL.md`: スキル概要 + Phase 全体像 + references への参照。
 - `skills/plugin-updater/references/`:
   - `phase-flow.md`: Phase A-0〜G 詳細手順（コマンド本文から分離）
@@ -594,12 +627,17 @@ ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー�
 - **AI 解釈容易性**: スキルは AI が起動時に読み込む単位として設計されており、Phase 詳細を持つのに
   自然な配置
 - **将来拡張への耐性**: 追加コマンド（例: `update-one`、`prune-all`）が同じスキルを共有可能
-- **コマンド本文の単純化**: 約 460 行（v2.x 当時）→ 約 46 行（v3.x 現状・実装ロジックは約 30 行）で、
+- **コマンド本文の単純化**: 約 460 行（v2.x 当時）→ 約 43 行（v3.5.0 実測・実装ロジックは約 30 行）で、
   レビューでの「肥大化指摘」が構造的に解消
 
 ### Trade-offs
 
-- **ファイル数増**: 4 ファイル → 7 ファイル
+- **ファイル数増**: 4 ファイル（v2.x: `plugin.json` + `README.md` + `commands/update-all.md` +
+  references 1 ファイル）→ 8 ファイル（v3.x: `plugin.json` + `README.md` + `commands/update-all.md`
+  + `skills/plugin-updater/SKILL.md` + references 4 ファイル `phase-flow.md` / `output-formats.md`
+  / `cross-cutting-rules.md` / `architecture-decisions.md`）。**計測母数**: プラグインルート
+  （`plugins/plugins-update/`）配下の全ドキュメント・スキル定義ファイル（`.claude-plugin/plugin.json`
+  と `README.md` と `commands/` 配下と `skills/` 配下を合算）
 - **インストール容量増**: わずかに増加（数 KB 程度）
 - **コマンドとスキルで `description` の重複管理**: 軽微だが SSOT 違反の懸念あり。
   当面の運用緩和策として、スキル側 SKILL.md「トリガー条件」セクションに「コマンド呼び出し経由のみ
