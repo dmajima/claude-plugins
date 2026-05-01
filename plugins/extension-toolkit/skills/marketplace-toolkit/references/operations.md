@@ -174,4 +174,4 @@ flowchart TD
 | ホームディレクトリ展開先 | `~`, `~/`, `$HOME` |
 | シンボリックリンクが上記を指す | realpath 解決後に上記いずれかに該当 |
 
-実装時は `realpath -m` で正規化したうえで上記拒否リストと照合する（[`../../environment-setup-toolkit/scripts/setup/teardown_venv.sh`](../../environment-setup-toolkit/scripts/setup/teardown_venv.sh) と同様の 3 段ガード設計）。
+実装時は `realpath -m` で正規化したうえで上記拒否リストと照合する（プラグイン直下 `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh` と同様の 3 段ガード設計、ADR-024）。

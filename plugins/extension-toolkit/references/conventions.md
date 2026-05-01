@@ -68,7 +68,7 @@ plugins/{plugin-name}/
 | `agents/` | Claude Code 公式 | 任意 |
 | `hooks/` | Claude Code 公式 | 任意 |
 | `mcp/` | Claude Code 公式 | 任意 |
-| `references/` | 独自（SSOT 集約） | 任意 |
+| `references/` | 独自（SSOT・ナレッジ・スクリプト集約。`references/scripts/` 配下に共通スクリプト、ADR-024 / ADR-025） | 任意（Python 利用プラグインでは `references/scripts/setup/` 必須） |
 
 ### 2.3 配置の禁止
 
@@ -77,9 +77,11 @@ plugins/{plugin-name}/
 | プラグイン直下に `teams/` を置く | 独自構造は `references/` 配下に集約（ADR-002） |
 | プラグイン直下に `templates/` を置く | 同上 |
 | プラグイン直下に `shared/` `common/` `lib/` 等を置く | `references/` を使う |
-| プラグイン直下にトップレベル `scripts/` を置く | スキル内 `scripts/` または `environment-setup-toolkit` を使う |
+| **プラグイン直下に `scripts/` を置く（実スクリプト・サブフォルダ含む）** | 実スクリプトは `references/scripts/` に集約（ADR-025） |
 | プラグイン直下に `docs/` を置く | `README.md` + `references/` で完結させる |
 | Claude Code 公式 + `references/` 以外のトップレベルディレクトリを追加 | ADR で明示する場合のみ例外 |
+| **スキル直下に `references/scripts/setup/setup_venv.sh` 等の venv 関連スクリプトを置く** | プラグイン単位 venv（ADR-024）に違反、プラグイン直下 `references/scripts/setup/` に集約する |
+| **スキルごとの個別 `requirements.txt` を作る** | プラグイン直下に統合（ADR-024） |
 
 ### 2.4 例外条項
 
@@ -101,11 +103,12 @@ ADR 追加なしの追加は **規約違反**。
 plugins/{plugin-name}/skills/{skill-name}/
 ├── SKILL.md                       # 必須（Claude Code 公式仕様）
 ├── README.md                      # 必須（独自、readme-policy.md 準拠）
-├── references/                    # 任意（スキル固有の詳細ドキュメント）
-├── scripts/                       # 任意（実行可能スクリプト、節 5 で詳述）
+├── references/                    # 任意（スキル固有の詳細ドキュメント・スキル固有スクリプト、節 5 で詳述）
 ├── agents/                        # 任意（Claude Code 公式仕様、グローバル重複でも保持）
 └── evals/                         # 動作分岐ありなら必須（独自）
 ```
+
+実行可能スクリプトはすべて `references/scripts/` 配下に配置する（ADR-025）。スキル直下に `scripts/` ディレクトリは置かない。
 
 ### 3.2 許可リストの根拠
 
@@ -113,8 +116,7 @@ plugins/{plugin-name}/skills/{skill-name}/
 |---------|------|----------|
 | `SKILL.md` | Claude Code 公式 | 必須 |
 | `README.md` | 独自ルール（[`readme-policy.md`](readme-policy.md)） | 必須 |
-| `references/` | 独自（スキル固有の詳細） | 任意 |
-| `scripts/` | 独自（実行可能スクリプト） | 任意 |
+| `references/` | 独自（スキル固有の詳細・スクリプト・テンプレート集約） | 任意 |
 | `agents/` | Claude Code 公式（プラグイン配布時のサブエージェント） | 任意 |
 | `evals/` | 独自（[`eval-guide.md`](eval-guide.md)） | 動作分岐ありなら必須 |
 
@@ -122,7 +124,8 @@ plugins/{plugin-name}/skills/{skill-name}/
 
 | 禁止 | 理由 |
 |-----|------|
-| `scripts/` の代わりに `knowledge/` `lib/` `bin/` 等 | `scripts/` 固定（命名衝突回避） |
+| **スキル直下に `scripts/` を置く（実スクリプト・サブフォルダ含む）** | 実スクリプトは `references/scripts/` に集約（ADR-025） |
+| `scripts/` の代わりに `knowledge/` `lib/` `bin/` 等 | スキル直下にこれらは置かず `references/scripts/{業務}/` を使う |
 | `references/` の代わりに `docs/` `notes/` 等 | エコシステム慣用に反する |
 | `agents/` ディレクトリの重複理由による削除 | プラグイン配布先環境に依存できないため保持必須 |
 | `tests/` `spec/` 等を直下に置く | 動作分岐の例示は `evals/` を使う |
@@ -146,7 +149,7 @@ plugins/{plugin-name}/skills/{skill-name}/
 
 ### 4.1 推奨される配置
 
-`references/` 直下は **プラグイン横断 SSOT・チーム定義・推奨構成テンプレート** を集約する場。実情に応じて拡張可（厳格な許可リストではない）。
+`references/` は **「ナレッジ・SSOT・テンプレート・実行スクリプト」をまとめて集約する独自リソース領域** である。「読み物専用」ではなく、`references/scripts/` 配下に実行可能スクリプトを配置する設計（ADR-025）。実情に応じて拡張可（厳格な許可リストではない）。
 
 推奨例:
 
@@ -200,9 +203,35 @@ references/
 └── template/             # スキル固有テンプレート（任意）
 ```
 
-## 5. scripts/ 直下の構造（**推奨例 + 一部禁止項目**）
+## 5. references/scripts/ 配下の構造（**推奨例 + 一部禁止項目**）
 
-### 5.1 推奨される業務単位サブフォルダ
+実行可能スクリプトはすべて `references/scripts/` 配下に集約する（ADR-025）。配置は **2 階層**:
+
+| 階層 | 配置 | 用途 |
+|-----|------|------|
+| プラグイン直下 | `plugins/{plugin-name}/references/scripts/` | プラグイン共通スクリプト（venv 関連は必ずここ） |
+| スキル直下 | `plugins/{plugin-name}/skills/{skill-name}/references/scripts/` | スキル固有の業務スクリプト（venv は持たない） |
+
+### 5.1 プラグイン直下 `references/scripts/`（ADR-024）
+
+`setup/` が標準サブフォルダ。Python を利用するプラグインでは **必須**。
+
+```text
+plugins/{plugin-name}/references/scripts/
+└── setup/
+    ├── setup_venv.sh        # venv 構築 + 依存インストール
+    ├── teardown_venv.sh     # venv 削除
+    └── requirements.txt     # 全スキルの依存統合リスト
+```
+
+| ルール | 内容 |
+|-------|------|
+| Python 利用時 | `setup_venv.sh` `teardown_venv.sh` `requirements.txt` 必須 |
+| Python 未利用時 | `references/scripts/setup/` 自体を省略可能 |
+| venv は **プラグイン単位 1 つ** | 複数スキル協業時も同一 venv を再利用 |
+| `requirements.txt` は **マージ済リスト** | スキルごとの個別 requirements.txt は禁止。スキル固有スクリプトの依存もここに統合する |
+
+### 5.2 スキル直下 `references/scripts/`（業務単位）
 
 複数業務がある場合は業務単位サブフォルダ分割を **推奨**。
 
@@ -210,31 +239,35 @@ references/
 
 | サブフォルダ | 用途 |
 |-----------|------|
-| `setup/` | 環境構築（venv 関連はここに置かない、`environment-setup-toolkit` に委譲） |
 | `input/` | 入力データ読み取り処理 |
 | `output/` | 出力ファイル生成処理 |
-| `deps/` | 依存リスト保管（`requirements.txt` 等） |
+| `checks/` | 機械チェック・検証処理 |
 | `helpers/` | 共通ヘルパー |
 
-業務が 1 種類のみなら `scripts/` 直下にフラットに置いてよい。
+業務が 1 種類のみなら `references/scripts/` 直下にフラットに置いてよい。
 
-### 5.2 厳格な禁止項目
-
-業務単位サブフォルダ自体は推奨だが、以下は **厳格に禁止**:
+### 5.3 厳格な禁止項目
 
 | 禁止 | 理由 |
 |-----|------|
-| `scripts/` の代わりに `knowledge/` `lib/` `bin/` を使う | `scripts/` 固定、命名衝突回避 |
-| 拡張子別サブフォルダ（`scripts/py/` `scripts/sh/` 等） | 業務単位で分けるべき |
-| Python venv 構築・撤去スクリプトをスキル内に置く | `environment-setup-toolkit` に委譲（ADR-010） |
+| **プラグイン直下に `scripts/` を置く** | `references/scripts/` に集約（ADR-025） |
+| **スキル直下に `scripts/` を置く** | 同上 |
+| `references/scripts/` の代わりに `knowledge/` `lib/` `bin/` を使う | `scripts/` 固定、命名衝突回避 |
+| 拡張子別サブフォルダ（`references/scripts/py/` `references/scripts/sh/` 等） | 業務単位で分けるべき |
+| **スキル直下 `references/scripts/` に Python venv 構築・撤去スクリプトを置く** | プラグイン直下 `references/scripts/setup/` に集約（ADR-024） |
+| **スキルごとの個別 `requirements.txt` を作る** | プラグイン直下に統合（ADR-024） |
+| **md ファイル内に実行スクリプトをインライン記載する** | `references/scripts/{業務単位}/` にファイル化（ADR-025、詳細は [`scripts-policy.md`](scripts-policy.md)）|
 
-### 5.3 venv の配置
+### 5.4 venv の配置と運用
 
 | ルール | 内容 |
 |-------|------|
-| venv 作成先 | `<work_dir>/.venv`（`scripts/` 内ではない） |
-| venv 構築・撤去 | `environment-setup-toolkit` に委譲 |
-| 依存リスト保管 | `scripts/deps/requirements.txt` または `references/setup.md` |
+| venv 実体の作成先 | `<work_dir>/.venv`（セッション作業領域内） |
+| venv ライフサイクルスクリプト | プラグイン直下 `references/scripts/setup/` |
+| 各スキルの呼び出し方 | `bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" "$WORK_DIR" "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"` |
+| `environment-setup-toolkit` の役割 | プラグイン直下スクリプト呼び出しのオーケストレーション（自前で setup を持たない、ADR-024） |
+
+詳細は [`scripts-policy.md`](scripts-policy.md) 節 5 を参照。
 
 ## 6. コマンドファイル構造
 

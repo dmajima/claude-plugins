@@ -16,6 +16,10 @@
 | ディレクトリ構造の許可リスト遵守 | High | `conventions.md` 節 2.1 / 3.1 と照合 |
 | 利用者環境非依存性（ADR-022） | High | グローバルルール / グローバルエージェント / 外部ツール前提の棚卸し（[`self-containment.md`](self-containment.md) 節 5） |
 | レビュー起動はフレッシュインスタンス（ADR-021） | High | スポーンプロンプトに必須引き継ぎ事項が含まれ、引き継ぎ禁止事項が含まれないこと（[`review-freshness.md`](review-freshness.md) 節 2-3） |
+| **md インラインスクリプト不在（ADR-025）** | High | フェンス付きコードブロック（`bash` / `python` / `sh` / `powershell` 等）が 6 行以上、または制御構造を含む 5 行以上を検出すれば違反（[`scripts-policy.md`](scripts-policy.md) 節 3-4） |
+| **トップレベル `scripts/` 不在（ADR-025）** | High | `plugins/{name}/scripts/` および `plugins/{name}/skills/{skill}/scripts/` が存在しないことを確認（実スクリプトは `references/scripts/` に集約） |
+| **プラグイン直下 `references/scripts/setup/` 構成（ADR-024）** | High | プラグインに `.py` ファイルが 1 つ以上ある場合、`plugins/{name}/references/scripts/setup/setup_venv.sh` `teardown_venv.sh` `requirements.txt` の存在を確認 |
+| **スキル直下 venv スクリプト不在（ADR-024）** | High | `plugins/{name}/skills/{skill}/references/scripts/setup/setup_venv.sh` 等が存在しないことを確認（プラグイン直下に集約済） |
 
 ### 1.1 ディレクトリ構造の許可リスト機械チェック（厳格対象のみ）
 
@@ -24,9 +28,10 @@
 | 階層 | 厳格度 | 許可リスト | 違反時の重大度 |
 |-----|-------|----------|------------|
 | プラグイン直下 | **厳格** | `.claude-plugin/` `README.md` `commands/` `skills/` `agents/` `hooks/` `mcp/` `references/` | High |
-| スキル直下 | **厳格** | `SKILL.md` `README.md` `references/` `scripts/` `agents/` `evals/` | High |
-| `references/` 直下 | 推奨例 | （機械チェックなし、人間レビュー） | - |
-| `scripts/` 直下 | 推奨例 + 一部禁止 | 禁止項目（`knowledge/` `lib/` `bin/`、拡張子別サブフォルダ）のみ機械検出 | Medium |
+| スキル直下 | **厳格** | `SKILL.md` `README.md` `references/` `agents/` `evals/` | High |
+| `references/` 直下 | 推奨例 | （機械チェックなし、人間レビュー）。`scripts/` 配下は推奨業務単位サブフォルダ（[`conventions.md`](conventions.md) 節 5）| - |
+| `references/scripts/` 直下 | 推奨例 + 一部禁止 | 禁止項目（`knowledge/` `lib/` `bin/`、拡張子別サブフォルダ）のみ機械検出 | Medium |
+| トップレベル `scripts/` 直下（プラグイン/スキル両方） | **厳格・存在禁止** | 配置自体が ADR-025 違反 | High |
 
 許可リスト外のエントリ（厳格 2 階層）を検出した場合は High 指摘とし、ADR で例外として明示されているか確認する。明示されていなければ修正必須。
 
@@ -48,8 +53,8 @@ for entry in plugins/"$PLUGIN_NAME"/*; do
   fi
 done
 
-# スキル直下に許可されないエントリがあるか
-ALLOWED_SKILL_ROOT="SKILL.md README.md references scripts agents evals"
+# スキル直下に許可されないエントリがあるか（scripts/ は ADR-025 で禁止）
+ALLOWED_SKILL_ROOT="SKILL.md README.md references agents evals"
 for skill_dir in plugins/"$PLUGIN_NAME"/skills/*/; do
   for entry in "$skill_dir"*; do
     name=$(basename "$entry")
@@ -59,9 +64,17 @@ for skill_dir in plugins/"$PLUGIN_NAME"/skills/*/; do
   done
 done
 
-# scripts/ 配下の禁止命名チェック
+# トップレベル scripts/ の存在チェック（ADR-025: references/scripts/ に集約）
+[ -d "plugins/$PLUGIN_NAME/scripts" ] && \
+  echo "[High] ADR-025 違反: トップレベル scripts/ が存在します（references/scripts/ に移行してください）"
+find plugins/"$PLUGIN_NAME"/skills/*/scripts -maxdepth 0 -type d 2>/dev/null \
+  | while read d; do echo "[High] ADR-025 違反: $d は references/scripts/ に移行してください"; done
+
+# references/scripts/ 配下の禁止命名チェック
 for forbidden in knowledge lib bin py sh; do
-  find plugins/"$PLUGIN_NAME"/skills/*/scripts -maxdepth 1 -type d -name "$forbidden" 2>/dev/null \
+  find plugins/"$PLUGIN_NAME"/skills/*/references/scripts -maxdepth 1 -type d -name "$forbidden" 2>/dev/null \
+    | while read d; do echo "[Medium] Forbidden subfolder name: $d"; done
+  find plugins/"$PLUGIN_NAME"/references/scripts -maxdepth 1 -type d -name "$forbidden" 2>/dev/null \
     | while read d; do echo "[Medium] Forbidden subfolder name: $d"; done
 done
 ```
@@ -76,8 +89,9 @@ done
 | frontmatter `name` がディレクトリ名と一致 | High | パス比較 |
 | 必須セクション存在（責務 / 責務外 / トリガー条件 / 前提 / 実行モード判定 / 実行フロー / 重要な制約） | High | パターン検索 |
 | `scripts/` 命名（`knowledge/` 不可） | Medium | パス確認 |
-| Python 利用時の依存リスト保有（`scripts/deps/requirements.txt` または `references/setup.md`） | High | ファイル存在確認 |
-| Python 利用時の venv 構築・撤去は `environment-setup-toolkit` に委譲（スキル内 `scripts/setup/setup_venv.sh` 等は配置不要） | Medium | パターン不在確認 |
+| Python 利用時の依存はプラグイン直下 `scripts/setup/requirements.txt` に統合（ADR-024） | High | ファイル存在確認 + スキル独自 requirements.txt 不在 |
+| スキル直下 `scripts/setup/setup_venv.sh` 等の venv 関連スクリプト不在（ADR-024） | High | パターン不在確認（プラグイン直下に集約済） |
+| md インライン実行スクリプト不在（ADR-025） | High | コードブロック行数 + 制御構造検出（[`scripts-policy.md`](scripts-policy.md)） |
 | `agents/` 削除痕跡なし（更新時） | High | git diff |
 | 動作分岐がある場合 `evals/` 存在 | High | ディレクトリ存在確認 |
 | `README.md` 存在 | Medium | ファイル存在確認 |

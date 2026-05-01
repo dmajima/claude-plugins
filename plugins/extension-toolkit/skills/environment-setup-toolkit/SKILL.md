@@ -5,15 +5,15 @@ description: Claude Code のスキル/プラグインの実行環境（Python ve
 
 # Environment Setup Toolkit
 
-スキル / プラグインの実行環境を **一元的に構築・撤去** するスキル。各 `*-toolkit` スキルは Python 環境構築の手順を本スキルに委譲することで、責務を単一化する。
+プラグイン単位 Python venv の **オーケストレータ** スキル（ADR-024）。本スキルは自前で setup ロジックを保持せず、対象プラグインの `references/scripts/setup/setup_venv.sh` / `teardown_venv.sh` を起動する。
 
 ## 責務
 
-- セッション作業領域への Python venv 作成・再利用判定
-- `requirements.txt` ベースの依存パッケージインストール
-- venv の撤去（タスク終了後のクリーンアップ）
-- 環境変数の設定支援（必要時）
+- 対象プラグインの `references/scripts/setup/setup_venv.sh` の起動（venv 構築 + 依存インストール）
+- 対象プラグインの `references/scripts/setup/teardown_venv.sh` の起動（venv 削除）
+- プラグインに setup スクリプトが未配置の場合の **作成案内**（ADR-024 準拠の雛形提示）
 - 環境構築可否の事前チェック（Python バージョン確認等）
+- 環境変数の設定支援（必要時）
 
 ## 責務外（他スキルが担当）
 
@@ -65,7 +65,7 @@ description: Claude Code のスキル/プラグインの実行環境（Python ve
 |----------|------|---|
 | 動作（setup / teardown / refresh / check） | 必須 | `setup` |
 | 作業ディレクトリ | 必須 | `.claude/.local/work/{yyyyMMdd_nn_summary}/workspace` |
-| `requirements.txt` の場所 | setup 時任意 | 呼び出し元スキル内 `${CLAUDE_SKILL_DIR}/scripts/deps/requirements.txt` または明示的なパス指定。省略時は依存インストールをスキップ |
+| `requirements.txt` の場所 | setup 時任意 | プラグイン直下 `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt`（ADR-024）。省略時は依存インストールをスキップ |
 | Python バージョン要件 | 任意 | `>=3.10` |
 
 ### 3. 環境チェック
@@ -81,8 +81,13 @@ description: Claude Code のスキル/プラグインの実行環境（Python ve
 
 ### 4. setup 実行
 
+対象プラグインの `references/scripts/setup/setup_venv.sh` を起動する（プラグイン単位 venv、ADR-024）:
+
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/setup/setup_venv.sh" <work_dir> [<requirements_path>] [<min_python_version>]
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
+  <work_dir> \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt" \
+  [<min_python_version>]
 ```
 
 | 引数 | 必須 | 内容 |
@@ -101,10 +106,22 @@ bash "${CLAUDE_SKILL_DIR}/scripts/setup/setup_venv.sh" <work_dir> [<requirements
 ### 5. teardown 実行
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/setup/teardown_venv.sh" <work_dir>
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" <work_dir>
 ```
 
 `<work_dir>/.venv` を削除。
+
+### 5.5 プラグインに setup スクリプトが未配置の場合
+
+ADR-024 準拠の雛形を作成するよう案内する:
+
+| ファイル | 配置先 |
+|--------|--------|
+| `setup_venv.sh` | `plugins/{name}/references/scripts/setup/setup_venv.sh` |
+| `teardown_venv.sh` | `plugins/{name}/references/scripts/setup/teardown_venv.sh` |
+| `requirements.txt` | `plugins/{name}/references/scripts/setup/requirements.txt` |
+
+雛形は `extension-toolkit` プラグイン自身の `references/scripts/setup/` を参考にする。
 
 ### 6. 検証
 
