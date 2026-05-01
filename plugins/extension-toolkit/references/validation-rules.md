@@ -99,6 +99,9 @@ done
 |-----|-------|---------|
 | frontmatter `description` 60 文字以内 | Medium | 文字数カウント |
 | 引数仕様が description に記載されていない | Low | パターン検索 |
+| frontmatter `argument-hint` 存在（引数受取コマンド、ADR-023） | High | YAML キー存在 + 本文 `$ARGUMENTS` 有無の照合 |
+| `argument-hint` 60 文字以内・改行なし | Medium | 文字数 + 改行検査 |
+| `argument-hint` の引数表記規則順守（`<...>` / `[...]` / `[--flag]`） | Medium | 正規表現照合 |
 | ルーティング先スキルが存在（オーケストレータ型） | High | スキル存在確認 |
 
 ### 2.4 エージェント（`agent-toolkit` 出力）
