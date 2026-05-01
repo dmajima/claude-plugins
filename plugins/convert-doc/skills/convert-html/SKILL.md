@@ -1,10 +1,6 @@
 ---
 name: convert-html
-description: >
-  MarkdownファイルをWikiスタイルのデザインが適用された自己完結型HTMLファイルに変換するスキル。
-  画像はbase64埋め込み、mermaid図はSVG変換・インライン埋め込み、コードブロックにはシンタックスハイライトが適用される。
-  「MDをHTMLに変換」「MarkdownからHTML」「HTMLファイルに書き出して」「設計書をHTMLに変換して」
-  「資料をHTMLで出力して」「convert-html」などの依頼に必ず使用すること。
+description: Markdown ファイルを Wiki スタイルの自己完結型 HTML に変換するスキル（画像 base64 埋込・mermaid SVG インライン・シンタックスハイライト適用）。「MD を HTML に変換」「設計書を HTML に変換」「資料を HTML で出力」等で起動する。Use when converting a Markdown file into a self-contained styled HTML. SKIP when target format is PDF (convert-pdf) or PowerPoint (convert-pptx).
 ---
 
 # convert-html スキル

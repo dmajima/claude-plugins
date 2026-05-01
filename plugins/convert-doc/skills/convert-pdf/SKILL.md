@@ -1,10 +1,6 @@
 ---
 name: convert-pdf
-description: >
-  Markdown ファイルを Wiki スタイルの PDF ファイルに変換するスキル。
-  内部で convert-html スキルを使って HTML を生成し、Playwright (Chromium) で PDF 化する。
-  mermaid 図・シンタックスハイライト・表・画像もすべて HTML 版と同一デザインで再現される。
-  「MD を PDF に変換」「資料を PDF で出力」「設計書を PDF 化して」「convert-pdf」などの依頼に必ず使用すること。
+description: Markdown を Wiki スタイル PDF に変換するスキル。convert-html 経由で Playwright (Chromium) で PDF 化（mermaid・表・画像・シンタックスハイライトを HTML 版と同一デザインで再現）。「MD を PDF に変換」「資料を PDF で出力」「設計書を PDF 化して」等で起動する。Use when converting a Markdown file into a styled PDF. SKIP when target is HTML (convert-html) or PowerPoint (convert-pptx).
 ---
 
 # convert-pdf スキル

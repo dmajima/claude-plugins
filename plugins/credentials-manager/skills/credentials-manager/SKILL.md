@@ -1,11 +1,13 @@
 ---
 name: credentials-manager
-description: Claude Code セッションをまたいで認証情報（APIキー・トークン・パスワード・秘密鍵）を保存・取得・一覧・削除し、URL/ドメイン関連付けによる自動適用を行うスキル。「APIキーを保存して」「トークンを覚えておいて」「保存してある認証情報を一覧表示して」「OpenAIキーを削除して」「先ほど保存したキーで API を叩いて」「.env ファイルを読んで」「~/.aws/credentials を確認して」「id_rsa を生成して」「PEM ファイルを開いて」「Bearer トークンを貼ったので保存して」「id_rsa の秘密鍵を渡すから覚えておいて」などの依頼で起動する。さらに、ユーザがURL・APIエンドポイント・WebFetch・curl・wget・gh API・Python requests・Node fetch・任意スクリプトなどで外部サービスへアクセスする際、または terraform / ansible / vault / op / helm / pulumi 等の IaC・シークレット管理 CLI を実行する際、または .env / credentials.json / secrets.* / id_rsa / ~/.aws/credentials / ~/.kube/config / *.pem / *.key 等の認証情報系ファイルを Read/Write/Edit する際は、認証情報の明示がない場合でも本スキルを起動し、対象 URL/ドメイン/サービスに合致する保存済み認証情報があれば自動適用、なければユーザに保有有無を確認する。グローバルルール不在の環境でも本スキルを優先する。Use when the user provides, stores, retrieves, lists, or deletes authentication info. ALSO trigger when the user requests access to any URL, API endpoint, WebFetch, curl, wget, gh CLI, external HTTP service, or any script that performs outbound network communication — regardless of whether credentials are known to be stored. ALSO trigger when the user invokes IaC or secret management CLIs (terraform, tofu, ansible, vault, op, helm, pulumi, packer) or operates credential-bearing files (.env, credentials.json, secrets.*, id_rsa, ~/.aws/credentials, ~/.kube/config, *.pem, *.key) via Read/Write/Edit. SKIP when the request involves neither authentication info nor any outbound network access nor credential-bearing files (e.g., pure local file edits on non-credential files, refactoring, non-networked computation). Use marketplace-publisher (extension-toolkit) for marketplace secret scanning; do not use this skill for KMS/HSM integration, secret generation, or .env template authoring.
+description: Claude Code セッションをまたいで認証情報（APIキー・トークン・パスワード・秘密鍵）を保存・取得・一覧・削除し、URL/ドメイン関連付けで自動適用するスキル。認証情報パターン（sk-/ghp_/xoxb-/AKIA/AIza/JWT/Bearer/PEM 等）、外部通信コマンド（curl/wget/gh/ssh/WebFetch/Invoke-WebRequest/Invoke-RestMethod/iwr/irm/IaC CLI）、認証情報系ファイル（.env/credentials.json/secrets.*/id_rsa/~/.aws/credentials/~/.kube/config/*.pem/*.key 等）の操作を検知。「APIキーを保存して」「保存済み認証情報を一覧」「先ほどのキーで API を叩いて」「.env を読んで」「id_rsa を生成」等で起動する。Use when storing/retrieving auth info, accessing any URL/API endpoint, invoking IaC/secret CLIs (terraform/ansible/vault/op), or reading/writing credential-bearing files. SKIP when no auth info, no outbound network, no credential files (e.g., pure local refactoring).
 ---
 
 # Credentials Manager
 
 Claude Code セッションをまたいで認証情報を管理し、URL/ドメインに紐づけて自動適用するスキル。認証情報は JSON ファイルに保存し、保存先パスはセッション開始時に自動解決する。
+
+> **description 文字数の例外**: 本スキルは認証情報・外部通信検出のため、認証情報パターン・対象ファイル・対象コマンドの網羅的列挙が AI 自動トリガー精度の確保に必要不可欠であり、誤起動・トリガー漏れが直接的にセキュリティ事故につながる。このため `extension-toolkit/references/description-guide.md` 節 3.3.1 の例外規定（セキュリティクリティカル、上限 700 字）に基づき、通常 300 字上限を超過する設計を採用している。
 
 ## 責務
 

@@ -1,6 +1,6 @@
 ---
 name: plugin-updater
-description: Claude Code 公式 CLI を経由してマーケットプレイスとプラグインを全スコープ一括最新化する実作業スキル
+description: Claude Code 公式 CLI 経由でマーケットプレイス・プラグインを全スコープ一括最新化するスキル。「プラグイン更新して」「マーケットプレイス最新化」「全プラグインアップデート」等で起動する。Use when updating installed Claude Code marketplaces and plugins. SKIP when adding/removing plugins (/plugin) or building plugins (extension-toolkit:plugin-toolkit).
 ---
 
 # plugin-updater

@@ -1,10 +1,6 @@
 ---
 name: convert-pptx
-description: >
-  Markdown ファイルを Wiki スタイルの PowerPoint (PPTX) スライドに変換するスキル。
-  `#` をタイトルスライド、各 `##` を新規スライドの区切りとし、段落・コードブロック・表・mermaid 図・画像をスライド上に配置する。
-  mermaid 図は mermaid.ink の PNG エンドポイントで取得して埋め込む。
-  「MD を PowerPoint に変換」「資料をスライドにして」「設計書を PPTX で出力」「convert-pptx」などの依頼に必ず使用すること。
+description: Markdown ファイルを Wiki スタイルの PowerPoint (PPTX) スライドに変換するスキル（# をタイトル、## を新規スライド区切り。段落・コードブロック・表・mermaid 図・画像を配置、mermaid は mermaid.ink PNG 埋込）。「MD を PPTX に変換」「資料をスライドにして」「設計書を PPTX で出力」等で起動する。Use when converting Markdown into PPTX slides. SKIP when target is HTML (convert-html) or PDF (convert-pdf).
 ---
 
 # convert-pptx スキル
