@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "credentials-manager",
-      "description": "Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン",
+      "description": "認証情報を保存・自動適用 + フックで認証情報を扱う全パスを最優先化するセキュリティプラグイン",
       "category": "security",
       "source": "./plugins/credentials-manager",
       "author": {
@@ -21,7 +21,11 @@
         "token",
         "auth",
         "url-match",
-        "auto-apply"
+        "auto-apply",
+        "hooks",
+        "rule-template",
+        "session-start",
+        "pre-tool-use"
       ]
     },
     {

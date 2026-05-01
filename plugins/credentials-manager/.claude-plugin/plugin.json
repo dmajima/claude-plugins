@@ -1,7 +1,7 @@
 {
   "name": "credentials-manager",
-  "version": "1.0.0",
-  "description": "Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン",
+  "version": "1.1.0",
+  "description": "認証情報を保存・自動適用 + フックで認証情報を扱う全パスを最優先化するセキュリティプラグイン",
   "author": {
     "name": "dmajima"
   },
@@ -12,6 +12,10 @@
     "token",
     "auth",
     "url-match",
-    "auto-apply"
+    "auto-apply",
+    "hooks",
+    "rule-template",
+    "session-start",
+    "pre-tool-use"
   ]
 }

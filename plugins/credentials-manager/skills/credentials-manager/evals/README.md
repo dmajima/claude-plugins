@@ -4,6 +4,8 @@
 
 ## ケース一覧
 
+### スキル本体（v1.0.0）
+
 | ケース | 内容 | 主な分岐根拠 |
 |-------|-----|-------------|
 | case-01 | URL 関連付き API キー保存（対話モード） | save 系 + URL あり |
@@ -19,6 +21,23 @@
 | case-11 | 既存 credentials.json の JSON パース失敗 | エラー系（バックアップ + 再初期化） |
 | case-12 | user-scoped 保存（リポジトリ外） | パス解決・優先順位 2（フォールバック） |
 | case-13 | `.gitignore` 未登録時の警告 | パス解決・優先順位 1 + `.gitignore` 未登録 |
+
+### Hooks（v1.1.0）
+
+| ケース | 内容 | hook | 主な分岐根拠 |
+|-------|-----|------|-------------|
+| case-14 | user スコープでテンプレート初回配置 | SessionStart | スコープ判定 user |
+| case-15 | project スコープでテンプレート初回配置 | SessionStart | スコープ判定 project |
+| case-16 | 既存ファイル時の no-op (idempotent) | SessionStart | ターゲット既存検出 |
+| case-17 | プロンプト中の sk-* / ghp_* / AKIA 等検出 | UserPromptSubmit | SECRET_PATTERN マッチ |
+| case-18 | WebFetch 呼び出し → trigger | PreToolUse | ツール種別 WebFetch |
+| case-19 | Bash + curl → trigger | PreToolUse | 外部通信コマンド検出 |
+| case-20 | Bash + ローカルコマンド → no-op | PreToolUse | 過検出抑制境界 |
+| case-21 | Read .env → trigger | PreToolUse | 認証情報系ファイル該当 |
+| case-22 | Read .env.example → no-op | PreToolUse | 除外リスト境界 |
+| case-23 | Write コンテンツにシークレット → trigger | PreToolUse | コンテンツ内 SECRET_PATTERN |
+| case-24 | プロンプト中の Bearer トークン検出 | UserPromptSubmit | BEARER_PATTERN マッチ |
+| case-25 | 環境変数欠如時の silent exit | SessionStart | エラー系・fail-open |
 
 ## 実行確認方法
 
