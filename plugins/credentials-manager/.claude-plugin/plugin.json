@@ -1,7 +1,7 @@
 {
   "name": "credentials-manager",
   "version": "1.1.0",
-  "description": "Claude Code セッションをまたいで認証情報を保存・自動適用しつつ、SessionStart で最重要ルールを自動配置・PreToolUse で外部通信前に credentials-manager 起動を強制するプラグイン",
+  "description": "認証情報を保存・自動適用 + フックで認証情報を扱う全パスを最優先化するセキュリティプラグイン",
   "author": {
     "name": "dmajima"
   },

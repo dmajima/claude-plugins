@@ -24,7 +24,7 @@ if [[ -z "$PLUGIN_ROOT" ]]; then
   exit 0
 fi
 
-TEMPLATE="$PLUGIN_ROOT/templates/rules/security/credentials-management.md"
+TEMPLATE="$PLUGIN_ROOT/references/templates/rules/security/credentials-management.md"
 if [[ ! -f "$TEMPLATE" ]]; then
   exit 0
 fi

@@ -35,17 +35,17 @@ Claude Code セッションをまたいで認証情報（API キー・トーク�
 
 ```bash
 # 1. リポジトリを複製
-git clone https://github.com/dmajima/claude-plugins <local-path>
+git clone https://github.com/dmajima/claude-plugins ~/claude-plugins
 
 # 2. リリースタグ（推奨）またはブランチに切替
-cd <local-path>
-git checkout v1.0.0   # 推奨: 検証済みリリースタグ
+cd ~/claude-plugins
+git checkout v1.1.0   # 推奨: 検証済みリリースタグ
 # または: git checkout main   # 最新追従
 ```
 
 ```text
 # 3. ローカルパスでマーケットプレイスを登録
-/plugin marketplace add <local-path>
+/plugin marketplace add ~/claude-plugins
 
 # 4. プラグインをインストール
 /plugin install credentials-manager@dmajima-claude-plugins
@@ -114,7 +114,7 @@ Claude（要約）:
 
 ### SessionStart — 最重要ルールテンプレートの自動配置
 
-セッション開始時に `${CLAUDE_PLUGIN_ROOT}/templates/rules/security/credentials-management.md` を、プラグインのインストールスコープに応じた以下のディレクトリへコピーします。
+セッション開始時に `${CLAUDE_PLUGIN_ROOT}/references/templates/rules/security/credentials-management.md` を、プラグインのインストールスコープに応じた以下のディレクトリへコピーします。
 
 | スコープ判定 | 配置先 |
 |------------|-------|
@@ -219,15 +219,15 @@ plugins/credentials-manager/
 ├── hooks/
 │   └── hooks.json                              # SessionStart / PreToolUse フック登録
 ├── references/
-│   └── scripts/
-│       └── hooks/
-│           ├── install_rule_template.sh        # SessionStart：テンプレート配置
-│           ├── preempt_credentials_check.sh    # PreToolUse：認証情報を扱い得る全ツール検出
-│           └── detect_credentials_in_prompt.sh # UserPromptSubmit：ユーザー入力のシークレット検出
-├── templates/
-│   └── rules/
-│       └── security/
-│           └── credentials-management.md       # 最重要ルールのテンプレート本体
+│   ├── scripts/
+│   │   └── hooks/
+│   │       ├── install_rule_template.sh        # SessionStart：テンプレート配置
+│   │       ├── preempt_credentials_check.sh    # PreToolUse：認証情報を扱い得る全ツール検出
+│   │       └── detect_credentials_in_prompt.sh # UserPromptSubmit：ユーザー入力のシークレット検出
+│   └── templates/
+│       └── rules/
+│           └── security/
+│               └── credentials-management.md   # 最重要ルールのテンプレート本体
 └── skills/
     └── credentials-manager/
         ├── SKILL.md
