@@ -5,6 +5,13 @@
 #   1. Spawning the Python interpreter.
 #   2. Checking the toggle (disabled) file.
 #   3. Passing stdin through unchanged.
+#
+# venv lifecycle: this hook *consumes* an existing venv (no construction
+# or rebuild here -- SessionStart owns those) and runs cleanup-if-stale at
+# the very end so a venv older than 72h is removed once the plugin's
+# user-facing activity finishes.  Stale check is O(stat) and well within
+# the 10s timeout.
+#
 # Fail-open: any error must not block the user prompt.
 set -uo pipefail
 
@@ -34,5 +41,15 @@ if [[ -n "${HOME_DIR}" && -f "${HOME_DIR}/.claude/.local/plugins/skill-router/di
   exit 0
 fi
 
-printf '%s' "${INPUT}" | "${PYTHON_BIN}" "${PLUGIN_ROOT}/references/scripts/lib/route.py"
-exit 0
+LIFECYCLE="${PLUGIN_ROOT}/references/scripts/lib/venv_lifecycle.py"
+PY="$("${PYTHON_BIN}" "${LIFECYCLE}" python-bin --plugin-root "${PLUGIN_ROOT}" --no-construct 2>/dev/null || echo "${PYTHON_BIN}")"
+[[ -z "${PY}" ]] && PY="${PYTHON_BIN}"
+
+printf '%s' "${INPUT}" | "${PY}" "${PLUGIN_ROOT}/references/scripts/lib/route.py"
+ROUTE_RC=$?
+
+# Stale-venv teardown (Q3): runs after the routing call so the user-facing
+# response is never delayed by the cleanup.
+"${PYTHON_BIN}" "${LIFECYCLE}" cleanup-if-stale --plugin-root "${PLUGIN_ROOT}" >/dev/null 2>&1 || true
+
+exit "${ROUTE_RC}"
