@@ -1,8 +1,20 @@
 # skill-router requirements
 #
 # This plugin is intentionally stdlib-only (design v2 section 14.1).
-# The file exists to satisfy ADR-024 (each plugin owns a setup directory)
-# and to make future Phase 2 dependencies (e.g. tinysegmenter) easy to add.
+# Phase 2 dependencies (e.g. tinysegmenter) can be added by appending
+# pinned lines below; an empty file or a comment-only file is treated as
+# "no dependencies" by venv_lifecycle and skips venv construction
+# entirely.
 #
-# To bootstrap a venv when Phase 2 dependencies are introduced, delegate to:
-#   extension-toolkit:environment-setup-toolkit
+# venv lifecycle is managed in-tree by
+# references/scripts/lib/venv_lifecycle.py and invoked from the
+# SessionStart / UserPromptSubmit hooks.  Policy:
+#   * construct  : on the first SessionStart after deps appear (or after
+#                  a teardown), under <base>/.venv where <base> is
+#                  resolved by build_index.resolve_base_dir().
+#   * rebuild    : on stderr containing a Python traceback that ends in
+#                  ModuleNotFoundError / ImportError, up to 3 times per
+#                  session (tracked by <base>/.venv-rebuild-count).
+#   * teardown   : when the venv is older than 72 h, evaluated at the
+#                  end of the UserPromptSubmit hook so the user-facing
+#                  response is never blocked.

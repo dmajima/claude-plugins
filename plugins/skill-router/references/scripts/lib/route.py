@@ -3,13 +3,17 @@
 Reads the hook stdin JSON, scores enabled skills against the user prompt,
 and emits an additionalContext block when a high or mid tier match is
 found.  Always exits 0 (fail-open).
+
+Index loading is JSON-only.  The previous ``index.pkl`` fast-load path
+has been removed because :func:`pickle.load` against a base directory
+that may live on user-writable storage is an RCE vector.  See
+``build_index.py`` module docstring for the full rationale.
 """
 from __future__ import annotations
 
 import json
 import logging
 import os
-import pickle
 import re
 import sys
 import time
@@ -106,19 +110,6 @@ def load_config(base: Path) -> dict[str, Any]:
 
 
 def load_index(base: Path) -> dict[str, Any]:
-    pkl = base / "index.pkl"
-    if pkl.is_file():
-        try:
-            with pkl.open("rb") as fh:
-                payload = pickle.load(fh)
-            if (
-                isinstance(payload, dict)
-                and payload.get("python_version", [])[:2]
-                == list(sys.version_info[:2])
-            ):
-                return payload.get("index") or {}
-        except (OSError, pickle.UnpicklingError, EOFError, AttributeError, ValueError):
-            pass
     json_path = base / "index.json"
     if json_path.is_file():
         try:

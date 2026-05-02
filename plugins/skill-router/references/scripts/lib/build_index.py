@@ -1,20 +1,42 @@
 """Build the routing index for skill-router (design v2 section 3.1).
 
 Outputs (atomically replaced):
-  <base>/index.json            human-readable, debug aid
-  <base>/index.pkl             route.py fast-load cache
+  <base>/index.json            machine-readable index, loaded by route.py
   <base>/inverted_index.json   keyword -> [skill_qualified_name, ...]
   <base>/index.log             append-only log
   <base>/error.log             append-only error log
 
 The script is fail-open: any unrecoverable error logs and exits 0.
+
+Schema support
+--------------
+``~/.claude/plugins/installed_plugins.json`` schema versions accepted by
+this builder are listed in :data:`SUPPORTED_INSTALLED_SCHEMA`.  When a
+new schema version ships, update **all** of the following together:
+
+1. :data:`SUPPORTED_INSTALLED_SCHEMA` -- add the new integer to the
+   ``frozenset``.
+2. :func:`_resolve_install_path` -- ensure the new shape (e.g. extra
+   wrappers around the per-key value) is recognised.  The current
+   implementation already handles ``dict`` (v1) and ``list[dict]`` (v2);
+   a v3 extension that adds, say, scope wrappers needs an additional
+   branch here.
+3. :func:`_count_installed_plugins` -- keep the totals consistent with
+   how the new schema represents per-plugin entries.
+4. ``plugins/skill-router/tests/test_build_index.py`` -- add cases that
+   round-trip the new shape.
+
+Index files (``index.json`` / ``inverted_index.json``) are JSON-only by
+design; the builder used to also emit ``index.pkl`` as a fast-load
+cache, but that has been removed because :func:`pickle.load` against
+attacker-controllable data is an RCE vector when ``<base>`` itself is
+under user-writable storage.
 """
 from __future__ import annotations
 
 import json
 import logging
 import os
-import pickle
 import re
 import socket
 import sys
@@ -32,6 +54,10 @@ import parse_evals  # noqa: E402  (sibling module, see design v2 section 3.2.6)
 SCHEMA_VERSION = 2
 INVERTED_SCHEMA_VERSION = 1
 MAX_POSTINGS_PER_KEYWORD = 50
+# Versions of ~/.claude/plugins/installed_plugins.json that this builder
+# understands.  Encountering an unknown version logs a warning but keeps
+# scanning (fail-open, see module docstring).
+SUPPORTED_INSTALLED_SCHEMA: frozenset[int] = frozenset({1, 2})
 
 # Skip-phrase vocabularies.  Lifted from design v2 section 3.1.4 step 6.
 _VERB_VOCAB: frozenset[str] = frozenset(
@@ -143,7 +169,47 @@ def _enabled_plugin_keys(settings: Any) -> set[str]:
     return out
 
 
-def _resolve_install_path(installed: Any, key: str) -> Path | None:
+def _iso8601_to_epoch(ts: Any) -> int:
+    """Parse an ISO8601 string to epoch seconds, robust to TZ suffixes.
+
+    Handles both ``Z`` and ``+HH:MM`` offsets.  Returns 0 for empty,
+    malformed, or non-string values so missing timestamps sort below
+    any real one in :func:`_entry_score`.
+    """
+    if not isinstance(ts, str) or not ts.strip():
+        return 0
+    candidate = ts.strip()
+    if candidate.endswith("Z"):
+        candidate = candidate[:-1] + "+00:00"
+    try:
+        return int(datetime.fromisoformat(candidate).timestamp())
+    except (ValueError, TypeError):
+        return 0
+
+
+def _entry_score(entry: dict, expected_scope: str | None) -> tuple[int, int, int, str]:
+    """Score an installed_plugins.json entry to pick the best match.
+
+    Tuple ordering (descending priority via ``max`` natural order):
+      1. scope match against ``expected_scope`` (1 if match, else 0)
+      2. installPath existing as a directory on disk
+      3. timestamp recency in epoch seconds (lastUpdated -> installedAt)
+      4. installPath as deterministic tiebreaker
+    """
+    entry_scope = entry.get("scope")
+    scope_match = 1 if expected_scope and entry_scope == expected_scope else 0
+
+    raw_path = entry.get("installPath") or entry.get("path") or ""
+    path_exists = 1 if raw_path and Path(raw_path).is_dir() else 0
+
+    recency = _iso8601_to_epoch(entry.get("lastUpdated") or entry.get("installedAt"))
+
+    return (scope_match, path_exists, recency, raw_path)
+
+
+def _resolve_install_path(
+    installed: Any, key: str, *, expected_scope: str | None = None
+) -> Path | None:
     if not isinstance(installed, dict):
         return None
     plugin, _, marketplace = key.partition("@")
@@ -151,13 +217,49 @@ def _resolve_install_path(installed: Any, key: str) -> Path | None:
     if not isinstance(plugins_section, dict):
         return None
     entry = plugins_section.get(key) or plugins_section.get(plugin)
+    if isinstance(entry, list):
+        candidates = [e for e in entry if isinstance(e, dict)]
+        if not candidates:
+            return None
+        entry = max(candidates, key=lambda e: _entry_score(e, expected_scope))
     if not isinstance(entry, dict):
         return None
     install_path = entry.get("installPath") or entry.get("path")
     if not install_path:
         return None
     candidate = Path(install_path)
-    return candidate if candidate.is_dir() else None
+    # Reject symlinks at any level on the way down to the install dir,
+    # so a tampered ``installed_plugins.json`` cannot redirect skill
+    # discovery into an attacker-controlled directory.  ``resolve()``
+    # also canonicalises ``..`` segments.
+    try:
+        if candidate.is_symlink():
+            return None
+        resolved = candidate.resolve(strict=True)
+    except OSError:
+        return None
+    return resolved if resolved.is_dir() else None
+
+
+def _count_installed_plugins(installed: Any) -> int:
+    """Count the total number of installed plugin entries.
+
+    Handles both v1 (``dict`` per key) and v2 (``list[dict]`` per key)
+    layouts of ``installed_plugins.json``; entries of unrecognised
+    shapes are ignored rather than counted.
+    """
+    if not isinstance(installed, dict):
+        return 0
+    plugins = installed.get("plugins") or {}
+    if not isinstance(plugins, dict):
+        return 0
+    total = 0
+    for value in plugins.values():
+        if isinstance(value, list):
+            total += sum(1 for entry in value if isinstance(entry, dict))
+        elif isinstance(value, dict):
+            total += 1
+    return total
 
 
 # ---------------------------------------------------------------------------
@@ -329,12 +431,19 @@ def _write_outputs(
         base / "index.json",
         json.dumps(index, ensure_ascii=False, indent=2).encode("utf-8"),
     )
-    pickle_payload = {"schema_version": SCHEMA_VERSION, "python_version": list(sys.version_info[:3]), "index": index}
-    _atomic_write(base / "index.pkl", pickle.dumps(pickle_payload))
     _atomic_write(
         base / "inverted_index.json",
         json.dumps(inverted, ensure_ascii=False, indent=2).encode("utf-8"),
     )
+    # Legacy index.pkl is removed if present.  See module docstring for
+    # the security rationale (pickle.load is RCE-prone against
+    # attacker-controllable <base>).
+    legacy_pkl = base / "index.pkl"
+    if legacy_pkl.exists():
+        try:
+            legacy_pkl.unlink()
+        except OSError:
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -358,16 +467,25 @@ def build() -> dict[str, Any]:
     enabled_project = _enabled_plugin_keys(project_settings)
     enabled = enabled_user | enabled_project
 
+    if isinstance(installed, dict):
+        installed_schema = installed.get("version")
+        if installed_schema is not None and installed_schema not in SUPPORTED_INSTALLED_SCHEMA:
+            logger.warning(
+                "unsupported installed_plugins schema=%s (supported=%s)",
+                installed_schema,
+                sorted(SUPPORTED_INSTALLED_SCHEMA),
+            )
+
     skills: list[dict[str, Any]] = []
     skipped_plugins = 0
     for key in sorted(enabled):
-        install_path = _resolve_install_path(installed, key)
+        scope = "project" if key in enabled_project else "user"
+        install_path = _resolve_install_path(installed, key, expected_scope=scope)
         if install_path is None:
             skipped_plugins += 1
             logger.warning("install path missing for %s", key)
             continue
         plugin, _, marketplace = key.partition("@")
-        scope = "project" if key in enabled_project else "user"
         for skill_md in install_path.glob("skills/*/SKILL.md"):
             qualified = f"{plugin}:{skill_md.parent.name}"
             try:
@@ -392,7 +510,7 @@ def build() -> dict[str, Any]:
             "project_dir": str(project_dir),
         },
         "stats": {
-            "total_plugins_installed": len(installed.get("plugins", {})) if isinstance(installed, dict) else 0,
+            "total_plugins_installed": _count_installed_plugins(installed),
             "total_plugins_enabled": len(enabled),
             "total_skills_indexed": len(skills),
             "skills_with_evals": sum(1 for s in skills if s["evals"]),

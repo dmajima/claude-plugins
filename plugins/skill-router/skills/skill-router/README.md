@@ -12,12 +12,18 @@ skill-router プラグインの **操作・診断ガイド** スキル。Claude 
 skills/skill-router/
 ├── SKILL.md            # スキル定義（Claude Code が実行時に読み込む）
 ├── README.md           # このファイル（人間向け）
-└── evals/              # 動作分岐検証用ケース集
+└── evals/              # 動作分岐検証用ケース集（10 ケース）
     ├── README.md       # ケース一覧・実行確認方法
-    ├── case-01_rebuild.md
-    ├── case-02_status.md
-    ├── case-03_disable.md
-    └── case-04_skip_negative.md
+    ├── case-01_rebuild.md                  # 操作系: /router-rebuild 案内
+    ├── case-02_status.md                   # 操作系: /router-status 案内
+    ├── case-03_disable.md                  # 操作系: /router-toggle off
+    ├── case-04_skip_negative.md            # 自動: skip_phrase 発火（負例）
+    ├── case-05_diag_no_recommendation.md   # 診断: 推奨なし切り分け
+    ├── case-06_diag_over_recommendation.md # 診断: 過剰推奨切り分け
+    ├── case-07_diag_slow_start.md          # 診断: 起動遅延切り分け
+    ├── case-08_toggle_on.md                # 操作系: /router-toggle on
+    ├── case-09_non_interactive.md          # 操作系: 非対話モード
+    └── case-10_fail_open.md                # 自動: フェイルオープン
 ```
 
 実行ロジックはプラグイン直下の `references/scripts/lib/` に集約されており、本スキル内には Python ソースを置かない（ADR-024 / ADR-025 準拠）。

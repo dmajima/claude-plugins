@@ -14,15 +14,17 @@
 | `/router-rebuild` | コマンド | インデックスを手動で再構築する |
 | `/router-status` | コマンド | 統計・直近のルーティング決定・スコア分布を表示する（`--clean` で 30 日超セッション削除） |
 | `/router-toggle` | コマンド | プラグインを `on` / `off` に切り替える |
-| `SessionStart` フック | フック | `startup` / `resume` / `clear` 時にインデックス（`index.json` + `index.pkl` + `inverted_index.json`）を自動構築する |
-| `UserPromptSubmit` フック | フック | プロンプトを 5W1H 抽出 + 逆引き索引 + スコア閾値判定し、`high` / `mid` 帯のスキル候補を `additionalContext` で注入する |
+| `SessionStart` フック | フック | `startup` / `resume` / `clear` 時にインデックス（`index.json` + `inverted_index.json`）を自動構築する。Phase 2 で `requirements.txt` に依存が追加されると、内蔵 venv ライフサイクル管理（`<base>/.venv` 配下、72h TTL、1 セッション 3 回までの自動再構築）も同フックから起動する |
+| `UserPromptSubmit` フック | フック | プロンプトを 5W1H 抽出 + 逆引き索引 + スコア閾値判定し、`high` / `mid` 帯のスキル候補を `additionalContext` で注入する。フック終了時に古い venv（72h 超）を自動撤去する |
 
 ## 動作概要
 
 ```text
 [SessionStart]
   └─ build_index.py で installed_plugins.json と各 SKILL.md / evals を走査し
-     index.json + index.pkl + inverted_index.json を生成
+     index.json + inverted_index.json を生成
+     （installed_plugins.json schema v1 / v2 に対応。未対応バージョンは
+      警告ログを残しフェイルオープン）
 
 [UserPromptSubmit]
   └─ route.py が prompt を受け取り
