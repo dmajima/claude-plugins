@@ -53,14 +53,16 @@ python references/scripts/lib/parse_evals.py \
 
 ### フェイルオープン確認
 
-`case-10_fail_open` は意図的に `<base>/index.pkl` を破損させて確認する。
+`case-10_fail_open` は意図的に `<base>/index.json` を不正 JSON に書き換えて確認する。
 
 ```bash
 # 検証用（注意: 実環境では復旧が必要）
-printf '' > <base>/index.pkl
+printf 'broken' > <base>/index.json
 # プロンプト送信後に <base>/error.log を確認、通常応答が継続することを確認
 /router-rebuild   # 復旧
 ```
+
+旧 `<base>/index.pkl` は pickle ロードの RCE リスクのため廃止済み。`route.py` は `index.json` のみをロードする。
 
 ## ケースフォーマット
 

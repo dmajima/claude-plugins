@@ -12,6 +12,14 @@
 # user-facing activity finishes.  Stale check is O(stat) and well within
 # the 10s timeout.
 #
+# Why no rebuild here: the 10s UserPromptSubmit budget cannot accommodate
+# venv create (60s) + pip install (180s).  If route.py raises an env
+# error during this hook, it surfaces as an exit-non-zero from the python
+# call below; the next SessionStart will pick it up via its own
+# ensure/rebuild path.  Operators forced to recover mid-session can run
+# `/router-rebuild` (which delegates to build_index_on_start.sh) without
+# waiting for SessionStart.
+#
 # Fail-open: any error must not block the user prompt.
 set -uo pipefail
 

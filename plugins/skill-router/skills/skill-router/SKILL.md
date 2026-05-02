@@ -96,7 +96,7 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 
 ## evals
 
-`evals/case-01_rebuild.md` 〜 `evals/case-04_skip_negative.md` の 4 ケースで、コマンド誘導とルーティング判定の負例を確認できる。詳細は `evals/README.md` を参照。
+`evals/case-01_rebuild.md` 〜 `evals/case-10_fail_open.md` の 10 ケースで、コマンド誘導・ルーティング判定の負例・診断フロー・非対話モード・フェイルオープン挙動をカバーする。詳細は `evals/README.md` を参照。
 
 ## 重要な制約
 
