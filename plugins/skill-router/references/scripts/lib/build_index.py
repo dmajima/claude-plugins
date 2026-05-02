@@ -32,6 +32,10 @@ import parse_evals  # noqa: E402  (sibling module, see design v2 section 3.2.6)
 SCHEMA_VERSION = 2
 INVERTED_SCHEMA_VERSION = 1
 MAX_POSTINGS_PER_KEYWORD = 50
+# Versions of ~/.claude/plugins/installed_plugins.json that this builder
+# understands.  Encountering an unknown version logs a warning but keeps
+# scanning (fail-open, see module docstring).
+SUPPORTED_INSTALLED_SCHEMA: frozenset[int] = frozenset({1, 2})
 
 # Skip-phrase vocabularies.  Lifted from design v2 section 3.1.4 step 6.
 _VERB_VOCAB: frozenset[str] = frozenset(
@@ -143,7 +147,47 @@ def _enabled_plugin_keys(settings: Any) -> set[str]:
     return out
 
 
-def _resolve_install_path(installed: Any, key: str) -> Path | None:
+def _iso8601_to_epoch(ts: Any) -> int:
+    """Parse an ISO8601 string to epoch seconds, robust to TZ suffixes.
+
+    Handles both ``Z`` and ``+HH:MM`` offsets.  Returns 0 for empty,
+    malformed, or non-string values so missing timestamps sort below
+    any real one in :func:`_entry_score`.
+    """
+    if not isinstance(ts, str) or not ts.strip():
+        return 0
+    candidate = ts.strip()
+    if candidate.endswith("Z"):
+        candidate = candidate[:-1] + "+00:00"
+    try:
+        return int(datetime.fromisoformat(candidate).timestamp())
+    except (ValueError, TypeError):
+        return 0
+
+
+def _entry_score(entry: dict, expected_scope: str | None) -> tuple[int, int, int, str]:
+    """Score an installed_plugins.json entry to pick the best match.
+
+    Tuple ordering (descending priority via ``max`` natural order):
+      1. scope match against ``expected_scope`` (1 if match, else 0)
+      2. installPath existing as a directory on disk
+      3. timestamp recency in epoch seconds (lastUpdated -> installedAt)
+      4. installPath as deterministic tiebreaker
+    """
+    entry_scope = entry.get("scope")
+    scope_match = 1 if expected_scope and entry_scope == expected_scope else 0
+
+    raw_path = entry.get("installPath") or entry.get("path") or ""
+    path_exists = 1 if raw_path and Path(raw_path).is_dir() else 0
+
+    recency = _iso8601_to_epoch(entry.get("lastUpdated") or entry.get("installedAt"))
+
+    return (scope_match, path_exists, recency, raw_path)
+
+
+def _resolve_install_path(
+    installed: Any, key: str, *, expected_scope: str | None = None
+) -> Path | None:
     if not isinstance(installed, dict):
         return None
     plugin, _, marketplace = key.partition("@")
@@ -155,10 +199,7 @@ def _resolve_install_path(installed: Any, key: str) -> Path | None:
         candidates = [e for e in entry if isinstance(e, dict)]
         if not candidates:
             return None
-        entry = max(
-            candidates,
-            key=lambda e: e.get("lastUpdated", e.get("installedAt", "")),
-        )
+        entry = max(candidates, key=lambda e: _entry_score(e, expected_scope))
     if not isinstance(entry, dict):
         return None
     install_path = entry.get("installPath") or entry.get("path")
@@ -366,16 +407,25 @@ def build() -> dict[str, Any]:
     enabled_project = _enabled_plugin_keys(project_settings)
     enabled = enabled_user | enabled_project
 
+    if isinstance(installed, dict):
+        installed_schema = installed.get("version")
+        if installed_schema is not None and installed_schema not in SUPPORTED_INSTALLED_SCHEMA:
+            logger.warning(
+                "unsupported installed_plugins schema=%s (supported=%s)",
+                installed_schema,
+                sorted(SUPPORTED_INSTALLED_SCHEMA),
+            )
+
     skills: list[dict[str, Any]] = []
     skipped_plugins = 0
     for key in sorted(enabled):
-        install_path = _resolve_install_path(installed, key)
+        scope = "project" if key in enabled_project else "user"
+        install_path = _resolve_install_path(installed, key, expected_scope=scope)
         if install_path is None:
             skipped_plugins += 1
             logger.warning("install path missing for %s", key)
             continue
         plugin, _, marketplace = key.partition("@")
-        scope = "project" if key in enabled_project else "user"
         for skill_md in install_path.glob("skills/*/SKILL.md"):
             qualified = f"{plugin}:{skill_md.parent.name}"
             try:
