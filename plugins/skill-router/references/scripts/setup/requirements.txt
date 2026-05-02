@@ -1,0 +1,8 @@
+# skill-router requirements
+#
+# This plugin is intentionally stdlib-only (design v2 section 14.1).
+# The file exists to satisfy ADR-024 (each plugin owns a setup directory)
+# and to make future Phase 2 dependencies (e.g. tinysegmenter) easy to add.
+#
+# To bootstrap a venv when Phase 2 dependencies are introduced, delegate to:
+#   extension-toolkit:environment-setup-toolkit

@@ -1,0 +1,20 @@
+{
+  "name": "skill-router",
+  "version": "0.1.0",
+  "description": "ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン",
+  "author": {
+    "name": "dmajima"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/dmajima/claude-plugins",
+  "repository": "https://github.com/dmajima/claude-plugins",
+  "keywords": [
+    "skill-router",
+    "router",
+    "user-prompt-submit",
+    "session-start",
+    "skill-invocation",
+    "additional-context",
+    "hooks"
+  ]
+}
