@@ -151,6 +151,14 @@ def _resolve_install_path(installed: Any, key: str) -> Path | None:
     if not isinstance(plugins_section, dict):
         return None
     entry = plugins_section.get(key) or plugins_section.get(plugin)
+    if isinstance(entry, list):
+        candidates = [e for e in entry if isinstance(e, dict)]
+        if not candidates:
+            return None
+        entry = max(
+            candidates,
+            key=lambda e: e.get("lastUpdated", e.get("installedAt", "")),
+        )
     if not isinstance(entry, dict):
         return None
     install_path = entry.get("installPath") or entry.get("path")
