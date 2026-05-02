@@ -108,9 +108,15 @@ class CaseMdExpectationsTests(unittest.TestCase):
         self.assertEqual(parse_evals._extract_case_md_expectations(text), ["captured"])
 
     def test_heading_with_extra_words_does_not_match(self) -> None:
-        # Implementation requires "## 期待\s*\n", i.e. the heading is exactly
-        # "期待" followed by whitespace and a newline.  "## 期待動作" does not
-        # qualify - this captures the documented behaviour.
+        """Documented design: only ``## 期待`` (exactly) opens an expectation
+        block.  Headings like ``## 期待動作`` / ``## 期待出力`` used in
+        ``case-04_skip_negative.md`` and ``case-05_diag_no_recommendation.md``
+        intentionally fall outside this extractor: those tables are part of
+        the human-readable case spec and are NOT supposed to feed back into
+        :func:`parse_skill_evals`'s structured output.  If a future change
+        starts harvesting those tables, this test will fail loudly so the
+        decision is reviewed deliberately rather than slipping in by
+        accident."""
         text = "## 期待動作\n- foo\n"
         self.assertEqual(parse_evals._extract_case_md_expectations(text), [])
 
