@@ -19,6 +19,15 @@ Policy
     counter in ``<base>/.venv-rebuild-count``.  SessionStart resets the
     counter via ``session-reset``.
 
+    **Important**: the counter is incremented *before* :func:`construct`
+    runs, so a failed construction still consumes one of the three
+    attempts.  This is intentional - it caps both transient errors and
+    persistent misconfigurations under the same budget, preventing a
+    broken environment from spinning rebuilds forever.  Operators who
+    suspect a transient failure can rerun the SessionStart hook to
+    reset the counter (``session-reset`` clears it on each fresh
+    session).
+
 - Teardown
     A venv whose ``pyvenv.cfg`` mtime is older than ``VENV_TTL_HOURS`` (72 h
     by default) is removed at the end of the *UserPromptSubmit* hook
@@ -262,8 +271,13 @@ def _read_rebuild_count(base: Path) -> int:
 
 
 def _write_rebuild_count(base: Path, value: int) -> None:
+    """Atomically write the rebuild counter so concurrent hooks cannot
+    observe a half-written file."""
     base.mkdir(parents=True, exist_ok=True)
-    (base / REBUILD_COUNT_FILE).write_text(str(value), encoding="utf-8")
+    target = base / REBUILD_COUNT_FILE
+    tmp = base / (REBUILD_COUNT_FILE + ".tmp")
+    tmp.write_text(str(value), encoding="utf-8")
+    os.replace(tmp, target)
 
 
 def cmd_rebuild(args: argparse.Namespace) -> int:

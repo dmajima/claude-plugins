@@ -1,20 +1,42 @@
 """Build the routing index for skill-router (design v2 section 3.1).
 
 Outputs (atomically replaced):
-  <base>/index.json            human-readable, debug aid
-  <base>/index.pkl             route.py fast-load cache
+  <base>/index.json            machine-readable index, loaded by route.py
   <base>/inverted_index.json   keyword -> [skill_qualified_name, ...]
   <base>/index.log             append-only log
   <base>/error.log             append-only error log
 
 The script is fail-open: any unrecoverable error logs and exits 0.
+
+Schema support
+--------------
+``~/.claude/plugins/installed_plugins.json`` schema versions accepted by
+this builder are listed in :data:`SUPPORTED_INSTALLED_SCHEMA`.  When a
+new schema version ships, update **all** of the following together:
+
+1. :data:`SUPPORTED_INSTALLED_SCHEMA` -- add the new integer to the
+   ``frozenset``.
+2. :func:`_resolve_install_path` -- ensure the new shape (e.g. extra
+   wrappers around the per-key value) is recognised.  The current
+   implementation already handles ``dict`` (v1) and ``list[dict]`` (v2);
+   a v3 extension that adds, say, scope wrappers needs an additional
+   branch here.
+3. :func:`_count_installed_plugins` -- keep the totals consistent with
+   how the new schema represents per-plugin entries.
+4. ``plugins/skill-router/tests/test_build_index.py`` -- add cases that
+   round-trip the new shape.
+
+Index files (``index.json`` / ``inverted_index.json``) are JSON-only by
+design; the builder used to also emit ``index.pkl`` as a fast-load
+cache, but that has been removed because :func:`pickle.load` against
+attacker-controllable data is an RCE vector when ``<base>`` itself is
+under user-writable storage.
 """
 from __future__ import annotations
 
 import json
 import logging
 import os
-import pickle
 import re
 import socket
 import sys
@@ -206,7 +228,38 @@ def _resolve_install_path(
     if not install_path:
         return None
     candidate = Path(install_path)
-    return candidate if candidate.is_dir() else None
+    # Reject symlinks at any level on the way down to the install dir,
+    # so a tampered ``installed_plugins.json`` cannot redirect skill
+    # discovery into an attacker-controlled directory.  ``resolve()``
+    # also canonicalises ``..`` segments.
+    try:
+        if candidate.is_symlink():
+            return None
+        resolved = candidate.resolve(strict=True)
+    except OSError:
+        return None
+    return resolved if resolved.is_dir() else None
+
+
+def _count_installed_plugins(installed: Any) -> int:
+    """Count the total number of installed plugin entries.
+
+    Handles both v1 (``dict`` per key) and v2 (``list[dict]`` per key)
+    layouts of ``installed_plugins.json``; entries of unrecognised
+    shapes are ignored rather than counted.
+    """
+    if not isinstance(installed, dict):
+        return 0
+    plugins = installed.get("plugins") or {}
+    if not isinstance(plugins, dict):
+        return 0
+    total = 0
+    for value in plugins.values():
+        if isinstance(value, list):
+            total += sum(1 for entry in value if isinstance(entry, dict))
+        elif isinstance(value, dict):
+            total += 1
+    return total
 
 
 # ---------------------------------------------------------------------------
@@ -378,12 +431,19 @@ def _write_outputs(
         base / "index.json",
         json.dumps(index, ensure_ascii=False, indent=2).encode("utf-8"),
     )
-    pickle_payload = {"schema_version": SCHEMA_VERSION, "python_version": list(sys.version_info[:3]), "index": index}
-    _atomic_write(base / "index.pkl", pickle.dumps(pickle_payload))
     _atomic_write(
         base / "inverted_index.json",
         json.dumps(inverted, ensure_ascii=False, indent=2).encode("utf-8"),
     )
+    # Legacy index.pkl is removed if present.  See module docstring for
+    # the security rationale (pickle.load is RCE-prone against
+    # attacker-controllable <base>).
+    legacy_pkl = base / "index.pkl"
+    if legacy_pkl.exists():
+        try:
+            legacy_pkl.unlink()
+        except OSError:
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -450,7 +510,7 @@ def build() -> dict[str, Any]:
             "project_dir": str(project_dir),
         },
         "stats": {
-            "total_plugins_installed": len(installed.get("plugins", {})) if isinstance(installed, dict) else 0,
+            "total_plugins_installed": _count_installed_plugins(installed),
             "total_plugins_enabled": len(enabled),
             "total_skills_indexed": len(skills),
             "skills_with_evals": sum(1 for s in skills if s["evals"]),
