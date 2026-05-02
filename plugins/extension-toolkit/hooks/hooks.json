@@ -9,6 +9,15 @@
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/enforce_toolkit_routing.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/check_version_bump_on_commit.sh\""
+          }
+        ]
       }
     ],
     "Stop": [

@@ -1,6 +1,6 @@
 ---
 name: marketplace-publisher
-description: Claude Code プラグインマーケットプレイスへの公開ワークフロー（重複検査・実体検証・git add/commit/push・PR 作成・ハンドオフ or フルオート選択）を担当するスキル。「foo プラグインを公開」「マーケットプレイスに登録」「重複チェックして」「フルオートで公開」などの依頼で起動する。Use when the user wants to publish a plugin to a marketplace, check for duplicates, or run a full automation publish flow. SKIP when the user wants to create plugin files (use plugin-toolkit), edit marketplace.json or sync the marketplace README directly (use marketplace-toolkit, ADR-020), or migrate items (use plugin-toolkit's migration scenario).
+description: Claude Code プラグインの公開ワークフロー（重複検査・実体検証・git push・PR 作成・ハンドオフ or フルオート）担当スキル。「foo プラグインを公開」「マーケットプレイスに登録」「フルオートで公開」等で起動する。Use when publishing a plugin to a marketplace. SKIP when creating plugin files (plugin-toolkit), editing marketplace.json (marketplace-toolkit), or reviewing (extension-reviewer).
 ---
 
 # Marketplace Publisher

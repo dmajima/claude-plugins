@@ -1,6 +1,6 @@
 ---
 name: plugin-toolkit
-description: Claude Code のプラグイン外形（plugin.json・README・ディレクトリ構造）を新規作成し、既存のスキル/コマンド/フック/エージェントをプラグイン構造へ移管（コピー）するスキル。「新しいプラグイン foo を作って」「既存スキル bar をプラグイン化」「foo プラグインに既存スキル追加」などの依頼で起動する。Use when the user wants to scaffold a new plugin shell or migrate existing assets (skills, commands, agents, hooks) into a plugin structure. SKIP when the user wants to create a skill body (use skill-toolkit), command body (use command-toolkit), agent body (use agent-toolkit), or hook body (use hook-toolkit). Marketplace.json updates and marketplace-level README sync are delegated to marketplace-toolkit; plugin publishing (git push / PR) to marketplace-publisher.
+description: Claude Code プラグイン外形（plugin.json・README）を新規作成し、既存スキル/コマンド/フック/エージェントを移管するスキル。「新しいプラグイン foo を作って」「既存スキル bar をプラグイン化」「スキルをプラグインに変換」等で起動する。Use when scaffolding a new plugin or migrating assets. SKIP when authoring bodies (*-toolkit), editing marketplace.json, or publishing (marketplace-publisher).
 ---
 
 # Plugin Toolkit

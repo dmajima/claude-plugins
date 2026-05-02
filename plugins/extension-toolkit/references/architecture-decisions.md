@@ -270,6 +270,17 @@
 | 推奨ルーティング | SKILL.md → `skill-toolkit` / commands/*.md → `command-toolkit` / agents/*.md → `agent-toolkit` / hooks/* → `hook-toolkit` / README.md → `readme-toolkit` / plugin.json → `plugin-toolkit` / references/scripts/setup/ → `environment-setup-toolkit` / 公開 → `marketplace-publisher` / レビュー → `extension-reviewer` |
 | 代替案 | (1) PreToolUse ハードブロック型 → 過剰制約・bypass 常態化、却下（旧設計）。(2) PreToolUse フック完全廃止 + Stop のみ → 軽微編集には適合するが、新規大規模変更時のスキル誘導も失う、却下。(3) git pre-commit のみで検証 → Claude のターン中に気付けず、コミット時点で大きな手戻りになる、却下。(4) settings.json でユーザ環境ごとに登録 → プラグイン同梱の自己完結性（ADR-022）に反する、却下 |
 
+## ADR-027: バージョン更新検証を Stop に加え PreToolUse Bash でも実施（ADR-026 の補強）
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | ADR-026 の Stop フック単独構成を **PreToolUse Bash + Stop の二重実行** に変更する。`hooks/hooks.json` の `PreToolUse` に `matcher: "Bash"` を追加し、`references/scripts/hooks/check_version_bump_on_commit.sh` を呼ぶ。スクリプトは tool_input.command を sed で抽出し `git commit` を含む場合のみ既存 `check_version_bump.sh` に委譲して同一検査を実施する。Stop フックは保持する（後方互換 + 委譲先の信頼性確保） |
+| 理由 | (1) Stop フックの stderr が **環境/タイミングによっては Claude の会話 context に届かない事例が確認された**（編集を 30 回以上行ったセッションで PreToolUse Edit / Stop どちらの警告も到達しなかった）。(2) PreToolUse の `additionalContext` 経路は仕様上確実に Claude へ届くため、コミット直前の最後の防衛線として有効。(3) Stop と PreToolUse Bash の両方で同じ検査スクリプトを呼ぶことで、片方の経路が機能しない環境でも警告が漏れない。(4) スクリプトロジック自体の重複は避け、PreToolUse 用ラッパーは git commit 検知後に既存 check_version_bump.sh を呼ぶだけの薄い委譲層とする |
+| トレードオフ | (1) 同じ警告が Stop と PreToolUse Bash の両方で発火し得る → 警告内容は同一なので重複しても害は小さい（Claude が一度判断すれば足りる）。(2) Bash 全件で発火するため処理コストが微増 → 早期に tool_name / command を sed で判定して非対象は exit 0 で即離脱、git status / git diff の重い処理は git commit 検出時のみ実行 |
+| 適用範囲 | 本プラグインがインストールされたすべての環境 |
+| 必須項目 | (a) `hooks/hooks.json` の `PreToolUse` に `matcher: "Bash"` エントリを追加、(b) `references/scripts/hooks/check_version_bump_on_commit.sh` を新設し ADR-025 配置義務に準拠、(c) ラッパーは tool_name == "Bash" かつ command に `git commit` を含む場合のみ既存 `check_version_bump.sh` に委譲、(d) Stop フックは削除せず保持、(e) どちらも fail-open（exit 0） |
+| 代替案 | (1) Stop フックのみ維持 → 環境によって届かない事例があるため不採用。(2) PreToolUse Bash のみに移行 → Stop が機能する環境での冗長性を失う、却下。(3) PreToolUse Bash で check_version_bump.sh を直接呼ぶ → 全 Bash 呼び出しで git status を実行することになりコスト過大、却下。(4) PostToolUse で検査 → コミット完了後の警告となり手戻りが発生、却下 |
+
 ## ADR の追加・更新
 
-新たな設計判断が発生した際は、本ファイルに ADR-XXX 形式で追記する。既存 ADR を変更する場合は **最新の決定のみを記載** する（変更前の判断・変更経緯は Git コミット履歴を参照する）。ADR-010（スキル単位 venv）は ADR-024 で更新されたため、ADR-024 の内容が現行決定。
+新たな設計判断が発生した際は、本ファイルに ADR-XXX 形式で追記する。既存 ADR を変更する場合は **最新の決定のみを記載** する（変更前の判断・変更経緯は Git コミット履歴を参照する）。ADR-010（スキル単位 venv）は ADR-024 で更新されたため、ADR-024 の内容が現行決定。ADR-026（フック構成）は ADR-027 で補強されたため、両方を併読する。
