@@ -16,6 +16,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 | `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック・README）の作成・レビュー・マーケットプレイス公開まで統括支援 | 1.3.1 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 | `plugins-update` | インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化する | 1.0.1 | `/plugin install plugins-update@dmajima-claude-plugins` |
 | `convert-doc` | Markdown を HTML / PDF / PowerPoint（PPTX）に Wiki スタイルで一括変換できる 3 スキル + 4 コマンド同梱のドキュメント変換プラグイン | 1.0.1 | `/plugin install convert-doc@dmajima-claude-plugins` |
+| `skill-router` | ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン | 0.1.0 | `/plugin install skill-router@dmajima-claude-plugins` |
 
 ## マーケットプレイスの追加方法
 
@@ -105,7 +106,8 @@ dmajima-claude-plugins/
     ├── convert-doc/
     ├── credentials-manager/
     ├── extension-toolkit/
-    └── plugins-update/
+    ├── plugins-update/
+    └── skill-router/
 ```
 
 ## ライセンス・連絡先

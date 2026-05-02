@@ -71,6 +71,24 @@
         "wiki"
       ],
       "strict": false
+    },
+    {
+      "name": "skill-router",
+      "source": "./plugins/skill-router",
+      "description": "ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン",
+      "author": {
+        "name": "dmajima"
+      },
+      "category": "productivity",
+      "keywords": [
+        "skill-router",
+        "router",
+        "user-prompt-submit",
+        "session-start",
+        "skill-invocation",
+        "additional-context",
+        "hooks"
+      ]
     }
   ]
 }
