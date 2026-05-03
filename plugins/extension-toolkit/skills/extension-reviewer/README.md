@@ -79,6 +79,7 @@ Claude（要約）:
 | ファイル | 内容 |
 |---------|------|
 | `SKILL.md` | スキル定義とトリガー条件 |
+| **`references/checklists/`** | **【最重要】レビュー結果報告前に必ず通過させる網羅チェックリスト集（共通 + 対象種別別 + 手順自己点検）** |
 | `references/review-perspectives.md` | 対象別レビュー観点とエージェント選定 |
 | `references/team-selection.md` | 対象別チーム / エージェントの採用ルール |
 | `references/automated-checks.md` | 機械的チェック項目とその実行方法 |

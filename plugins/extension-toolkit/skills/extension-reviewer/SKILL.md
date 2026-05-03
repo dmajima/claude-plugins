@@ -13,6 +13,7 @@ Claude Code の拡張要素（スキル・プラグイン・コマンド・エ�
 - 複数の専門エージェントの **並列起動**（最低 3 名）
 - 観点別レビュー結果の統合・優先度付け（Critical / High / Medium / Low）
 - 構造妥当性・内容妥当性・パスポータビリティ・AI 誤認回避・evals 充実度の確認
+- **レビュー結果報告前の [`references/checklists/`](references/checklists/) 全項目走査（MANDATORY）**
 - 修正提案（任意で実施、合意のもとで適用）
 
 ## 責務外（他スキルが担当）
@@ -129,55 +130,47 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
 
 ### 5. 結果統合
 
-各エージェントの結果と自動チェック結果を統合し、優先度別に整理:
+各エージェントの結果と自動チェック結果を統合し、優先度別に整理（Critical / High / Medium / Low / Suggestion + 総合判定 APPROVE / CONDITIONAL_APPROVE / REJECT）。詳細フォーマットは [`references/review-perspectives.md`](references/review-perspectives.md) の「総合判定ルール」を参照。
 
-```markdown
-## レビュー結果統合
+### 6. チェックリスト走査（**最重要・MANDATORY**）
 
-### Critical（即時修正必須）
-- {問題}（{担当エージェント}, {ファイル:行}）
+**ユーザへの最終報告を組み立てる前に必ず実施する。本ステップを省略してレビュー結果を報告してはならない。**
 
-### High（修正推奨）
-- {問題}（{担当エージェント}, {ファイル:行}）
+| 動作 | 内容 |
+|-----|------|
+| 適用ファイル選定 | [`references/checklists/README.md`](references/checklists/README.md) 節 2 のテーブルから対象種別に応じた適用ファイルを決定 |
+| 全項目走査 | 適用ファイル（`common.md` + 対象種別別 + `process.md` + 該当時 `versioning.md` / `scripts-policy.md`）の全項目を走査 |
+| 判定 | 各項目を OK / NG / NA（理由必須）の 3 値で判定 |
+| 未確認項目の解消 | High 以上に未確認が残る場合、追加レビューまたは未確認理由の確定 |
+| 通過記録の作成 | 適用ファイルごとに項目数 / OK / NG / 未確認の集計を組み立てる |
 
-### Medium（検討推奨）
-- {問題}
+このステップ完了まで「総合判定」を確定してはならない。詳細は [`references/checklists/README.md`](references/checklists/README.md) を参照。
 
-### Low / Suggestion
-- {改善提案}
-
-### 総合判定
-{APPROVE / CONDITIONAL_APPROVE / REJECT} — {理由 1 行}
-```
-
-### 6. 修正提案 / 自動修正
+### 7. 修正提案 / 自動修正
 
 | モード | 動作 |
 |-------|------|
 | 通常 | 結果を提示、修正は別スキル（`*-toolkit`）で実施するよう案内 |
 | `--auto-fix` | 軽微な指摘（パスポータビリティ・プレースホルダ・フォーマット）を自動修正 |
 
-自動修正の対象外:
+自動修正の対象外: 構造的問題（責務分離違反）/ description 不適切 / セキュリティ指摘（必ずユーザ確認）。
 
-- 構造的な問題（責務分離違反等）
-- 内容的な問題（description の不適切等）
-- セキュリティ指摘（必ずユーザ確認）
-
-### 7. 引き渡し
+### 8. 引き渡し
 
 | 結果 | 接続先 |
 |-----|-------|
 | Critical/High なし | `marketplace-publisher` への接続を提案 |
 | Critical/High あり | 該当 `*-toolkit` への接続を提案（修正後再レビュー推奨） |
 
+報告には [`references/checklists/README.md`](references/checklists/README.md) 節 5 の「チェックリスト通過記録」テーブルを **必ず含める**。
+
 ## 重要な制約
 
+- **【最重要・MANDATORY】レビュー結果報告の直前に必ず [`references/checklists/`](references/checklists/) の適用ファイル全項目を走査する**。未走査・部分走査での総合判定確定は禁止。High 以上の未確認項目がある場合、総合判定は最大 `CONDITIONAL_APPROVE` とし、未確認理由を報告に明記する
 - **レビューはチーム単位で起動**（[`../../references/teams/`](../../references/teams/) のチーム定義に従う）
 - **レビューは必ずフレッシュ Agent インスタンスで起動**（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021 準拠）。修正実装と同一コンテキストでレビューを行わない。スポーンプロンプトに必須引き継ぎ事項（目的 / 役割 / ユーザー指摘 / 対象 / 観点 / フォーマット）を明記し、引き継ぎ禁止事項（過去レビュー結論等）を含めない
-- 標準は最低 3 名（観点が 2 つに固定の場合は 2 名でも可）
-- メンバーは並列起動（独立観点）
-- 自動修正は軽微な指摘のみ
-- セキュリティ指摘は必ずユーザ確認
+- 標準は最低 3 名（観点が 2 つに固定の場合は 2 名でも可）。メンバーは並列起動（独立観点）
+- 自動修正は軽微な指摘のみ。セキュリティ指摘は必ずユーザ確認
 - このスキル自身では構造変更を伴う修正は行わない
 - ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
 - 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証を実施
@@ -186,6 +179,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
 
 | 用途 | ファイル |
 |-----|---------|
+| **【最重要】レビュー全項目チェックリスト** | [`references/checklists/`](references/checklists/) |
 | 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
 | AI 誤認回避 | [`../../references/ai-readability.md`](../../references/ai-readability.md) |
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
