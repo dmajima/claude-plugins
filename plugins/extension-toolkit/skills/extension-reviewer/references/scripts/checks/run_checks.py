@@ -695,6 +695,119 @@ def check_secrets(target: pathlib.Path, collector: IssueCollector) -> None:
                 break  # 同一ファイル内の同パターン重複は省略
 
 
+def _detect_owner_marketplace(target: pathlib.Path, plugin_dir: pathlib.Path) -> str | None:
+    """プラグインの所属マーケットプレイス名を推定する。
+
+    優先順:
+        1. target が `.claude-plugin/marketplace.json` を含むリポジトリ配下なら、その `name`
+        2. target 自身（または scope-root 想定の親）に `.claude-plugin/marketplace.json` があれば、その `name`
+        3. 推定不可なら None（呼び出し側で判定スキップ）
+    """
+    candidates = [target, plugin_dir]
+    cur = plugin_dir
+    for _ in range(6):  # ルートまで遡上（深さ上限）
+        candidates.append(cur)
+        if cur.parent == cur:
+            break
+        cur = cur.parent
+    for base in candidates:
+        manifest = base / ".claude-plugin" / "marketplace.json"
+        if manifest.exists():
+            text = read_text_safe(manifest)
+            if not text:
+                continue
+            try:
+                data = json.loads(text)
+            except json.JSONDecodeError:
+                continue
+            name = data.get("name")
+            if isinstance(name, str) and name:
+                return name
+    return None
+
+
+def check_cross_marketplace_readme(target: pathlib.Path, collector: IssueCollector) -> None:
+    """11. クロスマーケットプレイス依存時の README D-1/D-2/D-3 揃い検査（R-2-7 / ADR-028）。
+
+    `plugin.json` の `dependencies` 配列に **自プラグイン所属マーケ名と異なる** `marketplace`
+    フィールド値を含むエントリが 1 件以上ある場合、対応する README に以下 3 ブロックが
+    すべて含まれることを確認する:
+        D-1: `/plugin marketplace add` の記載
+        D-2: `extraKnownMarketplaces` JSON ブロックの記載
+        D-3: 依存プラグインを明示する `/plugin install` の記載
+    """
+    for plugin_json in target.rglob("plugin.json"):
+        if is_excluded_dir(plugin_json, target):
+            continue
+        if plugin_json.parent.name != ".claude-plugin":
+            continue
+        plugin_dir = plugin_json.parent.parent
+        text = read_text_safe(plugin_json)
+        if text is None:
+            continue
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            continue  # JSON 不正は別チェックで検出済み
+
+        deps = data.get("dependencies")
+        if not isinstance(deps, list) or not deps:
+            continue
+
+        owner_mp = _detect_owner_marketplace(target, plugin_dir)
+        cross_dep_mps: list[str] = []
+        for entry in deps:
+            if not isinstance(entry, dict):
+                continue  # 文字列形式は同一マーケ依存で対象外
+            mp_name = entry.get("marketplace")
+            if not isinstance(mp_name, str) or not mp_name:
+                continue
+            if owner_mp and mp_name == owner_mp:
+                continue  # 同一マーケットプレイス依存は対象外
+            cross_dep_mps.append(mp_name)
+
+        if not cross_dep_mps:
+            continue  # クロスマーケットプレイス依存なし
+
+        readme = plugin_dir / "README.md"
+        if not readme.exists():
+            collector.add(
+                "High",
+                "README.md 不在（クロスマーケットプレイス依存時 D-1/D-2/D-3 検証不可）",
+                plugin_json,
+                f"cross marketplace deps: {','.join(cross_dep_mps)}",
+            )
+            continue
+        readme_text = read_text_safe(readme)
+        if readme_text is None:
+            collector.add(
+                "High",
+                "README.md 読み込み失敗",
+                readme,
+                f"cross marketplace deps: {','.join(cross_dep_mps)}",
+            )
+            continue
+
+        d1_ok = bool(re.search(r"/plugin\s+marketplace\s+add\s+\S+", readme_text))
+        d2_ok = "extraKnownMarketplaces" in readme_text and "autoUpdate" in readme_text
+        d3_ok = bool(re.search(r"/plugin\s+install\s+\S+@\S+", readme_text))
+
+        missing = []
+        if not d1_ok:
+            missing.append("D-1(/plugin marketplace add)")
+        if not d2_ok:
+            missing.append("D-2(extraKnownMarketplaces JSON)")
+        if not d3_ok:
+            missing.append("D-3(/plugin install)")
+        if missing:
+            collector.add(
+                "High",
+                "ADR-028: クロスマーケットプレイス依存時の README D-1/D-2/D-3 不揃い",
+                readme,
+                f"missing={','.join(missing)} cross_marketplaces={','.join(cross_dep_mps)}",
+            )
+
+
 # --------------------------------------------------------------------------- #
 # メインフロー
 # --------------------------------------------------------------------------- #
@@ -710,6 +823,7 @@ CHECKS = [
     ("description 文字数", check_description_length),
     ("argument-hint 必須（ADR-023）", check_argument_hint),
     ("シークレット混入", check_secrets),
+    ("クロスマーケ依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7）", check_cross_marketplace_readme),
 ]
 
 

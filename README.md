@@ -13,7 +13,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 | プラグイン | 説明 | バージョン | インストール |
 |----------|------|----------|----------|
 | `credentials-manager` | Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン（URL/ドメイン自動マッチ + SessionStart で最重要ルール自動配置 + UserPromptSubmit/PreToolUse で外部通信・認証情報系ファイル・シークレット直接埋め込みを多層検出） | 1.1.1 | `/plugin install credentials-manager@dmajima-claude-plugins` |
-| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック・README）の作成・レビュー・マーケットプレイス公開まで統括支援 | 1.4.0 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
+| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック・README）の作成・レビュー・マーケットプレイス公開まで統括支援 | 1.5.0 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 | `plugins-update` | インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化する | 1.0.1 | `/plugin install plugins-update@dmajima-claude-plugins` |
 | `convert-doc` | Markdown を HTML / PDF / PowerPoint（PPTX）に Wiki スタイルで一括変換できる 3 スキル + 4 コマンド同梱のドキュメント変換プラグイン | 1.0.1 | `/plugin install convert-doc@dmajima-claude-plugins` |
 | `skill-router` | ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン | 0.2.0 | `/plugin install skill-router@dmajima-claude-plugins` |
@@ -84,7 +84,26 @@ git checkout v{x.y.z}   # 推奨: 特定リリースタグを指定（最新タ�
 |------------------|-----|------------|----------------------|
 | `anthropic-agent-skills` | スキル雛形・ドキュメント生成系の参考実装 | `extension-toolkit`（`example-skills` / `document-skills` を依存宣言） | `/plugin marketplace add https://github.com/anthropics/skills` |
 
-依存マーケットプレイスは `allowCrossMarketplaceDependenciesOn` で許可していれば自動解決されます。許可されていない / ネットワーク制約がある環境では、利用者が手動で依存マーケットプレイスを追加してください。
+依存マーケットプレイスは `allowCrossMarketplaceDependenciesOn` で許可されていても、**利用者が `/plugin marketplace add` 済みでなければ Claude Code 公式仕様により依存は未解決のまま放置されます**（自動マーケ追加機構なし）。詳細は ADR-028（[`plugins/extension-toolkit/references/architecture-decisions.md`](plugins/extension-toolkit/references/architecture-decisions.md)）参照。
+
+### 依存マーケットプレイスの自動更新有効化（推奨）
+
+依存マーケットプレイスの `extraKnownMarketplaces` 登録（`autoUpdate: true`）も併せて行うと、依存先プラグインもセッション起動時に自動更新されます。本マーケットプレイス自身の登録（前述「自動更新の有効化」節）と並べて記述します。
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "dmajima-claude-plugins": {
+      "source": { "type": "github", "repo": "dmajima/claude-plugins" },
+      "autoUpdate": true
+    },
+    "anthropic-agent-skills": {
+      "source": { "type": "github", "repo": "anthropics/skills" },
+      "autoUpdate": true
+    }
+  }
+}
+```
 
 ## プラグイン追加手順（メンテナ向け）
 

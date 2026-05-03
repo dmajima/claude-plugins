@@ -1,6 +1,6 @@
 {
   "name": "extension-toolkit",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック・README）の作成・レビュー・マーケットプレイス公開まで統括支援",
   "author": {
     "name": "dmajima"

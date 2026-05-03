@@ -108,6 +108,7 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 - [ ] 移管シナリオで元ファイルが無傷
 - [ ] パスポータビリティチェック合格
 - [ ] 既存ファイルを誤って上書きしていない
+- [ ] **`dependencies` に `marketplace` フィールド付き（クロスマーケットプレイス依存）を含む場合**: README が `readme-policy.md` 5.1 D の D-1 / D-2 / D-3 ブロックを満たすことを `readme-toolkit` 連携時に確認（ADR-028 / [`../../references/dependencies-policy.md`](../../references/dependencies-policy.md) 節 2.3）
 
 ### 8. 引き渡し
 
@@ -148,6 +149,8 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.2） |
 | バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md)（`plugin.json` 編集時必須）|
+| 依存関係宣言 | [`../../references/dependencies-policy.md`](../../references/dependencies-policy.md)（`dependencies` 設定 + クロスマーケ依存時の README 連携要件）|
+| README 規約（クロスマーケ依存時 D-1/D-2/D-3 必須）| [`../../references/readme-policy.md`](../../references/readme-policy.md) 節 5.1 D / ADR-028 |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
 | 移管ルール | [`references/migration-rules.md`](references/migration-rules.md) |
 | 動作例 | [`evals/`](evals/) |

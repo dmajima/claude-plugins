@@ -75,14 +75,36 @@ git checkout v{x.y.z}   # 推奨: 特定リリースタグを指定（最新タ�
 ### D. 依存関係のインストール
 
 依存プラグイン（`example-skills` / `document-skills`）は、`marketplace.json` の `allowCrossMarketplaceDependenciesOn` で `anthropic-agent-skills` を許可している場合、**自動インストールされます**。
+ただし **`anthropic-agent-skills` マーケットプレイスを利用者が `/plugin marketplace add` 済みでない場合、Claude Code 公式仕様により依存は未解決のまま放置されます**（自動マーケ追加機構は存在しません）。
+本プラグインはクロスマーケットプレイス依存（自マーケ `dmajima-claude-plugins` と異なる `anthropic-agent-skills` への依存）を持つため、以下 D-1 / D-2 / D-3 の 3 ブロックを **必須実施** としています（ADR-028 準拠）。
 
-自動インストールが成立しない場合（別マーケットプレイスへの参照が許可されていない・ネットワーク制約等）は、以下の手順で個別インストールします:
+**D-1. 依存マーケットプレイスの追加（必須）**
 
 ```text
-# 依存マーケットプレイスを追加
 /plugin marketplace add https://github.com/anthropics/skills
+```
 
-# 依存プラグインを明示インストール
+**D-2. 依存マーケットプレイスの自動更新有効化（必須）**
+
+`~/.claude/settings.json` の `extraKnownMarketplaces` に依存マーケットプレイスを `autoUpdate: true` で登録します。これにより依存プラグインもセッション起動時に自動更新されます。自プラグインの `dmajima-claude-plugins` 登録（C 節）と並べて記述します。
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "anthropic-agent-skills": {
+      "source": {
+        "type": "github",
+        "repo": "anthropics/skills"
+      },
+      "autoUpdate": true
+    }
+  }
+}
+```
+
+**D-3. 依存プラグインの個別インストール（必須）**
+
+```text
 /plugin install example-skills@anthropic-agent-skills
 /plugin install document-skills@anthropic-agent-skills
 ```

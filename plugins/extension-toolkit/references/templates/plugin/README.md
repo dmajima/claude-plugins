@@ -69,20 +69,44 @@ git checkout {tag-or-branch}
 ### D. 依存関係のインストール
 
 `plugin.json` の `dependencies` で宣言された依存プラグインは、利用者のマーケットプレイスで `allowCrossMarketplaceDependenciesOn` が許可されていれば自動インストールされます。
-**自動インストールが成立しない場合**（別マーケットプレイスへの参照が許可されていない・ネットワーク制約等）は、以下の手順で個別にインストールします:
+ただし **依存先マーケットプレイスを利用者が `/plugin marketplace add` で追加していない場合、Claude Code 公式仕様により依存は未解決のまま放置されます**（自動マーケ追加機構は存在しません）。
+クロスマーケットプレイス依存（`plugin.json` の `dependencies` に **自プラグインの所属マーケ名と異なる** `marketplace` フィールドが含まれる場合）があるプラグインでは、以下 D-1 / D-2 / D-3 の 3 ブロックを **必須記載** してください（ADR-028 準拠）。
+依存なし・同一マーケ依存のみのプラグインでは、本セクション全体を「依存関係なし」の 1 行に置き換えます（**セクションごとの省略は不可**）。
+
+**D-1. 依存マーケットプレイスの追加（必須）**
 
 ```text
-# 依存マーケットプレイスを追加
 /plugin marketplace add {dependency-marketplace-url}
+```
 
-# 依存プラグインを明示インストール
+**D-2. 依存マーケットプレイスの自動更新有効化（必須）**
+
+`~/.claude/settings.json` の `extraKnownMarketplaces` に依存マーケットプレイスを `autoUpdate: true` で登録します。これにより依存プラグインもセッション起動時に自動更新されます。自プラグインのマーケットプレイス登録（C 節）と同形式で並べて記述してください。
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "{dependency-marketplace-name}": {
+      "source": {
+        "type": "github",
+        "repo": "{owner}/{repo}"
+      },
+      "autoUpdate": true
+    }
+  }
+}
+```
+
+複数の依存マーケットプレイスがある場合は `extraKnownMarketplaces` 配下に同形式で並べて登録してください。
+
+**D-3. 依存プラグインの個別インストール（必須）**
+
+```text
 /plugin install {dependency-plugin-1}@{dependency-marketplace}
 /plugin install {dependency-plugin-2}@{dependency-marketplace}
 ```
 
-依存なしの場合は「依存関係なし」と明示してください。
-
-#### Python 等の外部ツール依存
+**Python 等の外部ツール依存**
 
 スキル内で Python venv 等の外部ツールを使う場合、利用者環境に導入されている前提となる外部ツールをここに列挙します:
 

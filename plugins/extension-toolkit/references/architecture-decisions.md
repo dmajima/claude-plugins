@@ -172,6 +172,7 @@
 | トレードオフ | README が長くなる。ただしセクションは「導入手順」配下にまとめ、利用者は必要な手順のみ読めばよい構造のため許容 |
 | 適用範囲 | `extension-toolkit` が生成・改修する **すべてのプラグイン** の README.md。スキル単体の README はマーケットプレイス経由インストールに該当しないため、本 ADR は適用外（スキルは README にトリガーフレーズを記載） |
 | 代替案 | (1) マーケットプレイス経由のみ記載 → 環境制約のある利用者を排除、却下。(2) 自動更新は別ドキュメントに分離 → 散在し導入時に見落とされる、却下。(3) 依存関係はリンク参照のみ → リンク先の表現がプラグインごとに異なり一貫性が損なわれる、却下 |
+| 後続 ADR | クロスマーケットプレイス依存ありプラグインの D セクション詳細（D-1 / D-2 / D-3 必須化）は ADR-028 で規定 |
 
 ## ADR-019: プラグイン追加・更新時のマーケットプレイス README 同期義務化
 
@@ -281,6 +282,17 @@
 | 必須項目 | (a) `hooks/hooks.json` の `PreToolUse` に `matcher: "Bash"` エントリを追加、(b) `references/scripts/hooks/check_version_bump_on_commit.sh` を新設し ADR-025 配置義務に準拠、(c) ラッパーは tool_name == "Bash" かつ command に `git commit` を含む場合のみ既存 `check_version_bump.sh` に委譲、(d) Stop フックは削除せず保持、(e) どちらも fail-open（exit 0） |
 | 代替案 | (1) Stop フックのみ維持 → 環境によって届かない事例があるため不採用。(2) PreToolUse Bash のみに移行 → Stop が機能する環境での冗長性を失う、却下。(3) PreToolUse Bash で check_version_bump.sh を直接呼ぶ → 全 Bash 呼び出しで git status を実行することになりコスト過大、却下。(4) PostToolUse で検査 → コミット完了後の警告となり手戻りが発生、却下 |
 
+## ADR-028: 外部マーケットプレイス依存時の `extraKnownMarketplaces` 登録テンプレート同梱義務
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | クロスマーケットプレイス依存（`plugin.json` の `dependencies` 配列に **自プラグインの所属マーケ名と異なる** `marketplace` フィールド値を含むエントリが 1 件以上ある状態）を持つプラグインは、当該 README の「導入手順」に、(a) 依存マーケットプレイスを `/plugin marketplace add` で追加するコマンド、(b) `~/.claude/settings.json` の `extraKnownMarketplaces` に依存マーケットプレイスを `autoUpdate: true` で登録する JSON テンプレート、(c) 依存プラグインを `/plugin install` で個別追加するコマンド、の 3 点を **必須記載** する。テンプレートは `references/templates/plugin/README.md` の「D. 依存関係のインストール」セクションに反映する。同一マーケットプレイス依存のみ・依存なしのプラグインには本要件は適用しない |
+| 理由 | (1) Claude Code の公式仕様では、未追加のマーケットプレイスからの依存は **自動解決されず未解決のまま放置される**（`Dependencies from a marketplace you have not added are left unresolved.`）。`marketplace.json` の `allowCrossMarketplaceDependenciesOn` で許可していても、利用者側でその依存マーケットプレイスを `/plugin marketplace add` していなければインストールが完了しない。(2) `plugin.json` には依存マーケットプレイスを **自動追加させる仕組みが存在しない** ため、利用者向け手順書（README）で補完するしかない。(3) 単に追加コマンドだけ案内しても、`extraKnownMarketplaces` への登録を行わないと自動更新されず、グローバルルール `plugin-auto-update.md`（`autoUpdate: true` 必須・週 1 更新ポリシー）と整合しない。(4) 自プラグインの `extraKnownMarketplaces` 登録（`readme-policy.md` 5.1 C / ADR-018 (C) 由来）と整合させるため、依存マーケットプレイスについても同形式で示すのが学習負荷が低い |
+| トレードオフ | (1) README 記述量が増える → 依存ありプラグイン限定で適用、依存なしプラグインは無影響。(2) 依存マーケットプレイスの URL / `source` 情報を README 作成者が把握する必要がある → `dependencies-policy.md` のクロスマーケットプレイス依存判断時に同時に確認する運用とする。(3) 利用者が `extraKnownMarketplaces` 登録を行わなくてもインストール自体は成立する（`/plugin install` で済む）→ 自動更新は機能しないが、ハードエラーにはならないので警告型として許容 |
+| 適用範囲 | クロスマーケットプレイス依存を持つプラグイン（`plugin.json` の `dependencies` 配列に **自プラグインの所属マーケ名と異なる** `marketplace` フィールド値を含むエントリが 1 件以上ある場合）。同一マーケットプレイス依存のみ・依存なしのプラグインには適用しない |
+| 必須項目 | (a) `readme-policy.md` 5.1 D に依存マーケ `extraKnownMarketplaces` 登録ブロックを必須化、(b) `references/templates/plugin/README.md` のテンプレートに該当ブロックを反映、(c) `dependencies-policy.md` から本 ADR への参照を追加、(d) クロスマーケットプレイス依存時の README 検証チェックリスト項目を追加（`readme-policy.md` セクション 10）、(e) クロスマーケットプレイス依存判定は `marketplace` フィールド値 ≠ 自プラグイン所属マーケ名 で行う（自マーケ内依存で `marketplace` を冗長記載するケースの誤検知防止） |
+| 代替案 | (1) `plugin.json` 側で依存マーケットプレイスの `source` を持たせて自動追加 → 公式仕様に存在しない、却下。(2) `marketplace.json` の `allowCrossMarketplaceDependenciesOn` 拡張で利用者側 `extraKnownMarketplaces` を強制 → マーケットプレイス側は依存先をホストできず、利用者の `~/.claude/settings.json` を書き換える権限もない、却下。(3) README に追加コマンドだけ書き `extraKnownMarketplaces` は省略 → 自動更新ポリシーと不整合、却下。(4) postinstall フック相当で `extraKnownMarketplaces` を自動登録 → Claude Code にそうした機構なし、却下。(5) Claude Code 公式に依存マーケ自動追加機構を機能要望として提出（短期は本 ADR で運用、公式機能実装後に本 ADR を deprecate）→ 中長期的には推奨経路だが本 ADR 採否とは独立、本 ADR は **公式機能が登場するまでの暫定対応** と位置付ける。(6) 中長期で `marketplace.json` の `allowCrossMarketplaceDependenciesOn` をオブジェクト形式（`{ "name": "...", "source": {...} }`）へ拡張し、README 生成時に `source` を構造化保持 → 将来検討、本 ADR では現運用を維持 |
+
 ## ADR の追加・更新
 
-新たな設計判断が発生した際は、本ファイルに ADR-XXX 形式で追記する。既存 ADR を変更する場合は **最新の決定のみを記載** する（変更前の判断・変更経緯は Git コミット履歴を参照する）。ADR-010（スキル単位 venv）は ADR-024 で更新されたため、ADR-024 の内容が現行決定。ADR-026（フック構成）は ADR-027 で補強されたため、両方を併読する。
+新たな設計判断が発生した際は、本ファイルに ADR-XXX 形式で追記する。既存 ADR を変更する場合は **最新の決定のみを記載** する（変更前の判断・変更経緯は Git コミット履歴を参照する）。ADR-010（スキル単位 venv）は ADR-024 で更新されたため、ADR-024 の内容が現行決定。ADR-026（フック構成）は ADR-027 で補強されたため、両方を併読する。ADR-018（README 4 要素）は ADR-028（クロスマーケットプレイス依存時の D セクション詳細）で詳細化されたため、両方を併読する。

@@ -22,6 +22,7 @@
 | R-2-4 | High | (D) 依存関係セクションが存在する（依存なしの場合も「依存関係なし」と明示する。セクション省略は不可） | 同上 |
 | R-2-5 | Medium | 自動インストール不成立時の個別インストール手順が依存プラグインごとに明示されている | 同上 |
 | R-2-6 | Medium | Python 等の外部ツール依存が「動作要件」に明記されている | 同 節 5.1 |
+| R-2-7 | High | クロスマーケットプレイス依存（`plugin.json` の `dependencies` 配列に **自プラグインの所属マーケ名と異なる** `marketplace` フィールド値を含むエントリが 1 件以上）の場合、D セクションに D-1（依存マーケ `/plugin marketplace add`）/ D-2（依存マーケの `extraKnownMarketplaces` 登録 JSON）/ D-3（依存プラグイン `/plugin install`）の 3 ブロックが揃っている | [readme-policy.md](../../../references/readme-policy.md) 節 5.1 D / ADR-028 |
 
 ## R-3. 利用方法
 
