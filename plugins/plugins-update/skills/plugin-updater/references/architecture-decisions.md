@@ -13,12 +13,13 @@
 |------|---------|------|------------------|----------------------------|
 | ADR-PU-001 | 単一プラグイン化（vs marketplace-toolkit への統合 / vs スキル化） | Accepted | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-002 | 公式 CLI 委譲（vs 低レベル git 操作 / vs 内部実装）— **Trigger ADR** | Accepted | 2026-05-01 (v1.0.0) | 2026-05-01 (v1.0.0) |
-| ADR-PU-003 | Phase A-0〜G 固定順序 | Accepted | 2026-05-01 (v1.0.0) | 2026-05-01 (v1.0.0) |
+| ADR-PU-003 | Phase A-0〜G 固定順序 | Accepted | 2026-05-01 (v1.0.0) | 2026-05-03 (v1.1.0 / A-3 追加) |
 | ADR-PU-004 | 横断ルール SSOT 配置（cross-cutting-rules.md への分離） | Accepted | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-005 | exit code 一次判定 + Unknown 区分 | Accepted | 2026-05-01 (v1.0.0) | 2026-05-01 (v1.0.0) |
 | ADR-PU-006 | サーキットブレーカー閾値と粒度 | Accepted | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-007 | 失敗対応の対話モデル | Accepted | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-008 | コマンドとスキルの責務分離（トリガー / 実作業） | Accepted | N/A | 2026-05-01 (v1.0.0) |
+| ADR-PU-009 | installed_plugins.json をスコープ判定の SSOT に採用（Phase A-3） | Accepted | 2026-05-03 (v1.1.0) | 2026-05-03 (v1.1.0) |
 
 > **追従漏れ検知**: 「最終 CLI 仕様確認日」「最終 Future Direction 改訂日」列は ADR-PU-002（Trigger ADR）
 > の改訂時に追従が必要な ADR を可視化するため。本表が SSOT。CLI 仕様変更時は ADR-PU-002 の
@@ -200,12 +201,13 @@ CLI が `--output json` 等の構造化出力モードを提供したら、ADR-P
 | A | 対象収集（`marketplace list` + `enabledPlugins` 抽出） | 3 |
 | A-1 | プラグイン名・MP 名・スコープ名の入力検証（XR-1） | 4 |
 | A-2 | マーケットプレイス整合性検証（`enabledPlugins` の MP が `marketplace list` に存在するか） | 5 |
-| B | マーケットプレイス更新（`--scope` 指定でも常に実行） | 6 |
-| C | User スコープのプラグイン更新 | 7 |
-| D | Project スコープのプラグイン更新 | 8 |
-| E | Local スコープのプラグイン更新 | 9 |
-| F | 結果報告（サマリ + マーケットプレイス詳細 + スコープ別詳細） | 10 |
-| G | 失敗対応の確認 + 限定リトライ + 再描画 | 11 |
+| A-3 | スコープ真値判定（`installed_plugins.json` の `scope` / `projectPath` を SSOT として project/local の現在のプロジェクト外エントリ等を除外。詳細は ADR-PU-009） | 6 |
+| B | マーケットプレイス更新（`--scope` 指定でも常に実行） | 7 |
+| C | User スコープのプラグイン更新 | 8 |
+| D | Project スコープのプラグイン更新 | 9 |
+| E | Local スコープのプラグイン更新 | 10 |
+| F | 結果報告（サマリ + マーケットプレイス詳細 + スコープ別詳細） | 11 |
+| G | 失敗対応の確認 + 限定リトライ + 再描画 | 12 |
 
 ### Phase 番号体系
 
@@ -751,3 +753,125 @@ ADR-PU-001 のスキル化却下は「AI 自動起動 vs 明示的トリガー�
   Phase F の NOTE 形式に再構成した結果、参照が宙吊りになる問題が発生していた。v1.0.0 では
   Phase 番号を持たない `### サニタイズ規則本体` への改称で本問題は構造的に解消済み。Context での
   本 ADR 制定動機の一つとして記録する（v1.0.0 で参照宙吊りはない）。
+
+---
+
+## ADR-PU-009: installed_plugins.json をスコープ判定の SSOT に採用（Phase A-3）
+
+### Context
+
+v1.0.x までは `enabledPlugins`（settings.json の `~/.claude/settings.json` /
+`<repo>/.claude/settings.json` / `<repo>/.claude/settings.local.json`）の所在を **暗黙のスコープ判定**
+として使用していた:
+
+- `~/.claude/settings.json` → user スコープ
+- `<repo>/.claude/settings.json` → project スコープ
+- `<repo>/.claude/settings.local.json` → local スコープ
+
+しかし Claude Code は `~/.claude/plugins/installed_plugins.json` を **真のインストール状態の
+SSOT** として管理しており、特に **`scope=project|local` のプラグインは `projectPath` フィールド**
+で「どの作業ディレクトリにインストールされたか」を記録する。同一プラグインを複数プロジェクトで
+独立にインストールできるため、現在の `<repo>` と異なる `projectPath` のエントリに対して
+`claude plugin update <plugin>@<mp> --scope project` を発行しても CLI が「該当エントリなし」で
+失敗する。
+
+具体的な再現:
+
+1. プロジェクト A で `csharp-lsp@claude-plugins-official` を project スコープでインストール
+   （`projectPath = A`）
+2. プロジェクト B で同一プラグインを再度 project スコープでインストール（`projectPath = B`）
+3. プロジェクト A の `<repo>/.claude/settings.json` の `enabledPlugins` には当該プラグインが
+   記録されている
+4. プロジェクト C（`projectPath = C` がインストール済みでない）で `/update-all` を実行すると、
+   `<repo>/.claude/settings.json` 由来の更新対象列挙時に当該プラグインが含まれてしまい、
+   `claude plugin update --scope project` が失敗する
+
+### Decision
+
+`~/.claude/plugins/installed_plugins.json` を **スコープ判定の SSOT** として採用し、
+**Phase A-3** で読み取り・突合する。判定ロジックは phase-flow.md A-3 が SSOT。
+
+- `enabledPlugins` は **「有効/無効フラグ」専用** の補助情報として維持（disabled 除外目的）
+- スコープ真値は `installed_plugins.json` の `scope` / `projectPath` フィールドが決定
+- `projectPath != <repo>` のエントリは **Skipped（現在のプロジェクト外）** として除外（リトライ対象外）
+
+派生する Skipped 区分は 5 種類で、いずれも Phase G リトライ対象外:
+
+1. 現在のプロジェクト外
+2. 未インストール（installed_plugins.json に該当エントリなし）
+3. disabled（enabledPlugins 値が false / null）
+4. enabledPlugins 未登録（installed されているが当該スコープで未有効化）
+5. projectPath 欠落（installed_plugins.json の project/local エントリで projectPath が記録されていない）
+
+### Rationale
+
+- **誤更新の構造的排除**: 別プロジェクトの project/local エントリを誤って更新対象に含めない。
+- **CLI 挙動との整合**: `claude plugin update --scope project` は実際に現在の `<repo>` 配下の
+  `installed_plugins.json` エントリのみを更新可能であり、本判定はそれと一致する。
+- **シークレット非接触原則の維持**: `installed_plugins.json` は Claude Code が機械生成する
+  状態ファイルで、`mcpServers` / `apiKeyHelper` / `env` 等の機密キーを構造的に持たない。
+  Read ツールで全文読み込み可能（A-Sec のような Grep 限定読み込みは不要）。
+- **`enabledPlugins` の役割明確化**: `enabledPlugins` を「有効/無効フラグ」専用に限定することで、
+  「インストール先（projectPath）」と「有効化状態」の責務を分離。
+- **ユーザ体験の改善**: スキップ理由が明示されるため、別プロジェクトでの更新が必要なのか、
+  `enabledPlugins` 編集が必要なのかを Phase F-4 のアクションで判別可能。
+
+### Trade-offs
+
+- **追加の Read 操作**: Phase A-3 で `~/.claude/plugins/installed_plugins.json` の Read が
+  発生する（夜次レイテンシは 1 ファイル分の Read 程度で軽微）。
+- **Read 全文の機密キーリスク**: 現状の Claude Code 実装では `installed_plugins.json` に機密キーは
+  含まれないが、将来 Claude Code が同ファイルにフィールド追加する場合、新規フィールドの内容次第で
+  サニタイズ追加が必要になる可能性がある。**現実装では `version=2` のスキーマに `scope` /
+  `projectPath` / `installPath` / `version` / `installedAt` / `lastUpdated` / `gitCommitSha` のみが
+  含まれることを A-3 で前提**とし、これ以外のキーが追加された場合は本 ADR の Future Direction で
+  対応する。
+- **スキーマバージョン互換**: `version=1` 等の旧スキーマや `version=3` 以降の新スキーマを検出した
+  場合、A-3 をスキップして従来挙動（settings.json ベース）にフォールバックする（フェイルセーフ）。
+- **projectPath 文字列比較の OS 差**: Windows は大文字小文字非区別、POSIX は区別という差を
+  正規化する処理が必要（A-3-3 で実装）。シンボリックリンク経由でインストールされた稀ケースでは
+  文字列一致せず Skipped 扱いになるが、誤更新よりは安全側。
+- **`projectPath` のメインコンテキスト混入**: `C:\Users\<USER>\...` 形式のパスにユーザ名が含まれる
+  ため、判定後はメインコンテキストに保持しない。Phase F-3 の備考列および F-4 のアクション文言で
+  表示する場合は **必ず XR-3 サニタイズ（`<user-home>` マスク）を経由** する（phase-flow.md A-3-6 の
+  注記参照）。
+- **`projectPath` 詐称攻撃面**: `~/.claude/plugins/installed_plugins.json` がローカル他プロセスで
+  改変された場合、`projectPath` に `..`/制御文字/末尾空白/`\\?\` プレフィックス/UNC を仕込まれる
+  リスクがある。phase-flow.md A-3-3-pre で **`projectPath` にも XR-1 パス検証を対称適用**して防御
+  （CWE-22 / CWE-706）。
+- **DoS / 巨大 `installed_plugins.json`**: A-3-1 で **4000 行 / 1 MB の上限** を明示し、超過時は
+  フェイルクローズ（A-3 をスキップしファイル不在時挙動にフォールバック）。
+- **スキーマ未定義フィールド注入**: A-3-1 の Read 直後に **`scope` / `projectPath` のみを抽出する
+  ホワイトリストピックアップ** を行い、原データを破棄する。これにより将来 Claude Code が
+  `installed_plugins.json` にフィールドを追加した場合や、攻撃者が同ファイルに任意フィールドを
+  注入した場合でも、メインコンテキストに混入する経路を構造的に遮断する。
+- **A-1 と A-3 の交差集合**: A-3-4 で「`enabledPlugins` ∩ `installed_plugins.json`」の交差集合のみを
+  C/D/E の対象とする。`installed_plugins.json` 単独に細工キーが注入されても、A-1 検証済の
+  `enabledPlugins` を経由しないルートで CLI に到達することはない（XR-1 二重防御の構造化）。
+
+### Alternatives Considered
+
+- **`enabledPlugins` のみで完結する**（現状維持）: 別プロジェクトでインストールされた project/local
+  エントリの誤更新失敗が解消しない。却下。
+- **`claude plugin list` 出力を解析**: CLI の出力フォーマットが安定保証されておらず、ADR-PU-005 の
+  「exit code 一次判定」原則と整合しない。テキスト解析依存度が増す。却下。
+- **A-3 を独立フェーズ化せず Phase A の中で処理**: A-Sec の Grep 限定読み取り原則と
+  Read 全文読み取りの方式差を 1 つの Phase 内に共存させると認知負荷が高まる。独立サブフェーズ化で
+  責務を分離する方が SRP に整合。却下。
+- **`scope=project|local` のエントリは projectPath を見ず一律 Skipped にする**: 現在のプロジェクト
+  内のインストールも更新できなくなる過剰防御。却下。
+
+### Future Direction
+
+- **CLI が `claude plugin list --output json` を提供した場合**: `installed_plugins.json` の直接 Read を
+  廃し CLI 出力に切り替える（ADR-PU-002 Future Direction と連動）。本 ADR の Decision を改訂。
+- **`installed_plugins.json` のスキーマ変更追従**: `version=3` 以降や新規フィールド追加が
+  リリースノートで告知された場合、A-3-2 のスキーマ検証ロジックを更新。新フィールドに機密情報が
+  含まれる場合は XR-3 のサニタイズ規則本体テーブルに追加する。
+- **`/update-all --include-other-projects` 等の拡張**: 別プロジェクトの project/local エントリも
+  まとめて更新したいユーザ要望が出た場合、`/update-all --include-other-projects` フラグを追加し、
+  当該フラグ指定時は projectPath ベースで全プロジェクト分の更新を試みる（CLI が複数プロジェクト
+  対応をサポートした後の拡張）。
+- **A-3 由来 Skipped の自動修復提案**: Phase F-4 のアクション提示を受けて、ユーザが対話的に
+  `enabledPlugins` から該当エントリを除外できる別コマンド（例: `/prune-enabled-plugins`）を
+  検討する（ADR-PU-001 Future Direction の `maintenance-toolkit` 内で扱う案）。

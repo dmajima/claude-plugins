@@ -85,6 +85,7 @@ Phase 番号体系（`A-0-1` の 3 階層 / `A-1` の 2 階層 / `B-1` のサブ
 | A | 対象収集（`marketplace list` + 各スコープの `enabledPlugins` 抽出） |
 | A-1 | プラグイン名 / MP 名 / スコープ名の入力検証（XR-1） |
 | A-2 | マーケットプレイス整合性検証（未登録 MP の早期除外） |
+| A-3 | スコープ真値判定（`installed_plugins.json` の `scope` / `projectPath` で project/local の現在のプロジェクト外エントリを除外。disabled / 未インストール / projectPath 欠落も除外。ADR-PU-009） |
 | B | マーケットプレイス更新（`--scope` 指定でも常に実行） |
 | C | User スコープのプラグイン更新 |
 | D | Project スコープのプラグイン更新 |
@@ -103,8 +104,9 @@ Phase 番号体系（`A-0-1` の 3 階層 / `A-1` の 2 階層 / `B-1` のサブ
 | 横断ルール SSOT 配置（cross-cutting-rules.md） | ADR-PU-004 |
 | exit code 一次判定 + Unknown 区分（Missing はリトライ対象外） | ADR-PU-005 |
 | サーキットブレーカー（MP 単位累計 3 件以上の Failed で配下 Skip。集計対象・Phase B 例外は ADR-PU-006 が SSOT） | ADR-PU-006 |
-| 失敗対応の対話モデル（Failed のみリトライ・5 件閾値で個別判断除外） | ADR-PU-007 |
+| 失敗対応の対話モデル（Failed のみリトライ・5 件閾値で個別判断除外。Skipped 全区分はリトライ対象外） | ADR-PU-007 / ADR-PU-009 |
 | コマンドとスキルの責務分離（トリガー / 実作業） | ADR-PU-008 |
+| `installed_plugins.json` をスコープ判定 SSOT に採用（Phase A-3 で projectPath 一致を判定し、現在のプロジェクト外エントリを除外） | ADR-PU-009 |
 
 ## 出力契約
 
