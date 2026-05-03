@@ -1,6 +1,6 @@
 ---
 description: Markdown を Wiki スタイルの PDF に変換する
-argument-hint: <入力MDパス> [出力PDFパス] [--title タイトル] [--format A4] [--landscape]
+argument-hint: <入力MD> [出力PDF] [--title タイトル] [--format A4] [--landscape]
 ---
 
 `convert-pdf` スキルを呼び出して Markdown を PDF に変換してください。
