@@ -112,20 +112,45 @@ git checkout {tag-or-branch}
 ### D. 依存関係のインストール
 
 `plugin.json` の `dependencies` で宣言された依存プラグインは、利用者のマーケットプレイスで `allowCrossMarketplaceDependenciesOn` が許可されていれば自動インストールされる。
-**自動インストールが成立しない場合**（別マーケットプレイスへの参照が許可されていない・ネットワーク制約等）は、以下の手順で個別インストールする:
+ただし、**依存先マーケットプレイスを利用者が `/plugin marketplace add` で追加していない場合、Claude Code 公式仕様により依存は未解決のまま放置される**（`Dependencies from a marketplace you have not added are left unresolved.`）。
+そのため、クロスマーケットプレイス依存（`plugin.json` の `dependencies` に **自プラグインの所属マーケ名と異なる** `marketplace` フィールドが含まれる場合）があるプラグインは、以下 D-1 / D-2 / D-3 の 3 ブロックを **必須記載** する（ADR-028 準拠）。
+依存なし・同一マーケ依存のみのプラグインでは、D セクションを「依存関係なし」の 1 行に置き換える（**セクションごとの省略は不可**）。
+
+**D-1. 依存マーケットプレイスの追加（必須）**
 
 \`\`\`text
 # 依存マーケットプレイスを追加
 /plugin marketplace add {dependency-marketplace-url}
+\`\`\`
 
-# 依存プラグインを明示インストール
+**D-2. 依存マーケットプレイスの `extraKnownMarketplaces` 登録（必須・自動更新の有効化）**
+
+`~/.claude/settings.json` の `extraKnownMarketplaces` に依存マーケットプレイスを `autoUpdate: true` で登録することで、依存プラグインもセッション起動時に自動更新される。自プラグインのマーケットプレイス登録（C 節）と同形式で並べて示す。
+
+\`\`\`json
+{
+  "extraKnownMarketplaces": {
+    "{dependency-marketplace-name}": {
+      "source": {
+        "type": "github",
+        "repo": "{owner}/{repo}"
+      },
+      "autoUpdate": true
+    }
+  }
+}
+\`\`\`
+
+**D-3. 依存プラグインの個別インストール（必須）**
+
+\`\`\`text
 /plugin install {dependency-plugin-1}@{dependency-marketplace}
 /plugin install {dependency-plugin-2}@{dependency-marketplace}
 \`\`\`
 
 依存プラグインの一覧は `plugin.json` の `dependencies` フィールドで確認できる。
 
-#### Python など外部ツール依存
+**Python など外部ツール依存**
 
 スキル内で Python venv や外部 CLI を使う場合、利用者環境にそれらが導入されていることが前提となる。本プラグインの場合の前提:
 
@@ -146,7 +171,7 @@ git checkout {tag-or-branch}
 | A. マーケットプレイス経由 | **省略不可**（マーケットプレイス未公開でも、公開予定先 URL を `{未公開}` 等で明記） |
 | B. ローカル複製 | **省略不可**（公開状況に関係なく、再現可能なクローン手順を必ず記載） |
 | C. 自動更新 | **省略不可**（`autoUpdate` が利用できない環境向けの手動更新コマンドも併記） |
-| D. 依存関係 | 依存なしのプラグインは「依存関係なし」と **明示**（セクションごと省略は不可） |
+| D. 依存関係 | 依存なしのプラグインは「依存関係なし」と **明示**（セクションごと省略は不可）。**クロスマーケットプレイス依存（`plugin.json` の `dependencies` に自マーケ名と異なる `marketplace` フィールド値を含む）の場合は D-1 / D-2 / D-3 の 3 ブロックを全て記載**（ADR-028 準拠） |
 
 ### 5.2 スキル
 
@@ -247,6 +272,7 @@ README 作成・更新後に以下を確認:
 - [ ] 「このドキュメントについて」セクションあり
 - [ ] 導入手順がセクション 4 位に存在
 - [ ] **プラグイン: 導入手順に 4 要素（A マーケットプレイス / B ローカル複製 / C 自動更新 / D 依存関係）が網羅されている**（ADR-018 準拠）
+- [ ] **プラグイン（クロスマーケットプレイス依存あり）: D セクションに D-1（マーケ add）/ D-2（`extraKnownMarketplaces` 登録）/ D-3（プラグイン install）の 3 ブロックが揃っている**（ADR-028 準拠）
 - [ ] 利用方法（最小例）がある
 - [ ] 技術スタック・アーキテクチャは後半に配置されている
 - [ ] 過去履歴・変更経緯の記載なし
@@ -312,3 +338,4 @@ README 作成・更新後に以下を確認:
 - AI 動作で参照される前提の記述（README は人間向け）
 - **プラグイン README で導入手順 4 要素（A/B/C/D）のいずれかを欠落させること**（ADR-018 違反）
 - **依存関係を持つプラグインで個別インストール手順を省略すること**（自動解決前提の記述のみは不可）
+- **クロスマーケットプレイス依存ありのプラグインで `extraKnownMarketplaces` 登録テンプレート（D-2）を省略すること**（ADR-028 違反、自動更新ポリシーと不整合）

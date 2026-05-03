@@ -65,6 +65,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
 | 7.5 | コマンド `argument-hint` 必須（ADR-023） | `commands/*.md` | High | `check_argument_hint` |
 | 8 | エンコーディング保持 | 編集ファイル（差分）| Critical | （`run_checks.py` 対象外。`Edit`/`Write` ツール側 + ルール `~/.claude/rules/common/file-encoding.md` で担保） |
 | 9 | シークレット混入 | プラグイン全体 | Critical | `check_secrets`（`marketplace-publisher` の `secret-scan.md` と同等） |
+| 10 | クロスマーケットプレイス依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7） | `plugin.json` + 同階層 `README.md` | High | `check_cross_marketplace_readme` |
 
 `run_checks.py` の出力 JSON 構造:
 
@@ -152,6 +153,22 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 を参照。`run_checks.py` の `check_secrets` 関数で同等のロジックを実装している。
 検出時は **Critical 指摘**（公開フローを中断）。
 
+### 10. クロスマーケットプレイス依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7）
+
+`run_checks.py` の `check_cross_marketplace_readme` 関数が以下を実施する:
+
+1. `plugin.json` の `dependencies` 配列を走査
+2. 各エントリが `marketplace` フィールドを持ち、その値が **自プラグイン所属マーケ名と異なる** 場合に「クロスマーケットプレイス依存」と判定
+   - 自プラグイン所属マーケ名は target / 親ディレクトリ階層から `.claude-plugin/marketplace.json` を発見し `name` を取得
+3. 該当プラグインに対し、同階層 `README.md` 内に以下の 3 ブロックすべてが含まれることを確認:
+   - **D-1**: `/plugin marketplace add <URL>` の記載（正規表現）
+   - **D-2**: `extraKnownMarketplaces` キーと `autoUpdate` キーの両方が含まれる JSON 例
+   - **D-3**: `/plugin install <plugin>@<marketplace>` の記載（正規表現）
+4. 不揃いがあれば **High 指摘**（detail に欠落ブロック名と該当依存マーケ名を記録）
+5. 同一マーケットプレイス依存のみ・依存なし・`marketplace` フィールド省略の依存しか持たないプラグインはスキップ
+
+詳細仕様は [`../../../references/architecture-decisions.md`](../../../references/architecture-decisions.md) ADR-028 / [`../../../references/readme-policy.md`](../../../references/readme-policy.md) 節 5.1 D を参照。
+
 ## 指摘出力フォーマット
 
 JSON ファイル内の各 issue:
@@ -190,6 +207,7 @@ JSON ファイル内の各 issue:
 | argument-hint | 不可（適切な短縮表現の判断要） |
 | エンコーディング保持 | 不可（バックアップ必要） |
 | シークレット混入 | 不可（必ずユーザ確認） |
+| クロスマーケットプレイス依存時 D-1/D-2/D-3 | 不可（README 全体構造の判断要） |
 
 `--auto-fix` フラグありでも、自動修正可否欄が「不可」の項目はユーザに修正を委ねる。
 
