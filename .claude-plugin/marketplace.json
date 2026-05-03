@@ -54,7 +54,7 @@
     {
       "name": "convert-doc",
       "source": "./plugins/convert-doc",
-      "description": "Markdown を HTML / PDF / PowerPoint（PPTX）に Wiki スタイルで一括変換できる 3 スキル + 4 コマンド同梱のドキュメント変換プラグイン",
+      "description": "Markdown を Wiki スタイルの HTML / PDF / PPTX に一括変換するドキュメント変換プラグイン",
       "author": {
         "name": "dmajima"
       },
