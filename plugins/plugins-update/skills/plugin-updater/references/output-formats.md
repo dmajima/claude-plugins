@@ -28,8 +28,9 @@
 （将来 CLI が MP レベルで `not found` を返すようになった場合は仕様改訂）。
 **列名定義**: 「成功」= Updated（実際に更新が走ったエントリ）、「変更なし」= No change（既に最新版）、
 「Missing」= マーケットプレイスから消失（リトライ対象外）、「スキップ」= XR-1 不正値 / XR-2 サーキットブレーカー作動 /
-A-2 MP 未登録等で対象外、「失敗」= Failed（リトライ対象）、「Unknown」= exit code と出力解析で分類できなかった
-要手動確認エントリ。
+A-2 MP 未登録 / **A-3 由来（現在のプロジェクト外 / 未インストール / disabled / enabledPlugins 未登録 /
+projectPath 欠落）** 等で対象外、「失敗」= Failed（リトライ対象）、「Unknown」= exit code と出力解析で分類できなかった
+要手動確認エントリ。**「スキップ」の内訳は F-3 備考列で区別** する。
 
 ```markdown
 ## 更新結果サマリ
@@ -68,7 +69,7 @@ XR-5 の閾値（試行済み件数の 20%）を超える場合、cross-cutting-
 
 | プラグイン | マーケットプレイス | 結果 | 備考 |
 |----------|-----------------|-----|-----|
-| <plugin> | <marketplace> | Updated / No change / Missing / Failed / Unknown | <サニタイズ後の備考> |
+| <plugin> | <marketplace> | Updated / No change / Missing / Skipped / Failed / Unknown | <サニタイズ後の備考> |
 
 ### Project プラグイン
 （User と同形式。git リポジトリ外かつ scope 未指定なら "リポジトリ外のため省略" を表示。
@@ -78,6 +79,26 @@ scope=project 明示時は Phase A-0 で git リポジトリ存在を要求し�
 ### Local プラグイン
 （User と同形式。同様に scope 未指定時のみ "リポジトリ外のため省略" を表示）
 ```
+
+### F-3 備考列の Skipped 区分定型文（ADR-PU-009 / Phase A-3 由来）
+
+「結果」列が `Skipped` の場合、**備考列に以下の定型文** を表示してユーザがスキップ理由を一目で判別できるようにする
+（XR-3 サニタイズ後の文字列に含めて出力する）:
+
+| Skipped 区分 | 備考列定型文 |
+|--------------|------------|
+| 現在のプロジェクト外 | `現在のプロジェクト外にインストールされたプラグインをスキップしました` |
+| 未インストール | `installed_plugins.json に該当エントリがありません` |
+| disabled | `enabledPlugins で false / null のため対象外` |
+| enabledPlugins 未登録 | `当該スコープの enabledPlugins に未登録` |
+| projectPath 欠落 | `project / local スコープに projectPath が記録されていません` |
+| MP 未登録（A-2 由来） | `marketplace list に未登録のマーケットプレイスです` |
+| MP Unknown（B-1 由来） | `マーケットプレイス更新で MP 名抽出不能` |
+| サーキットブレーカー作動 | `同一マーケットプレイスで Failed が累積したためスキップ（XR-2）` |
+| 不正な名前（XR-1 由来） | `プラグイン名 / マーケットプレイス名が XR-1 の入力検証に不合致` |
+
+**いずれの Skipped 区分も Phase G リトライ対象から除外** する（A-3 由来 5 区分は ADR-PU-009、
+A-2 / B-1 / XR-1 由来は既存仕様に基づく）。
 
 ---
 
@@ -149,6 +170,13 @@ XR-3 適用は不要。
 
   特に `hooks` セクションが新規追加・変更されている場合、次回起動時に自動実行されます。
 - Missing と判定されたエントリは `enabledPlugins` から除外することを検討（マーケットプレイスから消失）
+- **Skipped（現在のプロジェクト外）が 1 件以上**: 該当プラグインを更新したい場合は、その
+  `projectPath` のディレクトリ内で Claude Code を起動し再度 `/update-all --scope project`（または
+  `local`）を実行してください
+- **Skipped（未インストール）が 1 件以上**: 該当エントリを `enabledPlugins` から除外するか、
+  `claude plugin install <plugin>@<marketplace>` でインストールしてください
+- **Skipped（disabled / enabledPlugins 未登録）が 1 件以上**: 該当プラグインを有効化したい場合は
+  `/plugin` で有効化してください
 - 更新後に問題が発覚した場合のロールバックは README の「ロールバック手順」セクションを参照
 - （失敗があれば）次のリトライ・スキップ確認に応答する
 ```
@@ -163,10 +191,16 @@ XR-3 適用は不要。
 
 | 変数 | 定義 | 集計タイミング | 出典 |
 |------|------|--------------|------|
-| `<N>` | 失敗総数（Failed のみ。Missing / Unknown は含まない） | Phase F-1 集計時点 | ADR-PU-007 |
+| `<N>` | 失敗総数（Failed のみ。Missing / Unknown / **Skipped 全区分** は含まない） | Phase F-1 集計時点 | ADR-PU-007 / ADR-PU-009 |
 | `<M>` | Phase B-1 で Failed と判定されたマーケットプレイスの件数 | Phase B-1 完了時点 | ADR-PU-007 |
 | `<P>` | Phase C/D/E で Failed と判定されたプラグインの件数 | Phase C/D/E 完了時点 | ADR-PU-007 |
 | `<bn>` | **サーキットブレーカー作動 MP 件数**（同一 MP 累計 3 件以上 Failed で作動済みの MP の数。`<M>` とは別カウント。`<M>` は B-1 単独の Failed、`<bn>` は B-1/C/D/E 横断累計が閾値到達したもの） | Phase F-1 集計時点で確定（Phase G-1 直前まで保持） | ADR-PU-006 |
+
+> **Skipped 区分のリトライ対象外性（再掲）**: Phase A-3 由来 5 区分（現在のプロジェクト外 /
+> 未インストール / disabled / enabledPlugins 未登録 / projectPath 欠落）および A-2 / B-1 / XR-1 由来の
+> 各 Skipped 区分はいずれも `<N>` / `<M>` / `<P>` のカウントに含まれず、Phase G-1 / G-2 の選択肢にも
+> 現れない。これらは「設定変更でしか解消しない永続的状態」であり CLI リトライで回復しないため
+> （ADR-PU-007 の Missing と同等の扱い）。Phase F-4 の「次のアクション」でユーザに設定変更を促す。
 
 `<N> = <M> + <P>`。`<bn>` は `<M>` の部分集合ではなく、**B-1 / C/D/E すべての Failed を MP 単位で
 横断集計した結果として 3 件以上に達した MP の件数**であり、独立した変数。

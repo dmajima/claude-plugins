@@ -10,8 +10,8 @@
 > **SSOT** として参照しているもの。可読性のため本ファイルにも再掲しているが、文言を変更する際は
 > output-formats.md のみを編集し、本ファイルは参照を維持する（ADR-PU-004 SSOT 配置原則準拠）。
 
-実行順は **A-0-1 → A-0-2 → A → A-1 → A-2 → B → C → D → E → F → G** の固定順
-（ADR-PU-003 に準拠、変更不可）。
+実行順は **A-0-1 → A-0-2 → A → A-1 → A-2 → A-3 → B → C → D → E → F → G** の固定順
+（ADR-PU-003 / ADR-PU-009 に準拠、変更不可）。
 
 ---
 
@@ -104,6 +104,11 @@ exit 0 で通過しているため処理は中断しない）。
 | User プラグイン | `~/.claude/settings.json` の `enabledPlugins` | **Grep で `enabledPlugins` ブロックを抽出**（A-Sec 手順に従う） |
 | Project プラグイン | `<repo>/.claude/settings.json` の `enabledPlugins` | 同上 |
 | Local プラグイン | `<repo>/.claude/settings.local.json` の `enabledPlugins` | 同上 |
+
+> **NOTE（A-3 連携）**: Phase A は「`enabledPlugins` の有効/無効フラグ集合」を抽出するに留まり、
+> **スコープ真値判定（projectPath 一致確認）は Phase A-3 が `~/.claude/plugins/installed_plugins.json`
+> から取得する**（ADR-PU-009）。Phase A の `User / Project / Local` 区分は settings.json の所在に基づく
+> 暫定区分であり、最終的な C/D/E への振り分けは A-3 結果が確定する。
 
 `settings.json` 系の読み取りは **必ず A-Sec 手順（Grep + ブロック終端検出）** で行う。
 **全文 Read ツールでの読み込みは禁止**（`mcpServers` / `extraKnownMarketplaces` / `hooks` /
@@ -411,6 +416,191 @@ B 実行後の MP 失敗による配下プラグインの動的制御は **XR-2 
 
 ---
 
+## Phase A-3: スコープ真値判定（installed_plugins.json による）
+
+### A-3 が解決する問題
+
+`enabledPlugins`（settings.json）は **そのスコープにおける有効/無効フラグ** であり、
+プラグインが **どこに（user / project / local のどの projectPath に）インストールされたか** を
+表現しない。`scope=project|local` のプラグインは `~/.claude/plugins/installed_plugins.json` の
+`projectPath` フィールドが **真のインストール先** を示すため、現在の `<repo>` と異なる
+`projectPath` のエントリを `claude plugin update --scope project` で更新しようとしても CLI が失敗する。
+
+A-3 は `installed_plugins.json` を **スコープ判定の SSOT** として読み取り、各エントリを以下に分類する:
+
+| 判定 | 扱い |
+|------|------|
+| 現在の `<repo>` と一致する `projectPath` を持つ project/local エントリ | Phase D / E の更新対象 |
+| `projectPath` が現在の `<repo>` と不一致な project/local エントリ | **Skipped（現在のプロジェクト外）** |
+| `scope=user` のエントリ | Phase C の更新対象 |
+| `installed_plugins.json` に存在しない `enabledPlugins` エントリ | **Skipped（未インストール）** |
+
+設計判断は ADR-PU-009 を参照。
+
+### A-3-1. installed_plugins.json の Read
+
+| 項目 | 値 |
+|------|-----|
+| 読み取りパス | `~/.claude/plugins/installed_plugins.json` |
+| 読み取り方式 | **Read ツールで全文読み込み可**（機械生成ファイルで `mcpServers` / `apiKeyHelper` 等の機密キーを構造的に含まないため。**前提**: ADR-PU-009 Trade-offs に列挙された現行スキーマフィールド `scope` / `projectPath` / `installPath` / `version` / `installedAt` / `lastUpdated` / `gitCommitSha` のみが含まれること。スキーマ変更時は ADR-PU-009 Future Direction を参照） |
+| **ファイルサイズ上限** | **4000 行 または 1 MB のいずれか先に到達した時点でフェイルクローズ** とする（DoS 抑止 / CWE-400）。超過時は A-3 をスキップしファイル不在時と同じ INFO + 警告を表示する。Read ツールは `limit: 4000` を明示してから取得し、戻り値が打ち切られた場合は超過とみなす |
+| ファイル不在時 | A-3 をスキップし、Phase A の `enabledPlugins` 抽出結果に対して既定スコープ（settings.json
+由来）で処理を継続。Phase F-4 に「`installed_plugins.json` が見つからないため projectPath による
+スコープ真値判定を行えませんでした。Project / Local スコープのプラグインで更新失敗が起きた場合は
+別プロジェクトでのインストールである可能性があります」を INFO 表示 |
+
+> **ホワイトリストピックアップ（必須・CWE-20 対策）**: Read 直後、各 `<plugin>@<mp>` 配列要素から
+> **`scope` と `projectPath` の 2 フィールドのみ** を抽出した派生オブジェクトを構築し、以降の処理は
+> 派生オブジェクトに対してのみ行う。`installPath` / `installedAt` / `lastUpdated` / `gitCommitSha` /
+> `version` および攻撃者が注入する可能性のある未定義フィールド（`description` / `notes` 等の任意長
+> 値）はメインコンテキストに保持しない。これにより、将来 Claude Code がスキーマ拡張した際に新規
+> フィールドが意図せずコンテキスト混入する経路を構造的に遮断する。
+
+### A-3-2. スキーマバージョン検証
+
+```text
+expected: { "version": 2, "plugins": { "<plugin>@<mp>": [ {scope, projectPath?, ...}, ... ] } }
+```
+
+- `version` フィールドが整数 `2` でない場合（`null` / 文字列 / 不在 / `1` / `3` 以降）は **未対応スキーマ**
+  として A-3 をスキップし、A-3-1 のファイル不在時と同じ INFO を表示する（フェイルセーフ）。
+- 将来 `version` が増加した場合に備え、本プラグインを更新してから再実行するようユーザに促す。
+
+> **フォールバック時の XR-1 適用範囲**: A-3 をスキップするフォールバック経路では、
+> `installed_plugins.json` 由来の値は使用されず、Phase A の `enabledPlugins` 抽出結果（A-1 で
+> XR-1 検証済み）のみが C/D/E に渡るため、入力検証の盲点は生じない。XR-1 二重適用の責務は
+> A-1（settings.json 由来）と A-3-4（installed_plugins.json 由来）で **データソース別に対称的**
+> に担保される（一方のフォールバック時はもう一方が実効、両方有効時は両方適用）。
+
+### A-3-3-pre. `projectPath` のパス検証（XR-1 パス検証の対称適用・必須）
+
+`<repo>` 側は XR-1 のパス検証を A-Repo で適用済みだが、`projectPath` 側は外部入力
+（`installed_plugins.json` 由来）であり、ホームディレクトリ上のファイルが他プロセスに改変された場合の
+攻撃面となる。比較前に **`projectPath` に対しても XR-1 のパス検証を対称的に適用** する（CWE-22 / CWE-706 防御）:
+
+| 検証項目 | 判定 |
+|---------|------|
+| `..` を含まない | 含めば当該エントリを Skipped（不正な projectPath）として除外 |
+| 改行・null 文字・制御文字（`\x00`〜`\x1F` / `\x7F`）を含まない | 含めば除外 |
+| **長さ上限** | 4096 文字超過で除外（OS 依存の現実的なパス上限） |
+| 末尾の連続空白を含まない | 含めば除外（NTFS の trailing-space 詐称対策） |
+| Windows 拡張長プレフィックス `\\?\` で始まらない | 始まれば除外（`\\?\C:\repo\..\evil` 系の正規化バイパス対策） |
+| Windows UNC パス（`^\\\\` で始まる）でない | UNC ならば除外（リモート共有経由の信頼境界外） |
+| 絶対パス | Windows: 正規表現 `^[A-Za-z]:[\\/]`、POSIX: `^/`。相対パスならば除外 |
+
+検証に失敗したエントリは **Skipped（不正な projectPath）** として記録し、`<repo>` との比較には
+進めない。XR-1 のパス検証は SSOT として [`cross-cutting-rules.md`](cross-cutting-rules.md) を参照する
+（規則本体を本ファイル内で再定義しない）。
+
+### A-3-3. `<repo>` および `projectPath` の正規化
+
+`projectPath` の文字列比較に先立ち、両者を **同一 OS 判定で対称的** に正規化する:
+
+| 実行 OS | 正規化手順 |
+|---------|----------|
+| **Windows** | (a) `/` を `\` に置換、(b) 末尾区切り削除（ルートは 1 文字残す）、(c) ASCII 範囲で `tolower`（NTFS 大文字小文字非区別に整合） |
+| **POSIX** | (a) 末尾 `/` 削除（ルートは 1 文字残す）、(b) 大文字小文字を維持。**`\` の `/` 置換は行わない**（POSIX で `\` はファイル名として合法な文字のため、変換すると別パスと誤一致するリスクがある） |
+
+正規化は `<repo>` と `projectPath` の **両方に同じ手順** を適用したうえで文字列比較する。
+両者で異なる OS の手順を混在させない。
+
+> ⚠️ **シンボリックリンク・ジャンクション**: XR-1 のパス検証で既に拒否済み（`<repo>` は
+> 通常ディレクトリのみが採用される）。`projectPath` 側についてはユーザの過去のインストール時点の
+> パスがそのまま記録されているため、シンボリックリンク経由でインストールされた稀ケースでは
+> 文字列一致しない可能性がある（Skipped として扱われる安全側の動作）。実害は「更新できないので
+> ユーザが手動で `/plugin update` を実行する必要がある」のみで、誤更新は発生しない。
+
+> **POSIX で `\` を含む `projectPath` の扱い**: WSL 経由インストール時の誤記等で `projectPath` に
+> backslash が混入したケースは「正規化しても `<repo>` と一致しない可能性が高い」ため、結果的に
+> Skipped（現在のプロジェクト外）として扱われる。これは誤更新を防ぐ安全側の動作であり、ユーザは
+> 該当 `projectPath` のディレクトリで再インストールするか `enabledPlugins` を整理することで解消できる。
+
+### A-3-4. エントリ突合と分類（交差集合方式）
+
+> **交差集合の必須性**: 候補集合は **「enabledPlugins ∩ installed_plugins.json」の交差集合のみ** を
+> 採用する。`installed_plugins.json` のみに存在し `enabledPlugins` に登録されていないキーは
+> A-3-5 の「enabledPlugins 未登録」として Skipped とし、CLI には到達させない。これにより、
+> `installed_plugins.json` 単独に攻撃者が細工キーを注入しても、A-1（settings.json）を経由しない
+> ルートで CLI に到達することはできない（XR-1 二重防御の構造化）。
+
+`installed_plugins.json["plugins"]` の各キー `<plugin>@<mp>` について、配列の各要素を以下のように分類する:
+
+```text
+for plugin_at_mp, entries in installed_plugins["plugins"].items():
+    plugin, mp = plugin_at_mp.split("@", 1)
+    # XR-1 の入力検証は A-1 で済んでいるが、installed_plugins.json 由来の値は
+    # 未検証のため A-3 でも再度 XR-1 を適用してから採用する
+    if XR-1 不合致:
+        記録: Skipped（不正な名前: installed_plugins.json 由来）
+        continue
+    for entry in entries:
+        scope = entry["scope"]
+        if scope == "user":
+            候補に追加: (scope=user, plugin, mp)
+        elif scope in ("project", "local"):
+            project_path = entry.get("projectPath")
+            if not project_path:
+                記録: Skipped（installed_plugins.json projectPath 欠落）
+                continue
+            if 正規化(project_path) == 正規化(<repo>):
+                候補に追加: (scope, plugin, mp)
+            else:
+                記録: Skipped（現在のプロジェクト外）
+                # projectPath 値はメインコンテキストに保持しない（XR-3 サニタイズの C:\Users\... マスク方針に整合）
+        else:
+            記録: Skipped（未知の scope 値）
+```
+
+### A-3-5. settings.json の `enabledPlugins` と突合（disabled 除外）
+
+A-3-4 で抽出した候補に対し、Phase A で取得済みの該当スコープ `enabledPlugins` を確認する:
+
+| `enabledPlugins[<plugin>@<mp>]` の値 | 扱い |
+|--------------------------------------|------|
+| `true` | Phase B-1 結果が OK / 部分失敗（許容）/ 全体失敗（警告付き継続）の MP 配下なら C/D/E の更新対象 |
+| `false` | **Skipped（disabled）** として記録（リトライ対象外） |
+| `null` | **Skipped（disabled / 無効と同等扱い）** として記録（リトライ対象外） |
+| キー欠落 | **Skipped（enabledPlugins 未登録）** として記録（リトライ対象外） |
+
+> **enabledPlugins 未登録の意味**: `installed_plugins.json` に存在するが `enabledPlugins` にキーが
+> 存在しない場合、Claude Code 仕様上「インストール済みだが当該スコープでは未有効化」を意味する。
+> 当該プラグインを更新すべきか不明確であり、ユーザの明示的な有効化を促すため Skipped 扱いとする
+> （誤って予期しない hooks / MCP を引き込まない安全側の動作）。
+
+### A-3 から派生する Skipped 区分（リトライ対象外）
+
+A-3 が確定した時点で、以下 5 種の Skipped 区分が派生する。**いずれも Phase G リトライ対象から除外** する。
+備考列の定型文は [`output-formats.md`](output-formats.md) の「F-3 備考列の Skipped 区分定型文」表が SSOT。
+
+| 区分 | 備考列定型文（output-formats.md SSOT より） |
+|------|------------------------------------------|
+| **Skipped（現在のプロジェクト外）** | `現在のプロジェクト外にインストールされたプラグインをスキップしました` |
+| **Skipped（未インストール）** | `installed_plugins.json に該当エントリがありません` |
+| **Skipped（disabled）** | `enabledPlugins で false / null のため対象外` |
+| **Skipped（enabledPlugins 未登録）** | `当該スコープの enabledPlugins に未登録` |
+| **Skipped（projectPath 欠落）** | `project / local スコープに projectPath が記録されていません` |
+
+> **リトライ対象外の根拠**: これらの Skipped は「設定の問題」（enabledPlugins 編集 / 別プロジェクト
+> での更新 / `/plugin install` 等）でしか解消しない永続的状態であり、CLI のリトライでは
+> 回復しないため Phase G の対象としない。Missing と同様の扱い（ADR-PU-007 / ADR-PU-009）。
+
+### A-3-6. Phase F-4 アクション提示の追加
+
+A-3 由来の Skipped が 1 件以上発生した場合、Phase F-4 の「次のアクション」に以下を追記する。
+**注意**: アクション文言中で `projectPath` の **実値を出力しない**。「その `projectPath` のディレクトリ」
+のように一般語で表現し、実値を出力する場合は **必ず XR-3 サニタイズ（`<user-home>` マスク）を
+通したうえで** 出力する。
+
+- **Skipped（現在のプロジェクト外）が 1 件以上**: 「該当プラグインを更新したい場合は、その
+  `projectPath` のディレクトリ内で Claude Code を起動し再度 `/update-all --scope project`（または
+  `local`）を実行してください」
+- **Skipped（未インストール）が 1 件以上**: 「該当エントリを `enabledPlugins` から除外するか、
+  `claude plugin install <plugin>@<marketplace>` でインストールしてください」
+- **Skipped（disabled）/（enabledPlugins 未登録）が 1 件以上**: 「該当プラグインを有効化したい
+  場合は `/plugin` で有効化してください」
+
+---
+
 ## Phase B: マーケットプレイス更新（最初に必ず実行・XR-1/XR-2/XR-3 を適用・dry-run 時はコマンド表示のみ）
 
 呼び出し元の `scope` の値にかかわらず、本フェーズは常に実行する。
@@ -439,6 +629,11 @@ claude plugin marketplace update
 ---
 
 ## Phase C / D / E: スコープ別プラグイン更新（XR-1/XR-2/XR-3 を適用・dry-run 時はコマンド表示のみ）
+
+各スコープの更新対象は **Phase A-3 で確定した候補集合**（A-3-5 で `enabledPlugins=true` と
+判定されたエントリ）から取得する。A-3 で派生した 5 種の Skipped（現在のプロジェクト外 /
+未インストール / disabled / enabledPlugins 未登録 / projectPath 欠落）はすべて C/D/E の
+対象外であり、Phase F-3 にスキップ理由を備考付きで表示するのみで CLI を呼び出さない。
 
 各スコープの (plugin-name, marketplace-name) ごとに以下を実行する:
 
@@ -566,7 +761,7 @@ Missing は Phase G の対象としないため、リトライ後も Missing の
   ブロック終端検出で `settings.json` 系を読み取り、`claude plugin marketplace list` を実行。
   事後検証ガード（第四手順）も dry-run 時に省略しない。`marketplace list` はキャッシュ参照のみで
   更新通信を行わないことが期待されるが、CLI バージョンにより異なる場合がある）
-- Phase A-1 / A-2 の検証も実行
+- Phase A-1 / A-2 / A-3 の検証も実行（A-3 は読み取り専用・スコープ真値判定）
 - Phase B / C / D / E（**変更系 CLI**）の代わりに、実行予定の CLI コマンド一覧を表示。フォーマットは
   [`output-formats.md`](output-formats.md) の **「Phase F（dry-run モード）」セクション**
   （F-1 / F-2 / F-3 dry-run 専用テーブル）を SSOT として参照する

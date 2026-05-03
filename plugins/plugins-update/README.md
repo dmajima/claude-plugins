@@ -24,6 +24,15 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 `--scope` 指定時も **マーケットプレイス更新（Phase B）は常に実行** されます。
 `--dry-run` と `--scope` は併用可能。
 
+> **NOTE（v1.1.0 以降）**: project / local スコープの更新対象は
+> `~/.claude/plugins/installed_plugins.json` の `projectPath` フィールドを **真のスコープ判定根拠**
+> として採用します（ADR-PU-009）。現在の作業ディレクトリ（`<repo>`）と異なる `projectPath` で
+> インストールされたプラグインは「**現在のプロジェクト外にインストールされたプラグインを
+> スキップしました**」として除外され、Phase G のリトライ対象からも除外されます。該当プラグインを
+> 更新したい場合は、その `projectPath` のディレクトリ内で Claude Code を起動して再実行してください。
+> v1.0.x までは `<repo>/.claude/settings.json` の `enabledPlugins` のみを参照していたため、別
+> プロジェクトでインストールされた project スコープのプラグインで CLI が失敗する不具合がありました。
+
 ## 導入手順
 
 ### 前提
@@ -176,7 +185,7 @@ OS パッケージマネージャ管理下に存在することを確認して�
 委譲します（ADR-PU-008）。Phase 構成の概略は以下のとおり（詳細は
 `skills/plugin-updater/references/phase-flow.md` を参照）。
 
-テーブルは **実行順** に並んでいます（A-0 → A → A-1 → A-2 → B → C → D → E → F → G、ADR-PU-003 準拠）。
+テーブルは **実行順** に並んでいます（A-0 → A → A-1 → A-2 → A-3 → B → C → D → E → F → G、ADR-PU-003 / ADR-PU-009 準拠）。
 
 | 実行順 | Phase | 処理内容 | 使用 CLI |
 |-------|-------|---------|---------|
@@ -185,12 +194,13 @@ OS パッケージマネージャ管理下に存在することを確認して�
 | 3 | A | 対象収集（マーケットプレイス一覧 + 各スコープの `enabledPlugins`） | `claude plugin marketplace list` |
 | 4 | A-1 | プラグイン名・MP 名・スコープ名の入力検証（XR-1） | — |
 | 5 | A-2 | マーケットプレイス整合性検証（未登録 MP の早期除外） | — |
-| 6 | B | マーケットプレイス更新（`--scope` 指定時も常に実行） | `claude plugin marketplace update` |
-| 7 | C | User スコープのプラグイン更新 | `claude plugin update <plugin>@<marketplace> --scope user` |
-| 8 | D | Project スコープのプラグイン更新 | 同上 `--scope project` |
-| 9 | E | Local スコープのプラグイン更新 | 同上 `--scope local` |
-| 10 | F | 結果報告（サニタイズ + サマリ + マーケットプレイス詳細 + スコープ別詳細） | — |
-| 11 | G | 失敗があれば `AskUserQuestion` でリトライ / スキップを確認 | — |
+| 6 | A-3 | スコープ真値判定（`~/.claude/plugins/installed_plugins.json` の `scope` / `projectPath` を SSOT として、project/local の現在のプロジェクト外エントリ・未インストール・disabled・enabledPlugins 未登録・projectPath 欠落を除外。ADR-PU-009） | — |
+| 7 | B | マーケットプレイス更新（`--scope` 指定時も常に実行） | `claude plugin marketplace update` |
+| 8 | C | User スコープのプラグイン更新 | `claude plugin update <plugin>@<marketplace> --scope user` |
+| 9 | D | Project スコープのプラグイン更新 | 同上 `--scope project` |
+| 10 | E | Local スコープのプラグイン更新 | 同上 `--scope local` |
+| 11 | F | 結果報告（サニタイズ + サマリ + マーケットプレイス詳細 + スコープ別詳細） | — |
+| 12 | G | 失敗（Failed）があれば `AskUserQuestion` でリトライ / スキップを確認（**Skipped 全区分はリトライ対象外**・ADR-PU-009） | — |
 
 ### 横断ルール
 
@@ -217,8 +227,9 @@ OS パッケージマネージャ管理下に存在することを確認して�
 | 横断ルール SSOT 配置 | ADR-PU-004 |
 | exit code 一次判定 + Unknown 区分（Missing はリトライ対象外） | ADR-PU-005 |
 | サーキットブレーカー（MP 単位累計 3 件） | ADR-PU-006 |
-| 失敗対応の対話モデル（Failed のみリトライ・5 件閾値で個別判断除外） | ADR-PU-007 |
+| 失敗対応の対話モデル（Failed のみリトライ・5 件閾値で個別判断除外・Skipped 全区分はリトライ対象外） | ADR-PU-007 / ADR-PU-009 |
 | コマンドとスキルの責務分離（トリガー / 実作業） | ADR-PU-008 |
+| `installed_plugins.json` をスコープ判定 SSOT に採用（`scope` / `projectPath` で project/local の現在のプロジェクト外エントリを除外） | ADR-PU-009 |
 
 ## 技術スタック・アーキテクチャ
 
@@ -327,7 +338,7 @@ plugins-update/
             ├── phase-flow.md                     # Phase A-0〜G 詳細手順
             ├── output-formats.md                 # Phase F のテーブル / 警告 / 質問文フォーマット
             ├── cross-cutting-rules.md            # XR-1〜XR-5（横断ルール SSOT）
-            └── architecture-decisions.md         # ADR-PU-001〜008（設計判断記録）
+            └── architecture-decisions.md         # ADR-PU-001〜009（設計判断記録）
 ```
 
 ## 関連プラグイン
