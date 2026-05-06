@@ -1,6 +1,6 @@
 ---
 name: plugin-toolkit
-description: Claude Code プラグイン外形（plugin.json・README）を新規作成し、既存スキル/コマンド/フック/エージェントを移管するスキル。「新しいプラグイン foo を作って」「既存スキル bar をプラグイン化」「スキルをプラグインに変換」等で起動する。Use when scaffolding a new plugin or migrating assets. SKIP when authoring bodies (*-toolkit), editing marketplace.json, or publishing (marketplace-publisher).
+description: Claude Code プラグイン外形（plugin.json・README）を新規作成し、既存スキル/コマンド/フック/エージェントを移管するスキル。「新しいプラグイン foo を作って」「既存スキル bar をプラグイン化」「スキルをプラグインに変換」等で起動する。Use when scaffolding a new plugin or migrating assets. SKIP when authoring skill/command/agent/hook bodies (skill/command/agent/hook-toolkit), editing marketplace.json (marketplace-toolkit), MIT LICENSE setup (mit-license-toolkit), or publishing (marketplace-publisher).
 ---
 
 # Plugin Toolkit
@@ -24,6 +24,7 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 | サブエージェント・チーム本体の生成 | `agent-toolkit` |
 | フック設定本体の生成 | `hook-toolkit` |
 | プラグイン・スキル単位の README 生成・更新 | `readme-toolkit` |
+| **MIT LICENSE 配置・`plugin.json.license` 設定・`license-info.json` 管理** | `mit-license-toolkit`（ADR-029） |
 | マーケットプレイス新規構築 | `marketplace-toolkit` |
 | `.claude-plugin/marketplace.json` の編集（plugins[] 追加・更新・削除）+ マーケットプレイス README 同期 | `marketplace-toolkit` |
 | プラグイン公開（git push / PR） | `marketplace-publisher` |
@@ -100,17 +101,25 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 
 [`../../references/path-portability.md`](../../references/path-portability.md) のルールで配置済み全ファイルを Grep し、NG パスがないか確認。検出時はユーザに修正方針を確認。
 
-### 7. 検証
+### 7. ライセンス配備（必須・ADR-029）
+
+外形生成または既存追加が完了したら、`mit-license-toolkit` を Skill ツール経由で呼び出して MIT LICENSE を配備する。`mit-license-toolkit` が `plugins/{plugin-name}/LICENSE` を生成し、`plugin.json.license = "MIT"` を設定する。ライセンス情報は `<repo_root>/.claude/.local/plugins/extension-toolkit/license-info.json` から取得（複数あれば AskUserQuestion で選択、不在なら新規収集）。詳細は [`../../references/license-policy.md`](../../references/license-policy.md) を参照。
+
+既存プラグインへの追加シナリオ（更新シナリオ）でも、対象プラグインに `LICENSE` が未配置 or `plugin.json.license != "MIT"` を検出した場合は `mit-license-toolkit` を呼び出す。
+
+### 8. 検証
 
 - [ ] `plugin.json` が valid JSON
 - [ ] `plugin.json` の `name` がディレクトリ名と一致
+- [ ] **`plugin.json` の `license == "MIT"`（ADR-029）**
+- [ ] **`plugins/{plugin-name}/LICENSE` が存在し、MIT 標準文 + Copyright 行が埋まっている（ADR-029）**
 - [ ] README に未置換プレースホルダ `{...}` が残っていない
 - [ ] 移管シナリオで元ファイルが無傷
 - [ ] パスポータビリティチェック合格
 - [ ] 既存ファイルを誤って上書きしていない
 - [ ] **`dependencies` に `marketplace` フィールド付き（クロスマーケットプレイス依存）を含む場合**: README が `readme-policy.md` 5.1 D の D-1 / D-2 / D-3 ブロックを満たすことを `readme-toolkit` 連携時に確認（ADR-028 / [`../../references/dependencies-policy.md`](../../references/dependencies-policy.md) 節 2.3）
 
-### 8. 引き渡し
+### 9. 引き渡し
 
 生成・配置したファイル一覧を提示。
 
@@ -121,6 +130,7 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 | エージェント本体未生成 | `agent-toolkit` |
 | フック本体未生成 | `hook-toolkit` |
 | README の追加カスタマイズ | `readme-toolkit` |
+| LICENSE / `plugin.json.license` 整備 | `mit-license-toolkit`（本フローで連携済みのため通常は不要、再調整時のみ） |
 | マーケットプレイス新規構築 | `marketplace-toolkit` |
 | `marketplace.json` への登録 + マーケットプレイス README 同期 | `marketplace-toolkit` |
 | プラグイン公開（git push / PR） | `marketplace-publisher` |
@@ -151,6 +161,7 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 | バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md)（`plugin.json` 編集時必須）|
 | 依存関係宣言 | [`../../references/dependencies-policy.md`](../../references/dependencies-policy.md)（`dependencies` 設定 + クロスマーケ依存時の README 連携要件）|
 | README 規約（クロスマーケ依存時 D-1/D-2/D-3 必須）| [`../../references/readme-policy.md`](../../references/readme-policy.md) 節 5.1 D / ADR-028 |
+| ライセンス必須化（MIT）| [`../../references/license-policy.md`](../../references/license-policy.md) / ADR-029 |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
 | 移管ルール | [`references/migration-rules.md`](references/migration-rules.md) |
 | 動作例 | [`evals/`](evals/) |

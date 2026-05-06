@@ -1,6 +1,6 @@
 ---
 name: readme-toolkit
-description: Claude Code のプラグイン・スキル等の README.md（人間向けリファレンス）を新規作成・更新するスキル。「foo プラグインの README を書いて」「bar スキルの README を更新」「README を最新化」等で起動。Use when creating or updating a human-facing README.md. SKIP when target is SKILL.md (skill-toolkit), plugin.json (plugin-toolkit), or marketplace README (marketplace-toolkit).
+description: Claude Code のプラグイン・スキル等の README.md（人間向けリファレンス）を新規作成・更新するスキル。「foo プラグインの README を書いて」「bar スキルの README を更新」「README を最新化」等で起動。Use when creating or updating a human-facing README.md. SKIP when target is SKILL.md (skill-toolkit), plugin.json (plugin-toolkit), generating LICENSE file (mit-license-toolkit), or marketplace README (marketplace-toolkit).
 ---
 
 # README Toolkit
@@ -84,9 +84,10 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 | このドキュメントについて | 「人間向けリファレンス・Claude 動作で不参照」を明記 |
 | 提供機能 | スキャン結果から自動生成（スキル/コマンド/エージェント一覧） |
 | 使い方 | スラッシュコマンド + 自然言語フレーズ例 |
-| ファイル構成 | ツリー形式（実構成と一致） |
+| ファイル構成 | ツリー形式（実構成と一致、プラグインの場合は `LICENSE` を含める） |
 | 依存システム | 該当時のみ（外部 URL・特定システム参照） |
 | カスタマイズ | 編集ポイントの一覧 |
+| **ライセンス**（プラグイン: 必須、ADR-029） | プラグイン直下 `LICENSE` への相対リンク（`[MIT License](LICENSE) の下で配布されています。`）。LICENSE / `plugin.json.license` の整備自体は `mit-license-toolkit` の責務で、本スキルは README への記載のみ担当 |
 
 ### 5. 過去履歴の除去（更新時）
 
@@ -100,6 +101,7 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 
 - [ ] 「このドキュメントについて」セクションあり
 - [ ] ファイル構成が実構成と一致
+- [ ] **プラグイン: 「ライセンス」セクションあり、`LICENSE` への相対リンクが含まれている（ADR-029）**
 - [ ] 過去履歴の記載なし
 - [ ] プレースホルダ `{...}` 残存なし
 - [ ] パスポータビリティ合格
@@ -129,4 +131,5 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.7） |
 | README 規約 | [`../../references/readme-policy.md`](../../references/readme-policy.md) |
+| ライセンスポリシー（README ライセンスセクション必須化） | [`../../references/license-policy.md`](../../references/license-policy.md) / ADR-029 |
 | 動作例 | [`evals/`](evals/) |
