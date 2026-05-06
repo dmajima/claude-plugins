@@ -141,6 +141,7 @@ plugins/{plugin-name}/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── README.md
+├── LICENSE
 ├── commands/
 ├── skills/
 ├── agents/
@@ -155,3 +156,7 @@ plugins/{plugin-name}/
 | システム | 用途 | 参照箇所 |
 |---------|------|---------|
 | {URL or path} | {用途} | {ファイルパス} |
+
+## ライセンス
+
+[MIT License](LICENSE) の下で配布されています。

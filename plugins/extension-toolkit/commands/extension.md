@@ -28,6 +28,7 @@ argument-hint: <種別> <対象名> [--non-interactive] [--full-auto]
 | `readme <target>` または `readme ...` | `readme-toolkit` | README 生成・更新 |
 | `setup <work-dir>` または `setup ...` | `environment-setup-toolkit` | Python venv 構築・撤去 |
 | `marketplace <name>` または `marketplace ...` | `marketplace-toolkit` | マーケットプレイス新規構築・本体管理 |
+| `license <plugin>` または `license ...` | `mit-license-toolkit` | MIT LICENSE 配備・`plugin.json.license` 設定・`license-info.json` 管理 |
 | `review <target>` または `review ...` | `extension-reviewer` | 多角レビュー実施 |
 | `publish <plugin>` または `publish ...` | `marketplace-publisher` | プラグイン公開ワークフロー |
 
@@ -104,5 +105,6 @@ argument-hint: <種別> <対象名> [--non-interactive] [--full-auto]
 | `readme-toolkit` | README 生成・更新 |
 | `environment-setup-toolkit` | Python venv 構築・撤去 |
 | `marketplace-toolkit` | マーケットプレイス新規構築・本体管理 |
+| `mit-license-toolkit` | MIT LICENSE 配備・`plugin.json.license` 設定・`license-info.json` 管理 |
 | `extension-reviewer` | 多角レビュー（チーム起動） |
 | `marketplace-publisher` | プラグイン公開ワークフロー（git push / PR） |

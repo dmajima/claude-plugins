@@ -1,7 +1,8 @@
 {
   "name": "extension-toolkit",
-  "version": "1.5.0",
-  "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック・README）の作成・レビュー・マーケットプレイス公開まで統括支援",
+  "version": "1.7.0",
+  "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援",
+  "license": "MIT",
   "author": {
     "name": "dmajima"
   },
@@ -14,6 +15,7 @@
     "readme-toolkit",
     "environment-setup-toolkit",
     "marketplace-toolkit",
+    "mit-license-toolkit",
     "extension-reviewer",
     "marketplace-publisher",
     "scaffolding"

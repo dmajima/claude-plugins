@@ -40,8 +40,9 @@
 ```text
 plugins/{plugin-name}/
 ├── .claude-plugin/                # 必須（Claude Code 公式仕様）
-│   └── plugin.json                # 必須
+│   └── plugin.json                # 必須（license: "MIT" 必須、ADR-029）
 ├── README.md                      # 必須（人間向けリファレンス、readme-policy.md 準拠）
+├── LICENSE                        # 必須（MIT 標準文、ADR-029 / license-policy.md 準拠）
 ├── commands/                      # 任意（Claude Code 公式仕様）
 │   └── {command-name}.md
 ├── skills/                        # 任意（Claude Code 公式仕様、節 3 で詳述）
@@ -63,6 +64,7 @@ plugins/{plugin-name}/
 |---------|------|----------|
 | `.claude-plugin/plugin.json` | Claude Code 公式 | 必須 |
 | `README.md` | 独自ルール（[`readme-policy.md`](readme-policy.md)） | 必須 |
+| `LICENSE` | 独自ルール（[`license-policy.md`](license-policy.md)、ADR-029） | 必須（MIT 標準文 + Copyright 行を `mit-license-toolkit` が生成） |
 | `commands/` | Claude Code 公式 | 任意 |
 | `skills/` | Claude Code 公式 | 任意 |
 | `agents/` | Claude Code 公式 | 任意 |
