@@ -1,6 +1,6 @@
 ---
 name: environment-setup-toolkit
-description: Claude Code プラグインの Python venv・依存パッケージを構築・撤去するオーケストレータ。対象プラグインの venv スクリプト（references/scripts/setup/）を起動する。「venv 作って」「Python 環境セットアップ」「環境を片付けて」等で起動する。Use when setting up or tearing down a Python venv for a plugin. SKIP when authoring skill/plugin/command/agent/hook (use the matching *-toolkit).
+description: Claude Code プラグインの Python venv・依存パッケージを構築・撤去するオーケストレータ。対象プラグインの venv スクリプト（references/scripts/setup/）を起動する。「venv 作って」「Python 環境セットアップ」「環境を片付けて」等で起動する。Use when setting up or tearing down a Python venv for a plugin. SKIP when authoring skill/plugin/command/agent/hook bodies (skill/plugin/command/agent/hook-toolkit) or MIT LICENSE setup (mit-license-toolkit).
 ---
 
 # Environment Setup Toolkit

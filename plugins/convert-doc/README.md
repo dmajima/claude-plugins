@@ -251,4 +251,4 @@ plugins/convert-doc/
 
 ## ライセンス
 
-MIT License を予定（リポジトリルートの `LICENSE` ファイルを参照）。
+[MIT License](LICENSE) の下で配布されています。

@@ -1,6 +1,6 @@
 ---
 name: skill-toolkit
-description: Claude Code のスキル（SKILL.md・references・evals 一式）を新規作成または既存改修するスキル。「新しいスキル foo を作って」「skill foo を更新」「既存スキル bar に機能追加」等で起動する。Use when creating or modifying a Claude Code skill. SKIP when target is a plugin shell (plugin-toolkit), command (command-toolkit), agent (agent-toolkit), or hook (hook-toolkit).
+description: Claude Code のスキル（SKILL.md・references・evals 一式）を新規作成または既存改修するスキル。「新しいスキル foo を作って」「skill foo を更新」「既存スキル bar に機能追加」等で起動する。Use when creating or modifying a Claude Code skill. SKIP when target is a plugin shell (plugin-toolkit), command (command-toolkit), agent (agent-toolkit), hook (hook-toolkit), or MIT LICENSE setup (mit-license-toolkit).
 ---
 
 # Skill Toolkit

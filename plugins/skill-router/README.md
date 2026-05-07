@@ -208,4 +208,4 @@ plugins/skill-router/
 
 ## ライセンス
 
-リポジトリ全体の `LICENSE` に準じます（MIT License）。
+[MIT License](LICENSE) の下で配布されています。

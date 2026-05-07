@@ -279,3 +279,7 @@ plugins/credentials-manager/
 - `credentials.json` をコミットしてはならない。
 
 詳細は `skills/credentials-manager/references/security.md` を参照してください。
+
+## ライセンス
+
+[MIT License](LICENSE) の下で配布されています。

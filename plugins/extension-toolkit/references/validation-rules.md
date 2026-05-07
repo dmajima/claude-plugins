@@ -27,7 +27,7 @@
 
 | 階層 | 厳格度 | 許可リスト | 違反時の重大度 |
 |-----|-------|----------|------------|
-| プラグイン直下 | **厳格** | `.claude-plugin/` `README.md` `commands/` `skills/` `agents/` `hooks/` `mcp/` `references/` | High |
+| プラグイン直下 | **厳格** | `.claude-plugin/` `README.md` `LICENSE` `commands/` `skills/` `agents/` `hooks/` `mcp/` `references/` | High |
 | スキル直下 | **厳格** | `SKILL.md` `README.md` `references/` `agents/` `evals/` | High |
 | `references/` 直下 | 推奨例 | （機械チェックなし、人間レビュー）。`scripts/` 配下は推奨業務単位サブフォルダ（[`conventions.md`](conventions.md) 節 5）| - |
 | `references/scripts/` 直下 | 推奨例 + 一部禁止 | 禁止項目（`knowledge/` `lib/` `bin/`、拡張子別サブフォルダ）のみ機械検出 | Medium |
@@ -45,7 +45,7 @@
 PLUGIN_NAME="dev-toolkit"   # ← 実値に置換
 
 # プラグイン直下に許可されないディレクトリ・ファイルがあるか
-ALLOWED_PLUGIN_ROOT=".claude-plugin commands skills agents hooks mcp references README.md"
+ALLOWED_PLUGIN_ROOT=".claude-plugin commands skills agents hooks mcp references README.md LICENSE"
 for entry in plugins/"$PLUGIN_NAME"/*; do
   name=$(basename "$entry")
   if ! echo "$ALLOWED_PLUGIN_ROOT" | grep -qw "$name"; then
@@ -87,7 +87,7 @@ done
 |-----|-------|---------|
 | `SKILL.md` 200 行以内 | High | `wc -l` |
 | frontmatter `name` がディレクトリ名と一致 | High | パス比較 |
-| 必須セクション存在（責務 / 責務外 / トリガー条件 / 前提 / 実行モード判定 / 実行フロー / 重要な制約） | High | パターン検索 |
+| 必須セクション存在（責務 / 責務外 / トリガー条件 / 前提 / 実行モード判定 / 実行フロー / 重要な制約 / 参照） | High | パターン検索 |
 | `scripts/` 命名（`knowledge/` 不可） | Medium | パス確認 |
 | Python 利用時の依存はプラグイン直下 `scripts/setup/requirements.txt` に統合（ADR-024） | High | ファイル存在確認 + スキル独自 requirements.txt 不在 |
 | スキル直下 `scripts/setup/setup_venv.sh` 等の venv 関連スクリプト不在（ADR-024） | High | パターン不在確認（プラグイン直下に集約済） |
@@ -102,6 +102,10 @@ done
 |-----|-------|---------|
 | `plugin.json` の `name` がディレクトリ名と一致 | High | パス比較 |
 | `README.md` 存在 | High | ファイル存在確認 |
+| **`LICENSE` 存在（ADR-029）** | Critical | ファイル存在確認（`plugins/{name}/LICENSE`） |
+| **`LICENSE` 本文が MIT 標準文と一致（ADR-029）** | Critical | [`license-policy.md`](license-policy.md) 節 2.2 と本文比較（copyright 行除く） |
+| **`LICENSE` の Copyright 行に year + holder が埋まっている（プレースホルダ未残存、ADR-029）** | Critical | 正規表現 `^Copyright \(c\) \S.+ \S.+$` + `{year}` `{copyright_holder}` 不在 |
+| **`plugin.json` の `license == "MIT"`（ADR-029）** | Critical | JSON フィールド確認 |
 | 移管シナリオで元ファイルが無傷 | Critical | git diff |
 | 移管後の `settings.json` が改変されていない | Critical | git diff |
 | 含まれるスキル/コマンド/エージェント/フックの種別別検証合格 | High | 本ファイルの該当節 |
@@ -233,8 +237,9 @@ done
 | `hook-toolkit` | 1 + 2.6 |
 | `readme-toolkit` | 1 + 2.7 |
 | `marketplace-toolkit` | 1 + 2.8（マーケットプレイス本体検証） |
+| `mit-license-toolkit` | 1 + 2.2（プラグイン直下の LICENSE 関連項目）|
 | `extension-reviewer` | 全節 + 自動チェック手順は [`../skills/extension-reviewer/references/automated-checks.md`](../skills/extension-reviewer/references/automated-checks.md) |
-| `marketplace-publisher` | 1 + 2.2（実体検証）+ 2.8（マーケットプレイス README 同期確認） |
+| `marketplace-publisher` | 1 + 2.2（実体検証 + LICENSE fail-closed）+ 2.8（マーケットプレイス README 同期確認） |
 
 ## 7. 関連ファイル
 
@@ -246,3 +251,4 @@ done
 | ポータブルパス | [`path-portability.md`](path-portability.md) |
 | evals 設計 | [`eval-guide.md`](eval-guide.md) |
 | アーキテクチャ決定 | [`architecture-decisions.md`](architecture-decisions.md) |
+| ライセンスポリシー（MIT 必須化） | [`license-policy.md`](license-policy.md) |

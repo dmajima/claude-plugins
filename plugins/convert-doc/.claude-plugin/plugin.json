@@ -1,10 +1,21 @@
 {
   "name": "convert-doc",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Markdown を Wiki スタイルの HTML / PDF / PPTX に一括変換するドキュメント変換プラグイン",
   "author": {
     "name": "dmajima"
   },
   "category": "documentation",
-  "keywords": ["markdown", "html", "pdf", "pptx", "powerpoint", "conversion", "documentation", "mermaid", "wiki"]
+  "keywords": [
+    "markdown",
+    "html",
+    "pdf",
+    "pptx",
+    "powerpoint",
+    "conversion",
+    "documentation",
+    "mermaid",
+    "wiki"
+  ],
+  "license": "MIT"
 }
