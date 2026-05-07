@@ -354,4 +354,4 @@ plugins-update/
 
 ## ライセンス
 
-本プラグインは MIT License で配布されます。
+[MIT License](LICENSE) の下で配布されています。
