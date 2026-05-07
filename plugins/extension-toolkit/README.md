@@ -146,7 +146,6 @@ git checkout v{x.y.z}   # 推奨: 特定リリースタグを指定（最新タ�
 | `readme <target>` | `readme-toolkit` | プラグイン・スキル README 生成・更新 |
 | `setup <work-dir>` | `environment-setup-toolkit` | Python venv 構築 |
 | `marketplace <name>` | `marketplace-toolkit` | マーケットプレイス新規構築・本体管理 |
-| `license <plugin>` | `mit-license-toolkit` | MIT LICENSE 配備・`plugin.json.license` 設定（ADR-029） |
 | `review <target>` | `extension-reviewer` | 多角レビュー |
 | `publish <plugin>` | `marketplace-publisher` | プラグイン公開ワークフロー |
 
@@ -162,7 +161,6 @@ git checkout v{x.y.z}   # 推奨: 特定リリースタグを指定（最新タ�
 | 「`qux` スキルの README を書いて」 | `readme-toolkit` |
 | 「Python venv 作って」 | `environment-setup-toolkit` |
 | 「新しいマーケットプレイス `acme-claude-plugins` を作って」 | `marketplace-toolkit` |
-| 「`grault` プラグインに MIT ライセンスを追加」 | `mit-license-toolkit` |
 | 「`quux` プラグインをレビュー」 | `extension-reviewer` |
 | 「`corge` プラグインを公開」 | `marketplace-publisher` |
 
@@ -196,7 +194,6 @@ Claude（要約）:
 | `readme-toolkit` | プラグイン・スキル単位の README 生成・更新 |
 | `environment-setup-toolkit` | Python venv 等の環境構築・撤去 |
 | `marketplace-toolkit` | マーケットプレイス新規構築・本体管理（`marketplace.json` + マーケットプレイス README） |
-| `mit-license-toolkit` | MIT LICENSE 配備・`plugin.json.license` 設定・`license-info.json` 管理（ADR-029） |
 | `extension-reviewer` | 拡張要素の多角レビュー（チーム起動） |
 | `marketplace-publisher` | プラグイン公開ワークフロー（git push / PR、`marketplace.json` 編集は `marketplace-toolkit` に委譲） |
 
@@ -252,7 +249,6 @@ Claude（要約）:
 | Claude UI 利用ルール | `references/user-interaction.md` |
 | 状態ファイル形式 | `references/state-files.md` |
 | README 規約（プラグイン・スキル・マーケットプレイス共通） | `references/readme-policy.md` |
-| ライセンスポリシー（MIT 必須化） | `references/license-policy.md` |
 | エージェント活用方針 | `references/agent-utilization.md` |
 | レビューフレッシュ起動原則（ADR-021） | `references/review-freshness.md` |
 | プラグイン自己完結性・利用者環境非依存（ADR-022） | `references/self-containment.md` |
@@ -274,7 +270,6 @@ plugins/extension-toolkit/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── README.md
-├── LICENSE                          # MIT ライセンス（ADR-029）
 ├── commands/
 │   └── extension.md                 # /extension オーケストレータ
 ├── references/                      # SSOT（プラグイン横断の共通ナレッジ）
@@ -290,7 +285,6 @@ plugins/extension-toolkit/
 │   ├── user-interaction.md
 │   ├── state-files.md
 │   ├── readme-policy.md
-│   ├── license-policy.md            # ライセンスポリシー（MIT 必須化、ADR-029）
 │   ├── agent-utilization.md
 │   ├── review-freshness.md          # レビューフレッシュ起動原則（ADR-021）
 │   ├── self-containment.md          # プラグイン自己完結性（ADR-022）
@@ -301,7 +295,7 @@ plugins/extension-toolkit/
 │   │   └── hook-security-team.md
 │   └── templates/                   # 推奨構成テンプレート
 │       ├── skill/
-│       ├── plugin/                  # plugin.json + README + LICENSE テンプレート
+│       ├── plugin/
 │       ├── command/
 │       ├── agent/
 │       ├── hook/
@@ -321,7 +315,6 @@ plugins/extension-toolkit/
     ├── readme-toolkit/
     ├── environment-setup-toolkit/
     ├── marketplace-toolkit/
-    ├── mit-license-toolkit/         # MIT LICENSE 配備・license-info.json 管理（ADR-029）
     ├── extension-reviewer/
     └── marketplace-publisher/
 ```
@@ -350,7 +343,3 @@ plugins/extension-toolkit/
 ### アーキテクチャ判断
 
 詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) を参照（全 ADR）。
-
-## ライセンス
-
-[MIT License](LICENSE) の下で配布されています。

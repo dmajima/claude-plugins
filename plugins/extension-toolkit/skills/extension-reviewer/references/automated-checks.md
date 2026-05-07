@@ -66,7 +66,6 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
 | 8 | エンコーディング保持 | 編集ファイル（差分）| Critical | （`run_checks.py` 対象外。`Edit`/`Write` ツール側 + ルール `~/.claude/rules/common/file-encoding.md` で担保） |
 | 9 | シークレット混入 | プラグイン全体 | Critical | `check_secrets`（`marketplace-publisher` の `secret-scan.md` と同等） |
 | 10 | クロスマーケットプレイス依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7） | `plugin.json` + 同階層 `README.md` | High | `check_cross_marketplace_readme` |
-| 11 | プラグインに MIT LICENSE 配備（ADR-029） | プラグイン直下 `LICENSE` + `plugin.json.license` + `README.md` | Critical / High | `check_mit_license` |
 
 `run_checks.py` の出力 JSON 構造:
 
@@ -170,24 +169,6 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 
 詳細仕様は [`../../../references/architecture-decisions.md`](../../../references/architecture-decisions.md) ADR-028 / [`../../../references/readme-policy.md`](../../../references/readme-policy.md) 節 5.1 D を参照。
 
-### 11. プラグイン MIT LICENSE 配備チェック（ADR-029）
-
-レビュー対象がプラグイン（`plugins/{name}/.claude-plugin/plugin.json` を持つディレクトリ）の場合、以下を確認する:
-
-| 検査項目 | 重大度 | 検出方法 |
-|---------|-------|---------|
-| `plugins/{name}/LICENSE` の存在 | Critical | ファイル存在確認 |
-| `LICENSE` 本文が MIT 標準文（[`../../../references/license-policy.md`](../../../references/license-policy.md) 節 2.2）と一致（copyright 行除く） | Critical | 行単位比較（copyright 行は除外）|
-| `Copyright (c) <year> <holder>` の `<year>` `<holder>` が空でなく、プレースホルダ `{year}` `{copyright_holder}` 未残存 | Critical | 正規表現 `^Copyright \(c\) (\S.+) (\S.+)$` |
-| `plugin.json.license == "MIT"` | Critical | JSON フィールド確認 |
-| `README.md` に「ライセンス」セクションが存在し、`LICENSE` への相対リンクが含まれる | High | 見出しパターン + リンク検出 |
-
-不備時は `mit-license-toolkit` への接続を案内する（自動修正不可、利用者の意思確認 + 著作権情報入力が必要なため）。
-
-`run_checks.py` の `check_mit_license` 関数で機械チェック実装済み。`$CLAUDE_PLUGIN_ROOT/skills/mit-license-toolkit/references/template/LICENSE` を SSOT として参照し、本文の行単位比較（copyright 行除く）+ Copyright 行の正規表現検証 + `plugin.json.license == "MIT"` を一括検査する。
-
-詳細仕様は [`../../../references/license-policy.md`](../../../references/license-policy.md) を参照。
-
 ## 指摘出力フォーマット
 
 JSON ファイル内の各 issue:
@@ -227,7 +208,6 @@ JSON ファイル内の各 issue:
 | エンコーディング保持 | 不可（バックアップ必要） |
 | シークレット混入 | 不可（必ずユーザ確認） |
 | クロスマーケットプレイス依存時 D-1/D-2/D-3 | 不可（README 全体構造の判断要） |
-| MIT LICENSE 配備（ADR-029） | 不可（著作権情報の確認が必要、`mit-license-toolkit` で対応） |
 
 `--auto-fix` フラグありでも、自動修正可否欄が「不可」の項目はユーザに修正を委ねる。
 

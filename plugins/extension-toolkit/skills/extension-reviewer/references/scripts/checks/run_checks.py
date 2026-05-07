@@ -39,7 +39,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import pathlib
 import re
 import sys
@@ -809,162 +808,6 @@ def check_cross_marketplace_readme(target: pathlib.Path, collector: IssueCollect
             )
 
 
-_MIT_COPYRIGHT_RE = re.compile(r"^Copyright \(c\) (\S+) (.+)$")
-
-
-def _resolve_mit_template() -> "pathlib.Path | None":
-    """MIT 標準文テンプレートのパスを解決する（mit-license-toolkit が SSOT）。"""
-    plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
-    if plugin_root:
-        candidate = pathlib.Path(plugin_root) / "skills" / "mit-license-toolkit" / "references" / "template" / "LICENSE"
-        if candidate.is_file():
-            return candidate
-    here = pathlib.Path(__file__).resolve()
-    candidate = (
-        here.parent.parent.parent.parent.parent
-        / "mit-license-toolkit"
-        / "references"
-        / "template"
-        / "LICENSE"
-    )
-    if candidate.is_file():
-        return candidate
-    return None
-
-
-def _normalize_license_body(body: str) -> "list[str]":
-    """copyright 行を除いた行列を返す（MIT テンプレートと比較するため）。"""
-    return [line for line in body.splitlines() if not line.startswith("Copyright (c)")]
-
-
-def check_mit_license(target: pathlib.Path, collector: IssueCollector) -> None:
-    """11. プラグイン MIT LICENSE 配備検査（ADR-029）。
-
-    対象: target 配下のすべてのプラグイン（.claude-plugin/plugin.json を持つディレクトリ）。
-    検査項目:
-        - プラグイン直下に LICENSE が存在する（Critical）
-        - LICENSE 本文が MIT 標準文と一致する（copyright 行除く、Critical）
-        - Copyright (c) <year> <holder> 行に year + holder が埋まっている（Critical）
-        - plugin.json.license == "MIT"（Critical）
-        - README.md に「ライセンス」セクションと LICENSE への相対リンクがある（High）
-    """
-    template_path = _resolve_mit_template()
-    if template_path is None:
-        # テンプレート参照不能は環境エラー扱いで High（致命ではないが検証品質低下）
-        collector.add(
-            "High",
-            "ADR-029: MIT LICENSE テンプレートが解決できない（環境エラー）",
-            None,
-            "$CLAUDE_PLUGIN_ROOT/skills/mit-license-toolkit/references/template/LICENSE が見つからない",
-        )
-        return
-
-    template_normalized = _normalize_license_body(template_path.read_text(encoding="utf-8"))
-
-    for plugin_json in target.rglob("plugin.json"):
-        if is_excluded_dir(plugin_json, target):
-            continue
-        if plugin_json.parent.name != ".claude-plugin":
-            continue
-        # references/templates/ 配下のテンプレートファイル（プレースホルダ込み）は除外
-        if "templates" in plugin_json.parts:
-            continue
-        plugin_dir = plugin_json.parent.parent
-
-        # plugin.json.license == "MIT" 検査
-        text = read_text_safe(plugin_json)
-        if text is not None:
-            try:
-                data = json.loads(text)
-                license_value = data.get("license")
-                if license_value != "MIT":
-                    collector.add(
-                        "Critical",
-                        "ADR-029: plugin.json.license != \"MIT\"",
-                        plugin_json,
-                        f"license={license_value!r} (期待値: \"MIT\")",
-                    )
-            except json.JSONDecodeError:
-                pass  # JSON 不正は別チェックで検出済み
-
-        # LICENSE 存在検査
-        license_path = plugin_dir / "LICENSE"
-        if not license_path.is_file():
-            collector.add(
-                "Critical",
-                "ADR-029: プラグイン直下 LICENSE 不在",
-                license_path,
-                "MIT 標準文 + Copyright 行を mit-license-toolkit で配備すること",
-            )
-            continue
-
-        # LICENSE 本文の MIT 標準文一致検査
-        license_text = read_text_safe(license_path)
-        if license_text is None:
-            collector.add("Critical", "ADR-029: LICENSE 読み込み失敗", license_path, "")
-            continue
-
-        if _normalize_license_body(license_text) != template_normalized:
-            collector.add(
-                "Critical",
-                "ADR-029: LICENSE 本文が MIT 標準文と不一致",
-                license_path,
-                "license-policy.md 節 2.2 の標準文と一字一句一致させること",
-            )
-            continue
-
-        # Copyright 行検査
-        copyright_lines = [line for line in license_text.splitlines() if line.startswith("Copyright (c)")]
-        if not copyright_lines:
-            collector.add(
-                "Critical",
-                "ADR-029: LICENSE に Copyright 行がない",
-                license_path,
-                "Copyright (c) <year> <holder> を含めること",
-            )
-        else:
-            match = _MIT_COPYRIGHT_RE.match(copyright_lines[0])
-            if not match:
-                collector.add(
-                    "Critical",
-                    "ADR-029: Copyright 行の書式が不正",
-                    license_path,
-                    f"line: {copyright_lines[0]}",
-                )
-            else:
-                year, holder = match.group(1).strip(), match.group(2).strip()
-                if not year or not holder or "{" in year or "{" in holder:
-                    collector.add(
-                        "Critical",
-                        "ADR-029: Copyright 行に year/holder が空またはプレースホルダ残存",
-                        license_path,
-                        f"year={year!r} holder={holder!r}",
-                    )
-
-        # README ライセンスセクション検査（プラグインのみ、High）
-        readme = plugin_dir / "README.md"
-        if readme.is_file():
-            readme_text = read_text_safe(readme)
-            if readme_text is not None:
-                has_license_section = bool(
-                    re.search(r"^##\s+ライセンス\b", readme_text, re.MULTILINE)
-                    or re.search(r"^##\s+License\b", readme_text, re.MULTILINE)
-                )
-                has_license_link = bool(re.search(r"\[[^\]]*[Ll]icense[^\]]*\]\([^)]*LICENSE[^)]*\)", readme_text))
-                if not (has_license_section and has_license_link):
-                    missing = []
-                    if not has_license_section:
-                        missing.append("「## ライセンス」セクション")
-                    if not has_license_link:
-                        missing.append("LICENSE への相対リンク")
-                    collector.add(
-                        "High",
-                        "ADR-029: README に「ライセンス」セクションまたは LICENSE リンクが不在",
-                        readme,
-                        f"missing={','.join(missing)}",
-                    )
-
-
 # --------------------------------------------------------------------------- #
 # メインフロー
 # --------------------------------------------------------------------------- #
@@ -981,7 +824,6 @@ CHECKS = [
     ("argument-hint 必須（ADR-023）", check_argument_hint),
     ("シークレット混入", check_secrets),
     ("クロスマーケ依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7）", check_cross_marketplace_readme),
-    ("プラグイン MIT LICENSE 配備（ADR-029）", check_mit_license),
 ]
 
 

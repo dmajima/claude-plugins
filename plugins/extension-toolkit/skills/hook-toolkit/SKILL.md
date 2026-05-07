@@ -1,6 +1,6 @@
 ---
 name: hook-toolkit
-description: Claude Code のフック設定（hooks/hooks.json または settings.json hooks セクション）を新規作成・改修するスキル。「PreToolUse フックを作って」「Stop イベントで通知音」「Bash 実行前にログ」等で起動する。Use when creating or modifying a hook configuration. SKIP when target is a skill (skill-toolkit), command (command-toolkit), agent (agent-toolkit), plugin shell (plugin-toolkit), or MIT LICENSE setup (mit-license-toolkit).
+description: Claude Code のフック設定（hooks/hooks.json または settings.json hooks セクション）を新規作成・改修するスキル。「PreToolUse フックを作って」「Stop イベントで通知音」「Bash 実行前にログ」等で起動する。Use when creating or modifying a hook configuration. SKIP when target is a skill, command, agent, or plugin shell (matching *-toolkit).
 ---
 
 # Hook Toolkit

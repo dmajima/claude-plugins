@@ -1,6 +1,6 @@
 ---
 name: agent-toolkit
-description: Claude Code のサブエージェント（agents/{name}.md）・エージェントチームを新規作成・編成・改修するスキル。「コードレビュー用エージェントを作って」「セキュリティ評価チームを編成」「実装エンジニア視点のエージェントが欲しい」等で起動する。Use when creating or refactoring a sub-agent or team. SKIP when target is a skill (skill-toolkit), command (command-toolkit), hook (hook-toolkit), plugin shell (plugin-toolkit), or MIT LICENSE setup (mit-license-toolkit).
+description: Claude Code のサブエージェント（agents/{name}.md）・エージェントチームを新規作成・編成・改修するスキル。「コードレビュー用エージェントを作って」「セキュリティ評価チームを編成」「実装エンジニア視点のエージェントが欲しい」等で起動する。Use when creating or refactoring a sub-agent or team. SKIP when target is a skill, command, hook, or plugin shell (skill/command/hook/plugin-toolkit).
 ---
 
 # Agent Toolkit

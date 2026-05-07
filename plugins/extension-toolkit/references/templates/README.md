@@ -18,7 +18,6 @@
 |-------------|------|----------|
 | スキル一式 | `skill/` | `skill-toolkit` |
 | プラグイン外形 | `plugin/` | `plugin-toolkit` |
-| プラグイン LICENSE | `plugin/LICENSE`（MIT 標準文 + `{year}` `{copyright_holder}` プレースホルダ） | `mit-license-toolkit` |
 | スラッシュコマンド | `command/command.md` | `command-toolkit` |
 | サブエージェント | `agent/agent.md` | `agent-toolkit` |
 | エージェントチーム | `agent/team.md` | `agent-toolkit` |
