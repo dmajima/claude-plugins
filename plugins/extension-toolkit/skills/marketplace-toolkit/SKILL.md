@@ -1,6 +1,6 @@
 ---
 name: marketplace-toolkit
-description: Claude Code プラグインマーケットプレイス（.claude-plugin/marketplace.json）の新規構築・本体管理（manifest・README 同期）スキル。「マーケットプレイス foo を作って」「marketplace.json に bar を追加」「README を同期」等で起動する。Use when creating or updating a marketplace. SKIP when publishing (marketplace-publisher), building plugin body (plugin-toolkit), or MIT LICENSE setup (mit-license-toolkit).
+description: Claude Code プラグインマーケットプレイス（.claude-plugin/marketplace.json）の新規構築・本体管理（manifest・README 同期）スキル。「マーケットプレイス foo を作って」「marketplace.json に bar を追加」「README を同期」等で起動する。Use when creating or updating a marketplace. SKIP when publishing (marketplace-publisher) or building plugin body (plugin-toolkit).
 ---
 
 # Marketplace Toolkit

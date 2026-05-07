@@ -2,7 +2,6 @@
   "name": "{plugin-name}",
   "version": "0.1.0",
   "description": "{プラグインの 1 行説明（80 文字以内）}",
-  "license": "MIT",
   "author": {
     "name": "{author-name}"
   },

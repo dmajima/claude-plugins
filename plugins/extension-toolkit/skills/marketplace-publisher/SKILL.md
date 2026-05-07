@@ -1,6 +1,6 @@
 ---
 name: marketplace-publisher
-description: Claude Code プラグインの公開ワークフロー（重複検査・実体検証・git push・PR 作成・ハンドオフ or フルオート）担当スキル。「foo プラグインを公開」「マーケットプレイスに登録」「フルオートで公開」等で起動する。Use when publishing a plugin to a marketplace. SKIP when creating plugin files (plugin-toolkit), editing marketplace.json (marketplace-toolkit), generating LICENSE file (mit-license-toolkit), or reviewing (extension-reviewer).
+description: Claude Code プラグインの公開ワークフロー（重複検査・実体検証・git push・PR 作成・ハンドオフ or フルオート）担当スキル。「foo プラグインを公開」「マーケットプレイスに登録」「フルオートで公開」等で起動する。Use when publishing a plugin to a marketplace. SKIP when creating plugin files (plugin-toolkit), editing marketplace.json (marketplace-toolkit), or reviewing (extension-reviewer).
 ---
 
 # Marketplace Publisher
@@ -24,7 +24,6 @@ Claude Code プラグインの **公開ワークフロー**（重複検査・実
 | スキル/コマンド/エージェント/フック本体の作成 | 各 `*-toolkit` |
 | 公開前のレビュー | `extension-reviewer` |
 | プラグイン・スキルの README 生成・更新 | `readme-toolkit` |
-| **MIT LICENSE 配備・`plugin.json.license` 設定** | `mit-license-toolkit`（本スキルは fail-closed 検証のみ、修正は委譲） |
 | マーケットプレイス新規構築 | `marketplace-toolkit` |
 | `marketplace.json` の編集（plugins[] 追加・更新・削除）+ マーケットプレイス README 同期 | `marketplace-toolkit`（本スキルから呼び出し） |
 
@@ -71,8 +70,6 @@ Claude Code プラグインの **公開ワークフロー**（重複検査・実
 | plugin.json の `name` がディレクトリ名と一致 | 必須 |
 | description が plugin.json と整合 | 不一致時はユーザ確認 |
 | `README.md` 存在 | 推奨 |
-| **`plugins/{plugin-name}/LICENSE` 存在 + 本文が MIT 標準文と一致 + Copyright 行が埋まっている**（ADR-029） | **必須・fail-closed**（不備時は `mit-license-toolkit` への接続を案内し公開を中断） |
-| **`plugin.json.license == "MIT"`**（ADR-029） | **必須・fail-closed** |
 | シークレット混入スキャン | **必須**（[references/secret-scan.md](references/secret-scan.md) 参照、検出時 fail-closed） |
 
 #### シークレット混入スキャン（必須）
@@ -192,7 +189,6 @@ marketplace.json の更新が完了しました。
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.2 実体検証） |
 | バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md)（公開コミットでのバージョン更新確認）|
-| ライセンス必須化（fail-closed 検証）| [`../../references/license-policy.md`](../../references/license-policy.md) / ADR-029 |
 | marketplace.json 仕様 | [`references/marketplace-json.md`](references/marketplace-json.md) |
 | 重複チェック詳細 | [`references/duplication-check.md`](references/duplication-check.md) |
 | シークレットスキャン | [`references/secret-scan.md`](references/secret-scan.md) |

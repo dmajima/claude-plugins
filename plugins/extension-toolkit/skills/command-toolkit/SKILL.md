@@ -1,6 +1,6 @@
 ---
 name: command-toolkit
-description: Claude Code のスラッシュコマンド（commands/{name}.md）を新規作成・改修するスキル。「新しい /foo コマンドを作って」「foo コマンドを更新」「○○用のコマンドが欲しい」等で起動する。Use when creating or modifying a slash command file. SKIP when target is a skill (skill-toolkit), agent (agent-toolkit), hook (hook-toolkit), plugin shell (plugin-toolkit), MIT LICENSE setup (mit-license-toolkit), or review (extension-reviewer).
+description: Claude Code のスラッシュコマンド（commands/{name}.md）を新規作成・改修するスキル。「新しい /foo コマンドを作って」「foo コマンドを更新」「○○用のコマンドが欲しい」等で起動する。Use when creating or modifying a slash command file. SKIP when target is a skill, agent, hook, plugin (matching *-toolkit), or review (extension-reviewer).
 ---
 
 # Command Toolkit
