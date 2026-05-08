@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "credentials-manager",
-      "description": "認証情報を保存・自動適用 + フックで認証情報を扱う全パスを最優先化するセキュリティプラグイン",
+      "description": "認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン",
       "category": "security",
       "source": "./plugins/credentials-manager",
       "author": {
@@ -25,7 +25,11 @@
         "hooks",
         "rule-template",
         "session-start",
-        "pre-tool-use"
+        "pre-tool-use",
+        "credentials-reader",
+        "credentials-manager",
+        "manage-command",
+        "interactive-ui"
       ]
     },
     {

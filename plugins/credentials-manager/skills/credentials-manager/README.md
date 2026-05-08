@@ -1,6 +1,6 @@
 # credentials-manager skill
 
-Claude Code セッションをまたいで認証情報を管理するスキル。URL/ドメイン関連付けによる自動適用、プロアクティブ検出、保存先スコープ自動解決を提供する。
+Claude Code セッションをまたいで認証情報の **追加・編集・削除** を担う管理特化スキル。参照（取得・一覧・自動マッチ・プロアクティブ検出）は同梱の [`credentials-reader`](../credentials-reader/SKILL.md) スキルが担当する。
 
 ## このドキュメントについて
 
@@ -11,28 +11,27 @@ Claude Code セッションをまたいで認証情報を管理するスキル�
 ### 前提
 
 - Claude Code がインストール済み
-- `credentials-manager` プラグイン（このスキルを含む）がインストール済み
+- `credentials-manager` プラグイン（このスキル + `credentials-reader` スキル + フック群を含む）がインストール済み
 - 依存プラグインなし
 
 ### 起動方法
 
-以下のフレーズで自動起動します。
+以下のフレーズで自動起動します（書き込み系のみ）。
 
 明示要求:
 
 - 「OpenAI の API キー `sk-...` を保存して」
-- 「保存してある認証情報を一覧表示して」
+- 「保存済みの GitHub トークンを更新して」
 - 「`openai-api-key` を削除して」
-- 「先ほど保存したキーで API を叩いて」
+- 「JSON が壊れているので修復して」
 
-暗黙トリガー（**グローバルルール `~/.claude/rules/security/credentials-management.md` 不在環境でも自動起動**）:
+引き継ぎ起動:
 
-- 「`https://api.example.com/v1/users` から取得して」
-- 「`curl https://api.github.com/user` を実行して」
-- 「`gh api users/me` を叩いて」
-- WebFetch / Python requests / Node fetch 等で外部 URL にアクセスする任意の指示
+- `credentials-reader` から保存承諾を受けた場合（0 件マッチ後・プロアクティブ検出後）
+- `credentials-reader` から JSON 破損の修復承諾を受けた場合
+- `/credentials-manager:manage` コマンドのメニュー操作で「追加 / 編集 / 削除」が選択された場合
 
-会話中に `sk-...` `ghp_...` `xoxb-...` `Bearer eyJhbG...` 等の認証情報パターンを検出した場合も保存提案として起動します。
+参照系（一覧表示・先ほどのキーで API 呼び出し・自動マッチ等）は `credentials-reader` が起動します。
 
 ## 利用方法
 
@@ -48,12 +47,11 @@ Claude（要約）:
 
 | 目的 | フレーズ | 動作 |
 |-----|---------|------|
-| URL アクセス時の自動適用 | 「`https://api.openai.com/v1/models` から取得して」 | 保存済み認証情報を URL/ドメインで自動マッチして適用 |
-| 複数件ヒット時の選択 | 「`https://api.example.com/v1/users` にアクセス」（同ドメイン認証情報が 2 件） | `AskUserQuestion` でどれを使うか確認 |
-| 0 件時の確認 | 「`https://api.unknown-service.com/...`」 | 「認証情報を提供しますか?」と確認 |
-| プロアクティブ検出 | 「キーは `ghp_xxxxxxxx`」 | 認証情報パターン検出 → 保存提案 |
-| 一覧 | 「保存してある認証情報を一覧表示」 | 表形式でマスク済み値を表示 |
-| 削除 | 「`openai-api-key` を削除」 | 対象エントリを削除（対話モードでは要確認） |
+| 新規保存 | 「OpenAI の API キー `sk-...` を保存して」 | save フローで識別名・URL/ドメインを推定して保存 |
+| 編集 | 「openai-api-key の値を新しいキーに更新して」 | update フローで差分を提示し確認後に更新 |
+| 削除 | 「`openai-api-key` を削除」 | 対話モードでは要確認 → エントリ削除 |
+| 修復 | 「credentials.json を修復して」 | JSON 破損ファイルをバックアップ → 空ストア再初期化 |
+| メニューUI | `/credentials-manager:manage` | AskUserQuestion で対話的に管理操作 |
 
 ## 動作要件
 
@@ -67,35 +65,31 @@ Claude（要約）:
 
 | 観点 | 拡張ポイント |
 |-----|------------|
-| 保存先のスコープ | リポジトリ内の場合は project-scoped（`<repo>/.claude/.local/plugins/credentials-manager/credentials.json`）、外なら user-scoped（`~/.claude/.local/plugins/credentials-manager/credentials.json`）を自動選択 |
+| 保存先のスコープ | リポジトリ内の場合は project-scoped、外なら user-scoped を自動選択 |
 | `auth_method` の既定 | `header:Authorization:Bearer`。サービス固有の方式が必要なら `header:X-API-Key:` 等を保存時に指定 |
-| URL ワイルドカード | `urls[]` で末尾 `*` および中間 `*` を利用可能（`references/auto-match.md` 参照） |
+| URL ワイルドカード | `urls[]` で末尾 `*` および中間 `*` を利用可能（`../credentials-reader/references/auto-match.md` 参照） |
 
 ## ファイル構成
 
 ```text
 skills/credentials-manager/
-├── SKILL.md                # スキル定義（Claude が読む）
+├── SKILL.md                # スキル定義（Claude が読む。書き込み系特化）
 ├── README.md               # このファイル
 ├── references/
-│   ├── operations.md       # 保存・取得・一覧・削除の詳細仕様
-│   ├── auto-match.md       # URL 自動マッチ仕様
+│   ├── operations.md       # save / update / delete / repair の詳細仕様
 │   └── security.md         # セキュリティ注意・制約
 └── evals/
     ├── README.md
     ├── case-01_save_with_url.md
-    ├── case-02_list_credentials.md
-    ├── case-03_proactive_detect.md
-    ├── case-04_auto_match_single.md
-    ├── case-05_auto_match_multiple.md
-    ├── case-06_auto_match_none.md
     ├── case-07_delete_with_confirm.md
     ├── case-08_non_interactive.md
-    ├── case-09_retrieve_found.md
-    ├── case-10_retrieve_not_found.md
-    ├── case-11_json_parse_error.md
+    ├── case-11_json_parse_error.md          # repair（reader 引き継ぎ）
     ├── case-12_user_scoped_save.md
-    └── case-13_gitignore_warning.md
+    ├── case-13_gitignore_warning.md
+    ├── case-14〜25                            # 同梱フック動作の評価（SessionStart / PreToolUse / UserPromptSubmit）
+    ├── case-26_update_with_confirm.md       # update
+    ├── case-27_manage_command.md            # /credentials-manager:manage コマンド経由
+    └── case-28_handoff_from_reader.md       # reader 引き継ぎ受け入れ
 ```
 
 ## 関連ドキュメント
@@ -103,12 +97,13 @@ skills/credentials-manager/
 | 用途 | 参照先 |
 |-----|------|
 | プラグイン全体の概要 | `../../README.md` |
-| 操作詳細 | `references/operations.md` |
-| 自動マッチ仕様 | `references/auto-match.md` |
+| 書き込み系操作詳細 | `references/operations.md` |
 | セキュリティ注意 | `references/security.md` |
+| 参照系スキル | `../credentials-reader/SKILL.md` |
+| メニューUIコマンド | `../../commands/manage.md` |
 
 ## 設計上の特徴
 
-- **グローバルルール非依存**: SKILL.md description で URL/API アクセス時の自動起動条件を定義しているため、利用者環境にグローバルルールが無くても自動的に認証情報問い合わせ先として機能する
+- **責務分離**: 参照は `credentials-reader`、書き込みは本スキル。フック起動時のコンテキスト読み込みを軽量な reader に絞ることで効率化
 - **install スコープ自動解決**: ワーキングディレクトリに `.git` があればプロジェクト単位、無ければユーザー単位を自動選択
 - **平文保存（ローカル開発用途）**: 本番秘匿情報運用は対象外。`references/security.md` 参照

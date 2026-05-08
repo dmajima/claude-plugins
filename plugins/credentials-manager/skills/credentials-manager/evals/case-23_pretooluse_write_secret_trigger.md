@@ -28,7 +28,7 @@
 
 ### Phase 4: Claude へ通知
 
-- `additionalContext` でマスキング処理 + 保存提案を要求
+- `additionalContext` で **`credentials-reader`** 最優先起動を要求 + マスキング処理（先頭4+****+末尾4、8文字以下は全マスク****） + 既存照合 → 保存提案 → ユーザ承諾時のみ `credentials-manager` 引き継ぎ を要求
 
 ## 期待出力
 

@@ -3,8 +3,9 @@
 #
 # credentials-manager プラグインの PreToolUse フック。
 # 認証情報のやり取りが発生し得るすべてのツール呼び出しを検出し、
-# Claude へ「credentials-manager スキルでの照合・保存提案を最優先で行うこと」を
-# additionalContext で通知する。
+# Claude へ「credentials-reader スキルでの照合・自動マッチを最優先で行うこと」を
+# additionalContext で通知する。書き込みが必要な場合のみ credentials-manager に
+# 引き継ぐ責務分離設計（参照系：reader / 書き込み系：manager）。
 #
 # 検出対象:
 #   1. 外部通信ツール
@@ -219,7 +220,7 @@ cat <<EOF
   "suppressOutput": true,
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
-    "additionalContext": "[credentials-manager] ${ESCAPED_REASON}。実行前に credentials-manager スキルを最優先で起動し、対象 URL/ドメイン/サービスの保存済み認証情報を必ず照合してください。0 件なら保有有無をユーザに確認、1 件なら自動適用、複数件ならユーザに選択させ、コンテンツに含まれるシークレット文字列があれば保存提案+マスキング処理を実施します。詳細: rules/security/credentials-management.md。"
+    "additionalContext": "[credentials-manager] ${ESCAPED_REASON}。credentials-reader を最優先起動して保存済み認証情報を照合してください（1件→自動適用 / 複数件→選択 / 0件→保有有無確認）。コマンド・コンテンツに認証情報パターンが含まれる場合はフル値を復唱せずマスク（先頭4+****+末尾4、8文字以下は全マスク****）で扱ってください。書き込み（保存・編集・削除）は credentials-manager に引き継ぎます。詳細: rules/security/credentials-management.md"
   }
 }
 EOF

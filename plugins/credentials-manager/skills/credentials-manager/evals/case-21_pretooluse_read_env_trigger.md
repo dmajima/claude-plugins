@@ -23,7 +23,7 @@
 
 ### Phase 3: Claude へ通知
 
-- `additionalContext` で credentials-manager 最優先起動を要求
+- `additionalContext` で **`credentials-reader`** 最優先起動を要求（書き込みが必要な場合のみ `credentials-manager` に引き継ぎ）。コンテンツ内シークレット検出時はマスク表示（先頭4+****+末尾4）を要求
 
 ## 期待出力
 

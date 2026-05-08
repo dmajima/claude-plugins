@@ -49,4 +49,4 @@
 ## 関連ケース
 
 - `case-08_non_interactive.md`（非対話モードでの保存差分）
-- `case-04_auto_match_single.md`（保存後の自動マッチ）
+- `credentials-reader:case-01_auto_match_single.md`（保存後の自動マッチ、reader 側）

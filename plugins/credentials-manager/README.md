@@ -1,19 +1,21 @@
 # credentials-manager
 
-Claude Code セッションをまたいで認証情報（API キー・トークン・パスワード等）を管理するプラグイン。URL / ドメイン関連付けによる自動適用に対応する。
+Claude Code セッションをまたいで認証情報（API キー・トークン・パスワード等）を管理するプラグイン。**参照（`credentials-reader`）／管理（`credentials-manager`）／対話 UI（`/credentials-manager:manage`）** を責務分離し、URL/ドメイン関連付けによる自動適用に対応する。
 
 ## このドキュメントについて
 
-このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。各スキルの動作本体は `skills/credentials-manager/SKILL.md` および `references/` 配下を参照してください。
+このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。各スキルの動作本体は `skills/credentials-reader/SKILL.md` `skills/credentials-manager/SKILL.md` および `references/` 配下を参照してください。
 
 ## 提供機能
 
-| 機能 | 種別 | 説明 |
+| 機能 | 種別 | 責務 |
 |-----|------|------|
-| `credentials-manager` | スキル | 認証情報の保存・取得・一覧・削除、URL/ドメインからの自動マッチ・自動適用 |
+| `credentials-reader` | スキル | 取得（retrieve）／一覧（list、参照目的）／URL 自動マッチ／プロアクティブ検出。フック経由で最優先起動される軽量スキル |
+| `credentials-manager` | スキル | 追加（save）／編集（update）／削除（delete）／修復（repair）。書き込み系の管理操作を担当 |
+| `/credentials-manager:manage` | コマンド | `AskUserQuestion` ベースの対話メニュー UI で reader と manager を呼び分ける設定 UI |
 | `install_rule_template.sh` | フック (SessionStart) | スコープ判定（user / project）に応じて最重要ルール `credentials-management.md` を `.claude/rules/security/` 配下へ自動配置（既存ファイルは温存） |
-| `preempt_credentials_check.sh` | フック (PreToolUse) | `WebFetch` / `WebSearch` / `mcp__*` / `Bash`（外部通信・認証付きクライアント・シークレット埋め込み・認証情報環境変数 export）/ `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit`（認証情報系ファイル・コンテンツ内シークレット）の実行前に Claude へ「`credentials-manager` を最優先で起動」と注意喚起 |
-| `detect_credentials_in_prompt.sh` | フック (UserPromptSubmit) | ユーザー入力に sk-* / ghp_* / xoxb-* / Bearer / Basic / JWT / PEM 秘密鍵等のシークレットパターンが含まれる場合、Claude へ「保存提案＋マスキング処理を最優先で実施」と通知 |
+| `preempt_credentials_check.sh` | フック (PreToolUse) | 外部通信・認証情報系ファイル・コンテンツ内シークレット検出時に Claude へ「`credentials-reader` を最優先起動」と注意喚起 |
+| `detect_credentials_in_prompt.sh` | フック (UserPromptSubmit) | ユーザー入力にシークレットパターン検出時、Claude へ「マスキング + `credentials-reader` 起動 + 必要時 `credentials-manager` 引き継ぎ」と通知 |
 
 ## 導入手順
 
@@ -39,7 +41,7 @@ git clone https://github.com/dmajima/claude-plugins ~/claude-plugins
 
 # 2. リリースタグ（推奨）またはブランチに切替
 cd ~/claude-plugins
-git checkout v1.1.0   # 推奨: 検証済みリリースタグ
+git checkout v2.0.0   # 推奨: 検証済みリリースタグ
 # または: git checkout main   # 最新追従
 ```
 
@@ -83,32 +85,51 @@ git checkout v1.1.0   # 推奨: 検証済みリリースタグ
 保存してある認証情報を一覧表示して
 ```
 
-スキルが起動して `credentials.json`（不在時は空ストア表示）の内容を返せば導入成功です。
+`credentials-reader` スキルが起動して `credentials.json`（不在時は空ストア表示）の内容を返せば導入成功です。
+
+または対話 UI:
+
+```text
+/credentials-manager:manage
+```
 
 ## 使い方
 
-### 最小例
+### 最小例（保存）
 
 ユーザ:
-> OpenAI の API キー `sk-proj-abc123def456` を保存して
+> OpenAI の API キーを保存して
 
 Claude（要約）:
-> `openai-api-key` として保存しました（api_key）。値: `sk-p****f456` 保存先: `<repo>/.claude/.local/plugins/credentials-manager/credentials.json`
+> `credentials-manager` スキルを起動 → 識別名・URL/ドメインを対話で確認 → `openai-api-key` として保存（マスク値表示・保存先パス通知）
+
+### 最小例（参照・自動適用）
+
+ユーザ:
+> https://api.openai.com/v1/models から取得して
+
+Claude（要約）:
+> `credentials-reader` スキルを起動 → 保存済み認証情報 `openai-api-key` (`sk-p****f456`) を `api.openai.com` に自動適用しました。
 
 ### 応用例
 
-| 目的 | フレーズ | 動作 |
-|-----|---------|------|
-| URL アクセス時に自動適用 | 「`https://api.openai.com/v1/models` から取得して」 | 保存済み認証情報を URL/ドメインで自動マッチして適用 |
-| プロアクティブ検出 | 「キーは `ghp_xxxxxxxx`」 | 認証情報パターン検出 → 保存提案 |
-| 削除 | 「`openai-api-key` を削除して」 | 対象エントリを削除（要確認） |
-| 一覧 | 「保存してある認証情報を一覧表示」 | 表形式でマスク済み値を表示 |
+| 目的 | フレーズ | 起動スキル |
+|-----|---------|----------|
+| URL アクセス時に自動適用 | 「`https://api.openai.com/v1/models` から取得して」 | `credentials-reader` |
+| 一覧表示 | 「保存してある認証情報を一覧表示」 | `credentials-reader` |
+| プロアクティブ検出 | 「キーは `ghp_xxxxxxxx`」 | `credentials-reader` → 保存承諾時 `credentials-manager` |
+| 新規保存 | 「OpenAI の API キー `sk-...` を保存して」 | `credentials-manager` |
+| 編集 | 「openai-api-key の値を更新して」 | `credentials-manager` |
+| 削除 | 「`openai-api-key` を削除して」 | `credentials-manager` |
+| 対話 UI | `/credentials-manager:manage` | コマンド経由で reader/manager を呼び分け |
 
 ### URL アクセス時の自動起動について
 
-本スキルは **明示要求がなくても、ユーザが URL / API エンドポイント / WebFetch / curl / 外部サービス通信を依頼した時点で自動起動** します。グローバルルール `~/.claude/rules/security/credentials-management.md` の有無に関わらず、SKILL.md の description が AI トリガー判定で参照されるため、利用者環境にグローバルルールが無くても問い合わせ先として機能します。
+本プラグインは **明示要求がなくても、ユーザが URL / API エンドポイント / WebFetch / curl / 外部サービス通信を依頼した時点で自動起動** します。グローバルルール `~/.claude/rules/security/credentials-management.md` の有無に関わらず、各 SKILL.md の description が AI トリガー判定で参照されるため、利用者環境にグローバルルールが無くても問い合わせ先として機能します。
 
-さらに本プラグインは下記 2 つのフックで強制力を多重化しています。
+参照系（自動マッチ・取得・一覧）は **`credentials-reader`** が起動するため、フック経由の起動コンテキストが軽量化されます。書き込み（保存・編集・削除）が必要になった場合のみ `credentials-manager` に引き継がれます。
+
+さらに本プラグインは下記 3 つのフックで強制力を多重化しています。
 
 ## 自動化機構（hooks）
 
@@ -127,7 +148,7 @@ Claude（要約）:
 
 ### PreToolUse — 認証情報を扱い得る全ツール呼び出しの注意喚起
 
-以下のいずれかに該当するツール呼び出しを検出した時点で、`hookSpecificOutput.additionalContext` を介して Claude に「`credentials-manager` を最優先で起動して認証情報を照合せよ」と通知します。
+以下のいずれかに該当するツール呼び出しを検出した時点で、`hookSpecificOutput.additionalContext` を介して Claude に「`credentials-reader` を最優先起動して照合し、書き込みが必要な場合のみ `credentials-manager` に引き継ぐ」と通知します。
 
 #### 1. ツール種別による検出
 
@@ -184,13 +205,39 @@ AKIA<16>  AIza<35>  glpat-*  eyJ*.*.*  Bearer ...
 
 ### UserPromptSubmit — ユーザー入力に含まれるシークレットの保存提案
 
-ユーザーがプロンプトに sk-* / ghp_* / xoxb-* / AKIA / AIza / glpat- / JWT / Bearer / Basic / PEM 秘密鍵等のパターンを含めた瞬間に検出し、Claude に対し「`credentials-manager` で保存提案 → 以降は保存名で参照 → 表示時はマスク値（先頭 4 + `***` + 末尾 4）に置換」を最優先で実施するよう通知します。
+ユーザーがプロンプトに sk-* / ghp_* / xoxb-* / AKIA / AIza / glpat- / JWT / Bearer / Basic / PEM 秘密鍵等のパターンを含めた瞬間に検出し、Claude に対し「`credentials-reader` を最優先起動 → マスキング + 既存照合 + 保存提案 → 承諾時のみ `credentials-manager` に引き継ぎ保存」を実施するよう通知します。
 
 会話中で平文の認証情報がそのまま復唱されることを防ぎ、保存ファイル経由で安全に扱えるようにします。
+
+### フックの軽量化（v2.0.0 から）
+
+`additionalContext` で Claude に最優先起動を指示する対象が **`credentials-reader`** に絞られたことで、フック起動時のコンテキスト読み込み量が大幅に減少しました。
+
+- v1 系: フックが `credentials-manager` 全体（save / retrieve / list / delete + auto-match + operations + security）を起動指示
+- v2 系: フックが `credentials-reader` のみ（軽量・参照特化）を起動指示。書き込みが必要な場合のみ `credentials-manager` に引き継ぐ
+
+参照のみで完結するケース（自動マッチ・一覧・取得）が多くを占めるため、平均的なフック起動時のコンテキスト消費が抑えられます。
 
 ### フックを無効化したい場合
 
 利用者プロジェクトの `.claude/settings.local.json` で hook を無効化、またはプラグイン本体をアンインストールしてください（プラグインスキル単体運用は SKILL.md の description で引き続き機能します）。
+
+## 対話 UI: `/credentials-manager:manage`
+
+Claude Code の `/config` コマンドのように、`AskUserQuestion` を使って操作メニューを順次提示し、保存済み認証情報を対話的に管理できる設定 UI です。
+
+```text
+/credentials-manager:manage              # メニューUI起動
+/credentials-manager:manage list         # 一覧表示を直接実行
+/credentials-manager:manage add          # 新規保存を直接実行
+/credentials-manager:manage update       # 編集を直接実行
+/credentials-manager:manage delete       # 削除を直接実行
+/credentials-manager:manage repair       # JSON 破損時の修復を直接実行
+```
+
+メニューモードでは「一覧／追加／編集／削除／終了」を順次選択でき、`credentials-reader`（一覧）と `credentials-manager`（追加・編集・削除・修復）を背後で呼び分けます。
+
+詳細は [`commands/manage.md`](commands/manage.md) を参照してください。
 
 ## 認証情報ファイルの保存先
 
@@ -215,60 +262,77 @@ AKIA<16>  AIza<35>  glpat-*  eyJ*.*.*  Bearer ...
 plugins/credentials-manager/
 ├── .claude-plugin/
 │   └── plugin.json
-├── README.md
+├── README.md                                          # このファイル
+├── LICENSE                                            # MIT
+├── commands/
+│   └── manage.md                                      # /credentials-manager:manage
 ├── hooks/
-│   └── hooks.json                              # SessionStart / PreToolUse フック登録
+│   └── hooks.json                                     # SessionStart / PreToolUse / UserPromptSubmit フック登録
 ├── references/
 │   ├── scripts/
 │   │   └── hooks/
-│   │       ├── install_rule_template.sh        # SessionStart：テンプレート配置
-│   │       ├── preempt_credentials_check.sh    # PreToolUse：認証情報を扱い得る全ツール検出
-│   │       └── detect_credentials_in_prompt.sh # UserPromptSubmit：ユーザー入力のシークレット検出
+│   │       ├── install_rule_template.sh               # SessionStart：テンプレート配置
+│   │       ├── preempt_credentials_check.sh           # PreToolUse：reader 起動指示
+│   │       └── detect_credentials_in_prompt.sh       # UserPromptSubmit：マスキング + reader 起動指示
 │   └── templates/
 │       └── rules/
 │           └── security/
-│               └── credentials-management.md   # 最重要ルールのテンプレート本体
+│               └── credentials-management.md          # 最重要ルールのテンプレート（責務分離反映）
 └── skills/
-    └── credentials-manager/
+    ├── credentials-reader/                            # 参照系特化スキル（軽量）
+    │   ├── SKILL.md
+    │   ├── README.md
+    │   ├── references/
+    │   │   ├── retrieve.md                            # 取得・一覧の操作仕様
+    │   │   ├── auto-match.md                          # URL 自動マッチ仕様
+    │   │   ├── handoff.md                             # credentials-manager への引き継ぎ仕様
+    │   │   └── security.md                            # セキュリティ注意（参照系）
+    │   └── evals/
+    │       ├── README.md
+    │       └── case-01〜10                            # 参照系の動作分岐
+    └── credentials-manager/                           # 書き込み系特化スキル
         ├── SKILL.md
         ├── README.md
         ├── references/
-        │   ├── operations.md
-        │   ├── auto-match.md
-        │   └── security.md
+        │   ├── operations.md                          # save / update / delete / repair の詳細仕様
+        │   └── security.md                            # セキュリティ注意（書き込み系）
         └── evals/
             ├── README.md
             ├── case-01_save_with_url.md
-            ├── case-02_list_credentials.md
-            ├── case-03_proactive_detect.md
-            ├── case-04_auto_match_single.md
-            ├── case-05_auto_match_multiple.md
-            ├── case-06_auto_match_none.md
             ├── case-07_delete_with_confirm.md
             ├── case-08_non_interactive.md
-            ├── case-09_retrieve_found.md
-            ├── case-10_retrieve_not_found.md
-            ├── case-11_json_parse_error.md
+            ├── case-11_json_parse_error.md            # repair（reader 引き継ぎ）
             ├── case-12_user_scoped_save.md
-            └── case-13_gitignore_warning.md
+            ├── case-13_gitignore_warning.md
+            ├── case-14〜25                            # 同梱フック動作の評価
+            ├── case-26_update_with_confirm.md         # update
+            ├── case-27_manage_command.md              # /credentials-manager:manage 経由
+            └── case-28_handoff_from_reader.md         # reader 引き継ぎ受け入れ
 ```
 
 ## 技術スタック・アーキテクチャ
 
 ### 内部構成
 
-- 1 スキル（`credentials-manager`）
+- 2 スキル（`credentials-reader` / `credentials-manager`）
+- 1 コマンド（`/credentials-manager:manage`）
+- 3 フック（SessionStart / PreToolUse / UserPromptSubmit）
 - ストアファイル: JSON（`credentials.json`）
 - 保存先: スコープ自動解決（リポジトリ内なら `<repo>/.claude/.local/plugins/credentials-manager/`、それ以外は `~/.claude/.local/plugins/credentials-manager/`）
 
 ### 採用技術
 
-- Markdown / JSON
+- Markdown / JSON / Bash
 - Claude Code Skills API（`SKILL.md` の description ベースの自動トリガー判定を活用）
+- Claude Code Hooks API（SessionStart / PreToolUse / UserPromptSubmit）
+- Claude Code Commands API（`/credentials-manager:manage`）
+- `AskUserQuestion`（対話メニュー UI）
 
 ### 設計上の特徴
 
-- **グローバルルール非依存**: SKILL.md description に URL/API アクセス時の自動起動条件を記述しているため、利用者環境にグローバルルールが無くても自動的に認証情報問い合わせ先として機能する
+- **責務分離（v2.0.0 〜）**: 参照系と書き込み系を別スキルに分離。フック経由の起動時に軽量な `credentials-reader` のみが読み込まれ、コンテキスト消費を抑制
+- **対話 UI コマンド（v2.0.0 〜）**: `/credentials-manager:manage` で `/config` 風のメニュー UI を提供
+- **グローバルルール非依存**: 各 SKILL.md description に URL/API アクセス時の自動起動条件を記述しているため、利用者環境にグローバルルールが無くても自動的に認証情報問い合わせ先として機能する
 - **install スコープ自動解決**: ワーキングディレクトリに `.git` があればプロジェクト単位、無ければユーザー単位を自動選択
 
 ## セキュリティ注意
@@ -277,8 +341,9 @@ plugins/credentials-manager/
 - 値は会話出力では常にマスクされる（フル値は表示しない）。
 - リポジトリ内に保存される場合、`.claude/.local/` が `.gitignore` に登録されていることを確認する。
 - `credentials.json` をコミットしてはならない。
+- `credentials-reader` → `credentials-manager` 引き継ぎ時はマスク済み情報のみが渡され、フル値はユーザに再入力させる仕様。
 
-詳細は `skills/credentials-manager/references/security.md` を参照してください。
+詳細は `skills/credentials-reader/references/security.md` および `skills/credentials-manager/references/security.md` を参照してください。
 
 ## ライセンス
 
