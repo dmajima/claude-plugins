@@ -111,6 +111,26 @@
         "additional-context",
         "hooks"
       ]
+    },
+    {
+      "name": "session-usage",
+      "source": "./plugins/session-usage",
+      "description": "カレントセッションのトークン消費量を JSONL から直接集計し、AskUserQuestion 対話メニュー（プレビュー表示・クリップボードコピー・再集計）で操作できる完全内製プラグイン",
+      "author": {
+        "name": "dmajima"
+      },
+      "category": "diagnostics",
+      "keywords": [
+        "session",
+        "usage",
+        "tokens",
+        "diagnostics",
+        "tui",
+        "clipboard",
+        "powershell",
+        "interactive",
+        "doctor-like"
+      ]
     }
   ]
 }

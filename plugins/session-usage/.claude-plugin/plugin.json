@@ -1,0 +1,24 @@
+{
+  "name": "session-usage",
+  "version": "1.0.0",
+  "description": "カレントセッションのトークン消費量を JSONL から直接集計し、AskUserQuestion 対話メニュー（プレビュー表示・クリップボードコピー・再集計）で操作できる完全内製プラグイン",
+  "author": {
+    "name": "dmajima"
+  },
+  "homepage": "https://github.com/dmajima/claude-plugins/tree/main/plugins/session-usage",
+  "repository": "https://github.com/dmajima/claude-plugins",
+  "license": "MIT",
+  "category": "diagnostics",
+  "keywords": [
+    "session",
+    "usage",
+    "tokens",
+    "diagnostics",
+    "tui",
+    "clipboard",
+    "powershell",
+    "interactive",
+    "doctor-like"
+  ],
+  "dependencies": []
+}
