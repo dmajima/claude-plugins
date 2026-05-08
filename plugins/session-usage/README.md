@@ -1,7 +1,9 @@
 # session-usage
 
 カレントセッション（または指定セッション）のトークン消費量を JSONL から直接集計し、
-**`/doctor` 風の対話 TUI** でフルスクリーン表示・クリップボードコピー可能にするプラグイン。
+**Claude UI のコンテキスト内** で `/doctor` 風レイアウトで表示するプラグイン。
+表示と同時に整形済み文字列をクリップボードへ自動コピーし、`AskUserQuestion`
+による対話ループで再集計・終了を選択できる。
 
 外部プラグイン（ccusage 等）には一切依存せず、PowerShell 標準機能のみで動作する。
 
@@ -9,10 +11,8 @@
 
 - **正確な集計**: `~/.claude/projects/<projectKey>/<sessionId>.jsonl` を直接パース
 - **整形表示**: `/doctor` 風の罫線レイアウト、k tokens 単位、利用比率付き
-- **対話 TUI**: 新規ウィンドウで起動、キー入力で操作
-  - `[c]` クリップボードコピー
-  - `[r]` 再集計（リアルタイム更新）
-  - `[q]` / ESC 終了
+- **自動クリップボードコピー**: 表示と同時に `Set-Clipboard` で整形済み文字列を保存
+- **対話ループ**: `AskUserQuestion` による「再集計 / 終了」の選択
 - **セッション識別**: rename 済セッション名（custom-title）/ AI 自動生成タイトル（ai-title）を表示
 - **モデル別内訳**: 複数モデル使用時のみ自動表示
 - **Server Tool 使用回数**: web_search / web_fetch を 0 でないときだけ表示
@@ -41,7 +41,6 @@ claude plugin install session-usage@dmajima-claude-plugins
 
 - Windows
 - PowerShell 7+ （`pwsh` が PATH 上にあること）
-- Windows Terminal（推奨。無くても conhost で動作）
 
 ## 表示例
 
@@ -52,20 +51,21 @@ claude plugin install session-usage@dmajima-claude-plugins
 
   Session  : セッション使用量合計を表示するコマンド作成 (auto)
   ID       : 409dc664-c57f-4263-bf55-fb527475a536
-  Period   : 2026-05-08 14:22 - 15:46  (1.4 h)
-  Requests : 147
+  Period   : 2026-05-08 14:22 - 16:05  (1.7 h)
+  Requests : 237
 
   ┌── Token Consumption ───────────────────────────────────┐
-  │  Input               :        0.3k tokens (  0.0%)  │
-  │  Cache Creation      :      612.4k tokens (  2.7%)  │
-  │  Cache Read          :   21,602.8k tokens ( 96.3%)  │
-  │  Output              :      220.5k tokens (  1.0%)  │
-  │                        ───────────────────────────   │
-  │  Total               :   22,436.0k tokens             │
+  │  Input               :        0.5k tokens (  0.0%)  │
+  │  Cache Creation      :      700.8k tokens (  1.5%)  │
+  │  Cache Read          :   44,796.2k tokens ( 97.8%)  │
+  │  Output              :      314.9k tokens (  0.7%)  │
+  │                        ───────────────────────────────   │
+  │  Total               :   45,812.4k tokens             │
   └────────────────────────────────────────────────────────┘
 
-────────────────────────────────────────────────────────
-  [c] Copy clipboard   [r] Refresh   [q] Quit (or ESC)
+  [OK] clipboard へコピーしました
+
+→ AskUserQuestion: [再集計] [終了]
 ```
 
 ## アーキテクチャ
@@ -80,26 +80,33 @@ plugins/session-usage/
 └── skills/
     └── session-usage/
         ├── SKILL.md                     # スキル定義
+        ├── README.md                    # 人間向けリファレンス
         ├── scripts/
-        │   ├── aggregate/
-        │   │   └── aggregate.ps1        # JSONL 集計+整形（純粋関数）
-        │   └── tui/
-        │       ├── tui.ps1              # 対話 TUI 本体（ReadKey ループ）
-        │       └── launch.ps1           # 新規ウィンドウで TUI を起動
+        │   └── aggregate/
+        │       └── aggregate.ps1        # JSONL 集計+整形+コピー（-Stdout / -Copy）
         └── references/
-            ├── procedures.md            # 実行手順詳細
-            └── tui-spec.md              # TUI 仕様（画面構成・キーバインド）
+            └── procedures.md            # 実行手順詳細
 ```
 
-### なぜ別ウィンドウなのか
+### Claude UI 内対話の理由
 
 Claude Code のカスタムコマンドは Bash ツール経由で実行される。Bash ツールは
 `stdin` が閉じた非対話モードで動くため、`[System.Console]::ReadKey()` による
 キー入力受付が成立しない。
 
-そのため `launch.ps1` は新規 PowerShell ウィンドウ（Windows Terminal 優先）を
-開き、そこで `tui.ps1` を実行する。これにより `/doctor` 同等のフルスクリーン
-対話体験を Claude Code から起動できる。
+そのため、`c` キー / `q` キー等の直接的なキーバインドは使わず、`AskUserQuestion`
+による選択肢提示で対話を実現する。クリップボードコピーは「`c` 押下を待つ」
+代わりに **常に自動で実行** される。
+
+## aggregate.ps1 の引数
+
+| 引数 | 役割 |
+|------|------|
+| `-SessionId <UUID>` | 集計対象セッション（省略時は env / 最新 mtime） |
+| `-ProjectKey <key>` | プロジェクトキー（省略時は cwd から自動導出） |
+| `-Stdout` | UTF-8 で stdout に直接書き出し（Bash 経由用） |
+| `-Copy` | 整形済み文字列をクリップボードへコピー |
+| `-AsObject` | 整形済み文字列ではなく集計結果オブジェクトを返す |
 
 ## 集計仕様
 

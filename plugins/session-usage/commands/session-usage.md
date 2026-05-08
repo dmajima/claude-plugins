@@ -1,10 +1,10 @@
 ---
-description: カレントセッションのトークン消費量を対話 TUI で表示してクリップボードへコピーする
+description: カレントセッションのトークン消費量を Claude UI に表示し、自動でクリップボードへコピーする
 argument-hint: "[session-uuid]"
 allowed-tools: Bash(pwsh:*)
 ---
 
-# /session-usage — セッション使用量 TUI
+# /session-usage — セッション使用量
 
 ユーザの引数: $ARGUMENTS
 
@@ -29,15 +29,13 @@ UUID 検証は `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$` 
 Skill(skill: "session-usage", args: "$ARGUMENTS")
 ```
 
-スキルが `launch.ps1` 経由で別ウィンドウに対話 TUI を起動する。
-TUI ウィンドウでは以下のキー操作が可能:
+スキルが以下を実施する:
 
-- `[c]` クリップボードコピー
-- `[r]` 再集計
-- `[q]` / ESC 終了
+1. `aggregate.ps1 -Stdout -Copy` で集計結果を Claude UI に表示
+2. 同時に整形済み文字列をクリップボードへ自動コピー
+3. `AskUserQuestion` で「再集計 / 終了」を選択させる
 
 ## 関連
 
 - 実作業スキル: [`../skills/session-usage/SKILL.md`](../skills/session-usage/SKILL.md)
-- TUI 仕様: [`../skills/session-usage/references/tui-spec.md`](../skills/session-usage/references/tui-spec.md)
 - 実行手順: [`../skills/session-usage/references/procedures.md`](../skills/session-usage/references/procedures.md)

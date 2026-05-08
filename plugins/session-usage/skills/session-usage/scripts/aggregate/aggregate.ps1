@@ -25,7 +25,8 @@ param(
     [string]$SessionId,
     [string]$ProjectKey,
     [switch]$AsObject,
-    [switch]$Stdout      # Bash 経由から呼ぶ場合はこれを指定して UTF-8 で直接 stdout に書き出す
+    [switch]$Stdout,     # Bash 経由から呼ぶ場合はこれを指定して UTF-8 で直接 stdout に書き出す
+    [switch]$Copy        # 整形済み文字列をクリップボードへコピーする
 )
 
 $ErrorActionPreference = 'Stop'
@@ -211,6 +212,16 @@ if ($totals.web_search -gt 0 -or $totals.web_fetch -gt 0) {
 
 $rendered = $lines -join [Environment]::NewLine
 
+# クリップボードコピー（要求時）
+if ($Copy) {
+    try {
+        $rendered | Set-Clipboard
+    } catch {
+        # コピー失敗は致命的ではないので警告のみ（stderr）
+        [Console]::Error.WriteLine("[WARN] Set-Clipboard failed: $($_.Exception.Message)")
+    }
+}
+
 if ($Stdout) {
     # Bash 経由対応: stdout に UTF-8 バイナリで直接書き出す（Console コードページに依存しない）
     $utf8   = [System.Text.UTF8Encoding]::new($false)
@@ -218,6 +229,13 @@ if ($Stdout) {
     $stream = [Console]::OpenStandardOutput()
     $stream.Write($bytes, 0, $bytes.Length)
     $stream.Flush()
+
+    if ($Copy) {
+        $note = '  [OK] clipboard へコピーしました' + [Environment]::NewLine
+        $nb = $utf8.GetBytes($note)
+        $stream.Write($nb, 0, $nb.Length)
+        $stream.Flush()
+    }
     return
 }
 
