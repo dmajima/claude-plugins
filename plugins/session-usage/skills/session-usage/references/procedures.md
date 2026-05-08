@@ -41,7 +41,7 @@ Bash 出力エリアでは折りたたまれて表示されることがあるが
 ```text
 AskUserQuestion({
   questions: [{
-    question: "次のアクションを選んでください",
+    question: "集計結果",
     header: "session-usage",
     options: [
       {

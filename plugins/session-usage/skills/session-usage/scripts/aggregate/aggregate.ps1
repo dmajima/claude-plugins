@@ -165,43 +165,84 @@ if ($AsObject) {
 # ---- 整形済み文字列モード ----
 function Format-KP([long]$n, [long]$total) {
     $pct = if ($total -gt 0) { ($n / [double]$total) * 100 } else { 0 }
-    '{0,10:N1}k tokens ({1,5:N1}%)' -f ($n / 1000.0), $pct
+    '{0,9:N1}k ({1,5:N1}%)' -f ($n / 1000.0), $pct
 }
-function Format-K([long]$n) { '{0,10:N1}k tokens' -f ($n / 1000.0) }
+function Format-K([long]$n) { '{0,9:N1}k' -f ($n / 1000.0) }
 
-$double = '=' * 60
-$single = '-' * 60
+# preview の monospace box 幅に収まるよう全行を 50 chars 以内に統一する
+$WIDTH = 50
+$double = '=' * $WIDTH
+$single = '-' * $WIDTH
+
+# 長い文字列を WIDTH-prefix に収めて折り返すヘルパー（ASCII 主体・全角は概算で 2 幅換算）
+function Get-DisplayWidth([string]$s) {
+    $w = 0
+    foreach ($ch in $s.ToCharArray()) {
+        $code = [int]$ch
+        if ($code -ge 0x1100 -and ($code -le 0x115F -or $code -ge 0x2E80)) { $w += 2 } else { $w += 1 }
+    }
+    return $w
+}
+function Wrap-Field([string]$Prefix, [string]$Body) {
+    $avail = $WIDTH - (Get-DisplayWidth $Prefix)
+    if ((Get-DisplayWidth $Body) -le $avail) {
+        return ,(($Prefix + $Body))
+    }
+    $result = New-Object 'System.Collections.Generic.List[string]'
+    $padding = ' ' * (Get-DisplayWidth $Prefix)
+    $current = ''
+    $currentW = 0
+    foreach ($ch in $Body.ToCharArray()) {
+        $code = [int]$ch
+        $cw = if ($code -ge 0x1100 -and ($code -le 0x115F -or $code -ge 0x2E80)) { 2 } else { 1 }
+        if ($currentW + $cw -gt $avail) {
+            if ($result.Count -eq 0) { $result.Add($Prefix + $current) }
+            else { $result.Add($padding + $current) }
+            $current = ''
+            $currentW = 0
+        }
+        $current += $ch
+        $currentW += $cw
+    }
+    if ($current.Length -gt 0) {
+        if ($result.Count -eq 0) { $result.Add($Prefix + $current) }
+        else { $result.Add($padding + $current) }
+    }
+    return $result
+}
 
 $lines = New-Object 'System.Collections.Generic.List[string]'
 $lines.Add('')
 $lines.Add($double)
 $lines.Add('  Claude Code  Session Usage')
 $lines.Add($double)
-$lines.Add(("  Session  : {0}" -f $sessionName))
+foreach ($l in (Wrap-Field '  Session  : ' $sessionName)) { $lines.Add($l) }
 $lines.Add(("  ID       : {0}" -f $SessionId))
-if ($periodStr) { $lines.Add(("  Period   : {0}" -f $periodStr)) }
+if ($periodStr) { foreach ($l in (Wrap-Field '  Period   : ' $periodStr)) { $lines.Add($l) } }
 $lines.Add(("  Requests : {0:N0}" -f $totals.msg_count))
 $lines.Add('')
-$lines.Add('  -- Token Consumption ' + ('-' * 39))
+$lines.Add('  -- Token Consumption ' + ('-' * 27))
 $lines.Add(("  Input          : {0}" -f (Format-KP $totals.input        $grandTotal)))
 $lines.Add(("  Cache Creation : {0}" -f (Format-KP $totals.cache_create $grandTotal)))
 $lines.Add(("  Cache Read     : {0}" -f (Format-KP $totals.cache_read   $grandTotal)))
 $lines.Add(("  Output         : {0}" -f (Format-KP $totals.output       $grandTotal)))
-$lines.Add('  ' + ('-' * 58))
+$lines.Add('  ' + ('-' * ($WIDTH - 2)))
 $lines.Add(("  Total          : {0}" -f (Format-K  $grandTotal)))
 
-# Per-Model: 常時表示
+# Per-Model: 常時表示（モデル名 + tokens + calls を 50 文字以内に圧縮）
 $lines.Add('')
-$lines.Add('  -- Per-Model ' + ('-' * 47))
+$lines.Add('  -- Per-Model ' + ('-' * 36))
 foreach ($k in $byModel.Keys) {
     $b = $byModel[$k]
-    $lines.Add(("  {0,-30} : {1} / {2,5:N0} calls" -f $k, (Format-K $b.total), $b.count))
+    # モデル名が長すぎる場合は切り詰め
+    $name = if ((Get-DisplayWidth $k) -gt 22) { $k.Substring(0, [Math]::Min($k.Length, 19)) + '...' } else { $k }
+    $lines.Add(("  {0,-22} : {1} /{2,4:N0}c" -f $name, (Format-K $b.total), $b.count))
 }
 
 # Server Tools: 0 でない場合のみ
 if ($totals.web_search -gt 0 -or $totals.web_fetch -gt 0) {
     $lines.Add('')
-    $lines.Add('  -- Server Tools ' + ('-' * 44))
+    $lines.Add('  -- Server Tools ' + ('-' * 33))
     if ($totals.web_search -gt 0) { $lines.Add(("  Web Search Requests : {0,8:N0}" -f $totals.web_search)) }
     if ($totals.web_fetch  -gt 0) { $lines.Add(("  Web Fetch  Requests : {0,8:N0}" -f $totals.web_fetch))  }
 }
