@@ -170,7 +170,7 @@ function Format-KP([long]$n, [long]$total) {
 function Format-K([long]$n) { '{0,9:N1}k' -f ($n / 1000.0) }
 
 # preview の monospace box 幅に収まるよう全行を WIDTH 以内に統一する
-$WIDTH = 40
+$WIDTH = 60
 $double = '=' * $WIDTH
 $single = '-' * $WIDTH
 
@@ -228,7 +228,7 @@ $lines.Add(("  ID       : {0}" -f $SessionId))
 if ($periodStr) { $lines.Add(("  Period   : {0}" -f $periodStr)) }
 $lines.Add(("  Requests : {0:N0}" -f $totals.msg_count))
 $lines.Add('')
-$lines.Add('  -- Token Consumption ' + ('-' * 17))
+$lines.Add('  -- Token Consumption ' + ('-' * 37))
 $lines.Add(("  Input          : {0}" -f (Format-KP $totals.input        $grandTotal)))
 $lines.Add(("  Cache Creation : {0}" -f (Format-KP $totals.cache_create $grandTotal)))
 $lines.Add(("  Cache Read     : {0}" -f (Format-KP $totals.cache_read   $grandTotal)))
@@ -238,7 +238,7 @@ $lines.Add(("  Total          : {0}" -f (Format-K  $grandTotal)))
 
 # Per-Model: モデル名と値を 2 行に分割（長いモデル名は折り返しヘルパーが処理）
 $lines.Add('')
-$lines.Add('  -- Per-Model ' + ('-' * 25))
+$lines.Add('  -- Per-Model ' + ('-' * 45))
 foreach ($k in $byModel.Keys) {
     $b = $byModel[$k]
     $lines.Add(("  {0}" -f $k))
@@ -248,7 +248,7 @@ foreach ($k in $byModel.Keys) {
 # Server Tools: 0 でない場合のみ
 if ($totals.web_search -gt 0 -or $totals.web_fetch -gt 0) {
     $lines.Add('')
-    $lines.Add('  -- Server Tools ' + ('-' * 22))
+    $lines.Add('  -- Server Tools ' + ('-' * 42))
     if ($totals.web_search -gt 0) { $lines.Add(("  Web Search Requests : {0,8:N0}" -f $totals.web_search)) }
     if ($totals.web_fetch  -gt 0) { $lines.Add(("  Web Fetch  Requests : {0,8:N0}" -f $totals.web_fetch))  }
 }
