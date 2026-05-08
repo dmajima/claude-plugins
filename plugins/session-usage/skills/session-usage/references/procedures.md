@@ -12,7 +12,7 @@
 | 36 文字の UUID 形式 (`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`) | `SessionId` として渡す |
 | その他 | 警告出力後、空扱いで進行 |
 
-## ステップ 2: 集計実行 + 表示（コピーなし）
+## ステップ 2: 集計実行（結果取得のみ、自動コピーなし）
 
 Bash で以下を実行する:
 
@@ -27,12 +27,16 @@ pwsh -NoProfile -ExecutionPolicy Bypass \
 | `-Stdout` | UTF-8 で stdout に直接書き出し（Bash 経由でも文字化けしない） |
 | `-SessionId <UUID>` | 引数で指定された場合のみ |
 
-スクリプトの標準出力はそのまま Claude UI に表示される。
+スクリプトの標準出力は Claude のコンテキストへ取り込まれる。Claude UI の
+Bash 出力エリアでは折りたたまれて表示されることがあるが、**次のステップで
+`AskUserQuestion` の `preview` に埋め込んで全文表示する** ため、Bash 生出力の
+見え方は気にしない。
 **`-Copy` は付けない**。クリップボードへのコピーはユーザが選択したときだけ行う。
 
-## ステップ 3: AskUserQuestion による対話ループ（3 択）
+## ステップ 3: AskUserQuestion による対話ループ（3 択 + preview）
 
-集計結果を表示した後、Claude が `AskUserQuestion` で次のアクションを尋ねる。
+集計結果をコンテキストに取得した後、Claude が `AskUserQuestion` で次のアクションを尋ねる。
+**3 つすべてのオプションに `preview` フィールドで集計結果全文を必ず埋め込む**こと。
 
 ```text
 AskUserQuestion({
@@ -40,17 +44,30 @@ AskUserQuestion({
     question: "次のアクションを選んでください",
     header: "session-usage",
     options: [
-      { label: "クリップボードへコピー",
-        description: "現在表示している整形済み結果をクリップボードへコピーします" },
-      { label: "再集計",
-        description: "進行中の値を最新化して再表示します" },
-      { label: "終了",
-        description: "対話を終えます" }
+      {
+        label: "クリップボードへコピー",
+        description: "現在表示している整形済み結果をクリップボードへコピーします",
+        preview: "<集計結果全文>"
+      },
+      {
+        label: "再集計",
+        description: "進行中の値を最新化して再表示します",
+        preview: "<集計結果全文>"
+      },
+      {
+        label: "終了",
+        description: "対話を終えます",
+        preview: "<集計結果全文>"
+      }
     ],
     multiSelect: false
   }]
 })
 ```
+
+`preview` のおかげで Claude UI は左右分割レイアウトになり、選択肢にフォーカス
+した瞬間に右ペインで集計結果が monospace box として全文表示される。Bash 出力の
+折りたたみとは別経路の表示なので、結果が省略されることはない。
 
 ユーザの選択に応じて分岐:
 

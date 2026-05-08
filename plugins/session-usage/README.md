@@ -12,6 +12,7 @@
 - **正確な集計**: `~/.claude/projects/<projectKey>/<sessionId>.jsonl` を直接パース
 - **整形表示**: `/doctor` 風の罫線レイアウト、k tokens 単位、利用比率付き
 - **対話ループ**: `AskUserQuestion` による 3 択（クリップボードコピー / 再集計 / 終了）
+- **折りたたまれない表示**: 集計結果は `AskUserQuestion` の `preview` フィールドに埋め込まれ、Claude UI の左右分割レイアウトで右ペインに monospace box として全文表示される
 - **明示的コピー**: 自動コピーは行わず、ユーザが「クリップボードへコピー」を選んだときだけ Set-Clipboard 実行
 - **セッション識別**: rename 済セッション名（custom-title）/ AI 自動生成タイトル（ai-title）を表示
 - **モデル別内訳**: 複数モデル使用時のみ自動表示
