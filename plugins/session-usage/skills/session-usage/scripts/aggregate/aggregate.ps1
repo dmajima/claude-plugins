@@ -212,31 +212,45 @@ if ($totals.web_search -gt 0 -or $totals.web_fetch -gt 0) {
 
 $rendered = $lines -join [Environment]::NewLine
 
-# クリップボードコピー（要求時）
-if ($Copy) {
-    try {
-        $rendered | Set-Clipboard
-    } catch {
-        # コピー失敗は致命的ではないので警告のみ（stderr）
-        [Console]::Error.WriteLine("[WARN] Set-Clipboard failed: $($_.Exception.Message)")
-    }
-}
-
-if ($Stdout) {
-    # Bash 経由対応: stdout に UTF-8 バイナリで直接書き出す（Console コードページに依存しない）
+# UTF-8 で stdout に直接書き出すヘルパー（Bash 経由でも文字化けしない）
+function Write-Utf8Stdout([string]$Text) {
     $utf8   = [System.Text.UTF8Encoding]::new($false)
-    $bytes  = $utf8.GetBytes($rendered + [Environment]::NewLine)
+    $bytes  = $utf8.GetBytes($Text + [Environment]::NewLine)
     $stream = [Console]::OpenStandardOutput()
     $stream.Write($bytes, 0, $bytes.Length)
     $stream.Flush()
+}
 
-    if ($Copy) {
-        $note = '  [OK] clipboard へコピーしました' + [Environment]::NewLine
-        $nb = $utf8.GetBytes($note)
-        $stream.Write($nb, 0, $nb.Length)
-        $stream.Flush()
+# クリップボードコピー（要求時のみ。スキル本体からは自動付与されない）
+$copyResult = $null
+if ($Copy) {
+    try {
+        $rendered | Set-Clipboard
+        $copyResult = '  [OK] clipboard へコピーしました'
+    } catch {
+        $copyResult = "  [NG] Set-Clipboard failed: $($_.Exception.Message)"
     }
+}
+
+# 出力モード分岐
+if ($Stdout -and $Copy) {
+    # 表示 + コピー（直接実行・テスト用途）
+    Write-Utf8Stdout $rendered
+    Write-Utf8Stdout $copyResult
     return
 }
 
+if ($Stdout) {
+    # 表示のみ（スキル本体のメインフロー）
+    Write-Utf8Stdout $rendered
+    return
+}
+
+if ($Copy) {
+    # コピーのみ（AskUserQuestion で「クリップボードへコピー」が選ばれた場合）
+    Write-Utf8Stdout $copyResult
+    return
+}
+
+# 既定: 文字列を返す（PowerShell 内部呼び出し用）
 return $rendered

@@ -10,42 +10,42 @@
 |---------|------|
 | 空 | `SessionId` 未指定で `aggregate.ps1` を起動 |
 | 36 文字の UUID 形式 (`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`) | `SessionId` として渡す |
-| その他 | 警告出力後、空扱いで進行（誤入力対策） |
+| その他 | 警告出力後、空扱いで進行 |
 
-## ステップ 2: 集計実行 + 表示 + 自動コピー
+## ステップ 2: 集計実行 + 表示（コピーなし）
 
 Bash で以下を実行する:
 
 ```bash
 pwsh -NoProfile -ExecutionPolicy Bypass \
   -File "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" \
-  -Stdout -Copy [-SessionId <UUID>]
+  -Stdout [-SessionId <UUID>]
 ```
 
 | フラグ | 役割 |
 |-------|------|
 | `-Stdout` | UTF-8 で stdout に直接書き出し（Bash 経由でも文字化けしない） |
-| `-Copy` | 整形済み文字列を `Set-Clipboard` でクリップボードへ |
 | `-SessionId <UUID>` | 引数で指定された場合のみ |
 
 スクリプトの標準出力はそのまま Claude UI に表示される。
-末尾に `[OK] clipboard へコピーしました` の通知が付く。
+**`-Copy` は付けない**。クリップボードへのコピーはユーザが選択したときだけ行う。
 
-クリップボードに失敗した場合は stderr に `[WARN] Set-Clipboard failed: ...` を出すが、
-表示自体は継続する（致命的エラーとはしない）。
+## ステップ 3: AskUserQuestion による対話ループ（3 択）
 
-## ステップ 3: AskUserQuestion による対話ループ
+集計結果を表示した後、Claude が `AskUserQuestion` で次のアクションを尋ねる。
 
-集計結果を表示・コピーした後、Claude が `AskUserQuestion` で次のアクションを尋ねる。
-
-```
+```text
 AskUserQuestion({
   questions: [{
     question: "次のアクションを選んでください",
     header: "session-usage",
     options: [
-      { label: "再集計", description: "進行中の値を最新化して再表示し、クリップボードも更新します" },
-      { label: "終了", description: "対話を終えます（現在の表示・コピーはそのまま残ります）" }
+      { label: "クリップボードへコピー",
+        description: "現在表示している整形済み結果をクリップボードへコピーします" },
+      { label: "再集計",
+        description: "進行中の値を最新化して再表示します" },
+      { label: "終了",
+        description: "対話を終えます" }
     ],
     multiSelect: false
   }]
@@ -54,13 +54,30 @@ AskUserQuestion({
 
 ユーザの選択に応じて分岐:
 
-| 選択 | 動作 |
-|-----|------|
-| 再集計 | ステップ 2 へ戻る（同じ SessionId / ProjectKey で再実行） |
-| 終了 | 対話を終える |
+### 選択: クリップボードへコピー
 
-過剰なループを防ぐため、再集計回数は実質的にユーザの判断に委ねる
-（コマンド側で上限を設けない）。
+```bash
+pwsh -NoProfile -ExecutionPolicy Bypass \
+  -File "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" \
+  -Copy [-SessionId <UUID>]
+```
+
+- `-Copy` のみ指定（`-Stdout` なし）
+- aggregate.ps1 が再集計し、結果を `Set-Clipboard` でコピー
+- stdout には `[OK] clipboard へコピーしました` のみ出る（罫線レイアウトは再表示しない）
+- 完了後、ステップ 3 へ戻り再度 AskUserQuestion を提示
+
+### 選択: 再集計
+
+ステップ 2 を再実行（`-Stdout` のみ）。表示後、ステップ 3 へ戻る。
+
+### 選択: 終了
+
+対話終了。
+
+### ループ継続条件
+
+「終了」が選ばれるまで継続。「コピー」や「再集計」の後も再度選択肢を出す。
 
 ## ステップ 4: エラー処理
 
@@ -68,7 +85,7 @@ AskUserQuestion({
 |------|------|
 | プロジェクトディレクトリが見つからない | aggregate.ps1 が throw → Claude が原因を簡潔に報告 |
 | 指定 UUID の JSONL が見つからない | 同上 |
-| Set-Clipboard 失敗 | stderr に WARN を出すが、表示は継続 |
+| Set-Clipboard 失敗 | aggregate.ps1 が `[NG] Set-Clipboard failed: ...` を stdout に出す |
 
 ## 関連スキル / コマンド
 
@@ -77,25 +94,27 @@ AskUserQuestion({
 
 ## 利用例
 
-### 例 1: カレントセッションを表示
+### 例 1: カレントセッションを表示してコピー選択
 
 ```text
 /session-usage
-→ 集計結果が Claude UI に表示
-→ クリップボードへ自動コピー
-→ 「再集計 / 終了」の選択肢が出る
+→ 集計結果を表示（コピーなし）
+→ AskUserQuestion: [クリップボードへコピー / 再集計 / 終了]
+→ ユーザ「クリップボードへコピー」選択
+→ aggregate.ps1 -Copy 実行
+→ "[OK] clipboard へコピーしました" 表示
+→ AskUserQuestion: [クリップボードへコピー / 再集計 / 終了]（再提示）
+→ ユーザ「終了」選択
+→ 終了
 ```
 
-### 例 2: 特定セッションを集計
+### 例 2: 進行中セッションの再集計を繰り返す
 
 ```text
-/session-usage 0988238f-3cbe-4a35-9981-cb523f7ef3d1
-→ 該当セッションが集計表示される（rename済セッションは名前で表示）
-```
-
-### 例 3: 自然言語起動
-
-```text
-ユーザ「今回のセッションでどれくらいトークン使ったか教えて」
-→ session-usage スキルが自動的にトリガーされる
+/session-usage
+→ 表示（クリップボード未触）
+→ ユーザ「再集計」 → 最新値表示 → 再度選択肢
+→ ユーザ「再集計」 → さらに最新値 → 再度選択肢
+→ ユーザ「クリップボードへコピー」→ コピー → 再度選択肢
+→ ユーザ「終了」
 ```

@@ -7,8 +7,8 @@ description: カレントセッション（または指定セッション）の�
 
 カレントセッション（または引数指定セッション）の JSONL を直接パースし、
 トークン消費量を `/doctor` 風レイアウトで Claude UI に表示する。
-表示と同時に整形済み文字列をクリップボードへ自動コピーし、
-`AskUserQuestion` による対話ループで「再集計 / 終了」を選択させる。
+表示後は `AskUserQuestion` による対話ループで「クリップボードへコピー / 再集計 / 終了」
+を選択できる（クリップボードコピーは選択時のみ実行され、自動コピーは行わない）。
 
 ## 責務
 
@@ -16,13 +16,14 @@ description: カレントセッション（または指定セッション）の�
 - `type=assistant` レコードの `message.usage` 集計
 - セッション名（custom-title / ai-title）、期間、リクエスト数の抽出
 - 整形済み文字列の生成（罫線レイアウト・k tokens 単位・利用比率付き）
-- 整形済み文字列の自動クリップボードコピー
-- `AskUserQuestion` による対話ループ（再集計 / 終了の選択）
+- `AskUserQuestion` による対話ループ（コピー / 再集計 / 終了の選択）
+- 「コピー」選択時のみ `Set-Clipboard` 実行
 
 ## 責務外
 
+- 自動クリップボードコピー（旧仕様。アクション化済み）
 - 別ウィンドウ TUI の起動（旧仕様。Claude UI 内対話で代替済み）
-- Anthropic API 課金額の計算（係数は内部仕様のため再現性が保証されない）
+- Anthropic API 課金額の計算
 - 5h ウィンドウ・週次利用枠の集計（`/usage` 組み込みコマンドの守備範囲）
 
 ## トリガー条件
@@ -52,41 +53,61 @@ description: カレントセッション（または指定セッション）の�
 `$ARGUMENTS` を UUID 形式チェックする。UUID 形式なら `SessionId` として渡し、
 それ以外は無視。
 
-### 2. 集計実行 + 表示 + 自動コピー
+### 2. 集計実行 + 表示（コピーなし）
 
 Bash 経由で以下を実行する:
 
 ```bash
 pwsh -NoProfile -ExecutionPolicy Bypass \
   -File "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" \
-  -Stdout -Copy [-SessionId <UUID>]
+  -Stdout [-SessionId <UUID>]
 ```
 
-- `-Stdout`: stdout へ UTF-8 直接書き出し（Bash 経由でも罫線・日本語が文字化けしない）
-- `-Copy`: 整形済み文字列を `Set-Clipboard` でクリップボードへ
-- 末尾に `[OK] clipboard へコピーしました` の通知が付く
+`-Stdout` のみ（`-Copy` は付けない）。Bash の標準出力がそのまま Claude UI に表示される。
+**この時点ではクリップボードへのコピーは行わない**。
 
-Bash の標準出力はそのまま Claude UI に表示される。
-
-### 3. 対話ループ（AskUserQuestion）
+### 3. 対話ループ（AskUserQuestion 3 択）
 
 集計結果を表示した後、`AskUserQuestion` で次のアクションを尋ねる:
 
-- 「再集計」: 進行中のセッションは値が増えるため、最新値を見たい場合に選択
-- 「終了」: 対話を終える
+```
+AskUserQuestion({
+  questions: [{
+    question: "次のアクションを選んでください",
+    header: "session-usage",
+    options: [
+      { label: "クリップボードへコピー",
+        description: "現在表示している整形済み結果を Set-Clipboard でコピーします" },
+      { label: "再集計",
+        description: "進行中の値を最新化して再表示します（コピーは行いません）" },
+      { label: "終了",
+        description: "対話を終えます" }
+    ],
+    multiSelect: false
+  }]
+})
+```
 
-「再集計」が選ばれたら手順 2 に戻る。「終了」が選ばれたら、または何も選ばれず
-普通に応答が続けば、対話を終える。
+選択に応じた動作:
+
+| 選択 | アクション | 直後の挙動 |
+|-----|-----------|-----------|
+| クリップボードへコピー | `aggregate.ps1 -Copy [-SessionId ...]` を実行 | コピー成功通知後、再度 AskUserQuestion を提示 |
+| 再集計 | 手順 2（`-Stdout` のみ）へ戻る | 再表示後、再度 AskUserQuestion を提示 |
+| 終了 | 対話終了 | — |
+
+「終了」が選ばれるまでループは継続する。コピーや再集計を選んだ後も、続けて
+別のアクションを選べるようにする。
 
 ## 重要な制約
 
+- **自動コピーは行わない**: 表示時点ではクリップボードに書き込まない。コピーは
+  ユーザが `AskUserQuestion` で明示的に選んだときだけ実行する
 - **Claude UI の Bash は stdin 閉鎖**: `[System.Console]::ReadKey()` 等の対話キー入力は不可。
   操作選択は `AskUserQuestion` に集約する
-- **集計対象は `type=assistant` レコードのみ**。他のレコード（user / system / attachment 等）
-  はトークン消費に計上しない
-- **Cache Read は累計で大きく見える**（同じトークンを毎リクエスト読み出すため）。これは
-  「コスト」ではなく「処理されたトークン量の総和」として理解する
-- **外部依存なし**: ccusage 等のサードパーティを使わず、PowerShell 標準機能のみで実装
+- **集計対象は `type=assistant` レコードのみ**
+- **Cache Read は累計で大きく見える**（同じトークンを毎リクエスト読み出すため）
+- **外部依存なし**: PowerShell 標準機能のみで実装
 
 ## 参照
 
