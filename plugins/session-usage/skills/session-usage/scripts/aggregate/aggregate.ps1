@@ -169,12 +169,12 @@ function Format-KP([long]$n, [long]$total) {
 }
 function Format-K([long]$n) { '{0,9:N1}k' -f ($n / 1000.0) }
 
-# preview の monospace box 幅に収まるよう全行を 50 chars 以内に統一する
-$WIDTH = 50
+# preview の monospace box 幅に収まるよう全行を WIDTH 以内に統一する
+$WIDTH = 40
 $double = '=' * $WIDTH
 $single = '-' * $WIDTH
 
-# 長い文字列を WIDTH-prefix に収めて折り返すヘルパー（ASCII 主体・全角は概算で 2 幅換算）
+# 全角は 2 幅、それ以外は 1 幅で計算
 function Get-DisplayWidth([string]$s) {
     $w = 0
     foreach ($ch in $s.ToCharArray()) {
@@ -183,30 +183,37 @@ function Get-DisplayWidth([string]$s) {
     }
     return $w
 }
-function Wrap-Field([string]$Prefix, [string]$Body) {
-    $avail = $WIDTH - (Get-DisplayWidth $Prefix)
-    if ((Get-DisplayWidth $Body) -le $avail) {
-        return ,(($Prefix + $Body))
+
+# 任意の行を WIDTH 幅で折り返す（続行行は元の行のインデントを継承）
+function Wrap-Line([string]$Line) {
+    if ((Get-DisplayWidth $Line) -le $WIDTH) {
+        return ,$Line
     }
+    # 行頭の連続スペースをインデントとして継承
+    $indent = ''
+    foreach ($ch in $Line.ToCharArray()) {
+        if ($ch -eq ' ') { $indent += ' ' } else { break }
+    }
+    $indentW = Get-DisplayWidth $indent
+
     $result = New-Object 'System.Collections.Generic.List[string]'
-    $padding = ' ' * (Get-DisplayWidth $Prefix)
     $current = ''
     $currentW = 0
-    foreach ($ch in $Body.ToCharArray()) {
+    $isFirst = $true
+    foreach ($ch in $Line.ToCharArray()) {
         $code = [int]$ch
         $cw = if ($code -ge 0x1100 -and ($code -le 0x115F -or $code -ge 0x2E80)) { 2 } else { 1 }
-        if ($currentW + $cw -gt $avail) {
-            if ($result.Count -eq 0) { $result.Add($Prefix + $current) }
-            else { $result.Add($padding + $current) }
-            $current = ''
-            $currentW = 0
+        if ($currentW + $cw -gt $WIDTH) {
+            $result.Add($current)
+            $current = $indent
+            $currentW = $indentW
+            $isFirst = $false
         }
         $current += $ch
         $currentW += $cw
     }
     if ($current.Length -gt 0) {
-        if ($result.Count -eq 0) { $result.Add($Prefix + $current) }
-        else { $result.Add($padding + $current) }
+        $result.Add($current)
     }
     return $result
 }
@@ -216,12 +223,12 @@ $lines.Add('')
 $lines.Add($double)
 $lines.Add('  Claude Code  Session Usage')
 $lines.Add($double)
-foreach ($l in (Wrap-Field '  Session  : ' $sessionName)) { $lines.Add($l) }
+$lines.Add(("  Session  : {0}" -f $sessionName))
 $lines.Add(("  ID       : {0}" -f $SessionId))
-if ($periodStr) { foreach ($l in (Wrap-Field '  Period   : ' $periodStr)) { $lines.Add($l) } }
+if ($periodStr) { $lines.Add(("  Period   : {0}" -f $periodStr)) }
 $lines.Add(("  Requests : {0:N0}" -f $totals.msg_count))
 $lines.Add('')
-$lines.Add('  -- Token Consumption ' + ('-' * 27))
+$lines.Add('  -- Token Consumption ' + ('-' * 17))
 $lines.Add(("  Input          : {0}" -f (Format-KP $totals.input        $grandTotal)))
 $lines.Add(("  Cache Creation : {0}" -f (Format-KP $totals.cache_create $grandTotal)))
 $lines.Add(("  Cache Read     : {0}" -f (Format-KP $totals.cache_read   $grandTotal)))
@@ -229,26 +236,34 @@ $lines.Add(("  Output         : {0}" -f (Format-KP $totals.output       $grandTo
 $lines.Add('  ' + ('-' * ($WIDTH - 2)))
 $lines.Add(("  Total          : {0}" -f (Format-K  $grandTotal)))
 
-# Per-Model: 常時表示（モデル名 + tokens + calls を 50 文字以内に圧縮）
+# Per-Model: モデル名と値を 2 行に分割（長いモデル名は折り返しヘルパーが処理）
 $lines.Add('')
-$lines.Add('  -- Per-Model ' + ('-' * 36))
+$lines.Add('  -- Per-Model ' + ('-' * 25))
 foreach ($k in $byModel.Keys) {
     $b = $byModel[$k]
-    # モデル名が長すぎる場合は切り詰め
-    $name = if ((Get-DisplayWidth $k) -gt 22) { $k.Substring(0, [Math]::Min($k.Length, 19)) + '...' } else { $k }
-    $lines.Add(("  {0,-22} : {1} /{2,4:N0}c" -f $name, (Format-K $b.total), $b.count))
+    $lines.Add(("  {0}" -f $k))
+    $lines.Add(("      {0} / {1:N0} calls" -f (Format-K $b.total), $b.count))
 }
 
 # Server Tools: 0 でない場合のみ
 if ($totals.web_search -gt 0 -or $totals.web_fetch -gt 0) {
     $lines.Add('')
-    $lines.Add('  -- Server Tools ' + ('-' * 33))
+    $lines.Add('  -- Server Tools ' + ('-' * 22))
     if ($totals.web_search -gt 0) { $lines.Add(("  Web Search Requests : {0,8:N0}" -f $totals.web_search)) }
     if ($totals.web_fetch  -gt 0) { $lines.Add(("  Web Fetch  Requests : {0,8:N0}" -f $totals.web_fetch))  }
 }
 
 $lines.Add('')
 $lines.Add($double)
+
+# 全行を WIDTH で折り返し（保険）
+$wrapped = New-Object 'System.Collections.Generic.List[string]'
+foreach ($line in $lines) {
+    foreach ($w in (Wrap-Line $line)) {
+        $wrapped.Add($w)
+    }
+}
+$lines = $wrapped
 
 $rendered = $lines -join [Environment]::NewLine
 
