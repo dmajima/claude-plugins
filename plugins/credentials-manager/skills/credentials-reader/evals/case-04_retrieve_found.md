@@ -1,4 +1,4 @@
-# Case 09: 取得（retrieve、対象あり）
+# Case 04: 取得（retrieve、対象あり）
 
 ## 入力
 
@@ -39,9 +39,9 @@
 
 ## 分岐の根拠
 
-このケースは「取得（retrieve）+ 部分一致単一ヒット」分岐に該当する。フル値が会話に出ないこと（マスキング規則）の検証が主要な観点。
+「取得（retrieve）+ 部分一致単一ヒット」分岐。フル値が会話に出ないこと（マスキング規則）の検証が主要な観点。
 
 ## 関連ケース
 
-- `case-10_retrieve_not_found.md`（候補不在時の動作）
-- `case-04_auto_match_single.md`（URL のみ指定で名前指定なしの自動マッチとの違い）
+- `case-05_retrieve_not_found.md`（候補不在時の動作）
+- `case-01_auto_match_single.md`（URL のみ指定で名前指定なしの自動マッチとの違い）

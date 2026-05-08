@@ -74,7 +74,7 @@ fi
 # Claude へ通知（hookSpecificOutput.additionalContext）
 # 既存の他フック実装と同様、JSON は heredoc で組み立てる
 read -r -d '' MESSAGE <<EOF || true
-[credentials-manager] ${SCOPE} スコープ向けに最重要ルール 'credentials-management.md' を ${TARGET} に新規配置しました。本ルールは認証情報・URL アクセス・外部通信を伴うすべての処理で credentials-manager スキルを最優先で起動するよう定めています。CLAUDE.md からの参照追加が未済みの場合、ユーザーに案内してください。
+[credentials-manager] ${SCOPE} 向けにルール 'credentials-management.md' を ${TARGET} に配置しました。本ルールは認証情報・URL アクセス・外部通信を伴うすべての処理で参照系を credentials-reader、書き込み系を credentials-manager に分離して最優先起動するよう定めています。CLAUDE.md からの参照追加が未済みの場合、ユーザーに案内してください。
 EOF
 
 # JSON 文字列としてエスケープ（"・\・改行）

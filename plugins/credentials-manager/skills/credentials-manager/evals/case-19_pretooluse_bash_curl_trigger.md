@@ -22,20 +22,22 @@
 
 ### Phase 3: Claude へ通知
 
-- `additionalContext` で credentials-manager 最優先起動を要求
+- `additionalContext` で **`credentials-reader`** 最優先起動を要求
+- マッチ件数に応じた挙動 + 必要時 `credentials-manager` への引き継ぎを案内
+- コンテンツ内シークレット検出時はマスク表示（先頭4+****+末尾4）を要求
 
 ## 期待出力
 
 | 項目 | 期待値 |
 |-----|-------|
-| Hook stdout | 有効な JSON（外部通信検出 reason 含む） |
+| Hook stdout | 有効な JSON（外部通信検出 reason + reader 起動指示 + マスキング指示 含む） |
 | 終了コード | 0 |
 
 ## 分岐の根拠
 
-`Bash` 内の外部通信コマンド検出分岐。`gh` / `wget` / `ssh` / `aws` 等も同分岐。
+`Bash` 内の外部通信コマンド検出分岐。`gh` / `wget` / `ssh` / `aws` 等も同分岐。v2.0.0 では reader 起動指示に統一（hooks 軽量化）。
 
 ## 関連ケース
 
 - `case-20_pretooluse_bash_local_noop.md`（同 Bash でも no-op となる対比）
-- `case-27_pretooluse_bash_iac_trigger.md`（IaC CLI 系の trigger）
+- `credentials-reader:case-01_auto_match_single.md`（reader 側の自動マッチ）

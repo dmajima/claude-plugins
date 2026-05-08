@@ -17,13 +17,14 @@
 
 ### Phase 2: Claude へ通知
 
-- `additionalContext` で「外部 URL アクセスツール (WebFetch) の呼び出し。実行前に credentials-manager で対象 URL/ドメインの保存済み認証情報を必ず照合してください」と通知
+- `additionalContext` で「外部 URL アクセスツール (WebFetch) の呼び出し。`credentials-reader` を最優先起動して保存済み認証情報を照合してください（1件→自動適用 / 複数件→選択 / 0件→保有有無確認）。書き込みは `credentials-manager` に引き継ぎます」と通知
 
 ### Phase 3: Claude の動作
 
-- 通知を受けて credentials-manager スキルを最優先で起動
+- 通知を受けて **`credentials-reader`** スキルを最優先で起動
 - 対象 URL `https://api.openai.com/...` のドメインで自動マッチ
-- マッチ件数に応じた挙動（case-04 / case-05 / case-06 と同じ）
+- マッチ件数に応じた挙動（reader case-01 / case-02 / case-03 と同じ）
+- 0 件マッチで保存承諾された場合のみ `credentials-manager` に引き継ぎ
 
 ## 期待出力
 
@@ -34,9 +35,9 @@
 
 ## 分岐の根拠
 
-`WebFetch` ツール常時 trigger 分岐（最も高頻度な発火点）。
+`WebFetch` ツール常時 trigger 分岐（最も高頻度な発火点）。v2.0.0 では reader 起動指示に統一（hooks 軽量化）。
 
 ## 関連ケース
 
-- `case-04_auto_match_single.md`（trigger 後の URL 自動マッチ）
-- `case-26_pretooluse_mcp_trigger.md`（同じ常時 trigger カテゴリで MCP）
+- `credentials-reader:case-01_auto_match_single.md`（trigger 後の URL 自動マッチ）
+- `case-22_pretooluse_read_env_example_noop.md`（同じ常時 trigger カテゴリで no-op 境界）

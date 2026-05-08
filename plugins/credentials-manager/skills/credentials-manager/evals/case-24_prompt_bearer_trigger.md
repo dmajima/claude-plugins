@@ -18,11 +18,11 @@
 
 ### Phase 2: Claude へ通知
 
-- `additionalContext` で「保存名で参照、マスク値で表示」を要求
+- `additionalContext` で「フル値復唱なし、マスク値で表示、`credentials-reader` 最優先起動 → 既存照合 → 保存提案 → 承諾時のみ `credentials-manager` 引き継ぎ」を要求
 
 ### Phase 3: Claude の動作
 
-- credentials-manager 起動 → 保存名確認 → 以降は保存名で参照
+- **`credentials-reader`** 起動 → 既存照合 → なければ保存提案 → 承諾時のみ `credentials-manager` に引き継ぎ → 保存名確認 → 以降は保存名で参照
 
 ## 期待出力
 

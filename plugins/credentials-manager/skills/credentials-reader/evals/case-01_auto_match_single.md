@@ -1,4 +1,4 @@
-# Case 04: URL アクセス時の自動マッチ（1 件ヒット）
+# Case 01: URL アクセス時の自動マッチ（1 件ヒット）
 
 ## 入力
 
@@ -15,7 +15,7 @@
 ### Phase 1: 暗黙トリガー発火
 
 - ユーザが認証情報を明示提供していないが、URL アクセス依頼を検出
-- `credentials-manager` スキルの description により AI が自動トリガー判定し本スキルを起動
+- `credentials-reader` スキルの description により AI が自動トリガー判定し本スキルを起動
 - グローバルルールが不在でも description の Use when 条件で起動する
 
 ### Phase 2: マッチング
@@ -36,15 +36,15 @@
 
 | 項目 | 期待値 |
 |-----|-------|
-| 生成ファイル | なし（読み取りのみ） |
+| 生成ファイル | なし（読み取りのみ、`credentials-manager` への引き継ぎなし） |
 | 標準出力（要約） | 自動適用通知 + API レスポンス |
 | 終了状態 | 成功 |
 
 ## 分岐の根拠
 
-このケースは「URL 自動マッチ・1 件ヒット」分岐に該当する。**重要**: グローバルルール不在でも description のトリガー条件により発火することを検証する。
+「URL 自動マッチ・1 件ヒット」分岐に該当。グローバルルール不在でも description のトリガー条件により発火することを検証する。
 
 ## 関連ケース
 
-- `case-05_auto_match_multiple.md`（複数件ヒット時の選択依頼）
-- `case-06_auto_match_none.md`（0 件時の保存提案）
+- `case-02_auto_match_multiple.md`（複数件ヒット時の選択依頼）
+- `case-03_auto_match_none.md`（0 件時の保存提案 → manager 引き継ぎ）

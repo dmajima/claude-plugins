@@ -3,8 +3,8 @@
 #
 # credentials-manager プラグインの UserPromptSubmit フック。
 # ユーザーが投入したプロンプトに認証情報らしい文字列が含まれている場合、
-# credentials-manager スキルで保存提案＋マスキング処理を最優先で実施するよう
-# Claude へ additionalContext で通知する。
+# credentials-reader スキルでマスキング・既存照合・保存提案を最優先で実施するよう
+# Claude へ additionalContext で通知する（保存承諾時のみ credentials-manager に引き継ぎ）。
 #
 # 検出パターン:
 #   - sk-* / ghp_* / gho_* / ghu_* / ghs_* / ghr_*
@@ -72,7 +72,7 @@ cat <<EOF
   "suppressOutput": true,
   "hookSpecificOutput": {
     "hookEventName": "UserPromptSubmit",
-    "additionalContext": "[credentials-manager] ${ESCAPED_REASON}。応答ではこの値を平文で復唱せず、credentials-manager スキルを最優先で起動して (1) 保存名と URL/ドメイン関連付けを確認し保存、(2) 以降は保存名で参照、(3) 表示時はマスク値（先頭4 + *** + 末尾4）に置き換える、を実施してください（rules/security/credentials-management.md 参照）。"
+    "additionalContext": "[credentials-manager] ${ESCAPED_REASON}。フル値を復唱せずマスク表示（先頭4+****+末尾4、8文字以下は全マスク****）してください。credentials-reader を最優先起動して既存照合 + 保存提案を行い、ユーザ承諾時のみ credentials-manager に引き継いで保存します。詳細: rules/security/credentials-management.md"
   }
 }
 EOF

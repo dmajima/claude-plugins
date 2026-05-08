@@ -1,10 +1,10 @@
 # URL 自動マッチ仕様
 
-`credentials-manager` スキルの **暗黙トリガー** 時に動作する、URL/ドメインからの保存済み認証情報の自動マッチング仕様。SKILL.md 実行フロー step 5 から参照される。
+`credentials-reader` スキルの **暗黙トリガー** 時に動作する、URL/ドメインからの保存済み認証情報の自動マッチング仕様。SKILL.md 実行フロー step 4 から参照される。
 
 ## 1. 暗黙トリガーの条件
 
-以下のいずれかに該当すると、ユーザから明示要求がなくても本スキルを起動する。
+以下のいずれかに該当すると、ユーザから明示要求がなくても本スキルが起動する（PreToolUse / UserPromptSubmit フックからの `additionalContext` でも誘導される）。
 
 | トリガー | 例 |
 |--------|---|
@@ -12,6 +12,7 @@
 | curl / wget / `gh api` 等のシェル経由 API 呼び出し | 「`curl https://api.github.com/user` を実行」 |
 | Python `requests` / Node `fetch` 等のスクリプト記述 | コード生成・実行依頼 |
 | API エンドポイント URL を含む指示一般 | 「`api.openai.com` にアクセス」 |
+| 認証情報系ファイル（`.env` / `id_rsa` 等）の読み取り | フック検出経由で起動 |
 
 ## 2. マッチング順序
 
@@ -29,7 +30,7 @@
 |----------|------|
 | 1 件 | 自動適用。ユーザに「保存済み認証情報 `<name>` (`<masked>`) を `<domain>` に自動適用しました。」と通知 |
 | 複数件 | `AskUserQuestion` でどれを使うか確認。選択肢にはマスク済み値・関連ドメイン・更新日を表示 |
-| 0 件 | ユーザに「`<domain>` 用の認証情報は保存されていません。提供しますか？」と確認。提供されたら save フローへ遷移 |
+| 0 件 | ユーザに「`<domain>` 用の認証情報は保存されていません。提供しますか？」と確認。提供されたら **`credentials-manager` への引き継ぎ**（[`handoff.md`](handoff.md) 参照） |
 
 ## 4. 適用方法（auth_method 解釈）
 
@@ -72,6 +73,8 @@
 [credentials-manager] No stored credential matches <domain>. Do you have credentials for this URL?
 ```
 
+承諾されたら `credentials-manager` を起動して保存フローへ遷移する（[`handoff.md`](handoff.md)）。
+
 ## 7. 暗黙トリガー時のスキップ条件
 
 以下に該当する場合は自動マッチを実行しない（誤検出回避）。
@@ -83,24 +86,6 @@
 | ユーザが明示的に「認証なしでアクセス」と指示 | 意図尊重 |
 | ユーザが既に認証情報を提供済み | 二重適用を避ける |
 
-## 8. プロアクティブ検出（API キー風文字列）
+## 8. プロアクティブ検出（API キー風文字列）との関係
 
-会話中に以下のパターンが現れたら、保存提案を行う:
-
-| パターン | 推定種別 |
-|--------|--------|
-| `sk-...` | OpenAI 系 `api_key` |
-| `sk-proj-...` | OpenAI Project `api_key` |
-| `sk-ant-...` | Anthropic `api_key` |
-| `ghp_...` `gho_...` `ghu_...` `ghs_...` | GitHub `token` |
-| `xoxb-...` `xoxp-...` `xoxa-...` | Slack `token` |
-| `Bearer eyJhbG...` | JWT `token` |
-| `AKIA...` | AWS Access Key（`api_key`） |
-
-提案文:
-
-```
-[credentials-manager] '<masked>' looks like a credential. Save it for future sessions?
-```
-
-ユーザが承諾したら save フローへ。会話の文脈から関連 URL/ドメインを抽出して併せて保存する。
+会話中にシークレットパターン（`sk-` `ghp_` `AKIA` `Bearer` 等）が現れた場合のプロアクティブ検出は、本スキル SKILL.md 実行フロー step 6 + [`handoff.md`](handoff.md) を参照する。
