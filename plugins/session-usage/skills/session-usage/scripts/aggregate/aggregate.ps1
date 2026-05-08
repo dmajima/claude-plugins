@@ -169,46 +169,45 @@ function Format-KP([long]$n, [long]$total) {
 }
 function Format-K([long]$n) { '{0,10:N1}k tokens' -f ($n / 1000.0) }
 
-$dbl = '═' * 56
-$bar = '─' * 56
+$double = '=' * 60
+$single = '-' * 60
 
 $lines = New-Object 'System.Collections.Generic.List[string]'
 $lines.Add('')
-$lines.Add('╔' + $dbl + '╗')
-$lines.Add('║  Claude Code  Session Usage' + (' ' * 28) + '║')
-$lines.Add('╚' + $dbl + '╝')
-$lines.Add('')
+$lines.Add($double)
+$lines.Add('  Claude Code  Session Usage')
+$lines.Add($double)
 $lines.Add(("  Session  : {0}" -f $sessionName))
 $lines.Add(("  ID       : {0}" -f $SessionId))
 if ($periodStr) { $lines.Add(("  Period   : {0}" -f $periodStr)) }
 $lines.Add(("  Requests : {0:N0}" -f $totals.msg_count))
 $lines.Add('')
-$lines.Add('  ┌── Token Consumption ' + ('─' * 35) + '┐')
-$lines.Add(("  │  Input               : {0}  │" -f (Format-KP $totals.input        $grandTotal)))
-$lines.Add(("  │  Cache Creation      : {0}  │" -f (Format-KP $totals.cache_create $grandTotal)))
-$lines.Add(("  │  Cache Read          : {0}  │" -f (Format-KP $totals.cache_read   $grandTotal)))
-$lines.Add(("  │  Output              : {0}  │" -f (Format-KP $totals.output       $grandTotal)))
-$lines.Add('  │                        ' + ('─' * 31) + '   │')
-$lines.Add(("  │  Total               : {0}{1}│" -f (Format-K $grandTotal), (' ' * 14)))
-$lines.Add('  └' + ('─' * 56) + '┘')
+$lines.Add('  -- Token Consumption ' + ('-' * 39))
+$lines.Add(("  Input          : {0}" -f (Format-KP $totals.input        $grandTotal)))
+$lines.Add(("  Cache Creation : {0}" -f (Format-KP $totals.cache_create $grandTotal)))
+$lines.Add(("  Cache Read     : {0}" -f (Format-KP $totals.cache_read   $grandTotal)))
+$lines.Add(("  Output         : {0}" -f (Format-KP $totals.output       $grandTotal)))
+$lines.Add('  ' + ('-' * 58))
+$lines.Add(("  Total          : {0}" -f (Format-K  $grandTotal)))
 
-if ($byModel.Count -gt 1) {
-    $lines.Add('')
-    $lines.Add('  ┌── Per-Model ' + ('─' * 43) + '┐')
-    foreach ($k in $byModel.Keys) {
-        $b = $byModel[$k]
-        $lines.Add(("  │  {0,-25}: {1} / {2,4:N0} calls   │" -f $k, (Format-K $b.total), $b.count))
-    }
-    $lines.Add('  └' + ('─' * 56) + '┘')
+# Per-Model: 常時表示
+$lines.Add('')
+$lines.Add('  -- Per-Model ' + ('-' * 47))
+foreach ($k in $byModel.Keys) {
+    $b = $byModel[$k]
+    $lines.Add(("  {0,-30} : {1} / {2,5:N0} calls" -f $k, (Format-K $b.total), $b.count))
 }
 
+# Server Tools: 0 でない場合のみ
 if ($totals.web_search -gt 0 -or $totals.web_fetch -gt 0) {
     $lines.Add('')
-    $lines.Add('  ┌── Server Tools ' + ('─' * 40) + '┐')
-    if ($totals.web_search -gt 0) { $lines.Add(("  │  Web Search Requests : {0,6:N0}{1}│" -f $totals.web_search, (' ' * 27))) }
-    if ($totals.web_fetch  -gt 0) { $lines.Add(("  │  Web Fetch  Requests : {0,6:N0}{1}│" -f $totals.web_fetch,  (' ' * 27))) }
-    $lines.Add('  └' + ('─' * 56) + '┘')
+    $lines.Add('  -- Server Tools ' + ('-' * 44))
+    if ($totals.web_search -gt 0) { $lines.Add(("  Web Search Requests : {0,8:N0}" -f $totals.web_search)) }
+    if ($totals.web_fetch  -gt 0) { $lines.Add(("  Web Fetch  Requests : {0,8:N0}" -f $totals.web_fetch))  }
 }
+
+$lines.Add('')
+$lines.Add($double)
 
 $rendered = $lines -join [Environment]::NewLine
 
