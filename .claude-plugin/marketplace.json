@@ -115,7 +115,7 @@
     {
       "name": "session-usage",
       "source": "./plugins/session-usage",
-      "description": "カレントセッションのトークン消費量を JSONL から直接集計し、対話 TUI（フルスクリーン + キー入力受付）でクリップボードコピー可能に表示するプラグイン",
+      "description": "カレントセッションのトークン消費量を JSONL から直接集計し、AskUserQuestion 対話メニュー（プレビュー表示・クリップボードコピー・再集計）で操作できる完全内製プラグイン",
       "author": {
         "name": "dmajima"
       },
