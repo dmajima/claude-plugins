@@ -187,6 +187,47 @@ class EmbedManyTests(unittest.TestCase):
             self.assertTrue(t.strip() or t == " ")
 
 
+class ResolveCacheDirTests(unittest.TestCase):
+    def test_user_specified_cache_dir_respected(self) -> None:
+        cfg = embedding_client.EmbeddingConfig(cache_dir="C:/short")
+        resolved = embedding_client._resolve_cache_dir(cfg, Path("ignored"))
+        # Path is normalised but the user-specified value wins regardless
+        # of OS or path length.
+        self.assertEqual(str(resolved).replace("\\", "/"), "C:/short")
+
+    def test_default_uses_base_when_short(self) -> None:
+        cfg = embedding_client.EmbeddingConfig()
+        base = Path("C:/short/base")
+        out = embedding_client._resolve_cache_dir(cfg, base)
+        self.assertEqual(out, base / "embeddings_cache" / "models")
+
+    def test_windows_fallback_when_path_too_deep(self) -> None:
+        """On Windows, very deep <base> should fall back to AppData."""
+        cfg = embedding_client.EmbeddingConfig()
+        deep = Path("C:/" + "/".join(["very_long_segment_name"] * 10))
+        with mock.patch.object(embedding_client.os, "name", "nt"), \
+             mock.patch.object(embedding_client, "_fallback_cache_dir",
+                               return_value=Path("C:/cache-fallback")):
+            with tempfile.TemporaryDirectory() as tmp:
+                # Redirect fallback to a real writable path so mkdir works.
+                with mock.patch.object(
+                    embedding_client,
+                    "_fallback_cache_dir",
+                    return_value=Path(tmp) / "fb",
+                ):
+                    out = embedding_client._resolve_cache_dir(cfg, deep)
+        self.assertNotEqual(out, deep / "embeddings_cache" / "models")
+        self.assertTrue(out.name == "fb")
+
+    def test_posix_never_falls_back(self) -> None:
+        """POSIX has no MAX_PATH limit -- always use <base>/embeddings_cache."""
+        cfg = embedding_client.EmbeddingConfig()
+        deep = Path("/" + "/".join(["very_long_segment_name"] * 20))
+        with mock.patch.object(embedding_client.os, "name", "posix"):
+            out = embedding_client._resolve_cache_dir(cfg, deep)
+        self.assertEqual(out, deep / "embeddings_cache" / "models")
+
+
 class GetModelTests(unittest.TestCase):
     def setUp(self) -> None:
         # Reset the singleton cache between tests.

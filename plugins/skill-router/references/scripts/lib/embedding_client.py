@@ -117,10 +117,62 @@ def is_sdk_available() -> bool:
 _model_cache: dict[tuple[str, str | None], Any] = {}
 
 
+# Windows MAX_PATH is 260.  HuggingFace caches snapshots under
+# ``<cache>/models--<org>--<name>/snapshots/<sha>/<file>`` which alone
+# eats 80-150 characters; if the user's <base> is deep (e.g. a repo
+# checkout under a long path), the resulting absolute path exceeds
+# MAX_PATH and ``[WinError 206]`` aborts the download.  Reserve enough
+# headroom for the longest model file we ship.
+_WINDOWS_CACHE_DIR_HEADROOM = 100  # chars; conservative
+
+# Where to fall back to when the auto-resolved cache dir is too deep
+# on Windows.  Kept short (``~/.cache/...``) and shared across all
+# bases on the host, which is fine because model ONNX files are
+# content-addressed by HuggingFace.
+_FALLBACK_CACHE_REL = ("AppData", "Local", "skill-router", "models")
+
+
+def _fallback_cache_dir() -> Path:
+    home = Path(os.path.expanduser("~"))
+    return home.joinpath(*_FALLBACK_CACHE_REL)
+
+
 def _resolve_cache_dir(cfg: EmbeddingConfig, base: Path) -> Path:
+    """Pick a cache directory for the fastembed/HuggingFace download.
+
+    Resolution:
+      1. user-specified ``cfg.cache_dir`` -- respected verbatim (the
+         operator presumably knows their environment best).
+      2. ``<base>/embeddings_cache/models`` -- the default, fine on
+         POSIX and on Windows when ``<base>`` is shallow.
+      3. On Windows only, when (2) would push paths past MAX_PATH,
+         fall back to ``~/AppData/Local/skill-router/models`` and log
+         a warning so operators can opt out via ``cfg.cache_dir``.
+    """
     if cfg.cache_dir:
         return Path(cfg.cache_dir).expanduser()
-    return base / "embeddings_cache" / "models"
+    primary = base / "embeddings_cache" / "models"
+    if os.name == "nt" and len(str(primary)) > _WINDOWS_CACHE_DIR_HEADROOM:
+        fallback = _fallback_cache_dir()
+        try:
+            fallback.mkdir(parents=True, exist_ok=True)
+            import logging as _logging
+
+            _logging.getLogger("skill_router.embedding").warning(
+                "embedding cache_dir %r is too deep for Windows MAX_PATH "
+                "(len=%d > %d); falling back to %s. Set "
+                "config.embedding.cache_dir explicitly to override.",
+                str(primary),
+                len(str(primary)),
+                _WINDOWS_CACHE_DIR_HEADROOM,
+                str(fallback),
+            )
+            return fallback
+        except OSError:
+            # Best effort: if even the fallback cannot be created we
+            # return the primary anyway and let the caller fail open.
+            pass
+    return primary
 
 
 def get_model(cfg: EmbeddingConfig, base: Path) -> Any | None:

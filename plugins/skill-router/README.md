@@ -252,6 +252,29 @@ sha256sum <embeddings_cache/models 配下の ONNX>
 
 オフライン環境では `embedding.cache_dir` でディレクトリを直接指定できます。
 
+#### Windows MAX_PATH（260 文字）自動フォールバック
+
+Windows では `<base>` が深いパスにあると、HuggingFace のモデルファイル名（`models--<org>--<name>/snapshots/<sha>/<file>` で 80〜150 文字）と合算して MAX_PATH を超え `[WinError 206] ファイル名または拡張子が長すぎます` で DL が失敗します。
+
+これを避けるため、`embedding.cache_dir` が **未指定** の場合に自動解決されるパス（`<base>/embeddings_cache/models/`）が 100 文字を超えると、自動的に以下にフォールバックします:
+
+```text
+~/AppData/Local/skill-router/models/
+```
+
+フォールバック時は `<base>/index.log` に WARNING ログが出力されます。
+
+明示的に `embedding.cache_dir` を指定した場合は自動フォールバックは行わず、その値を尊重します。
+
+```json
+{
+  "embedding": {
+    "enabled": true,
+    "cache_dir": "C:/sr-models"
+  }
+}
+```
+
 #### Windows での `--clear`
 
 `/router-embedding-cache --clear` は内部で POSIX `rm -f` 相当を呼びます。Windows 環境では同等の PowerShell コマンドを案内します。
