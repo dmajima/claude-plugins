@@ -26,6 +26,9 @@ _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
 import build_index  # noqa: E402
+import embedding_client  # noqa: E402
+import embedding_enrich  # noqa: E402
+import embedding_route  # noqa: E402
 import session_state  # noqa: E402
 
 
@@ -34,7 +37,7 @@ import session_state  # noqa: E402
 # ---------------------------------------------------------------------------
 
 DEFAULT_CONFIG: dict[str, Any] = {
-    "schema_version": 1,
+    "schema_version": 2,
     "weights": {
         "keyword_overlap": 1.0,
         "trigger_phrase": 2.0,
@@ -57,6 +60,14 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "tokenizer": {
         "min_kanji_length": 2,
         "min_katakana_length": 4,
+    },
+    "embedding": {
+        "enabled": False,
+        "model": embedding_client.DEFAULT_MODEL,
+        "cache_dir": None,
+        "weight": 3.0,
+        "min_similarity": 0.3,
+        "max_skills_per_run": 200,
     },
 }
 
@@ -376,6 +387,43 @@ def route(stdin_payload: dict[str, Any]) -> dict[str, Any] | None:
         rows.append((skill, score, reasons))
     rows.sort(key=lambda r: r[1], reverse=True)
 
+    # ------------------------------------------------------------------
+    # Optional embedding-based boost (v0.4+).
+    #
+    # Loads the SessionStart-built vector cache and applies a cosine
+    # similarity boost.  When ``embedding.enabled = false`` or the
+    # cache is missing, ``boost_rows`` returns the input unchanged.
+    # ------------------------------------------------------------------
+    embedding_section = config.get("embedding")
+    if not isinstance(embedding_section, dict):
+        embedding_section = {}
+    embedding_cfg = embedding_client.EmbeddingConfig.from_dict(embedding_section)
+    embedding_used = False
+    if embedding_cfg.enabled and rows:
+        try:
+            manifest = embedding_enrich.load_manifest(base)
+            qn_to_idx = {
+                qn: entry["idx"]
+                for qn, entry in manifest.items()
+                if isinstance(entry, dict)
+                and isinstance(entry.get("idx"), int)
+                and entry["idx"] >= 0
+            }
+            expected_sha = embedding_enrich.load_vectors_sha256_from_manifest(base)
+            matrix = embedding_enrich.load_vectors(base, expected_sha256=expected_sha)
+        except Exception:  # pragma: no cover - fail-open
+            qn_to_idx, matrix = {}, None
+        if qn_to_idx and matrix is not None:
+            try:
+                boosted = embedding_route.boost_rows(
+                    prompt, rows, base, embedding_cfg, qn_to_idx, matrix
+                )
+            except Exception:  # pragma: no cover - fail-open
+                boosted = rows
+            if boosted is not rows:
+                embedding_used = True
+                rows = boosted
+
     top1 = rows[0][1] if rows else 0.0
     top2 = rows[1][1] if len(rows) > 1 else 0.0
     tier = determine_tier(top1, top2, thresholds)
@@ -388,9 +436,17 @@ def route(stdin_payload: dict[str, Any]) -> dict[str, Any] | None:
         "ratio": ratio,
         "candidate": rows[0][0]["qualified_name"] if rows else None,
         "alternatives": [r[0]["qualified_name"] for r in rows[1:3]],
+        "embedding_used": embedding_used,
     }
     session_state.append_route_decision(base, sid, decision)
-    logger.info("tier=%s top1=%.2f top2=%.2f ratio=%.2f", tier, top1, top2, ratio)
+    logger.info(
+        "tier=%s top1=%.2f top2=%.2f ratio=%.2f embedding=%s",
+        tier,
+        top1,
+        top2,
+        ratio,
+        "on" if embedding_used else "off",
+    )
 
     if tier == "low":
         return None

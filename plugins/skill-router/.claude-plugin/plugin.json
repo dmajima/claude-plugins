@@ -1,7 +1,7 @@
 {
   "name": "skill-router",
-  "version": "0.2.1",
-  "description": "ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン",
+  "version": "0.4.0",
+  "description": "ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン。v0.4 から完全ローカルで動作する埋め込みベースの意味的類似度判定（fastembed + multilingual MiniLM）をオプトインで搭載",
   "author": {
     "name": "dmajima"
   },
@@ -15,6 +15,9 @@
     "session-start",
     "skill-invocation",
     "additional-context",
-    "hooks"
+    "hooks",
+    "embedding",
+    "fastembed",
+    "offline"
   ]
 }

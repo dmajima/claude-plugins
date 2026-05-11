@@ -11,10 +11,12 @@ Run from the repository root::
 from __future__ import annotations
 
 import json
+import logging
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 _LIB = (
     Path(__file__).resolve().parent.parent
@@ -166,6 +168,132 @@ class LoadIndexTests(unittest.TestCase):
         (self.base / "index.pkl").write_bytes(b"would-be-pickle-bytes")
         # No index.json present, so load_index falls through to {}.
         self.assertEqual(route.load_index(self.base), {})
+
+    def test_schema_version_3_index_is_loaded_as_is(self) -> None:
+        # build_index v0.4 emits SCHEMA_VERSION=3 (adds stats.embedding).
+        # The loader is intentionally schema-version-agnostic so older
+        # readers continue to function during a rolling update.
+        payload = {
+            "schema_version": 3,
+            "stats": {"embedding": {"enabled": False, "skills_vectorised": 0}},
+            "skills": [{"qualified_name": "p:s", "keywords": ["a"]}],
+        }
+        (self.base / "index.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+        self.assertEqual(route.load_index(self.base), payload)
+
+    def test_schema_version_2_index_still_loads(self) -> None:
+        # Cross-version safety: a v0.2/v0.3 index.json must still be
+        # accepted, since we make no breaking changes to the read shape.
+        payload = {
+            "schema_version": 2,
+            "stats": {},
+            "skills": [{"qualified_name": "p:s"}],
+        }
+        (self.base / "index.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+        self.assertEqual(route.load_index(self.base), payload)
+
+
+class RouteEntryPointSmokeTests(unittest.TestCase):
+    """Regression guard for the full route() function with embedding off.
+
+    With ``embedding.enabled = false`` (default), Phase B must be a
+    no-op and the decision payload must include ``embedding_used:
+    false`` with the heuristic ranking preserved.
+    """
+
+    @staticmethod
+    def _close_log_handlers() -> None:
+        for name in ("skill_router.route", "skill_router.build_index"):
+            lg = logging.getLogger(name)
+            for handler in list(lg.handlers):
+                try:
+                    handler.close()
+                except Exception:
+                    pass
+                lg.removeHandler(handler)
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        # Tear order matters on Windows: close log handles before
+        # TemporaryDirectory.cleanup walks the dir (LIFO).
+        self.addCleanup(self._tmp.cleanup)
+        self.addCleanup(self._close_log_handlers)
+        self.base = Path(self._tmp.name)
+        self._patch_base = mock.patch.object(
+            route.build_index, "resolve_base_dir", return_value=self.base
+        )
+        self._patch_base.start()
+        self.addCleanup(self._patch_base.stop)
+        self.skill = {
+            "qualified_name": "p:hello",
+            "skill_name": "hello",
+            "plugin": "p",
+            "keywords": ["hello", "world"],
+            "trigger_phrases": ["hello world"],
+            "evals": [{"prompt": "say hello world"}],
+            "skip_keywords_verb": [],
+            "skip_keywords_noun": [],
+            "description": "say hello",
+        }
+        (self.base / "index.json").write_text(
+            json.dumps({"schema_version": 3, "skills": [self.skill]}),
+            encoding="utf-8",
+        )
+        (self.base / "inverted_index.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "index": {"hello": ["p:hello"], "world": ["p:hello"]},
+                    "overgeneric": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def test_embedding_disabled_route_emits_no_op_decision(self) -> None:
+        result = route.route({"session_id": "sid-1", "prompt": "hello world"})
+        self.assertIsNotNone(result)
+        decision_file = self.base / "sessions" / "sid-1" / "route_decisions.jsonl"
+        self.assertTrue(decision_file.is_file())
+        last = decision_file.read_text(encoding="utf-8").splitlines()[-1]
+        decision = json.loads(last)
+        self.assertFalse(decision["embedding_used"])
+        self.assertEqual(decision["candidate"], "p:hello")
+
+    def test_embedding_enabled_invokes_boost(self) -> None:
+        # Place a config.json that enables embedding.
+        (self.base / "config.json").write_text(
+            json.dumps({"embedding": {"enabled": True}}),
+            encoding="utf-8",
+        )
+        # boost_rows reorders or annotates rows; assert the helper is
+        # invoked with the right plumbing (manifest stub + matrix stub).
+        with mock.patch.object(
+            route.embedding_enrich, "load_manifest", return_value={"p:hello": {"idx": 0}}
+        ), mock.patch.object(
+            route.embedding_enrich,
+            "load_vectors_sha256_from_manifest",
+            return_value="dummy-sha",
+        ), mock.patch.object(
+            route.embedding_enrich, "load_vectors", return_value=object()
+        ), mock.patch.object(
+            route.embedding_route,
+            "boost_rows",
+            side_effect=lambda *args, **kw: [
+                (args[1][0][0], args[1][0][1] + 10.0, args[1][0][2] + ["embedding_sim=+1.00"])
+            ],
+        ) as boost:
+            result = route.route({"session_id": "sid-2", "prompt": "hello world"})
+        self.assertIsNotNone(result)
+        boost.assert_called_once()
+        decision_file = self.base / "sessions" / "sid-2" / "route_decisions.jsonl"
+        last = decision_file.read_text(encoding="utf-8").splitlines()[-1]
+        decision = json.loads(last)
+        self.assertTrue(decision["embedding_used"])
 
 
 if __name__ == "__main__":

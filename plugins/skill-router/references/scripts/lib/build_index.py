@@ -49,9 +49,11 @@ _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
 import parse_evals  # noqa: E402  (sibling module, see design v2 section 3.2.6)
+import embedding_client  # noqa: E402
+import embedding_enrich  # noqa: E402
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 INVERTED_SCHEMA_VERSION = 1
 MAX_POSTINGS_PER_KEYWORD = 50
 # Versions of ~/.claude/plugins/installed_plugins.json that this builder
@@ -154,6 +156,24 @@ def _read_json(path: Path) -> Any:
             return json.load(fh)
     except (OSError, json.JSONDecodeError):
         return None
+
+
+def _load_user_config(base: Path) -> dict[str, Any]:
+    """Read ``<base>/config.json`` for sections build_index needs (the
+    ``embedding`` block in v0.4).  Returns ``{}`` when missing/malformed.
+
+    Kept separate from :func:`route.load_config` to avoid a circular
+    import (route.py already depends on build_index).
+    """
+    path = base / "config.json"
+    if not path.is_file():
+        return {}
+    try:
+        with path.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def _enabled_plugin_keys(settings: Any) -> set[str]:
@@ -498,7 +518,37 @@ def build() -> dict[str, Any]:
             if record is not None:
                 skills.append(record)
 
+    # ------------------------------------------------------------------
+    # Optional embedding-based skill vectorisation (v0.4+).
+    #
+    # Gated by ``embedding.enabled`` in the user's ``config.json``.
+    # When disabled, missing SDK, or any failure, the helper returns
+    # ``({}, None)`` and the heuristic-only behaviour is preserved.
+    # ------------------------------------------------------------------
+    user_config = _load_user_config(base)
+    embedding_section = (
+        user_config.get("embedding", {}) if isinstance(user_config, dict) else {}
+    )
+    if not isinstance(embedding_section, dict):
+        embedding_section = {}
+    embedding_cfg = embedding_client.EmbeddingConfig.from_dict(embedding_section)
+    embed_started = time.perf_counter()
+    embed_qn_to_idx: dict[str, int] = {}
+    try:
+        embed_qn_to_idx, _matrix = embedding_enrich.ensure_skill_vectors(
+            skills, base, embedding_cfg
+        )
+    except Exception:  # pragma: no cover - fail-open
+        logger.exception("embedding vectorisation failed; continuing with heuristic only")
+        embed_qn_to_idx = {}
+    embed_duration_ms = int((time.perf_counter() - embed_started) * 1000)
+
     duration_ms = int((time.perf_counter() - started) * 1000)
+    embedding_active = (
+        embedding_cfg.enabled
+        and embedding_client.is_sdk_available()
+        and bool(embed_qn_to_idx)
+    )
     index = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
@@ -516,17 +566,24 @@ def build() -> dict[str, Any]:
             "skills_with_evals": sum(1 for s in skills if s["evals"]),
             "skipped_plugins": skipped_plugins,
             "scan_duration_ms": duration_ms,
+            "embedding": {
+                "enabled": bool(embedding_active),
+                "model": embedding_cfg.model if embedding_active else None,
+                "skills_vectorised": len(embed_qn_to_idx),
+                "build_duration_ms": embed_duration_ms,
+            },
         },
         "skills": skills,
     }
     inverted = build_inverted_index(skills)
     _write_outputs(base, index, inverted)
     logger.info(
-        "indexed skills=%d enabled=%d skipped=%d duration_ms=%d",
+        "indexed skills=%d enabled=%d skipped=%d duration_ms=%d embedding=%s",
         len(skills),
         len(enabled),
         skipped_plugins,
         duration_ms,
+        "on" if embedding_active else "off",
     )
     return index
 
