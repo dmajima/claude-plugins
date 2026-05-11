@@ -6,10 +6,12 @@ Run from the repository root with the standard library only::
 """
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 _LIB = (
     Path(__file__).resolve().parent.parent
@@ -216,6 +218,63 @@ class ResolveInstallPathTests(unittest.TestCase):
             "foo@bar",
         )
         self.assertIn(result, {a, b})
+
+
+class BuildEntryPointSmokeTests(unittest.TestCase):
+    """Regression guard for the full build() function with LLM disabled.
+
+    Verifies that v0.3 still emits SCHEMA_VERSION=3, the new
+    ``stats.llm`` block, and never invokes the LLM client when no
+    plugins are enabled / the LLM gate is off.
+    """
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        # Tear order matters on Windows: the build_index logger keeps a
+        # file handle on ``base/index.log`` open, so we must close it
+        # before TemporaryDirectory.cleanup walks the directory.
+        # addCleanup runs in LIFO order, so register the directory
+        # cleanup first and the handler close second.
+        self.addCleanup(self._tmp.cleanup)
+        self.addCleanup(self._close_log_handlers)
+        self.base = Path(self._tmp.name)
+        self._patch_base = mock.patch.object(
+            build_index, "resolve_base_dir", return_value=self.base
+        )
+        self._patch_base.start()
+        self.addCleanup(self._patch_base.stop)
+        # Pretend there are no settings / installed_plugins on disk so
+        # build() runs deterministically with zero discovered skills.
+        self._patch_read = mock.patch.object(
+            build_index, "_read_json", return_value=None
+        )
+        self._patch_read.start()
+        self.addCleanup(self._patch_read.stop)
+
+    @staticmethod
+    def _close_log_handlers() -> None:
+        import logging as _logging
+
+        lg = _logging.getLogger("skill_router.build_index")
+        for handler in list(lg.handlers):
+            try:
+                handler.close()
+            except Exception:
+                pass
+            lg.removeHandler(handler)
+
+    def test_build_emits_schema_v3_and_llm_stats(self) -> None:
+        index = build_index.build()
+        self.assertEqual(index["schema_version"], 3)
+        self.assertIn("llm", index["stats"])
+        self.assertFalse(index["stats"]["llm"]["enabled"])
+        self.assertEqual(index["stats"]["llm"]["skills_with_enrichment"], 0)
+        self.assertEqual(index["skills"], [])
+        # Disk artefacts must also exist.
+        self.assertTrue((self.base / "index.json").is_file())
+        self.assertTrue((self.base / "inverted_index.json").is_file())
+        on_disk = json.loads((self.base / "index.json").read_text(encoding="utf-8"))
+        self.assertEqual(on_disk["schema_version"], 3)
 
 
 if __name__ == "__main__":

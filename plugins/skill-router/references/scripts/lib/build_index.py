@@ -49,9 +49,11 @@ _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
 import parse_evals  # noqa: E402  (sibling module, see design v2 section 3.2.6)
+import llm_client  # noqa: E402
+import llm_enrich  # noqa: E402
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 INVERTED_SCHEMA_VERSION = 1
 MAX_POSTINGS_PER_KEYWORD = 50
 # Versions of ~/.claude/plugins/installed_plugins.json that this builder
@@ -154,6 +156,27 @@ def _read_json(path: Path) -> Any:
             return json.load(fh)
     except (OSError, json.JSONDecodeError):
         return None
+
+
+def _load_user_config(base: Path) -> dict[str, Any]:
+    """Read ``<base>/config.json`` for sections build_index needs (currently
+    only ``llm``).  Returns ``{}`` when missing or malformed.
+
+    Kept separate from :func:`route.load_config` to avoid a circular
+    import (route.py already depends on build_index).  The full config
+    schema lives in route.py; build_index only needs to peek at the
+    ``llm`` block, so a stripped reader keeps this module dependency-free
+    apart from the LLM sub-modules.
+    """
+    path = base / "config.json"
+    if not path.is_file():
+        return {}
+    try:
+        with path.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def _enabled_plugin_keys(settings: Any) -> set[str]:
@@ -498,7 +521,39 @@ def build() -> dict[str, Any]:
             if record is not None:
                 skills.append(record)
 
+    # ------------------------------------------------------------------
+    # Phase A: optional offline LLM enrichment.
+    #
+    # Gated by ``llm.enabled`` AND ``llm.offline_enrichment.enabled`` in
+    # the user's ``config.json``.  When disabled, missing API key, or
+    # any failure, ``enrich_skills`` returns ``{}`` and
+    # ``apply_enrichment_to_skills`` is a no-op, preserving the
+    # heuristic-only behaviour exactly.
+    # ------------------------------------------------------------------
+    user_config = _load_user_config(base)
+    llm_section = user_config.get("llm", {}) if isinstance(user_config, dict) else {}
+    if not isinstance(llm_section, dict):
+        llm_section = {}
+    llm_cfg = llm_client.LLMConfig.from_dict(llm_section)
+    enrich_cfg = llm_enrich.EnrichConfig.from_dict(
+        llm_section.get("offline_enrichment", {})
+    )
+    enrichment: dict[str, dict[str, Any]] = {}
+    enrich_started = time.perf_counter()
+    try:
+        enrichment = llm_enrich.enrich_skills(skills, base, llm_cfg, enrich_cfg)
+        llm_enrich.apply_enrichment_to_skills(skills, enrichment)
+    except Exception:  # pragma: no cover - fail-open
+        logger.exception("llm enrichment failed; continuing with heuristic only")
+        enrichment = {}
+    enrich_duration_ms = int((time.perf_counter() - enrich_started) * 1000)
+
     duration_ms = int((time.perf_counter() - started) * 1000)
+    llm_active = (
+        llm_cfg.enabled
+        and enrich_cfg.enabled
+        and llm_client.is_sdk_available()
+    )
     index = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
@@ -516,17 +571,27 @@ def build() -> dict[str, Any]:
             "skills_with_evals": sum(1 for s in skills if s["evals"]),
             "skipped_plugins": skipped_plugins,
             "scan_duration_ms": duration_ms,
+            "llm": {
+                "enabled": bool(llm_active),
+                "model": llm_cfg.model if llm_active else None,
+                "skills_with_enrichment": sum(
+                    1 for s in skills if s.get("llm_enrichment")
+                ),
+                "cache_entries": len(enrichment),
+                "enrichment_duration_ms": enrich_duration_ms,
+            },
         },
         "skills": skills,
     }
     inverted = build_inverted_index(skills)
     _write_outputs(base, index, inverted)
     logger.info(
-        "indexed skills=%d enabled=%d skipped=%d duration_ms=%d",
+        "indexed skills=%d enabled=%d skipped=%d duration_ms=%d llm=%s",
         len(skills),
         len(enabled),
         skipped_plugins,
         duration_ms,
+        "on" if llm_active else "off",
     )
     return index
 

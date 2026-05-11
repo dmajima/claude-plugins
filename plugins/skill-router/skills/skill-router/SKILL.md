@@ -1,6 +1,6 @@
 ---
 name: skill-router
-description: skill-router の `<base>/index.json` / disabled / ログを操作・診断するスキル。「router の状態確認」「インデックス再構築」「skill-router を停止」等の依頼で起動し、`/router-rebuild` `/router-status` `/router-toggle` の使い分けと配置場所を説明する。Use when operating skill-router. SKIP when editing routing logic (use hook-toolkit or edit route.py).
+description: skill-router の `<base>/index.json` / disabled / `llm_cache/` / ログを操作・診断するスキル。「router の状態確認」「インデックス再構築」「LLM enrichment 確認」「skill-router を停止」等の依頼で起動し、`/router-rebuild` `/router-status` `/router-toggle` `/router-llm-cache` の使い分けと、v0.3 で追加された LLM オプション設定（`llm.enabled` / `offline_enrichment` / `online_routing`）を説明する。Use when operating skill-router. SKIP when editing routing logic (use hook-toolkit or edit route.py).
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
@@ -79,20 +79,43 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 
 | ファイル | 役割 |
 |---------|------|
-| `<base>/config.json` | 重み・閾値の外部化 |
-| `<base>/index.json` + `index.pkl` | インデックス本体 |
-| `<base>/inverted_index.json` | 逆引き索引 |
+| `<base>/config.json` | 重み・閾値・LLM 設定の外部化 |
+| `<base>/index.json` | インデックス本体（schema_version=3 から `stats.llm` と各スキルの `llm_enrichment` を含む） |
+| `<base>/inverted_index.json` | 逆引き索引（LLM 拡張キーワードも posting に含まれる） |
+| `<base>/llm_cache/enrichment.json` | LLM オフライン拡張キャッシュ（content hash で差分判定） |
 | `<base>/disabled` | トグル無効化フラグ |
 | `<base>/sessions/<id>/prompts.jsonl` | プロンプト履歴 |
-| `<base>/sessions/<id>/route_decisions.jsonl` | ルーティング決定履歴 |
+| `<base>/sessions/<id>/route_decisions.jsonl` | ルーティング決定履歴（`llm_used` を含む） |
 
 ## 関連スキル / コマンド
 
 | 種別 | 名前 | 用途 |
 |-----|------|------|
-| コマンド | `/router-rebuild` | index 手動再構築 |
-| コマンド | `/router-status` | 統計・直近決定・スコア分布表示（`--clean` で 30 日超セッション削除） |
+| コマンド | `/router-rebuild` | index 手動再構築（LLM 有効時は enrichment も差分更新） |
+| コマンド | `/router-status` | 統計・直近決定・スコア分布表示（`--clean` で 30 日超セッション削除）。`stats.llm` も含めて表示 |
 | コマンド | `/router-toggle` | `on` / `off` 切り替え |
+| コマンド | `/router-llm-cache` | LLM enrichment キャッシュ参照・クリア（v0.3 LLM 機能用） |
+
+## LLM オプション（v0.3+）
+
+`<base>/config.json` の `llm` セクションで Anthropic Claude API 連携を有効化できる。デフォルトは無効（`llm.enabled: false`）で、有効化前後の挙動・コスト・設定キーをユーザに案内すること。
+
+| キー | 既定 | 説明 |
+|-----|------|------|
+| `llm.enabled` | `false` | LLM 機能の親スイッチ |
+| `llm.model` | `claude-haiku-4-5-20251001` | 利用モデル |
+| `llm.api_key_env` | `ANTHROPIC_API_KEY` | API キーの環境変数名 |
+| `llm.offline_enrichment.enabled` | `true` | SessionStart で各スキルの拡張キーワード/発話例を生成（cache あり） |
+| `llm.online_routing.enabled` | `false` | UserPromptSubmit で曖昧な mid 帯のみ LLM 再ランク |
+| `llm.online_routing.timeout_sec` | `5.0` | 再ランク呼出のタイムアウト |
+
+API キーの解決順位:
+1. 環境変数 `${llm.api_key_env}`
+2. `credentials-manager` プラグインの `credentials.json`（`anthropic-api-key` / `ANTHROPIC_API_KEY` / `anthropic`）
+3. いずれも無ければ LLM 機能はフェイルオープン（heuristic のみで動作）
+
+LLM 機能の状態は `/router-status` の `stats.llm` で確認できる。
+キャッシュ参照は `/router-llm-cache` を案内すること。
 
 ## evals
 
@@ -113,5 +136,8 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 | インデクサ | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/build_index.py` |
 | evals パーサ | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/parse_evals.py` |
 | セッション状態 | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/session_state.py` |
+| LLM クライアント | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/llm_client.py` |
+| LLM オフライン拡張 (Phase A) | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/llm_enrich.py` |
+| LLM オンライン再ランク (Phase B) | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/llm_route.py` |
 | spike 一覧 | `${CLAUDE_PLUGIN_ROOT}/references/spike/` |
 | 設定既定値 | `${CLAUDE_PLUGIN_ROOT}/references/templates/config.default.json` |

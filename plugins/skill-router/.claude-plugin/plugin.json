@@ -1,7 +1,7 @@
 {
   "name": "skill-router",
-  "version": "0.2.1",
-  "description": "ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン",
+  "version": "0.3.0",
+  "description": "ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン。v0.3 から Anthropic Claude を用いたオプトインの LLM 拡張（オフライン索引拡張・曖昧時オンライン再ランク）に対応",
   "author": {
     "name": "dmajima"
   },
@@ -15,6 +15,8 @@
     "session-start",
     "skill-invocation",
     "additional-context",
-    "hooks"
+    "hooks",
+    "llm",
+    "anthropic"
   ]
 }
