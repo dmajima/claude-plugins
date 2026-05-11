@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 1,
   "weights": {
     "keyword_overlap": 1.0,
     "trigger_phrase": 2.0,
@@ -22,27 +22,5 @@
   "tokenizer": {
     "min_kanji_length": 2,
     "min_katakana_length": 4
-  },
-  "llm": {
-    "enabled": false,
-    "provider": "anthropic",
-    "model": "claude-haiku-4-5-20251001",
-    "api_key_env": "ANTHROPIC_API_KEY",
-    "request_timeout_sec": 30,
-    "offline_enrichment": {
-      "enabled": true,
-      "max_skills_per_run": 30,
-      "max_keywords_per_skill": 15,
-      "max_phrases_per_skill": 8,
-      "weight_in_inverted_index": true
-    },
-    "online_routing": {
-      "enabled": false,
-      "trigger_tier": "mid",
-      "ratio_threshold": 1.5,
-      "max_candidates": 5,
-      "timeout_sec": 5.0,
-      "score_boost": 4.0
-    }
   }
 }

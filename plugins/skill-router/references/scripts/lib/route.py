@@ -26,8 +26,6 @@ _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
 import build_index  # noqa: E402
-import llm_client  # noqa: E402
-import llm_route  # noqa: E402
 import session_state  # noqa: E402
 
 
@@ -36,7 +34,7 @@ import session_state  # noqa: E402
 # ---------------------------------------------------------------------------
 
 DEFAULT_CONFIG: dict[str, Any] = {
-    "schema_version": 2,
+    "schema_version": 1,
     "weights": {
         "keyword_overlap": 1.0,
         "trigger_phrase": 2.0,
@@ -59,28 +57,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "tokenizer": {
         "min_kanji_length": 2,
         "min_katakana_length": 4,
-    },
-    "llm": {
-        "enabled": False,
-        "provider": "anthropic",
-        "model": llm_client.DEFAULT_MODEL,
-        "api_key_env": llm_client.DEFAULT_API_KEY_ENV,
-        "request_timeout_sec": llm_client.DEFAULT_TIMEOUT_SEC,
-        "offline_enrichment": {
-            "enabled": True,
-            "max_skills_per_run": 30,
-            "max_keywords_per_skill": 15,
-            "max_phrases_per_skill": 8,
-            "weight_in_inverted_index": True,
-        },
-        "online_routing": {
-            "enabled": False,
-            "trigger_tier": "mid",
-            "ratio_threshold": 1.5,
-            "max_candidates": 5,
-            "timeout_sec": 5.0,
-            "score_boost": 4.0,
-        },
     },
 }
 
@@ -405,35 +381,6 @@ def route(stdin_payload: dict[str, Any]) -> dict[str, Any] | None:
     tier = determine_tier(top1, top2, thresholds)
     ratio = top1 / max(top2, 0.1)
 
-    # ------------------------------------------------------------------
-    # Phase B: optional online LLM re-rank for ambiguous mid-tier matches.
-    #
-    # Gated by ``llm.enabled`` AND ``llm.online_routing.enabled``.  The
-    # invocation is also bounded by ``trigger_tier`` (mid only by
-    # default) and ``ratio_threshold`` (only when top1/top2 is small).
-    # On any error the rerank returns ``rows`` unchanged.
-    # ------------------------------------------------------------------
-    llm_section = config.get("llm")
-    if not isinstance(llm_section, dict):
-        llm_section = {}
-    llm_cfg = llm_client.LLMConfig.from_dict(llm_section)
-    online_cfg = llm_route.OnlineConfig.from_dict(
-        llm_section.get("online_routing", {})
-    )
-    llm_used = False
-    if llm_route.should_invoke(tier, top1, top2, online_cfg):
-        try:
-            reranked = llm_route.rerank(prompt, rows, base, llm_cfg, online_cfg)
-        except Exception:  # pragma: no cover - fail-open
-            reranked = rows
-        if reranked and reranked is not rows:
-            llm_used = True
-            rows = reranked
-            top1 = rows[0][1]
-            top2 = rows[1][1] if len(rows) > 1 else 0.0
-            tier = determine_tier(top1, top2, thresholds)
-            ratio = top1 / max(top2, 0.1)
-
     decision = {
         "tier": tier,
         "top1": top1,
@@ -441,17 +388,9 @@ def route(stdin_payload: dict[str, Any]) -> dict[str, Any] | None:
         "ratio": ratio,
         "candidate": rows[0][0]["qualified_name"] if rows else None,
         "alternatives": [r[0]["qualified_name"] for r in rows[1:3]],
-        "llm_used": llm_used,
     }
     session_state.append_route_decision(base, sid, decision)
-    logger.info(
-        "tier=%s top1=%.2f top2=%.2f ratio=%.2f llm=%s",
-        tier,
-        top1,
-        top2,
-        ratio,
-        "on" if llm_used else "off",
-    )
+    logger.info("tier=%s top1=%.2f top2=%.2f ratio=%.2f", tier, top1, top2, ratio)
 
     if tier == "low":
         return None

@@ -1,11 +1,10 @@
 # skill-router requirements
 #
-# v0.3.0 introduces optional LLM-assisted routing.  The anthropic SDK
-# below is the only runtime dependency.  When llm.enabled is left at
-# its default (false), the plugin still works without the SDK -- all
-# llm_* helpers fall through to no-ops -- but the SDK is installed
-# eagerly by venv_lifecycle so opt-in users do not need a second hook
-# pass to pick up the dependency.
+# This plugin is intentionally stdlib-only (design v2 section 14.1).
+# Phase 2 dependencies (e.g. tinysegmenter) can be added by appending
+# pinned lines below; an empty file or a comment-only file is treated as
+# "no dependencies" by venv_lifecycle and skips venv construction
+# entirely.
 #
 # venv lifecycle is managed in-tree by
 # references/scripts/lib/venv_lifecycle.py and invoked from the
@@ -19,5 +18,3 @@
 #   * teardown   : when the venv is older than 72 h, evaluated at the
 #                  end of the UserPromptSubmit hook so the user-facing
 #                  response is never blocked.
-
-anthropic>=0.40,<0.50
