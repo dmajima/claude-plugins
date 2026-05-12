@@ -1,6 +1,6 @@
 ---
 name: skill-router
-description: skill-router の `<base>/index.json` / disabled / `embeddings_cache/` / ログを操作・診断するスキル。「router の状態確認」「インデックス再構築」「埋め込みキャッシュ確認」「skill-router を停止」等の依頼で起動し、`/router-rebuild` `/router-status` `/router-toggle` `/router-embedding-cache` の使い分けと、v0.4 で追加されたオフライン埋め込み判定（`embedding.enabled`）を説明する。Use when operating skill-router. SKIP when editing routing logic (use hook-toolkit or edit route.py).
+description: skill-router の状態確認・index 再構築・埋め込みキャッシュ参照・トグル切替を案内する操作スキル。「router の状態」「インデックス再構築」「skill-router を停止」「埋め込みキャッシュ確認」等で起動。Use when operating skill-router. SKIP when editing routing logic (use hook-toolkit or edit route.py directly).
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
