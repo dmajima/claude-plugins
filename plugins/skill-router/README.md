@@ -324,9 +324,36 @@ Remove-Item -Force "$BASE\embeddings_cache\vectors.npz", "$BASE\embeddings_cache
 
 #### サプライチェーン
 
-- `fastembed>=0.3,<1.0` `numpy>=1.24,<3.0` `onnxruntime>=1.17,<2.0` を `requirements.txt` で固定
-- 月次の `pip-audit` 等で脆弱性を確認することを推奨
+- `fastembed>=0.3,<1.0` `numpy>=1.24,<3.0` `onnxruntime>=1.17,<2.0` を `requirements.txt` でレンジ固定
+- 月次の `pip-audit` 等で CVE 確認を推奨
 - モデル ONNX は事前配置運用（オフライン環境向けセクション参照）が最も安全。ハッシュ確認は `sha256sum` で実施
+
+##### ハッシュ pinning（高セキュリティ運用向け）
+
+メンテナアカウント侵害・タイポスクワッティングへの追加対策として、`pip install --require-hashes` 用の lock ファイルを生成して使うことを推奨します。
+
+```bash
+# pip-tools を使う例（オンライン環境で 1 回実施）
+pip install pip-tools
+pip-compile --generate-hashes \
+  plugins/skill-router/references/scripts/setup/requirements.txt \
+  -o plugins/skill-router/references/scripts/setup/requirements.lock
+
+# venv 構築時に lock を強制（venv_lifecycle が将来サポート予定）
+pip install --require-hashes -r requirements.lock
+```
+
+現状の内蔵 venv ライフサイクル管理は通常の `requirements.txt` のみを参照しますが、利用者がローカルで `requirements.lock` を生成・配置し、`pip install --require-hashes` で再インストールすれば同等の保護が得られます。`uv lock` でも同等。
+
+##### HuggingFace モデルの revision pinning
+
+`fastembed` の `TextEmbedding(model_name=..., revision=...)` 引数（バージョンによってはサポート）でモデルのコミット SHA を pinning できます。`embedding_client.py` のラッパ経由では現状 revision 引数を渡していないため、HF Hub 上のモデル差し替えが反映される TOFU リスクが残ります。最高セキュリティが必要な環境では:
+
+1. オンライン環境で 1 回モデルを DL し `sha256sum embeddings_cache/models/.../*.onnx` を控える
+2. オフライン環境に `embeddings_cache/models/` ごと配置し、ハッシュ照合
+3. 以後の `embedding.cache_dir` を当該パス固定にして HF への接続を一切させない
+
+事前配置運用と組み合わせることで実効的に SHA pinning と同等の防御になります。
 
 #### 悪意あるスキルからのルーティング誘導
 
