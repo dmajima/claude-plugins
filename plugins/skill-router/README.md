@@ -412,7 +412,7 @@ plugins/skill-router/
     │       ├── test_embedding_client.py
     │       ├── test_embedding_enrich.py
     │       └── test_embedding_route.py
-    ├── spike/                    # 動作検証スクリプト（利用者は通常使用しない）
+    ├── research/                 # 設計時の動作検証スクリプト・調査記録（利用者は通常使用しない）
     │   ├── s1_session_id.py
     │   ├── s2_hook_concat.py
     │   ├── s3_plugin_data_var.py

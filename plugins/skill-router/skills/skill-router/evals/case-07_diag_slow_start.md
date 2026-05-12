@@ -37,16 +37,16 @@
 | evals が重い | 「`skills_with_evals={M}` で evals パースに時間消費。`parse_evals.py` のゴールデンテストでパフォーマンス回帰を確認してください」 |
 | **embedding 初回 DL** | 「`stats.embedding.build_duration_ms={B}ms` が大。初回モデル DL（HF ハブから 120MB）が原因の場合は 2 回目以降キャッシュヒットで縮小（case-11）。次回起動で再測定を推奨」 |
 | **embedding 全件再ベクトル化** | 「モデル変更（case-20）または `vectors.npz` 改竄（case-14）でキャッシュ全無効化された可能性。`/router-embedding-cache` で状態確認」 |
-| 予算内で正常 | 「現在 {scan_duration_ms}ms で予算内。体感の遅さは別要因（Python 起動・他フック干渉）の可能性。spike S5 (`s5_python_startup_latency.py`) を実行して切り分けてください」 |
+| 予算内で正常 | 「現在 {scan_duration_ms}ms で予算内。体感の遅さは別要因（Python 起動・他フック干渉）の可能性。`references/research/s5_python_startup_latency.py` を実行して切り分けてください」 |
 
 ## 分岐の根拠
 
-`references/scripts/lib/build_index.py` の `build()` で記録される `stats.scan_duration_ms` と spike `s5_python_startup_latency.py`（Python 起動 cold/warm レイテンシ実測）。SessionStart 起動遅延は `build_index.py` の処理時間か Python 起動コストか他フック干渉のいずれかで、各原因を切り分ける必要がある。
+`references/scripts/lib/build_index.py` の `build()` で記録される `stats.scan_duration_ms` と `references/research/s5_python_startup_latency.py`（Python 起動 cold/warm レイテンシ実測）。SessionStart 起動遅延は `build_index.py` の処理時間か Python 起動コストか他フック干渉のいずれかで、各原因を切り分ける必要がある。
 
 ## 関連ケース
 
 - `case-01_rebuild` — 手動再構築での `scan_duration_ms` 観測
-- spike `s5_python_startup_latency.py` — Python 起動レイテンシ実測
+- `references/research/s5_python_startup_latency.py` — Python 起動レイテンシ実測
 
 ## 備考
 

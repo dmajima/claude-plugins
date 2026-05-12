@@ -141,5 +141,5 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 | 埋め込みクライアント (v0.4) | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/embedding_client.py` |
 | スキルベクトル化 (v0.4) | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/embedding_enrich.py` |
 | 類似度補助スコア (v0.4) | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/embedding_route.py` |
-| spike 一覧 | `${CLAUDE_PLUGIN_ROOT}/references/spike/` |
+| 設計時調査記録（research） | `${CLAUDE_PLUGIN_ROOT}/references/research/` |
 | 設定既定値 | `${CLAUDE_PLUGIN_ROOT}/references/templates/config.default.json` |

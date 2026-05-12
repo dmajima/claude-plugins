@@ -44,7 +44,7 @@
 ## 関連ケース
 
 - `case-04_skip_negative` — 正常系のスコアリング動作
-- spike `s2_hook_concat.py` — 複数フック additionalContext 競合時の挙動
+- `references/research/s2_hook_concat.py` — 複数フック additionalContext 競合時の挙動
 
 ## 備考
 
