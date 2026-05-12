@@ -29,17 +29,17 @@ router のインデックスを再構築して
 | 出力 | 内容 |
 |-----|------|
 | 標準出力 | `index.json` 末尾の `stats` フィールドの抜粋（`total_skills_indexed` / `skills_with_evals` / `scan_duration_ms`） |
-| 副作用 | `<base>/index.json` / `index.pkl` / `inverted_index.json` の `generated_at` 更新 |
+| 副作用 | `<base>/index.json` / `inverted_index.json` の `generated_at` 更新（`embedding.enabled=true` 時は `embeddings_cache/vectors.npz` + `manifest.json` も差分更新） |
 | 失敗時 | `<base>/error.log` の末尾を要約し、フェイルオープン挙動（exit 0）の事実を伝える |
 
 ## 分岐の根拠
 
-設計書 v2 セクション 7「スラッシュコマンド仕様」で `/router-rebuild` を index 手動再構築の唯一のエントリポイントとして定義。SessionStart 自動再構築では足りないシナリオ（プラグイン追加直後・evals 編集後）を救済する分岐。
+`commands/router-rebuild.md` と `references/scripts/lib/build_index.py` の `build()` 関数。`/router-rebuild` は index 手動再構築の唯一のエントリポイントであり、SessionStart 自動再構築では足りないシナリオ（プラグイン追加直後・evals 編集後）を救済する分岐。
 
 ## 関連ケース
 
 - `case-02_status` — 再構築結果の確認（generated_at が新しいことを `/router-status` で観測）
-- `case-09_fail_open`（未実装、Phase 1 後半で追加予定）— `build_index.py` がエラーで exit 0 した場合の動作
+- `case-10_fail_open` — `build_index.py` がエラーで exit 0 した場合の動作
 
 ## 備考
 
