@@ -16,6 +16,12 @@ skill-router スキルの動作分岐検証用ケース集。`parse_evals.py` �
 | `case-08_toggle_on` | 正例 | `/router-toggle on` + 全階層フラグ削除 | 操作系・対話・べき等 |
 | `case-09_non_interactive` | 変形 | `/router-toggle off` 非対話モード | 操作系・非対話 |
 | `case-10_fail_open` | 負例 | index 破損時のフェイルオープン挙動 | 自動・エラー系 |
+| `case-11_embedding_cache_hit` | 正例 | v0.4 `embedding.enabled=true` 時の SessionStart キャッシュヒット | 自動・キャッシュ |
+| `case-12_embedding_boost_reorder` | 正例 | v0.4 コサイン類似度ブーストによる上位候補入れ替え | 自動・スコアリング |
+| `case-13_embedding_disabled` | 正例 | v0.4 `embedding.enabled=false` 既定での後方互換 no-op | 自動・後方互換 |
+| `case-14_cache_tamper_failopen` | 負例 | v0.4 vectors.npz 改竄検出時のフェイルオープン | 自動・エラー系 |
+| `case-15_max_path_fallback` | 変形 | v0.4 Windows MAX_PATH 超過時の cache_dir 自動フォールバック | OS 別・運用 |
+| `case-16_router_embedding_cache_modes` | 正例 | v0.4 `/router-embedding-cache` 3 モード（統計 / clear / show）| 操作系・対話 + 非対話 |
 
 ## カバレッジ達成状況
 
@@ -25,10 +31,11 @@ skill-router スキルの動作分岐検証用ケース集。`parse_evals.py` �
 | スコアリング正例 / 負例 | ✓ | case-02 (実値の正常範囲), case-04 (skip 発火) |
 | 診断 3 分岐 | ✓ | case-05, 06, 07 |
 | 対話モード / 非対話モード | ✓ | case-01〜08 (対話), case-09 (非対話) |
-| エラー系（フェイルオープン） | ✓ | case-10 |
-| v0.4 埋め込み有効化フロー | 未 | 追加予定（case-11 以降） |
-| v0.4 `/router-embedding-cache` | 未 | 追加予定（case-11 以降） |
-| v0.4 改竄検出フェイルオープン | 未 | 追加予定（case-11 以降） |
+| エラー系（フェイルオープン） | ✓ | case-10, case-14 |
+| v0.4 埋め込み有効化フロー | ✓ | case-11 (キャッシュヒット), case-12 (boost), case-13 (no-op) |
+| v0.4 `/router-embedding-cache` | ✓ | case-16 (3 モード) |
+| v0.4 改竄検出フェイルオープン | ✓ | case-14 |
+| v0.4 Windows MAX_PATH フォールバック | ✓ | case-15 |
 
 ## 実行確認方法
 
