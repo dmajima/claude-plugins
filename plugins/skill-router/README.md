@@ -17,7 +17,7 @@
 | `/router-status` | コマンド | 統計・直近のルーティング決定・スコア分布を表示する（`--clean` で 30 日超セッション削除）。`stats.embedding` を含む |
 | `/router-toggle` | コマンド | プラグインを `on` / `off` に切り替える |
 | `/router-embedding-cache` | コマンド | v0.4 埋め込みキャッシュの参照・クリア・スキル別詳細表示 |
-| `SessionStart` フック | フック | `startup` / `resume` / `clear` 時にインデックス（`index.json` + `inverted_index.json`）を自動構築する。v0.4.0 から `requirements.txt` に `fastembed` + `numpy` が追加され、内蔵 venv ライフサイクル管理（`<base>/.venv` 配下、72h TTL、1 セッション 3 回までの自動再構築）が常時有効に。`embedding.enabled` 時は同フックで各スキルのベクトル化（fastembed ONNX 推論）も実施 |
+| `SessionStart` フック | フック | `startup` / `resume` / `clear` 時にインデックス（`index.json` + `inverted_index.json`）を自動構築する（`hooks.json` timeout 360s）。`requirements.txt` の `fastembed` + `numpy` + `onnxruntime` に対する内蔵 venv ライフサイクル管理（`<base>/.venv` 配下、72h TTL、1 セッション 3 回までの自動再構築）も同フックから実施。`embedding.enabled` 時は同フックで各スキルのベクトル化（fastembed ONNX 推論）も実施。timeout 内訳の目安: venv create 60s + pip install 180s + index build 数 s + ベクトル化 100 スキルで 10s 程度 = 計 250s 程度（初回有効化時のみ）|
 | `UserPromptSubmit` フック | フック | プロンプトを 5W1H 抽出 + 逆引き索引 + スコア閾値判定し、`high` / `mid` 帯のスキル候補を `additionalContext` で注入する。`embedding.enabled` 時はプロンプトを fastembed でベクトル化してコサイン類似度を heuristic スコアに加算する。フック終了時に古い venv（72h 超）を自動撤去する |
 
 ## 動作概要
