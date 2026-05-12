@@ -367,8 +367,12 @@ def _extract_skill_record(
     fm = _parse_frontmatter(text)
     name = fm.get("name") or skill_md.parent.name
     description = fm.get("description", "")
-    use_when = (_USE_WHEN_RE.search(description) or [None, ""])[1].strip() if _USE_WHEN_RE.search(description) else ""
-    skip_when = (_SKIP_WHEN_RE.search(description) or [None, ""])[1].strip() if _SKIP_WHEN_RE.search(description) else ""
+    # Reuse the single match object instead of running each regex twice
+    # (impl review Suggestion).
+    use_match = _USE_WHEN_RE.search(description)
+    use_when = use_match.group(1).strip() if use_match else ""
+    skip_match = _SKIP_WHEN_RE.search(description)
+    skip_when = skip_match.group(1).strip() if skip_match else ""
     skip_verbs, skip_nouns = _split_skip_phrases(skip_when)
     trigger_phrases = _extract_trigger_phrases(description)
     evals = parse_evals.parse_skill_evals(skill_md.parent)
