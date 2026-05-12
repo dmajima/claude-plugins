@@ -50,6 +50,7 @@ if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
 import parse_evals  # noqa: E402  (sibling module, see design v2 section 3.2.6)
+import config_io  # noqa: E402
 import embedding_client  # noqa: E402
 import embedding_enrich  # noqa: E402
 
@@ -163,18 +164,11 @@ def _load_user_config(base: Path) -> dict[str, Any]:
     """Read ``<base>/config.json`` for sections build_index needs (the
     ``embedding`` block in v0.4).  Returns ``{}`` when missing/malformed.
 
-    Kept separate from :func:`route.load_config` to avoid a circular
-    import (route.py already depends on build_index).
+    Thin wrapper kept for readability at the call sites; delegates the
+    actual I/O to :func:`config_io.load_raw_config` which is shared
+    with :func:`route.load_config` (review architect M-2).
     """
-    path = base / "config.json"
-    if not path.is_file():
-        return {}
-    try:
-        with path.open("r", encoding="utf-8") as fh:
-            data = json.load(fh)
-    except (OSError, json.JSONDecodeError):
-        return {}
-    return data if isinstance(data, dict) else {}
+    return config_io.load_raw_config(base)
 
 
 def _enabled_plugin_keys(settings: Any) -> set[str]:

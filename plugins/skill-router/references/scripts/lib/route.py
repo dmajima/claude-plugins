@@ -27,6 +27,7 @@ if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
 import build_index  # noqa: E402
+import config_io  # noqa: E402
 import embedding_client  # noqa: E402
 import embedding_enrich  # noqa: E402
 import embedding_route  # noqa: E402
@@ -90,20 +91,17 @@ def _setup_logger(base: Path) -> logging.Logger:
     return logger
 
 
-def _merge(default: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
-    out = dict(default)
-    for key, val in override.items():
-        if key in out and isinstance(out[key], dict) and isinstance(val, dict):
-            out[key] = _merge(out[key], val)
-        else:
-            out[key] = val
-    return out
-
-
 def load_config(base: Path) -> dict[str, Any]:
+    """Load `<base>/config.json` and deep-merge with :data:`DEFAULT_CONFIG`.
+
+    Bootstrap behaviour: when the file is absent we serialise
+    :data:`DEFAULT_CONFIG` so the operator has a starting point to
+    edit.  The deep merge and raw read both live in
+    :mod:`config_io` to avoid duplicating with build_index (review
+    architect M-2).
+    """
     path = base / "config.json"
     if not path.is_file():
-        # Bootstrap default config so users can edit it without re-publishing.
         try:
             base.mkdir(parents=True, exist_ok=True)
             path.write_text(
@@ -113,12 +111,10 @@ def load_config(base: Path) -> dict[str, Any]:
         except OSError:
             pass
         return DEFAULT_CONFIG
-    try:
-        with path.open("r", encoding="utf-8") as fh:
-            user_cfg = json.load(fh)
-    except (OSError, json.JSONDecodeError):
+    user_cfg = config_io.load_raw_config(base)
+    if not user_cfg:
         return DEFAULT_CONFIG
-    return _merge(DEFAULT_CONFIG, user_cfg if isinstance(user_cfg, dict) else {})
+    return config_io.merge(DEFAULT_CONFIG, user_cfg)
 
 
 def load_index(base: Path) -> dict[str, Any]:
