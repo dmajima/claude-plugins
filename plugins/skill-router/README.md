@@ -47,7 +47,7 @@
      └─ high → 確定推奨 1 件、mid → 候補上位 3 件を additionalContext に注入
 ```
 
-詳細設計はリポジトリ管理ドキュメント（`skill-router_detailed_design_v2.md`）と本リポジトリの `plugins/skill-router/.claude/.local/work/.../adr-002.md` を参照してください。
+詳細設計は本プラグインの `references/scripts/lib/` 配下の各モジュール docstring（`build_index.py` / `route.py` / `embedding_client.py` / `embedding_enrich.py` / `embedding_route.py`）を参照してください。
 
 ## 導入手順
 
