@@ -359,7 +359,7 @@ plugins/skill-router/
 │       ├── README.md
 │       └── evals/                # 動作分岐検証用ケース集
 │           ├── README.md
-│           └── case-01_*.md ... case-10_*.md
+│           └── case-01_*.md ... case-16_*.md
 └── references/
     ├── scripts/
     │   ├── hooks/
