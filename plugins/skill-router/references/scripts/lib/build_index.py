@@ -596,11 +596,20 @@ def main() -> int:
         try:
             base = resolve_base_dir()
             base.mkdir(parents=True, exist_ok=True)
-            with (base / "error.log").open("a", encoding="utf-8") as fh:
-                import traceback
+            import traceback
 
+            import session_state  # local import: keeps build()'s hot path lean
+
+            # Mask secret-shaped substrings (sk-/ghp_/Bearer/...) before
+            # persisting the traceback; SessionStart-time exceptions can
+            # capture environment values or prompt fragments
+            # (security review L-3, CWE-209).
+            masked_tb = session_state.mask_secrets(traceback.format_exc())
+            with (base / "error.log").open("a", encoding="utf-8") as fh:
                 fh.write(f"=== {datetime.now(timezone.utc).isoformat()} ===\n")
-                traceback.print_exc(file=fh)
+                fh.write(masked_tb)
+                if not masked_tb.endswith("\n"):
+                    fh.write("\n")
         except OSError:
             pass
     return 0

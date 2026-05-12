@@ -490,9 +490,17 @@ def main() -> int:
         try:
             base = build_index.resolve_base_dir()
             base.mkdir(parents=True, exist_ok=True)
+            # Mask secret-shaped substrings before persisting the traceback.
+            # ``traceback.format_exc()`` can capture the offending prompt
+            # fragment (e.g. ``ghp_...`` pasted by the user) so we route the
+            # text through the same mask used by prompts.jsonl
+            # (security review L-3, CWE-209).
+            masked_tb = session_state.mask_secrets(traceback.format_exc())
             with (base / "error.log").open("a", encoding="utf-8") as fh:
                 fh.write(f"=== {datetime.now(timezone.utc).isoformat()} route ===\n")
-                traceback.print_exc(file=fh)
+                fh.write(masked_tb)
+                if not masked_tb.endswith("\n"):
+                    fh.write("\n")
         except OSError:
             pass
     return 0
