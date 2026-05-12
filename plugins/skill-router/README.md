@@ -112,6 +112,20 @@ git checkout main
 - Python 3.10 以上（`python3` または `python` として PATH 上に解決可能）
 - Bash 4.0 以上（フックエントリポイント実行用）
 
+#### 対応プラットフォーム
+
+`embedding.enabled=true` を利用する場合、`fastembed` の依存 `onnxruntime` が動作する以下のプラットフォームをサポートします。
+
+| プラットフォーム | 状態 |
+|---|---|
+| Windows x86_64 | サポート |
+| Linux x86_64 | サポート |
+| macOS x86_64 / arm64 | サポート |
+| Linux ARM64 / aarch64 | `onnxruntime` バージョンによっては wheel 未配布。動作要確認 |
+| Windows ARM64 | wheel 未配布のバージョンあり。動作要確認 |
+
+未対応プラットフォームでは `pip install` が失敗し、venv 再構築が枯渇すると埋め込み機能が無効化されます（heuristic にフェイルオープン）。`embedding.enabled=false`（既定）であれば全プラットフォームで動作します。
+
 ### E. 動作確認
 
 ```text
