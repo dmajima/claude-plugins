@@ -157,8 +157,13 @@ _FILE_EXT_RE = re.compile(
 def extract_5w1h(prompt: str) -> dict[str, Any]:
     tokens = build_index.extract_keywords(prompt)
     ext_match = _FILE_EXT_RE.search(prompt)
-    file_ext = ext_match.group(1).lower().replace("htm", "html") if ext_match else None
-    if file_ext == "html":
+    file_ext = ext_match.group(1).lower() if ext_match else None
+    # ``html?`` の正規表現は "htm" / "html" の両方をキャプチャするため、
+    # ``htm`` だけ ``html`` に正規化する。以前の実装は
+    # ``.replace("htm", "html")`` で "html" → "htmll" になるバグがあり、
+    # 続く no-op ガード ``if file_ext == "html": file_ext = "html"`` も
+    # 効いていなかった（review Low / 死コード指摘より発見）。
+    if file_ext == "htm":
         file_ext = "html"
     return {
         "tokens": tokens,
