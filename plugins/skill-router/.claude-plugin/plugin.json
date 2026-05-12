@@ -1,6 +1,6 @@
 {
   "name": "skill-router",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "UserPromptSubmit フックでプロンプトに合うスキルを自動推奨し、スキル起動率を高めるルーティングプラグイン",
   "author": {
     "name": "dmajima"
