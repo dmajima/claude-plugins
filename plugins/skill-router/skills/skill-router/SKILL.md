@@ -105,7 +105,7 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 | キー | 既定 | 説明 |
 |-----|------|------|
 | `embedding.enabled` | `false` | 親スイッチ |
-| `embedding.model` | `paraphrase-multilingual-MiniLM-L12-v2` | fastembed が対応する多言語埋め込みモデル |
+| `embedding.model` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | fastembed が対応する多言語埋め込みモデル |
 | `embedding.cache_dir` | `null` | モデル ONNX キャッシュ先（null は `<base>/embeddings_cache/models/`） |
 | `embedding.weight` | `3.0` | コサイン類似度に乗じる係数 |
 | `embedding.min_similarity` | `0.3` | この値未満はスコア加算しない（ノイズ抑制） |
