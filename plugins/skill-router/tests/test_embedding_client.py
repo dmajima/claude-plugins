@@ -66,6 +66,14 @@ class EmbeddingConfigFromDictTests(unittest.TestCase):
         cfg = embedding_client.EmbeddingConfig.from_dict({"weight": -1.0})
         self.assertEqual(cfg.weight, 0.0)
 
+    def test_clamps_excessive_weight_to_upper_bound(self) -> None:
+        cfg = embedding_client.EmbeddingConfig.from_dict({"weight": 1e9})
+        self.assertEqual(cfg.weight, 1000.0)
+
+    def test_clamps_inf_weight_to_upper_bound(self) -> None:
+        cfg = embedding_client.EmbeddingConfig.from_dict({"weight": float("inf")})
+        self.assertEqual(cfg.weight, 1000.0)
+
     def test_clamps_similarity_out_of_range(self) -> None:
         too_high = embedding_client.EmbeddingConfig.from_dict({"min_similarity": 2.0})
         self.assertEqual(too_high.min_similarity, 1.0)

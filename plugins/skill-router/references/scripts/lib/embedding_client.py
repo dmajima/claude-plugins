@@ -81,8 +81,12 @@ class EmbeddingConfig:
                 enabled=bool(raw.get("enabled", False)),
                 model=str(raw.get("model", DEFAULT_MODEL)) or DEFAULT_MODEL,
                 cache_dir=cache_dir,
-                # Weight may legitimately be 0 to disable boost; reject only NaN.
-                weight=max(0.0, float(raw.get("weight", 3.0))),
+                # Weight may legitimately be 0 to disable boost; cap at
+                # 1000.0 so a tampered config (e.g. ``"weight": 1e308`` or
+                # NaN/inf inputs) cannot inject ``inf`` into the routing
+                # score and force every prompt to the high tier
+                # (impl review H-2).
+                weight=max(0.0, min(1000.0, float(raw.get("weight", 3.0)))),
                 # Similarity is bounded to [-1, 1]; clamp to a sane window.
                 min_similarity=max(0.0, min(1.0, float(raw.get("min_similarity", 0.3)))),
                 # Bounded between 1 and 10000 -- the upper cap is a DoS
