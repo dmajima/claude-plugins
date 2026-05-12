@@ -2,7 +2,7 @@
 
 Run from the repository root::
 
-    python -m unittest plugins/skill-router/tests/test_session_state.py
+    python -m unittest plugins/skill-router/references/scripts/tests/test_session_state.py
 """
 from __future__ import annotations
 
@@ -13,12 +13,7 @@ import unittest
 from io import StringIO
 from pathlib import Path
 
-_LIB = (
-    Path(__file__).resolve().parent.parent
-    / "references"
-    / "scripts"
-    / "lib"
-)
+_LIB = Path(__file__).resolve().parent.parent / "lib"
 sys.path.insert(0, str(_LIB))
 
 import session_state  # noqa: E402

@@ -12,12 +12,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-_LIB = (
-    Path(__file__).resolve().parent.parent
-    / "references"
-    / "scripts"
-    / "lib"
-)
+_LIB = Path(__file__).resolve().parent.parent / "lib"
 sys.path.insert(0, str(_LIB))
 
 import embedding_client  # noqa: E402

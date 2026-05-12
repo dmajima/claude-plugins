@@ -2,7 +2,7 @@
 
 Run from the repository root::
 
-    python -m unittest plugins/skill-router/tests/test_parse_evals.py
+    python -m unittest plugins/skill-router/references/scripts/tests/test_parse_evals.py
 
 The golden test exercises the parser against the plugin's real
 ``skills/skill-router/evals/`` directory so accidental restructuring of
@@ -17,12 +17,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-_LIB = (
-    Path(__file__).resolve().parent.parent
-    / "references"
-    / "scripts"
-    / "lib"
-)
+_LIB = Path(__file__).resolve().parent.parent / "lib"
 sys.path.insert(0, str(_LIB))
 
 import parse_evals  # noqa: E402
@@ -276,8 +271,11 @@ class GoldenSkillRouterEvalsTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        # __file__ lives at <plugin_root>/references/scripts/tests/.
+        # Walk up four levels to reach <plugin_root>, then descend into
+        # skills/skill-router (the plugin-shipped skill directory).
         cls.skill_dir = (
-            Path(__file__).resolve().parent.parent
+            Path(__file__).resolve().parent.parent.parent.parent
             / "skills"
             / "skill-router"
         )

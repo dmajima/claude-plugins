@@ -6,7 +6,7 @@ download.
 
 Run from the repository root::
 
-    python -m unittest discover -s plugins/skill-router/tests \\
+    python -m unittest discover -s plugins/skill-router/references/scripts/tests \\
         -p "test_embedding_client.py"
 """
 from __future__ import annotations
@@ -18,12 +18,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-_LIB = (
-    Path(__file__).resolve().parent.parent
-    / "references"
-    / "scripts"
-    / "lib"
-)
+_LIB = Path(__file__).resolve().parent.parent / "lib"
 sys.path.insert(0, str(_LIB))
 
 import embedding_client  # noqa: E402

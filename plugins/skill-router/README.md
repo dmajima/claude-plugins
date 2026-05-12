@@ -360,21 +360,13 @@ plugins/skill-router/
 │       └── evals/                # 動作分岐検証用ケース集
 │           ├── README.md
 │           └── case-01_*.md ... case-10_*.md
-├── tests/
-│   ├── test_build_index.py
-│   ├── test_route.py
-│   ├── test_session_state.py
-│   ├── test_parse_evals.py
-│   ├── test_venv_lifecycle.py
-│   ├── test_embedding_client.py     # v0.4
-│   ├── test_embedding_enrich.py     # v0.4
-│   └── test_embedding_route.py      # v0.4
 └── references/
     ├── scripts/
     │   ├── hooks/
     │   │   ├── build_index_on_start.sh
     │   │   └── route_prompt.sh
     │   ├── lib/
+    │   │   ├── __init__.py
     │   │   ├── build_index.py        # v0.4 で embedding 統合
     │   │   ├── route.py              # v0.4 で embedding 統合
     │   │   ├── session_state.py
@@ -383,8 +375,17 @@ plugins/skill-router/
     │   │   ├── embedding_client.py   # v0.4 fastembed ラッパー
     │   │   ├── embedding_enrich.py   # v0.4 スキルベクトル化
     │   │   └── embedding_route.py    # v0.4 コサイン類似度補助スコア
-    │   └── setup/
-    │       └── requirements.txt      # v0.4 から fastembed + numpy
+    │   ├── setup/
+    │   │   └── requirements.txt      # v0.4 から fastembed + numpy + onnxruntime
+    │   └── tests/                    # ユニットテスト（v0.4.2 で tests/ から移動）
+    │       ├── test_build_index.py
+    │       ├── test_route.py
+    │       ├── test_session_state.py
+    │       ├── test_parse_evals.py
+    │       ├── test_venv_lifecycle.py
+    │       ├── test_embedding_client.py
+    │       ├── test_embedding_enrich.py
+    │       └── test_embedding_route.py
     ├── spike/                    # 動作検証スクリプト（利用者は通常使用しない）
     │   ├── s1_session_id.py
     │   ├── s2_hook_concat.py

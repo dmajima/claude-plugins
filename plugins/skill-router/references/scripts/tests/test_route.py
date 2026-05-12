@@ -6,7 +6,7 @@ the full hook machinery to exercise.
 
 Run from the repository root::
 
-    python -m unittest plugins/skill-router/tests/test_route.py
+    python -m unittest plugins/skill-router/references/scripts/tests/test_route.py
 """
 from __future__ import annotations
 
@@ -18,12 +18,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-_LIB = (
-    Path(__file__).resolve().parent.parent
-    / "references"
-    / "scripts"
-    / "lib"
-)
+_LIB = Path(__file__).resolve().parent.parent / "lib"
 sys.path.insert(0, str(_LIB))
 
 import route  # noqa: E402

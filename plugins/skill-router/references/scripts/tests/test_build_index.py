@@ -2,7 +2,7 @@
 
 Run from the repository root with the standard library only::
 
-    python -m unittest plugins/skill-router/tests/test_build_index.py
+    python -m unittest plugins/skill-router/references/scripts/tests/test_build_index.py
 """
 from __future__ import annotations
 
@@ -13,12 +13,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-_LIB = (
-    Path(__file__).resolve().parent.parent
-    / "references"
-    / "scripts"
-    / "lib"
-)
+_LIB = Path(__file__).resolve().parent.parent / "lib"
 sys.path.insert(0, str(_LIB))
 
 import build_index  # noqa: E402  (path adjusted above)
