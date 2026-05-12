@@ -5,7 +5,7 @@ argument-hint: "<on|off>"
 
 ユーザの引数: $ARGUMENTS
 
-`skill-router` のルーティング動作を即時に切り替えます。`<base>/disabled` フラグファイルの作成・削除で実現するため、Claude Code の再起動なしで反映されます（設計書 v2 セクション 7）。
+`skill-router` のルーティング動作を即時に切り替えます。`<base>/disabled` フラグファイルの作成・削除で実現するため、Claude Code の再起動なしで反映されます（`references/scripts/hooks/route_prompt.sh` のトグル参照順位と整合）。
 
 ## 動作モード
 
