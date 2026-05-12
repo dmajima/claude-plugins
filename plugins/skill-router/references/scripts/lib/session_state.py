@@ -16,6 +16,7 @@ import re
 import socket
 import sys
 import time
+from collections import deque
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -153,12 +154,19 @@ def tail_recent_prompts(
 
 
 def _iter_tail(fh: Iterable[str], n: int) -> list[str]:
-    buf: list[str] = []
+    """Return the last ``n`` lines of ``fh`` as a list (newline-stripped).
+
+    Uses :class:`collections.deque` with ``maxlen=n`` so the trim is O(1)
+    per line instead of O(N) ``list.pop(0)``.  This keeps
+    ``tail_recent_prompts`` cheap even for long-running sessions where
+    ``prompts.jsonl`` grows to thousands of lines (impl review M-10).
+    """
+    if n <= 0:
+        return []
+    buf: deque[str] = deque(maxlen=n)
     for line in fh:
         buf.append(line.rstrip("\n"))
-        if len(buf) > n:
-            buf.pop(0)
-    return buf
+    return list(buf)
 
 
 if __name__ == "__main__":
