@@ -35,8 +35,15 @@ _SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (
 )
 
 
-def mask_secrets(text: str) -> str:
-    """Replace any matched secret with the first 4 chars + '***' + last 4."""
+def mask_secrets(text: str | None) -> str | None:
+    """Replace any matched secret with the first 4 chars + '***' + last 4.
+
+    Returns the input unchanged for ``None`` and empty-string inputs so the
+    caller's type expectation matches the actual runtime contract.  Previously
+    the annotation was ``(text: str) -> str`` while the implementation handled
+    ``None`` via ``if not text: return text``; the discrepancy showed up in
+    mypy strict mode and confused readers (impl review M-9).
+    """
     if not text:
         return text
     masked = text
@@ -85,13 +92,22 @@ def session_dir(base: Path, session_id: str) -> Path:
 
 
 def append_prompt(base: Path, session_id: str, payload: dict[str, Any]) -> None:
-    """Append a sanitized record to prompts.jsonl. Fail-open."""
+    """Append a sanitized record to prompts.jsonl. Fail-open.
+
+    Both ``prompt`` and ``cwd`` pass through ``mask_secrets`` because a
+    cwd value can carry a path under e.g. ``.../credentials/...`` or
+    similar that an operator pasted token-bearing fragments into
+    (security review M-2 / CWE-532).
+    """
     try:
+        cwd = payload.get("cwd")
+        if isinstance(cwd, str):
+            cwd = mask_secrets(cwd)
         record = {
             "ts": time.time(),
             "session_id": session_id,
             "prompt": mask_secrets(payload.get("prompt", "")),
-            "cwd": payload.get("cwd"),
+            "cwd": cwd,
         }
         path = session_dir(base, session_id) / "prompts.jsonl"
         with path.open("a", encoding="utf-8") as fh:
