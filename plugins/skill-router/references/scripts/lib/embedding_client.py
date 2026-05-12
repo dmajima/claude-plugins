@@ -27,11 +27,14 @@ from typing import Any
 # Set telemetry-suppression env vars *before* fastembed / huggingface_hub
 # are imported, since both libraries cache the values at import time and
 # a later ``setdefault`` would be a no-op against an already-initialised
-# session.  See security review M-4 for the rationale.
+# session.  Only the two no-op telemetry switches are enforced here.
+#
+# We deliberately do NOT force ``TRANSFORMERS_OFFLINE`` / ``HF_DATASETS_OFFLINE``
+# to ``"0"``: that would override an operator's explicit ``"1"`` opt-in for
+# air-gapped runs (security review M-1).  The operator is the source of truth
+# for offline behaviour; the plugin only suppresses telemetry.
 os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 os.environ.setdefault("DO_NOT_TRACK", "1")
-os.environ.setdefault("TRANSFORMERS_OFFLINE", "0")
-os.environ.setdefault("HF_DATASETS_OFFLINE", "0")
 
 # Lazy / optional imports.  fastembed and numpy may be missing if the
 # plugin's venv hasn't been constructed yet; everything below must
