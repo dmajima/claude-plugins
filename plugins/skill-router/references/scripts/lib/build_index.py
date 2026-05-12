@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import json
 import logging
+import logging.handlers
 import os
 import re
 import socket
@@ -135,13 +136,25 @@ def resolve_base_dir() -> Path:
     return Path(os.path.expanduser("~")) / ".claude" / ".local" / "plugins" / "skill-router"
 
 
+_LOG_MAX_BYTES = 1_048_576  # 1 MiB per log file
+_LOG_BACKUP_COUNT = 3  # rotate to .1 / .2 / .3, then drop
+
+
 def _setup_logger(base: Path) -> logging.Logger:
     base.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger("skill_router.build_index")
     logger.setLevel(logging.INFO)
     if logger.handlers:
         return logger
-    handler = logging.FileHandler(base / "index.log", encoding="utf-8")
+    # Rotating handler (1 MiB x 3 backups = 4 MiB cap) prevents the log
+    # from growing unboundedly across long-lived dev environments
+    # (security review Suggestion / CWE-779).
+    handler = logging.handlers.RotatingFileHandler(
+        base / "index.log",
+        maxBytes=_LOG_MAX_BYTES,
+        backupCount=_LOG_BACKUP_COUNT,
+        encoding="utf-8",
+    )
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logger.addHandler(handler)
     return logger

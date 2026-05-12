@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import logging.handlers
 import os
 import re
 import sys
@@ -79,13 +80,24 @@ DEFAULT_CONFIG: dict[str, Any] = {
 # ---------------------------------------------------------------------------
 
 
+_LOG_MAX_BYTES = 1_048_576  # 1 MiB per log file
+_LOG_BACKUP_COUNT = 3
+
+
 def _setup_logger(base: Path) -> logging.Logger:
     logger = logging.getLogger("skill_router.route")
     if logger.handlers:
         return logger
     logger.setLevel(logging.INFO)
     base.mkdir(parents=True, exist_ok=True)
-    handler = logging.FileHandler(base / "route.log", encoding="utf-8")
+    # Rotating handler (1 MiB x 3 backups) caps long-running session
+    # log growth (security review Suggestion / CWE-779).
+    handler = logging.handlers.RotatingFileHandler(
+        base / "route.log",
+        maxBytes=_LOG_MAX_BYTES,
+        backupCount=_LOG_BACKUP_COUNT,
+        encoding="utf-8",
+    )
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logger.addHandler(handler)
     return logger
