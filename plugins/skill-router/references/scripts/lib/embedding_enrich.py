@@ -298,7 +298,12 @@ def ensure_skill_vectors(
         return {}, None
 
     manifest = load_manifest(base)
-    existing_matrix = load_vectors(base)
+    # Verify the cached vectors against the manifest's recorded SHA-256 even
+    # on the SessionStart path; otherwise an attacker who tampers with
+    # vectors.npz between sessions would have their bytes silently reused
+    # for any skill whose content_hash still matches (impl review H-1).
+    expected_sha = load_vectors_sha256_from_manifest(base)
+    existing_matrix = load_vectors(base, expected_sha256=expected_sha)
 
     # Build (qualified_name, content_hash, cached_row_idx) triples.
     rows: list[tuple[str, str, int | None]] = []
