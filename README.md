@@ -16,7 +16,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 | `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.7.0 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 | `plugins-update` | インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化する | 1.1.1 | `/plugin install plugins-update@dmajima-claude-plugins` |
 | `convert-doc` | Markdown を HTML / PDF / PowerPoint（PPTX）に Wiki スタイルで一括変換できる 3 スキル + 4 コマンド同梱のドキュメント変換プラグイン | 1.0.3 | `/plugin install convert-doc@dmajima-claude-plugins` |
-| `skill-router` | ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン | 0.2.1 | `/plugin install skill-router@dmajima-claude-plugins` |
+| `skill-router` | UserPromptSubmit フックでプロンプトに合うスキルを自動推奨し、スキル起動率を高めるルーティングプラグイン | 0.4.1 | `/plugin install skill-router@dmajima-claude-plugins` |
 | `session-usage` | カレントセッションのトークン消費量を JSONL から直接集計し、AskUserQuestion 対話メニュー（プレビュー表示・クリップボードコピー・再集計）で操作できる完全内製プラグイン | 1.0.0 | `/plugin install session-usage@dmajima-claude-plugins` |
 
 ## マーケットプレイスの追加方法
@@ -127,6 +127,7 @@ dmajima-claude-plugins/
     ├── credentials-manager/
     ├── extension-toolkit/
     ├── plugins-update/
+    ├── session-usage/
     └── skill-router/
 ```
 
