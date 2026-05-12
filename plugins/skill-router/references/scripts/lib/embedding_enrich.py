@@ -116,13 +116,32 @@ def vectors_path(base: Path) -> Path:
     return cache_dir(base) / VECTORS_FILE
 
 
+def _compute_entries_signature(entries: dict[str, dict[str, Any]]) -> str:
+    """Return a deterministic SHA-256 of the manifest's ``entries`` map.
+
+    Used as a best-effort self-consistency signal (security review M-3).
+    The hash is recomputed on read and compared against the value stored
+    in the manifest itself.  An attacker who can write both fields can
+    of course recompute the signature, so this is **not** a cryptographic
+    seal -- it only catches accidental corruption and naive single-field
+    tampering where the attacker forgets to refresh the signature.  A
+    full integrity guarantee would require a host-side keyed HMAC or an
+    external trusted store, which is out of scope for a fully-local
+    plugin.
+    """
+    canonical = json.dumps(entries, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def load_manifest(base: Path) -> dict[str, dict[str, Any]]:
     """Return ``{qualified_name -> entry}`` or ``{}`` on miss/error.
 
     Rejects the entire cache when the on-disk schema_version differs
-    from :data:`CACHE_SCHEMA_VERSION`; treating a version mismatch as
-    a full miss keeps the loader simple and forces a clean rebuild on
-    the next SessionStart (impl review H-2).
+    from :data:`CACHE_SCHEMA_VERSION` or when the recorded
+    ``entries_sha256`` does not match the live ``entries`` payload;
+    treating any version / consistency mismatch as a full miss keeps
+    the loader simple and forces a clean rebuild on the next
+    SessionStart (impl review H-2, security review M-3).
     """
     path = manifest_path(base)
     if not path.is_file():
@@ -139,6 +158,11 @@ def load_manifest(base: Path) -> dict[str, dict[str, Any]]:
     entries = data.get("entries")
     if not isinstance(entries, dict):
         return {}
+    recorded_sig = data.get("entries_sha256")
+    if isinstance(recorded_sig, str) and recorded_sig:
+        actual_sig = _compute_entries_signature(entries)
+        if actual_sig != recorded_sig:
+            return {}
     out: dict[str, dict[str, Any]] = {}
     for qn, val in entries.items():
         if isinstance(qn, str) and isinstance(val, dict):
@@ -233,12 +257,14 @@ def save_cache(
             _np.savez(fh, vectors=matrix)
         os.replace(vtmp, vfinal)
         digest = vectors_sha256(base) or ""
+        entries_sig = _compute_entries_signature(manifest)
         manifest_payload = {
             "schema_version": CACHE_SCHEMA_VERSION,
             "generated_at": datetime.now(timezone.utc)
             .astimezone()
             .isoformat(timespec="seconds"),
             "vectors_sha256": digest,
+            "entries_sha256": entries_sig,
             "entries": manifest,
         }
         with mtmp.open("w", encoding="utf-8") as fh:

@@ -318,6 +318,27 @@ class IntegrityVerificationTests(unittest.TestCase):
             np.savez(fh, vectors=np.array([1, 2, 3], dtype=np.float32))
         self.assertIsNone(embedding_enrich.load_vectors(self.base))
 
+    def test_manifest_entries_signature_recorded(self) -> None:
+        m_path = embedding_enrich.manifest_path(self.base)
+        with m_path.open("r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+        self.assertIn("entries_sha256", payload)
+        self.assertTrue(payload["entries_sha256"])
+        expected = embedding_enrich._compute_entries_signature(self.manifest)
+        self.assertEqual(payload["entries_sha256"], expected)
+
+    def test_load_manifest_rejects_tampered_entries(self) -> None:
+        # Tamper an entry without recomputing entries_sha256.
+        m_path = embedding_enrich.manifest_path(self.base)
+        with m_path.open("r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+        payload["entries"]["p:s"]["content_hash"] = "attacker"
+        m_path.write_text(
+            json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+        )
+        # Signature now mismatches -> entire cache is rejected.
+        self.assertEqual(embedding_enrich.load_manifest(self.base), {})
+
 
 @unittest.skipIf(np is None, "numpy not installed")
 class SaveCacheCleanupTests(unittest.TestCase):
