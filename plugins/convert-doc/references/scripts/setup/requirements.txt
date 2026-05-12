@@ -3,3 +3,7 @@ Pygments==2.18.0
 rcssmin==1.1.2
 rjsmin==1.2.2
 Pillow==11.2.1
+playwright==1.48.0
+python-pptx==1.0.2
+requests==2.32.3
+lxml==5.3.0

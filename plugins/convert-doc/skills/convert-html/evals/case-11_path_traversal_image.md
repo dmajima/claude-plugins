@@ -27,7 +27,7 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert.py:embed_image()`:
+`references/scripts/convert-html/convert.py:embed_image()`:
 ```python
 candidate = base_dir / src
 if candidate.exists() and _is_within(base_dir, candidate):

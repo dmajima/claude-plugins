@@ -55,7 +55,7 @@ Markdown ファイルを Wiki デザインの自己完結型 HTML に変換す�
 1. **ワークディレクトリ作成**（`.claude/.local/work/yyyyMMdd_nn_convert_html/{inputs,workspace}`）
 2. **venv 構築**（`workspace/.venv` 配下）→ 依存パッケージをインストール
 3. **CSS / JS の選択**（対話モード時のみ。詳細は [`references/css-js-selection.md`](references/css-js-selection.md)）
-4. **変換スクリプト実行**（`scripts/convert/convert.py`）
+4. **変換スクリプト実行**（`references/scripts/convert-html/convert.py`）
 5. **出力ファイルをユーザーに報告**（最終 HTML はセッションフォルダ直下）
 6. **venv 削除**
 
@@ -67,7 +67,7 @@ Markdown ファイルを Wiki デザインの自己完結型 HTML に変換す�
 
 | アセット | 既定の配置 | 分類 |
 |---------|-----------|------|
-| 変換スクリプト | `${CLAUDE_SKILL_DIR}/scripts/convert/convert.py` | スキル固有 |
+| 変換スクリプト | `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-html/convert.py` | スキル固有 |
 | HTML テンプレート | `${CLAUDE_PLUGIN_ROOT}/assets/html/template.html` | プラグイン共通（PDF と共有） |
 | CSS テンプレート | `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css` | プラグイン共通（PDF と共有） |
 | ライトボックス JS | `${CLAUDE_SKILL_DIR}/assets/js/lightbox.js` | スキル固有（HTML 専用） |

@@ -76,7 +76,7 @@
     {
       "name": "convert-doc",
       "source": "./plugins/convert-doc",
-      "description": "Markdown を Wiki スタイルの HTML / PDF / PPTX に一括変換するドキュメント変換プラグイン",
+      "description": "Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX → Markdown 取り込みも対応）",
       "author": {
         "name": "dmajima"
       },
@@ -90,7 +90,9 @@
         "conversion",
         "documentation",
         "mermaid",
-        "wiki"
+        "wiki",
+        "pptx-import",
+        "convert-from-pptx"
       ],
       "strict": false
     },

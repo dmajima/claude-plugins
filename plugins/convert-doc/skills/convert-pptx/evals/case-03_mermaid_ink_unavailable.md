@@ -32,7 +32,7 @@
 `SKILL.md`「重要な制約」:
 > mermaid 図の取得には `mermaid.ink` への HTTPS 接続が必要。オフライン時はテキストのコードブロック表示にフォールバック
 
-`scripts/convert/convert_pptx.py:fetch_mermaid_png()`:
+`references/scripts/convert-pptx/convert_pptx.py:fetch_mermaid_png()`:
 - 失敗時 `return None`
 - 呼び出し側でテキスト配置にフォールバック
 

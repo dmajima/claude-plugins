@@ -1,6 +1,6 @@
 ---
 name: convert-pptx
-description: Markdown ファイルを Wiki スタイルの PowerPoint (PPTX) スライドに変換するスキル（# をタイトル、## を新規スライド区切り。段落・コードブロック・表・mermaid 図・画像を配置、mermaid は mermaid.ink PNG 埋込）。「MD を PPTX に変換」「資料をスライドにして」「設計書を PPTX で出力」等で起動する。Use when converting Markdown into PPTX slides. SKIP when target is HTML (convert-html) or PDF (convert-pdf).
+description: Markdown ファイルを Wiki スタイルの PowerPoint (PPTX) スライドに変換するスキル（入力 MD → 出力 PPTX）。# をタイトル、## を新規スライド区切りとし、段落・箇条書き・コードブロック・表・mermaid 図・画像を配置する。「MD を PPTX に変換」「資料をスライドにして」「設計書を PPTX で出力」等で起動する。Use when converting Markdown into PPTX slides. SKIP when input is PPTX (use convert-from-pptx for PPTX→MD) or when output is HTML (convert-html) / PDF (convert-pdf).
 ---
 
 # convert-pptx スキル
@@ -49,7 +49,7 @@ Markdown ファイルを Wiki デザインの PowerPoint (PPTX) に変換する�
 
 1. **ワークディレクトリ作成**（`.claude/.local/work/yyyyMMdd_nn_convert_pptx/{inputs,workspace}`）
 2. **venv 構築**（`workspace/.venv` 配下）→ 依存パッケージをインストール
-3. **変換スクリプト実行**（`scripts/convert/convert_pptx.py`）
+3. **変換スクリプト実行**（`references/scripts/convert-pptx/convert_pptx.py`）
 4. **出力ファイルをユーザーに報告**（最終 PPTX はセッションフォルダ直下）
 5. **venv 削除**
 
@@ -75,7 +75,7 @@ Markdown ファイルを Wiki デザインの PowerPoint (PPTX) に変換する�
 
 ## アセットの場所
 
-- 変換スクリプト: `${CLAUDE_SKILL_DIR}/scripts/convert/convert_pptx.py`
+- 変換スクリプト: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py`
 
 ## オプション
 

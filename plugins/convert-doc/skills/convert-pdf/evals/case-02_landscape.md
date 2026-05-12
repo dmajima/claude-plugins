@@ -17,7 +17,7 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert_pdf.py:main()`:
+`references/scripts/convert-pdf/convert_pdf.py:main()`:
 ```python
 parser.add_argument("--landscape", action="store_true", help="Landscape orientation")
 ...

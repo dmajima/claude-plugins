@@ -19,7 +19,7 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert.py:main()` の入力検証:
+`references/scripts/convert-html/convert.py:main()` の入力検証:
 > `if not input_path.exists(): print(...); sys.exit(1)`
 
 ## 関連ケース

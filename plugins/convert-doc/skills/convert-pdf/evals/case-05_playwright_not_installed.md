@@ -25,7 +25,7 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert_pdf.py:render_pdf()`:
+`references/scripts/convert-pdf/convert_pdf.py:render_pdf()`:
 ```python
 from playwright.sync_api import sync_playwright   # 関数内 import
 ```

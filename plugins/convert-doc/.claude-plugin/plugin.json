@@ -1,6 +1,6 @@
 {
   "name": "convert-doc",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX → Markdown 取り込みも対応）",
   "author": {
     "name": "dmajima"

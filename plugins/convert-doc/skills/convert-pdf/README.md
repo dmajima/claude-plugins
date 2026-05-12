@@ -14,7 +14,7 @@ Markdown を Wiki デザインの PDF に変換するスキル。`convert-doc` �
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-初回実行時に `scripts/setup/setup_venv.sh` が以下を自動で実行します。
+初回実行時に `references/scripts/setup/setup_venv.sh` が以下を自動で実行します。
 
 1. `playwright / markdown / Pygments / rcssmin / rjsmin / Pillow` のインストール
 2. `playwright install chromium` による Chromium バイナリのダウンロード（~120MB）
@@ -40,7 +40,7 @@ Markdown を Wiki デザインの PDF に変換するスキル。`convert-doc` �
 
 ```bash
 "$SESSION_DIR/workspace/.venv/Scripts/python" \
-  "${CLAUDE_SKILL_DIR}/scripts/convert/convert_pdf.py" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pdf/convert_pdf.py" \
   "<入力MD>" "<出力PDF>" [--title "タイトル"] [--format A4] [--landscape]
 ```
 
@@ -66,4 +66,4 @@ skills/convert-pdf/
 
 - デザイン変更はプラグイン共通の `plugins/convert-doc/assets/css/template.css` を編集する（convert-html と共有）
   - convert-pdf だけに独自 CSS を適用したい場合は `skills/convert-pdf/assets/css/template.css` に上書きファイルを置くこともできるが、現在の `convert_pdf.py` は convert-html の convert.py を呼び出して HTML を生成するため、convert-html 側の解決ロジックに従う
-- Playwright の PDF オプション（ヘッダー/フッター、印刷オプション）は `scripts/convert/convert_pdf.py` の `page.pdf(...)` 呼び出し箇所を編集する
+- Playwright の PDF オプション（ヘッダー/フッター、印刷オプション）は `references/scripts/convert-pdf/convert_pdf.py` の `page.pdf(...)` 呼び出し箇所を編集する

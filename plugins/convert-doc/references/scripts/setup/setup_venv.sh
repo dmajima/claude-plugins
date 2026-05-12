@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# setup_venv.sh - convert-pptx スキル用 venv 構築スクリプト
+# setup_venv.sh - convert-doc プラグイン共通 venv 構築スクリプト（ADR-024 準拠・全 4 スキル統合）
 #
 # 使い方:
-#   bash "${CLAUDE_SKILL_DIR}/scripts/setup/setup_venv.sh" <WORK_DIR>
+#   bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" <WORK_DIR>
 #
 # 引数:
 #   WORK_DIR  venv を作成するワークディレクトリのパス（通常はセッションの workspace/ 配下）
-#             例: .claude/.local/work/20260421_01_convert_pptx/workspace
+#             例: .claude/.local/work/20260512_01_convert_doc/workspace
 
 set -euo pipefail
 
-WORK_DIR="${1:?エラー: WORK_DIR を第1引数に指定してください。例: setup_venv.sh .claude/.local/work/20260421_01_convert_pptx/workspace}"
+WORK_DIR="${1:?エラー: WORK_DIR を第1引数に指定してください。例: setup_venv.sh .claude/.local/work/{yyyyMMdd_nn_summary}/workspace}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$WORK_DIR/.venv"
 REQUIREMENTS="$SCRIPT_DIR/requirements.txt"
@@ -20,7 +20,7 @@ if [ ! -f "$REQUIREMENTS" ]; then
   exit 1
 fi
 
-if [ -d "$VENV_DIR" ] && [ -x "$VENV_DIR/Scripts/python" -o -x "$VENV_DIR/bin/python" ]; then
+if [ -d "$VENV_DIR" ] && { [ -x "$VENV_DIR/Scripts/python" ] || [ -x "$VENV_DIR/bin/python" ]; }; then
   echo "venv が既に存在します。再利用します: $VENV_DIR"
 else
   echo "venv を作成しています: $VENV_DIR"

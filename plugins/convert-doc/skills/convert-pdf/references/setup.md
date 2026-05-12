@@ -2,7 +2,7 @@
 
 ## 依存パッケージ
 
-`scripts/setup/requirements.txt` で管理。
+`references/scripts/setup/requirements.txt` で管理。
 
 | パッケージ | 用途 |
 |---------|------|
@@ -18,7 +18,7 @@
 セッション作業領域の workspace 配下に venv を構築する。
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/setup/setup_venv.sh" "$SESSION_DIR/workspace"
+bash "${CLAUDE_PLUGIN_ROOT}/references/references/scripts/setup/setup_venv.sh" "$SESSION_DIR/workspace"
 ```
 
 setup_venv.sh は以下を自動実行する:
@@ -32,7 +32,7 @@ setup_venv.sh は以下を自動実行する:
 セッション完了後は venv を削除する。
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/setup/teardown_venv.sh" "$SESSION_DIR/workspace"
+bash "${CLAUDE_PLUGIN_ROOT}/references/references/scripts/setup/teardown_venv.sh" "$SESSION_DIR/workspace"
 ```
 
 ## Chromium の再ダウンロードを避けたい場合

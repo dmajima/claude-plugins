@@ -22,7 +22,7 @@
 `SKILL.md`「重要な制約」:
 > 1 スライドを超える長さのコンテンツは自動で継続スライドに分割するが、レイアウトの完全性は保証しない（ベストエフォート）
 
-`scripts/convert/convert_pptx.py` のパラメータ `MAX_BODY_CHARS_DEFAULT = 2400`
+`references/scripts/convert-pptx/convert_pptx.py` のパラメータ `MAX_BODY_CHARS_DEFAULT = 2400`
 
 ## 関連ケース
 

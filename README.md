@@ -13,9 +13,9 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 | プラグイン | 説明 | バージョン | インストール |
 |----------|------|----------|----------|
 | `credentials-manager` | Claude Code セッションをまたいで認証情報を保存・自動適用するプラグイン（URL/ドメイン自動マッチ + SessionStart で最重要ルール自動配置 + UserPromptSubmit/PreToolUse で外部通信・認証情報系ファイル・シークレット直接埋め込みを多層検出） | 1.1.2 | `/plugin install credentials-manager@dmajima-claude-plugins` |
-| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.7.0 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
+| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.8.0 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 | `plugins-update` | インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化する | 1.1.1 | `/plugin install plugins-update@dmajima-claude-plugins` |
-| `convert-doc` | Markdown を HTML / PDF / PowerPoint（PPTX）に Wiki スタイルで一括変換できる 3 スキル + 4 コマンド同梱のドキュメント変換プラグイン | 1.0.3 | `/plugin install convert-doc@dmajima-claude-plugins` |
+| `convert-doc` | Markdown と HTML / PDF / PowerPoint（PPTX）を相互変換できる 4 スキル + 5 コマンド同梱のドキュメント変換プラグイン（PPTX → Markdown 取り込みも対応） | 2.0.0 | `/plugin install convert-doc@dmajima-claude-plugins` |
 | `skill-router` | ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン | 0.2.1 | `/plugin install skill-router@dmajima-claude-plugins` |
 | `session-usage` | カレントセッションのトークン消費量を JSONL から直接集計し、AskUserQuestion 対話メニュー（プレビュー表示・クリップボードコピー・再集計）で操作できる完全内製プラグイン | 1.0.0 | `/plugin install session-usage@dmajima-claude-plugins` |
 
@@ -127,6 +127,7 @@ dmajima-claude-plugins/
     ├── credentials-manager/
     ├── extension-toolkit/
     ├── plugins-update/
+    ├── session-usage/
     └── skill-router/
 ```
 

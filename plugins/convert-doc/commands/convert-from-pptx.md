@@ -1,6 +1,6 @@
 ---
 description: PowerPoint (PPTX) を Claude が読み込める Markdown に変換する
-argument-hint: <入力PPTXパス> [出力MDパス] [--images-dir DIR] [--no-mermaid] [--include-notes]
+argument-hint: <入力PPTX> [出力MD] [--no-mermaid] [--include-notes]
 ---
 
 `convert-from-pptx` スキルを呼び出して PowerPoint (PPTX) を Markdown に変換してください。

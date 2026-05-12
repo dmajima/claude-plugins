@@ -47,14 +47,15 @@ PowerPoint (PPTX) ファイルを Claude が読み込める Markdown に変換�
 
 | 入力 | モード | 動作 |
 |-----|-------|------|
-| `/convert-from-pptx` または自然言語依頼 | 通常 | 標準オプションで変換、Mermaid 化を有効・スピーカーノート非含有 |
+| 引数で入力 PPTX / 出力 MD / 全オプションが指定 / `--non-interactive` 相当 | 非対話 | 確認を求めずデフォルト値で進行 |
 | `--no-mermaid` / `--include-notes` / `--include-hidden` 等の指定 | カスタム | 指定オプションに従って処理 |
+| 上記以外（自然言語依頼） | 対話 | 不足パラメータを `AskUserQuestion` でユーザに確認 |
 
 ## 実行フロー
 
 1. **ワークディレクトリ作成**（`.claude/.local/work/yyyyMMdd_nn_convert_from_pptx/{inputs,workspace}`）
-2. **venv 構築**（`workspace/.venv` 配下）→ 依存パッケージをインストール
-3. **変換スクリプト実行**（`scripts/convert/convert_from_pptx.py`）
+2. **venv 構築**（`workspace/.venv` 配下、`${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh` を利用）→ 統合 requirements をインストール
+3. **変換スクリプト実行**（`${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py`）
 4. **画像をサブディレクトリに抽出**（既定: `<出力MD basename>_images/`）
 5. **出力ファイルをユーザーに報告**（最終 MD はセッションフォルダ直下、画像は同階層の `<basename>_images/`）
 6. **venv 削除**
@@ -89,7 +90,7 @@ PowerPoint (PPTX) ファイルを Claude が読み込める Markdown に変換�
 
 ## アセットの場所
 
-- 変換スクリプト: `${CLAUDE_SKILL_DIR}/scripts/convert/convert_from_pptx.py`
+- 変換スクリプト: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py`
 
 ## オプション
 

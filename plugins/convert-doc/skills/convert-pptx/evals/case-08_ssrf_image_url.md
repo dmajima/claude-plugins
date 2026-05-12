@@ -27,7 +27,7 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert_pptx.py`:
+`references/scripts/convert-pptx/convert_pptx.py`:
 ```python
 @staticmethod
 def _is_public_host(host: str) -> bool:

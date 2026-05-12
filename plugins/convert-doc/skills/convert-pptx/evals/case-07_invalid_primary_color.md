@@ -19,7 +19,7 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert_pptx.py:hex_to_rgb()`:
+`references/scripts/convert-pptx/convert_pptx.py:hex_to_rgb()`:
 ```python
 _HEX_COLOR_RE = re.compile(r"^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$")
 

@@ -17,8 +17,8 @@
 | シナリオ | 解決結果 |
 |---------|---------|
 | A | `$CONVERT_HTML_SCRIPT` のパスを使用 |
-| B | `$CLAUDE_PLUGIN_ROOT/skills/convert-html/scripts/convert/convert.py` を使用 |
-| C | `Path(__file__).parent.parent.parent.parent / "convert-html" / ...` を使用（同一プラグイン内兄弟スキル） |
+| B | `$CLAUDE_PLUGIN_ROOT/references/scripts/convert-html/convert.py` を使用 |
+| C | `Path(__file__).parent.parent / "convert-html" / "convert.py"` を使用（同一プラグイン内兄弟業務スクリプト） |
 | D | stderr に "convert-html script not found via ..." を出力し `sys.exit(1)` |
 
 ## 期待出力
@@ -28,18 +28,19 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert_pdf.py:locate_convert_html_script()`:
+`references/scripts/convert-pdf/convert_pdf.py:locate_convert_html_script()`:
 ```python
 explicit = os.environ.get("CONVERT_HTML_SCRIPT")
 if explicit and Path(explicit).exists():
     return Path(explicit)
 plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
 if plugin_root:
-    candidate = Path(plugin_root) / "skills" / "convert-html" / ...
+    candidate = Path(plugin_root) / "references" / "scripts" / "convert-html" / "convert.py"
     if candidate.exists():
         return candidate
-# fallback: sibling
-sibling = ...
+# fallback: same-plugin sibling
+this_file = Path(__file__).resolve()
+sibling = this_file.parent.parent / "convert-html" / "convert.py"
 if sibling.exists():
     return sibling
 sys.exit(1)

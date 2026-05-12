@@ -19,7 +19,7 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert_pdf.py:main()`:
+`references/scripts/convert-pdf/convert_pdf.py:main()`:
 ```python
 input_path = Path(args.input)
 if not input_path.exists():

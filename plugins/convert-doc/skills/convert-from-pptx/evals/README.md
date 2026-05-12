@@ -26,11 +26,12 @@
 | [case-18_no_first_slide_as_title.md](case-18_no_first_slide_as_title.md) | `--no-first-slide-as-title` 指定時の 1 枚目挙動 |
 | [case-19_chart_shape.md](case-19_chart_shape.md) | チャート shape の要約出力 |
 | [case-20_smartart_fallback.md](case-20_smartart_fallback.md) | SmartArt 解析失敗時のテキストフォールバック |
-| [case-21_zip_bomb_protection.md](case-21_zip_bomb_protection.md) | ZIP bomb（高圧縮率・総展開サイズ）の拒否 |
+| [case-21a_zip_bomb_total_size.md](case-21a_zip_bomb_total_size.md) | ZIP bomb 防御（総展開サイズ超過） |
+| [case-21b_zip_bomb_compression_ratio.md](case-21b_zip_bomb_compression_ratio.md) | ZIP bomb 防御（圧縮率異常） |
 | [case-22_image_extension_allowlist.md](case-22_image_extension_allowlist.md) | 画像拡張子 allowlist による正規化 |
 
 ## 実行確認方法
 
 ```bash
-python "${CLAUDE_SKILL_DIR}/scripts/convert/convert_from_pptx.py" <入力PPTX> <出力MD> [オプション]
+python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" <入力PPTX> <出力MD> [オプション]
 ```

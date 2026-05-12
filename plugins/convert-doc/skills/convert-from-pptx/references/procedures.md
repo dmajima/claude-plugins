@@ -6,7 +6,7 @@
 
 ```bash
 "$SESSION_DIR/workspace/.venv/Scripts/python" \
-  "${CLAUDE_SKILL_DIR}/scripts/convert/convert_from_pptx.py" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" \
   "<入力PPTXファイルパス>" \
   "<出力MDファイルパス>" \
   [--images-dir <DIR>] \

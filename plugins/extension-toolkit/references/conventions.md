@@ -54,6 +54,10 @@ plugins/{plugin-name}/
 │   └── hooks.json
 ├── mcp/                           # 任意（Claude Code 公式仕様）
 │   └── ...
+├── assets/                        # 任意（独自、実行時の共通静的リソース、ADR-030）
+│   ├── css/
+│   ├── html/
+│   └── ...
 └── references/                    # 任意（独自、SSOT・チーム定義・テンプレート集約。節 4 で詳述）
     └── ...
 ```
@@ -70,6 +74,7 @@ plugins/{plugin-name}/
 | `agents/` | Claude Code 公式 | 任意 |
 | `hooks/` | Claude Code 公式 | 任意 |
 | `mcp/` | Claude Code 公式 | 任意 |
+| `assets/` | 独自（実行時の共通静的リソース、ADR-030） | 任意 |
 | `references/` | 独自（SSOT・ナレッジ・スクリプト集約。`references/scripts/` 配下に共通スクリプト、ADR-024 / ADR-025） | 任意（Python 利用プラグインでは `references/scripts/setup/` 必須） |
 
 ### 2.3 配置の禁止
@@ -107,6 +112,7 @@ plugins/{plugin-name}/skills/{skill-name}/
 ├── README.md                      # 必須（独自、readme-policy.md 準拠）
 ├── references/                    # 任意（スキル固有の詳細ドキュメント・スキル固有スクリプト、節 5 で詳述）
 ├── agents/                        # 任意（Claude Code 公式仕様、グローバル重複でも保持）
+├── assets/                        # 任意（独自、スキル固有の静的リソース。プラグイン直下と同名なら上書き、ADR-030）
 └── evals/                         # 動作分岐ありなら必須（独自）
 ```
 
@@ -120,6 +126,7 @@ plugins/{plugin-name}/skills/{skill-name}/
 | `README.md` | 独自ルール（[`readme-policy.md`](readme-policy.md)） | 必須 |
 | `references/` | 独自（スキル固有の詳細・スクリプト・テンプレート集約） | 任意 |
 | `agents/` | Claude Code 公式（プラグイン配布時のサブエージェント） | 任意 |
+| `assets/` | 独自（スキル固有の静的リソース、ADR-030） | 任意 |
 | `evals/` | 独自（[`eval-guide.md`](eval-guide.md)） | 動作分岐ありなら必須 |
 
 ### 3.3 配置の禁止

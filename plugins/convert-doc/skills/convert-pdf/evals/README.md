@@ -16,5 +16,5 @@
 ## 実行確認方法
 
 ```bash
-python "${CLAUDE_SKILL_DIR}/scripts/convert/convert_pdf.py" <ケースの入力> <出力> [オプション]
+python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pdf/convert_pdf.py" <ケースの入力> <出力> [オプション]
 ```

@@ -68,7 +68,7 @@ git clone https://github.com/dmajima/claude-plugins.git
 
 ### D. 依存関係のインストール
 
-4 スキルとも Python 仮想環境を利用します。スキル初回起動時に `scripts/setup/setup_venv.sh` が自動実行され、以下の依存パッケージがインストールされます。
+4 スキルとも Python 仮想環境を利用します。スキル初回起動時に `references/scripts/setup/setup_venv.sh` が自動実行され、以下の依存パッケージがインストールされます。
 
 | スキル | 主要パッケージ | 追加ダウンロード |
 |-------|--------------|----------------|
@@ -77,7 +77,7 @@ git clone https://github.com/dmajima/claude-plugins.git
 | convert-pptx | python-pptx / Pillow / requests / Pygments | なし |
 | convert-from-pptx | python-pptx / Pillow / lxml | なし（オフラインで動作） |
 
-すべてピン固定（`==`）バージョンで管理されています。バージョンは各スキルの `scripts/setup/requirements.txt` を参照してください。
+すべてピン固定（`==`）バージョンで管理されています。バージョンは各スキルの `references/scripts/setup/requirements.txt` を参照してください。
 
 ## 使い方
 
@@ -170,6 +170,7 @@ Skill(skill: "convert-from-pptx", args: "<入力PPTX> <出力MD> [--include-note
 plugins/convert-doc/
 ├── .claude-plugin/
 │   └── plugin.json
+├── LICENSE
 ├── README.md                         # このファイル（人間向け）
 ├── commands/                         # スラッシュコマンド
 │   ├── convert-html.md
@@ -177,82 +178,84 @@ plugins/convert-doc/
 │   ├── convert-pdf.md
 │   ├── convert-pptx.md
 │   └── convert-from-pptx.md
-├── assets/                           # プラグイン共通 assets（ADR-001 参照）
+├── assets/                           # プラグイン共通 assets（extension-toolkit ADR-030）
 │   ├── css/
 │   │   └── template.css
 │   └── html/
 │       └── template.html
+├── references/                       # プラグイン共通リソース
+│   └── scripts/                      # プラグイン単位 venv + 業務スクリプト（ADR-024 / ADR-025）
+│       ├── setup/                    # 統合 venv 構築（4 スキル分の依存をマージ）
+│       │   ├── requirements.txt
+│       │   ├── setup_venv.sh
+│       │   └── teardown_venv.sh
+│       ├── convert-html/
+│       │   └── convert.py
+│       ├── convert-pdf/
+│       │   └── convert_pdf.py
+│       ├── convert-pptx/
+│       │   └── convert_pptx.py
+│       └── convert-from-pptx/
+│           └── convert_from_pptx.py
 └── skills/
     ├── convert-html/
     │   ├── SKILL.md
     │   ├── README.md
-    │   ├── assets/                   # convert-html 固有 assets（ADR-002 参照）
+    │   ├── assets/                   # convert-html 固有 assets（extension-toolkit ADR-030）
     │   │   └── js/
     │   ├── evals/                    # 動作分岐の期待挙動ケース
-    │   ├── references/
-    │   └── scripts/
+    │   └── references/
     ├── convert-pdf/
     │   ├── SKILL.md
     │   ├── README.md
     │   ├── evals/
-    │   ├── references/
-    │   └── scripts/
+    │   └── references/
     ├── convert-pptx/
     │   ├── SKILL.md
     │   ├── README.md
     │   ├── evals/
-    │   ├── references/
-    │   └── scripts/
+    │   └── references/
     └── convert-from-pptx/                # PPTX → Markdown 取り込みスキル
         ├── SKILL.md
         ├── README.md
         ├── evals/
-        ├── references/
-        └── scripts/
+        └── references/
 ```
 
 ## 設計上の決定（ADR）
 
-### ADR-001: プラグイン直下 `assets/` の採用
+### ADR-001: プラグイン直下／スキル直下 `assets/` の採用
+
+| 項目 | 内容 |
+|------|------|
+| 状態 | Accepted（extension-toolkit ADR-030 に統合・正規化済み）|
+| 決定 | プラグイン直下 `assets/` に HTML/PDF 共通の CSS / HTML テンプレートを格納し、スキル直下 `assets/` でスキル固有のリソース（JS 等）を保持する。同名ファイルがあればスキル直下が優先 |
+| 文脈 | `convert-html` と `convert-pdf` は同一の HTML 表現を共有するため CSS / HTML テンプレートを 2 箇所で重複保持すると DRY 違反になる。一方で `convert-html` 固有の対話 JS（`lightbox.js` 等）はプラグイン共通には属さない |
+| 上流 SSOT | [extension-toolkit ADR-030](../extension-toolkit/references/architecture-decisions.md)（プラグイン直下・スキル直下 `assets/` の許可リスト追加）|
+| 代替案 | 各スキルに完全コピー（重複・同期保守コスト高）/ `references/template/` への配置（実行時参照と語義不一致） |
+| トレードオフ | プラグイン直下・スキル直下のトップレベルディレクトリが増えるが、共通リソースの SSOT 化と固有上書きの両立を優先 |
+
+### ADR-002: convert-pdf が convert-html へ subprocess 越しに依存
 
 | 項目 | 内容 |
 |------|------|
 | 状態 | Accepted |
-| 決定 | プラグイン直下に `assets/` を置き、HTML/PDF 共通の CSS / HTML テンプレートを格納する |
-| 文脈 | `convert-html` と `convert-pdf` は同一の HTML 表現を共有するため、CSS / HTML テンプレートを 2 箇所で重複保持すると DRY 違反になる |
-| 代替案 | 各スキルに完全コピー（重複・同期保守コスト高） |
-| トレードオフ | プラグイン構造規約の許可リスト（`SKILL.md` `commands/` `agents/` `hooks/` `mcp/` `references/` `skills/` `.claude-plugin/`）を逸脱するが、共通リソースの SSOT 化を優先する |
-
-### ADR-002: スキル直下 `assets/` の採用
-
-| 項目 | 内容 |
-|------|------|
-| 状態 | Accepted |
-| 決定 | スキル直下に `assets/` を置き、該当スキル固有の JS / CSS / HTML を格納する。同名ファイルが存在する場合はスキル側が ADR-001 のプラグイン共通アセットを上書きする |
-| 文脈 | `convert-html` 固有の対話 JS（`lightbox.js` `toc-toggle.js` `features.json`）はプラグイン共通には属さない。また、特定のスキルだけで CSS を上書きしたい運用ニーズがある |
-| 代替案 | スキル固有 JS を `references/template/` 等の既存ディレクトリに混在させる（責務不明瞭） |
-| トレードオフ | スキル構造規約の許可リスト（`SKILL.md` `README.md` `references/` `scripts/` `agents/` `evals/`）を逸脱するが、ADR-001 と整合する形で固有資産の置き場として明示する |
-
-### ADR-003: convert-pdf が convert-html へ subprocess 越しに依存
-
-| 項目 | 内容 |
-|------|------|
-| 状態 | Accepted |
-| 決定 | convert-pdf は convert-html の `convert.py` を subprocess で呼び出し、HTML 生成ロジックを SSOT に保つ |
+| 決定 | `convert-pdf` は `convert-html` の `convert.py` を subprocess で呼び出し、HTML 生成ロジックを SSOT に保つ |
 | 文脈 | HTML 生成ロジックを HTML / PDF で重複実装すると、デザイン更新時に両方修正が必要になる |
-| 解決順序 | パス解決は `$CONVERT_HTML_SCRIPT` → `$CLAUDE_PLUGIN_ROOT` → 同一プラグイン内兄弟ディレクトリ の優先順位（`convert_pdf.py:locate_convert_html_script`）|
+| 解決順序 | `$CONVERT_HTML_SCRIPT` → `$CLAUDE_PLUGIN_ROOT/references/scripts/convert-html/convert.py` → 同一プラグイン内の `__file__.parent.parent/convert-html/convert.py`（`convert_pdf.py:locate_convert_html_script`）|
 | 代替案 | convert-html をライブラリ化して import / Skill ツール経由（subprocess 内では呼べない） |
 | トレードオフ | プロセス起動オーバーヘッドが発生するが、依存方向の単純さを優先する |
 
-### ADR-004: venv 構築/撤去スクリプトをスキル内に保持
+### ADR-003: venv 構築/撤去スクリプトをプラグイン直下に統合
 
 | 項目 | 内容 |
 |------|------|
-| 状態 | Accepted |
-| 決定 | 各スキル配下に `scripts/setup/setup_venv.sh` `teardown_venv.sh` `requirements.txt` を保持する |
-| 文脈 | `environment-setup-toolkit` への委譲は extension-toolkit 環境に依存するが、本プラグインは単体配布の簡便性を優先する |
-| 代替案 | extension-toolkit に環境構築を委譲（依存プラグインが増える） |
-| トレードオフ | 各スキルで類似コードが重複するが、スキル単独の再利用性を優先する |
+| 状態 | Accepted（extension-toolkit ADR-024 に準拠）|
+| 決定 | `plugins/convert-doc/references/scripts/setup/{setup_venv.sh, teardown_venv.sh, requirements.txt}` をプラグイン共通として 1 箇所に集約。requirements.txt は全 4 スキル分の依存をマージし、venv は `<work_dir>/.venv` にプラグイン単位で 1 つ作成して全スキルで共有 |
+| 文脈 | スキル単位 venv は同一プラグイン内で重複構築されコストが大きい。`environment-setup-toolkit` への委譲は extension-toolkit 環境に依存するが、本プラグインは ADR-024 のプラグイン単位 venv 採用で簡便性と単体配布性を両立する |
+| 上流 SSOT | [extension-toolkit ADR-024](../extension-toolkit/references/architecture-decisions.md)（プラグイン単位 venv と `references/scripts/setup/` 配置）|
+| 代替案 | スキルごとに個別 venv（ADR-024 違反・廃止）/ `environment-setup-toolkit` への委譲（外部依存増加）|
+| トレードオフ | venv が肥大化するが、複数スキル並行利用時の再構築コスト削減を優先する |
 
 ## 依存システム（External Dependencies）
 
@@ -270,11 +273,11 @@ plugins/convert-doc/
 
 ## カスタマイズ
 
-- HTML / PDF のデザイン変更（共通）: `plugins/convert-doc/assets/css/template.css` を編集するか、同ディレクトリに追加の `.css` ファイルを置く（2 ファイル以上ある場合はスキル実行時に選択プロンプトが表示される）
+- HTML / PDF のデザイン変更（共通）: `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css` を編集するか、同ディレクトリに追加の `.css` ファイルを置く（2 ファイル以上ある場合はスキル実行時に選択プロンプトが表示される）
 - convert-html / convert-pdf だけで上書きしたい場合: `skills/{skill-name}/assets/css/` に同名ファイルを置く（スキル側がプラグイン共通を上書きする）
-- PPTX の色・フォント・レイアウト変更: `skills/convert-pptx/scripts/convert/convert_pptx.py` 冒頭の定数を編集
-- PPTX → Markdown の取り込みカスタマイズ: `skills/convert-from-pptx/scripts/convert/convert_from_pptx.py` 冒頭の `MONOSPACE_FONTS` 等の定数を編集
-- Python 依存パッケージの更新: 各スキルの `scripts/setup/requirements.txt` を編集
+- PPTX の色・フォント・レイアウト変更: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py` 冒頭の定数を編集
+- PPTX → Markdown の取り込みカスタマイズ: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py` 冒頭の `MONOSPACE_FONTS` / `ALLOWED_IMAGE_EXTS` 等の定数を編集
+- Python 依存パッケージの更新: `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt`（プラグイン統合）を編集
 
 ## ライセンス
 

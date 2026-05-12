@@ -18,5 +18,5 @@
 ## 実行確認方法
 
 ```bash
-python "${CLAUDE_SKILL_DIR}/scripts/convert/convert_pptx.py" <ケースの入力> <出力> [オプション]
+python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py" <ケースの入力> <出力> [オプション]
 ```

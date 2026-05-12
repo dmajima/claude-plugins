@@ -24,7 +24,7 @@
 スクリプト直接実行で検証する場合は以下:
 
 ```bash
-python "${CLAUDE_SKILL_DIR}/scripts/convert/convert.py" <ケースの入力> <出力> [オプション]
+python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-html/convert.py" <ケースの入力> <出力> [オプション]
 ```
 
 期待出力の差分を `diff` で確認することも可能。
