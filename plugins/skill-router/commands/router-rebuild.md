@@ -1,8 +1,8 @@
 ---
-description: skill-router の index を手動再構築（SessionStart 自動再構築の補完用）
+description: skill-router の index を手動再構築。Use when 新規スキル追加直後やインデックスが古い疑いがある時
 ---
 
-`skill-router` プラグインのインデックスを再構築します。設計書 v2 セクション 3.1 に基づく `build_index.py` を起動し、`index.json` / `index.pkl` / `inverted_index.json` を生成します。
+`skill-router` プラグインのインデックスを再構築します。`build_index.py` を起動し、`index.json` / `inverted_index.json`（および `embedding.enabled=true` 時は `embeddings_cache/vectors.npz` + `manifest.json`）を生成します。
 
 ## 動作
 
