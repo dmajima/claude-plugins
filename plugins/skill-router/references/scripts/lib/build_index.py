@@ -46,7 +46,8 @@ from pathlib import Path
 from typing import Any
 
 _HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(_HERE))
+if str(_HERE) not in sys.path:
+    sys.path.insert(0, str(_HERE))
 
 import parse_evals  # noqa: E402  (sibling module, see design v2 section 3.2.6)
 import embedding_client  # noqa: E402

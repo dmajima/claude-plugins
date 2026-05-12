@@ -23,7 +23,8 @@ from pathlib import Path
 from typing import Any, Iterable
 
 _HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(_HERE))
+if str(_HERE) not in sys.path:
+    sys.path.insert(0, str(_HERE))
 
 import build_index  # noqa: E402
 import embedding_client  # noqa: E402
