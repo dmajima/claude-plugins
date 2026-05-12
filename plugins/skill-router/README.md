@@ -366,7 +366,6 @@ plugins/skill-router/
     │   │   ├── build_index_on_start.sh
     │   │   └── route_prompt.sh
     │   ├── lib/
-    │   │   ├── __init__.py
     │   │   ├── build_index.py        # v0.4 で embedding 統合
     │   │   ├── route.py              # v0.4 で embedding 統合
     │   │   ├── session_state.py
