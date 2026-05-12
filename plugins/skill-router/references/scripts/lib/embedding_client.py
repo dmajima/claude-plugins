@@ -136,12 +136,21 @@ _WINDOWS_CACHE_DIR_HEADROOM = 100  # chars; conservative
 # on Windows.  Kept short (``~/.cache/...``) and shared across all
 # bases on the host, which is fine because model ONNX files are
 # content-addressed by HuggingFace.
-_FALLBACK_CACHE_REL = ("AppData", "Local", "skill-router", "models")
+_FALLBACK_CACHE_REL_WINDOWS = ("AppData", "Local", "skill-router", "models")
+_FALLBACK_CACHE_REL_POSIX = (".cache", "skill-router", "models")
 
 
 def _fallback_cache_dir() -> Path:
+    """Return the OS-appropriate fallback cache directory for HF models.
+
+    Branching here (rather than at the call site only) ensures any
+    future caller that invokes ``_fallback_cache_dir`` directly still
+    gets a path that matches platform conventions (impl review M-2).
+    """
     home = Path(os.path.expanduser("~"))
-    return home.joinpath(*_FALLBACK_CACHE_REL)
+    if os.name == "nt":
+        return home.joinpath(*_FALLBACK_CACHE_REL_WINDOWS)
+    return home.joinpath(*_FALLBACK_CACHE_REL_POSIX)
 
 
 def _resolve_cache_dir(cfg: EmbeddingConfig, base: Path) -> Path:
