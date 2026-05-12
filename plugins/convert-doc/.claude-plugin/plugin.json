@@ -1,7 +1,7 @@
 {
   "name": "convert-doc",
-  "version": "1.0.3",
-  "description": "Markdown を Wiki スタイルの HTML / PDF / PPTX に一括変換するドキュメント変換プラグイン",
+  "version": "1.1.0",
+  "description": "Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX → Markdown 取り込みも対応）",
   "author": {
     "name": "dmajima"
   },

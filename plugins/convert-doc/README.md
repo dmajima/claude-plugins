@@ -1,6 +1,6 @@
 # convert-doc
 
-Markdown ファイルを Wiki スタイルで **HTML / PDF / PowerPoint（PPTX）** のいずれにも変換できる、3 スキル + 4 コマンド同梱の配布用プラグイン。
+Markdown と **HTML / PDF / PowerPoint（PPTX）** を相互変換できる、4 スキル + 5 コマンド同梱の配布用プラグイン。PPTX → Markdown の取り込み変換にも対応し、Claude が PowerPoint 資料を読み込める形に転記する。
 
 ## このドキュメントについて
 
@@ -13,8 +13,9 @@ Markdown ファイルを Wiki スタイルで **HTML / PDF / PowerPoint（PPTX�
 | `convert-html` | Markdown → 自己完結型 HTML | 「MD を HTML に変換」「資料を HTML で出力」 |
 | `convert-pdf` | Markdown → PDF（内部で HTML 経由） | 「MD を PDF に変換」「資料を PDF で出力」 |
 | `convert-pptx` | Markdown → PowerPoint スライド | 「MD を PowerPoint に変換」「設計書をスライドにして」 |
+| `convert-from-pptx` | PowerPoint (PPTX) → Markdown 取り込み | 「PPTX を Markdown に変換」「スライドを読める形にして」 |
 
-3 スキルは共通のデザイントーン（ネイビー #003879 基調）で出力する。
+出力系の 3 スキル（HTML / PDF / PPTX）は共通のデザイントーン（ネイビー #003879 基調）で出力する。取り込みスキル（`convert-from-pptx`）は構造を Markdown に転記し、フロー図や SmartArt は Mermaid に変換する。
 
 ## 導入手順
 
@@ -67,13 +68,14 @@ git clone https://github.com/dmajima/claude-plugins.git
 
 ### D. 依存関係のインストール
 
-3 スキルとも Python 仮想環境を利用します。スキル初回起動時に `scripts/setup/setup_venv.sh` が自動実行され、以下の依存パッケージがインストールされます。
+4 スキルとも Python 仮想環境を利用します。スキル初回起動時に `scripts/setup/setup_venv.sh` が自動実行され、以下の依存パッケージがインストールされます。
 
 | スキル | 主要パッケージ | 追加ダウンロード |
 |-------|--------------|----------------|
 | convert-html | markdown / Pygments / rcssmin / rjsmin / Pillow | なし |
 | convert-pdf | playwright / markdown / Pygments / rcssmin / rjsmin / Pillow | Chromium バイナリ（~120MB、初回のみ） |
 | convert-pptx | python-pptx / Pillow / requests / Pygments | なし |
+| convert-from-pptx | python-pptx / Pillow / lxml | なし（オフラインで動作） |
 
 すべてピン固定（`==`）バージョンで管理されています。バージョンは各スキルの `scripts/setup/requirements.txt` を参照してください。
 
@@ -84,9 +86,11 @@ git clone https://github.com/dmajima/claude-plugins.git
 次のようなフレーズで各スキルが起動します。
 
 ```
-この Markdown を HTML に変換して → convert-html
-設計書を PDF にして            → convert-pdf
-資料を PowerPoint に変換して   → convert-pptx
+この Markdown を HTML に変換して  → convert-html
+設計書を PDF にして             → convert-pdf
+資料を PowerPoint に変換して    → convert-pptx
+この PPTX を Markdown に変換して → convert-from-pptx
+スライドを読める形にして         → convert-from-pptx
 ```
 
 ### スラッシュコマンド
@@ -97,6 +101,7 @@ git clone https://github.com/dmajima/claude-plugins.git
 | `/convert-html-full` | Markdown → HTML（**全 JS 機能有効・対話プロンプトなし**） | 自動化・全機能必須の場合 |
 | `/convert-pdf` | Markdown → PDF（内部で HTML 経由） | A4 縦・背景色印刷ありが既定 |
 | `/convert-pptx` | Markdown → PowerPoint スライド | 16:9・タイトル帯ネイビー |
+| `/convert-from-pptx` | PowerPoint (PPTX) → Markdown 取り込み | 画像は別ファイルに抽出、フロー図は Mermaid 化 |
 
 利用例:
 
@@ -105,14 +110,16 @@ git clone https://github.com/dmajima/claude-plugins.git
 /convert-html-full ./要件定義.md ./要件定義.html --title "要件定義書"
 /convert-pdf ./設計書.md --format A4 --landscape
 /convert-pptx ./提案資料.md --aspect 16:9 --subtitle "2026年4月版"
+/convert-from-pptx ./受領資料.pptx ./受領資料.md --include-notes
 ```
 
 ### 他スキルからの呼び出し
 
 ```
-Skill(skill: "convert-html", args: "<入力MD> <出力HTML> [--title <タイトル>]")
-Skill(skill: "convert-pdf",  args: "<入力MD> <出力PDF>  [--title <タイトル>]")
-Skill(skill: "convert-pptx", args: "<入力MD> <出力PPTX> [--title <タイトル>]")
+Skill(skill: "convert-html",      args: "<入力MD> <出力HTML> [--title <タイトル>]")
+Skill(skill: "convert-pdf",       args: "<入力MD> <出力PDF>  [--title <タイトル>]")
+Skill(skill: "convert-pptx",      args: "<入力MD> <出力PPTX> [--title <タイトル>]")
+Skill(skill: "convert-from-pptx", args: "<入力PPTX> <出力MD> [--include-notes] [--no-mermaid]")
 ```
 
 ## 共通の特徴
@@ -146,6 +153,17 @@ Skill(skill: "convert-pptx", args: "<入力MD> <出力PPTX> [--title <タイト�
 - 表は PowerPoint ネイティブの表として配置
 - タイトル帯・装飾はネイビーカラーを使用
 
+### PPTX → Markdown（`convert-from-pptx`）
+
+- 各スライドを `## スライドタイトル` セクションとして転記（1 枚目は `# タイトル`）
+- テキスト・箇条書き（レベル保持）・装飾（太字 / 斜体 / 取消線）・モノスペース段落（コードブロック）を保持
+- 表は Markdown パイプ表に変換
+- 画像はバイナリで抽出し、出力 MD と同階層の `<basename>_images/` に保存。Markdown では相対パス参照
+- 図形 + コネクタで構成されるフロー図は Mermaid `flowchart` に変換
+- SmartArt は内部の `diagramData` XML を解析して Mermaid `flowchart` に変換（解析可能な範囲）
+- スピーカーノートは `--include-notes` 指定時のみ `> [!NOTE]` ブロックで出力
+- オフラインで完結（外部 API へのアクセスなし）
+
 ## ファイル構成
 
 ```
@@ -157,7 +175,8 @@ plugins/convert-doc/
 │   ├── convert-html.md
 │   ├── convert-html-full.md
 │   ├── convert-pdf.md
-│   └── convert-pptx.md
+│   ├── convert-pptx.md
+│   └── convert-from-pptx.md
 ├── assets/                           # プラグイン共通 assets（ADR-001 参照）
 │   ├── css/
 │   │   └── template.css
@@ -178,7 +197,13 @@ plugins/convert-doc/
     │   ├── evals/
     │   ├── references/
     │   └── scripts/
-    └── convert-pptx/
+    ├── convert-pptx/
+    │   ├── SKILL.md
+    │   ├── README.md
+    │   ├── evals/
+    │   ├── references/
+    │   └── scripts/
+    └── convert-from-pptx/                # PPTX → Markdown 取り込みスキル
         ├── SKILL.md
         ├── README.md
         ├── evals/
@@ -231,7 +256,7 @@ plugins/convert-doc/
 
 ## 依存システム（External Dependencies）
 
-本プラグインの 3 スキルは、変換処理のために以下の外部サービスへアクセスする。
+本プラグインの 4 スキルのうち、出力系 3 スキルは変換処理のために以下の外部サービスへアクセスする。`convert-from-pptx` は外部依存なしで動作する。
 
 | 依存先 | 用途 | 影響するスキル | オフライン時の挙動 |
 |-------|------|-------------|------------------|
@@ -241,12 +266,14 @@ plugins/convert-doc/
 
 - mermaid.ink のエンドポイントは各スクリプト内で定数として定義しているため、オフライン環境向けに差し替え可能。
 - convert-pdf は初回実行時に Playwright が Chromium をダウンロードする（~120MB）。
+- convert-from-pptx は外部 API を呼び出さない。SmartArt / 図形フロー → Mermaid 変換も python-pptx + lxml のみで完結する。
 
 ## カスタマイズ
 
 - HTML / PDF のデザイン変更（共通）: `plugins/convert-doc/assets/css/template.css` を編集するか、同ディレクトリに追加の `.css` ファイルを置く（2 ファイル以上ある場合はスキル実行時に選択プロンプトが表示される）
 - convert-html / convert-pdf だけで上書きしたい場合: `skills/{skill-name}/assets/css/` に同名ファイルを置く（スキル側がプラグイン共通を上書きする）
 - PPTX の色・フォント・レイアウト変更: `skills/convert-pptx/scripts/convert/convert_pptx.py` 冒頭の定数を編集
+- PPTX → Markdown の取り込みカスタマイズ: `skills/convert-from-pptx/scripts/convert/convert_from_pptx.py` 冒頭の `MONOSPACE_FONTS` 等の定数を編集
 - Python 依存パッケージの更新: 各スキルの `scripts/setup/requirements.txt` を編集
 
 ## ライセンス
