@@ -1,5 +1,5 @@
 ---
-description: skill-router の埋め込みキャッシュを参照・クリアする（v0.4 LLM 機能用）
+description: skill-router のローカル埋め込みキャッシュを参照・クリアする（fastembed ベクトル）
 argument-hint: "[--clear] [--show <qualified_name>]"
 ---
 
