@@ -1,5 +1,5 @@
 ---
-description: skill-router の統計・直近決定・スコア分布表示（--clean で 30 日超セッション削除）
+description: skill-router の統計・直近決定・スコア分布を確認（チューニング時 / 異常診断時）
 argument-hint: "[--clean]"
 ---
 

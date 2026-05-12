@@ -1,5 +1,5 @@
 ---
-description: skill-router の有効化／無効化を切り替える
+description: skill-router を一時停止／再開（ルーティング on/off を即時切替）
 argument-hint: "<on|off>"
 ---
 
