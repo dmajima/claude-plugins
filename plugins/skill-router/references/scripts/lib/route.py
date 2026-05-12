@@ -353,9 +353,19 @@ def _emit(payload: dict[str, Any]) -> None:
 # ---------------------------------------------------------------------------
 
 
+_MAX_PROMPT_CHARS = 65536  # 64 KiB; protects n-gram / tokenizer memory
+
+
 def route(stdin_payload: dict[str, Any]) -> dict[str, Any] | None:
     prompt = (stdin_payload.get("prompt") or "").strip()
     if not prompt or prompt.startswith("/"):
+        return None
+    # Multi-megabyte prompts could blow up the n-gram extraction in
+    # ``_eval_similarity`` and the token scan in ``extract_5w1h``.  The
+    # 10s UserPromptSubmit budget plus the bounded fastembed input
+    # already cap embedding memory, but the heuristic path is otherwise
+    # unbounded; reject up-front (security review L-1, CWE-770).
+    if len(prompt) > _MAX_PROMPT_CHARS:
         return None
 
     base = build_index.resolve_base_dir()
