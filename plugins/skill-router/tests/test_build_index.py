@@ -112,7 +112,11 @@ class ResolveInstallPathTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
-        self.real_dir = Path(self._tmp.name)
+        # ``_resolve_install_path`` calls ``Path.resolve(strict=True)`` which
+        # canonicalises Windows 8.3 short paths (e.g. ``WWDMAJ~1``) into their
+        # long-name form.  Mirror that here so equality assertions hold on
+        # any Windows runner regardless of the user profile name length.
+        self.real_dir = Path(self._tmp.name).resolve()
 
     def _v2(self, entries):
         return {"version": 2, "plugins": {"foo@bar": entries}}
