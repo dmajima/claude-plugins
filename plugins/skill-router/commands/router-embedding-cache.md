@@ -35,12 +35,9 @@ argument-hint: "[--clear] [--show <qualified_name>]"
 
 ### 統計表示（引数なし）
 
-1. base ディレクトリを Bash で解決:
+1. base ディレクトリを共通ヘルパーで解決（ADR-025 準拠、`references/scripts/commands/resolve_base.sh`）:
    ```bash
-   HOME_DIR="${HOME:-${USERPROFILE:-}}"
-   if [[ -n "${CLAUDE_PLUGIN_DATA:-}" && -d "${CLAUDE_PLUGIN_DATA}" ]]; then BASE="${CLAUDE_PLUGIN_DATA}"; \
-   elif [[ -d "${PWD}/.claude/.local/plugins/skill-router" ]]; then BASE="${PWD}/.claude/.local/plugins/skill-router"; \
-   else BASE="${HOME_DIR}/.claude/.local/plugins/skill-router"; fi; echo "$BASE"
+   BASE="$(bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/commands/resolve_base.sh")"
    ```
 
 2. `$BASE/embeddings_cache/manifest.json` を Read。
@@ -62,10 +59,10 @@ argument-hint: "[--clear] [--show <qualified_name>]"
 
 ### --clear
 
+クリア処理は `references/scripts/commands/clear_embedding_cache.sh` に切り出しています（ADR-025 準拠）。
+
 ```bash
-rm -f "$BASE/embeddings_cache/vectors.npz" "$BASE/embeddings_cache/manifest.json"
-echo "skill-router: embedding cache cleared at $BASE/embeddings_cache/"
-echo "次回 SessionStart で再生成されます（embedding.enabled=true 時のみ）。"
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/commands/clear_embedding_cache.sh" "$BASE"
 ```
 
 注: `models/` 配下の ONNX モデルファイルは削除しません（再ダウンロードコスト回避）。

@@ -27,50 +27,21 @@ argument-hint: "<on|off>"
 
 ## 実行手順
 
-### 状態確認（引数なし時）
+トグル本体ロジックは `references/scripts/commands/toggle.sh` に集約しています（ADR-025 / scripts-policy 準拠）。
 
 ```bash
-HOME_DIR="${HOME:-${USERPROFILE:-}}"
-if [[ -n "${CLAUDE_PLUGIN_DATA:-}" && -f "${CLAUDE_PLUGIN_DATA}/disabled" ]] || \
-   [[ -f "${PWD}/.claude/.local/plugins/skill-router/disabled" ]] || \
-   [[ -n "${HOME_DIR}" && -f "${HOME_DIR}/.claude/.local/plugins/skill-router/disabled" ]]; then
-  echo "skill-router: OFF"
-else
-  echo "skill-router: ON"
-fi
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/commands/toggle.sh" status
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/commands/toggle.sh" off
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/commands/toggle.sh" on
 ```
 
-### 無効化（`off`）
+| 引数 | 動作 |
+|-----|------|
+| `status` | 現在の状態（ON / OFF）を 1 行で表示 |
+| `off` | 解決順位 1 番目に `disabled` ファイルを作成 |
+| `on` | 全層から `disabled` ファイルを削除 |
 
-```bash
-HOME_DIR="${HOME:-${USERPROFILE:-}}"
-if [[ -n "${CLAUDE_PLUGIN_DATA:-}" ]]; then
-  BASE="${CLAUDE_PLUGIN_DATA}"
-elif [[ -d "${PWD}/.claude" ]]; then
-  BASE="${PWD}/.claude/.local/plugins/skill-router"
-else
-  BASE="${HOME_DIR}/.claude/.local/plugins/skill-router"
-fi
-mkdir -p "${BASE}"
-touch "${BASE}/disabled"
-echo "skill-router toggled OFF (flag: ${BASE}/disabled)"
-```
-
-### 有効化（`on`）
-
-```bash
-HOME_DIR="${HOME:-${USERPROFILE:-}}"
-for BASE in \
-    "${CLAUDE_PLUGIN_DATA:-}" \
-    "${PWD}/.claude/.local/plugins/skill-router" \
-    "${HOME_DIR}/.claude/.local/plugins/skill-router"; do
-  if [[ -n "${BASE}" && -f "${BASE}/disabled" ]]; then
-    rm -f "${BASE}/disabled"
-    echo "skill-router: removed disabled flag at ${BASE}/disabled"
-  fi
-done
-echo "skill-router toggled ON"
-```
+スクリプトは fail-open（exit 0）で、書込権限不足等の異常もブロックしません。
 
 ## 提示する内容
 

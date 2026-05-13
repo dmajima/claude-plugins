@@ -1,7 +1,7 @@
-"""Spike S3: probe whether ${CLAUDE_PLUGIN_DATA} is provided in the runtime env.
+"""Research S3: probe whether ${CLAUDE_PLUGIN_DATA} is provided in the runtime env.
 
 Run directly (not as a hook) to inspect the result, e.g.:
-  python references/spike/s3_plugin_data_var.py
+  python references/research/s3_plugin_data_var.py
 
 Outputs:
   - presence (bool)

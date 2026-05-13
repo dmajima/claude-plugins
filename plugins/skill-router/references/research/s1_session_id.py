@@ -1,4 +1,4 @@
-"""Spike S1: confirm whether UserPromptSubmit stdin JSON provides session_id.
+"""Research S1: confirm whether UserPromptSubmit stdin JSON provides session_id.
 
 How to run:
   - Wire this script as a temporary UserPromptSubmit hook (see header docstring).
@@ -21,7 +21,7 @@ from pathlib import Path
 def _log_path() -> Path:
     base = Path(os.environ.get("CLAUDE_PLUGIN_DATA", "")).expanduser()
     if not base or not str(base):
-        base = Path.home() / ".claude" / ".local" / "plugins" / "skill-router" / "spike"
+        base = Path.home() / ".claude" / ".local" / "plugins" / "skill-router" / "research"
     base.mkdir(parents=True, exist_ok=True)
     return base / "s1_session_id.log"
 

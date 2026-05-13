@@ -1,5 +1,5 @@
 ---
-description: skill-router の index を手動再構築（新規スキル追加・index 鮮度疑い時）
+description: skill-router の index を手動再構築（引数不要・新規スキル追加後や推奨が出ないとき）
 ---
 
 `skill-router` プラグインのインデックスを再構築します。`build_index.py` を起動し、`index.json` / `inverted_index.json`（および `embedding.enabled=true` 時は `embeddings_cache/vectors.npz` + `manifest.json`）を生成します。

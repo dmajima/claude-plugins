@@ -119,10 +119,6 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 
 埋め込み機能の状態は `/router-status` の `stats.embedding` で確認できる。キャッシュ参照は `/router-embedding-cache` を案内すること。
 
-## evals
-
-`evals/case-01_rebuild.md` 〜 `evals/case-10_fail_open.md` の 10 ケースで、コマンド誘導・ルーティング判定の負例・診断フロー・非対話モード・フェイルオープン挙動をカバーする。詳細は `evals/README.md` を参照。
-
 ## 重要な制約
 
 - スコアリング・インデクサのロジック改修は本スキルからは行わない（`references/scripts/lib/route.py` / `build_index.py` を直接編集する）
@@ -134,6 +130,7 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 
 | 用途 | パス |
 |-----|------|
+| 動作分岐検証ケース | `${CLAUDE_SKILL_DIR}/evals/README.md`（case-01〜case-21 の 21 ケース：コマンド誘導 / 診断フロー / 非対話モード / フェイルオープン / 埋め込みキャッシュ操作） |
 | ルーティング本体 | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/route.py` |
 | インデクサ | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/build_index.py` |
 | evals パーサ | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/parse_evals.py` |

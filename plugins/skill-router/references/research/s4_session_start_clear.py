@@ -1,4 +1,4 @@
-"""Spike S4: verify that SessionStart matcher='clear' actually fires on /clear.
+"""Research S4: verify that SessionStart matcher='clear' actually fires on /clear.
 
 Wire this script as a SessionStart hook with matcher 'startup|resume|clear'
 (temporary local hooks.json).  It records each invocation with the
@@ -22,7 +22,7 @@ from pathlib import Path
 def _log_path() -> Path:
     base = Path(os.environ.get("CLAUDE_PLUGIN_DATA", "")).expanduser()
     if not str(base):
-        base = Path.home() / ".claude" / ".local" / "plugins" / "skill-router" / "spike"
+        base = Path.home() / ".claude" / ".local" / "plugins" / "skill-router" / "research"
     base.mkdir(parents=True, exist_ok=True)
     return base / "s4_session_start_clear.log"
 
