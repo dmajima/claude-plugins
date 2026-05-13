@@ -17,7 +17,7 @@ Markdown ファイルを Wiki スタイルのデザインが適用された自�
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-依存パッケージ（markdown / Pygments / rcssmin / rjsmin / Pillow）は初回実行時に `scripts/setup/setup_venv.sh` が自動で venv を構築してインストールします。
+依存パッケージ（markdown / Pygments / rcssmin / rjsmin / Pillow）は初回実行時に `references/scripts/setup/setup_venv.sh` が自動で venv を構築してインストールします。
 
 ## 使い方
 
@@ -65,7 +65,7 @@ Claude の動作:
   2. CSSファイルが複数ある場合: AskUserQuestion UI（ラジオボタン）で選択させる
   3. JS機能の選択: AskUserQuestion UI（チェックボックス）で除外機能を選択させる
      ※ 何も選ばない = 全機能有効 / 「全て不要」を選択 = JS埋め込みなし
-  4. scripts/convert/convert.py を実行
+  4. references/scripts/convert-html/convert.py を実行
   5. 出力パスを報告
   6. venv を削除
 
@@ -126,8 +126,8 @@ JS ファイルの作成ルールは `references/template/js-feature-template.js
 
 ### 変換スクリプトを変更する
 
-- `scripts/convert/convert.py` を編集する
-- 依存パッケージを追加する場合は `scripts/setup/requirements.txt` も更新する
+- `references/scripts/convert-html/convert.py` を編集する
+- 依存パッケージを追加する場合は `references/scripts/setup/requirements.txt` も更新する
 
 ## ファイル構成
 

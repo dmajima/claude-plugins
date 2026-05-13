@@ -35,7 +35,7 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert.py:fetch_mermaid_svg()`:
+`references/scripts/convert-html/convert.py:fetch_mermaid_svg()`:
 - リトライ: `for attempt in range(retries):` （retries=3）
 - Content-Type 検証: `if "image/svg+xml" not in ctype and "text/xml" not in ctype: raise ValueError(...)`
 - フォールバック: `f'<div class="mermaid-error">...{html_lib.escape(diagram_code)}</pre></div>'`

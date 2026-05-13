@@ -21,7 +21,7 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert_pdf.py:main()` のデフォルト値:
+`references/scripts/convert-pdf/convert_pdf.py:main()` のデフォルト値:
 - `--format`: `"A4"`
 - `--landscape`: action `store_true`（未指定 → False）
 - `--margin`: `"20mm"`

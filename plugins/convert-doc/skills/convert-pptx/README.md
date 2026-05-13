@@ -14,7 +14,7 @@ Markdown を Wiki デザインの PowerPoint (PPTX) に変換するスキル。`
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-依存パッケージ（python-pptx / Pillow / requests / Pygments）は初回実行時に `scripts/setup/setup_venv.sh` が自動で venv を構築してインストールします。mermaid 図の取得には `mermaid.ink` への HTTPS 接続が必要です（オフライン環境ではテキストコードブロックにフォールバックします）。
+依存パッケージ（python-pptx / Pillow / requests / Pygments）は初回実行時に `references/scripts/setup/setup_venv.sh` が自動で venv を構築してインストールします。mermaid 図の取得には `mermaid.ink` への HTTPS 接続が必要です（オフライン環境ではテキストコードブロックにフォールバックします）。
 
 ## 仕組み
 
@@ -36,7 +36,7 @@ Markdown を Wiki デザインの PowerPoint (PPTX) に変換するスキル。`
 
 ```bash
 "$SESSION_DIR/workspace/.venv/Scripts/python" \
-  "${CLAUDE_SKILL_DIR}/scripts/convert/convert_pptx.py" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py" \
   "<入力MD>" "<出力PPTX>" \
   [--title "主題"] [--subtitle "副題"] [--aspect 16:9]
 ```
@@ -61,6 +61,6 @@ skills/convert-pptx/
 
 ## カスタマイズ
 
-- 色・フォント・レイアウトの調整は `scripts/convert/convert_pptx.py` 冒頭の定数（`PRIMARY`, `BODY_FONT`, `CODE_FONT`, `SLIDE_WIDTH_IN`, `SLIDE_HEIGHT_IN` など）を編集する
+- 色・フォント・レイアウトの調整は `references/scripts/convert-pptx/convert_pptx.py` 冒頭の定数（`PRIMARY`, `BODY_FONT`, `CODE_FONT`, `SLIDE_WIDTH_IN`, `SLIDE_HEIGHT_IN` など）を編集する
 - スライド分割規則の変更（例: H3 でもスライド分割する）は `split_into_slides()` を編集する
 - mermaid の PNG サイズは `MERMAID_MAX_WIDTH_IN` / `MERMAID_MAX_HEIGHT_IN` を変更する

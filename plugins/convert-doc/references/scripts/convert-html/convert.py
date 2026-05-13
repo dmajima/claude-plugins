@@ -546,7 +546,7 @@ def main():
 
     output_path = Path(args.output) if args.output else input_path.with_suffix(".html")
 
-    # Path(__file__) = scripts/convert/convert.py
+    # Path(__file__) = references/scripts/convert-html/convert.py
     script_dir = Path(__file__).resolve().parent
     skill_root = script_dir.parent.parent            # skills/convert-html/
     plugin_root = skill_root.parent.parent           # plugins/convert-doc/

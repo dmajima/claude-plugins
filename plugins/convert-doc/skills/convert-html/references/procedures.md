@@ -8,7 +8,7 @@
 
 ```bash
 "$SESSION_DIR/workspace/.venv/Scripts/python" \
-  "${CLAUDE_SKILL_DIR}/scripts/convert/convert.py" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-html/convert.py" \
   "<入力MDファイルパス>" \
   "<出力HTMLファイルパス>" \
   [--title "タイトル文字列"]

@@ -1,6 +1,6 @@
 ---
 name: convert-pdf
-description: Markdown を Wiki スタイル PDF に変換するスキル。convert-html 経由で Playwright (Chromium) で PDF 化（mermaid・表・画像・シンタックスハイライトを HTML 版と同一デザインで再現）。「MD を PDF に変換」「資料を PDF で出力」「設計書を PDF 化して」等で起動する。Use when converting a Markdown file into a styled PDF. SKIP when target is HTML (convert-html) or PowerPoint (convert-pptx).
+description: Markdown を Wiki スタイル PDF に変換するスキル（入力 MD → 出力 PDF）。mermaid 図・表・画像・シンタックスハイライトを HTML 版と同一デザインで再現する。「MD を PDF に変換」「資料を PDF で出力」「設計書を PDF 化して」等で起動する。Use when converting a Markdown file into a styled PDF. SKIP when input is PPTX (use convert-from-pptx) or when output is HTML (convert-html) / PowerPoint (convert-pptx).
 ---
 
 # convert-pdf スキル
@@ -60,7 +60,7 @@ Markdown ファイルを Wiki デザインの PDF に変換する。
 
 ## アセットの場所
 
-- 変換スクリプト: `${CLAUDE_SKILL_DIR}/scripts/convert/convert_pdf.py`
+- 変換スクリプト: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pdf/convert_pdf.py`
 - 内部依存: 同一プラグイン内の `convert-html` スキルを subprocess で呼び出す
 - HTML / CSS テンプレートは `convert-html` 経由で `${CLAUDE_PLUGIN_ROOT}/assets/` から解決される
 

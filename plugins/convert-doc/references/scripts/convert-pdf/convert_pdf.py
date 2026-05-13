@@ -23,13 +23,13 @@ from typing import Optional
 
 
 def locate_convert_html_script() -> Path:
-    """Return the path to the sibling convert-html skill's convert.py.
+    """Return the path to the convert-html business script under the plugin's references/scripts/.
 
-    Resolution order:
+    Resolution order (ADR-024 / ADR-025 準拠):
       1. ``CONVERT_HTML_SCRIPT`` env var (explicit override)
       2. ``CLAUDE_PLUGIN_ROOT`` env var (set by Claude Code at runtime) +
-         ``skills/convert-html/scripts/convert/convert.py``
-      3. Sibling-skill fallback derived from ``__file__`` (same plugin tree)
+         ``references/scripts/convert-html/convert.py``
+      3. Same-plugin sibling fallback derived from ``__file__``
     """
     explicit = os.environ.get("CONVERT_HTML_SCRIPT")
     if explicit:
@@ -39,21 +39,20 @@ def locate_convert_html_script() -> Path:
 
     plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
     if plugin_root:
-        candidate = Path(plugin_root) / "skills" / "convert-html" / "scripts" / "convert" / "convert.py"
+        candidate = Path(plugin_root) / "references" / "scripts" / "convert-html" / "convert.py"
         if candidate.exists():
             return candidate
 
-    # Fallback: same-plugin sibling derived from this file's location
+    # Fallback: same-plugin sibling derived from this file's location.
+    # references/scripts/convert-pdf/  -> references/scripts/  -> convert-html/convert.py
     this_file = Path(__file__).resolve()
-    # scripts/convert/ -> scripts/ -> skills/convert-pdf/
-    skill_dir = this_file.parent.parent.parent
-    sibling = skill_dir.parent / "convert-html" / "scripts" / "convert" / "convert.py"
+    sibling = this_file.parent.parent / "convert-html" / "convert.py"
     if sibling.exists():
         return sibling
 
     print(
         "Error: convert-html script not found via $CONVERT_HTML_SCRIPT, "
-        "$CLAUDE_PLUGIN_ROOT, or sibling-skill fallback.",
+        "$CLAUDE_PLUGIN_ROOT, or sibling fallback.",
         file=sys.stderr,
     )
     sys.exit(1)

@@ -18,7 +18,7 @@
 
 ## 分岐の根拠
 
-`scripts/convert/convert_pptx.py:main()`:
+`references/scripts/convert-pptx/convert_pptx.py:main()`:
 ```python
 if not input_path.exists():
     print(f"Error: Input file not found: {input_path}", file=sys.stderr)

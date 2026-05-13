@@ -6,7 +6,7 @@
 
 ```bash
 "$SESSION_DIR/workspace/.venv/Scripts/python" \
-  "${CLAUDE_SKILL_DIR}/scripts/convert/convert_pdf.py" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pdf/convert_pdf.py" \
   "<入力MDファイルパス>" \
   "<出力PDFファイルパス>" \
   [--title "タイトル文字列"] \
@@ -44,8 +44,8 @@
 
 | ファイル | パス |
 |---|---|
-| 変換スクリプト | `${CLAUDE_SKILL_DIR}/scripts/convert/convert_pdf.py` |
-| 兄弟スキル（HTML 生成） | `${CLAUDE_PLUGIN_ROOT}/skills/convert-html/scripts/convert/convert.py` |
+| 変換スクリプト | `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pdf/convert_pdf.py` |
+| 兄弟スキル（HTML 生成） | `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-html/convert.py` |
 
 ## トラブルシューティング
 
