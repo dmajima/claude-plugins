@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/enforce_toolkit_routing.sh\""
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/enforce_toolkit_routing.ps1\""
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/check_version_bump_on_commit.sh\""
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/check_version_bump_on_commit.ps1\""
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/check_version_bump.sh\""
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/check_version_bump.ps1\""
           }
         ]
       }

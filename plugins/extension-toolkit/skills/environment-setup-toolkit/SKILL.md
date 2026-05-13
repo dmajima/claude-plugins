@@ -81,32 +81,32 @@ description: Claude Code プラグインの Python venv・依存パッケージ�
 
 ### 4. setup 実行
 
-対象プラグインの `references/scripts/setup/setup_venv.sh` を起動する（プラグイン単位 venv、ADR-024）:
+対象プラグインの `references/scripts/setup/setup_venv.ps1` を起動する（プラグイン単位 venv、ADR-024）:
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
-  <work_dir> \
-  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt" \
-  [<min_python_version>]
+```powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
+  -WorkDir <work_dir> `
+  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt" `
+  [-MinPythonVersion <ver>]
 ```
 
 | 引数 | 必須 | 内容 |
 |-----|------|------|
-| `<work_dir>` | 必須 | 作業ディレクトリ（`.venv` の親） |
-| `<requirements_path>` | 任意 | requirements.txt のパス（省略時は依存インストールをスキップ） |
-| `<min_python_version>` | 任意 | 最小 Python バージョン要件（例: `3.10`）。未指定時はバージョンチェックなし |
+| `-WorkDir` | 必須 | 作業ディレクトリ（`.venv` の親） |
+| `-RequirementsPath` | 任意 | requirements.txt のパス（省略時は依存インストールをスキップ） |
+| `-MinPythonVersion` | 任意 | 最小 Python バージョン要件（例: `3.10`）。未指定時はバージョンチェックなし |
 
 スクリプトの動作:
 
 1. （指定があれば）システム Python バージョン要件を検証
 2. `<work_dir>/.venv` 不在なら作成
 3. pip / setuptools / wheel を最新化
-4. `<requirements_path>` 指定時のみ依存をインストール
+4. `-RequirementsPath` 指定時のみ依存をインストール
 
 ### 5. teardown 実行
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" <work_dir>
+```powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir <work_dir>
 ```
 
 `<work_dir>/.venv` を削除。

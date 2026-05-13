@@ -140,10 +140,10 @@ python -m venv "$WORKSPACE/.venv"
 
 venv 構築（プラグイン直下スクリプトに委譲）:
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
-  "$SESSION_DIR/workspace" \
-  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
+```powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
+  -WorkDir "$SessionDir/workspace" `
+  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 ```
 ````
 
@@ -153,8 +153,8 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
 
 | 階層 | ファイル | 役割 |
 |-----|--------|------|
-| プラグイン直下 | `references/scripts/setup/setup_venv.sh` | venv 構築 + 依存インストール |
-| プラグイン直下 | `references/scripts/setup/teardown_venv.sh` | venv 削除 |
+| プラグイン直下 | `references/scripts/setup/setup_venv.ps1` | venv 構築 + 依存インストール (PowerShell) |
+| プラグイン直下 | `references/scripts/setup/teardown_venv.ps1` | venv 削除 (PowerShell) |
 | プラグイン直下 | `references/scripts/setup/requirements.txt` | プラグイン全体の依存パッケージ統合リスト |
 | セッション作業領域 | `<work_dir>/.venv/` | 実体（ユーザの作業セッションに紐づく一時領域） |
 
@@ -170,26 +170,26 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
 
 以下に該当するプラグインは venv 関連スクリプトを設置しなくてよい:
 
-- プラグイン全体で Python を一切使用しない（Bash / PowerShell / Node のみ等）
+- プラグイン全体で Python を一切使用しない（PowerShell / Node のみ等）
 - 利用する Python が標準ライブラリのみで完結し、外部依存パッケージが無い
 
 判断基準: `references/scripts/` 配下に `.py` ファイルが存在し、かつ標準ライブラリ以外の `import` を含む場合は venv 必須。
 
 ### 5.4 venv のライフサイクル
 
-```bash
+```powershell
 # 1. 構築（セッション開始時）
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
-  "$SESSION_DIR/workspace" \
-  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
+  -WorkDir "$SessionDir/workspace" `
+  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 
 # 2. Python 実行（venv 内 python を直接呼ぶ）
-"$SESSION_DIR/workspace/.venv/Scripts/python" \
-  "${CLAUDE_SKILL_DIR}/references/scripts/{業務}/main.py" <args>
+& "$SessionDir/workspace/.venv/Scripts/python" `
+  "$env:CLAUDE_SKILL_DIR/references/scripts/{業務}/main.py" <args>
 
 # 3. 撤去（セッション完了時）
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
-  "$SESSION_DIR/workspace"
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" `
+  -WorkDir "$SessionDir/workspace"
 ```
 
 呼び出し側（各スキル）は **この 3 ステップのみ** を実施する。venv 内部のロジック（python コマンド検出・pip 操作・OS 別パス分岐等）はすべて setup スクリプト側で完結させる。

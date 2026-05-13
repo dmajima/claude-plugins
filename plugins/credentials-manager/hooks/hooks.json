@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/install_rule_template.sh\""
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/install_rule_template.ps1\""
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/detect_credentials_in_prompt.sh\""
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/detect_credentials_in_prompt.ps1\""
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/preempt_credentials_check.sh\""
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/preempt_credentials_check.ps1\""
           }
         ]
       }

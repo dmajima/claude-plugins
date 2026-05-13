@@ -4,7 +4,7 @@
 
 | 項目 | 値 |
 |-----|---|
-| 起動フレーズ | "GitHub のトークン ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx を覚えておいて。あとで GitHub API を叩くときに使いたい。" |
+| 起動フレーズ | "GitHub のトークン ghp_<github-pat-sample> を覚えておいて。あとで GitHub API を叩くときに使いたい。" |
 | 引数 | なし |
 | フラグ | なし |
 | 既存状態 | `credentials.json` 不在 |

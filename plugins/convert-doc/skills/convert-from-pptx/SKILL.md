@@ -1,6 +1,6 @@
 ---
 name: convert-from-pptx
-description: PowerPoint (PPTX) ファイルを Claude が解釈可能な Markdown に変換するスキル（入力 PPTX → 出力 MD）。3 フェーズ構成: Phase 1 (Python) で全 shape の位置・サイズ・フォント・色・接続情報を構造化 JSON に dump、Phase 2 (Claude) で JSON を文脈解釈し装飾とコンテンツを区別した Markdown を生成、Phase 3 (Python + Claude) で生成 MD を元 PPTX と機械的に突き合わせて漏れ・誤転記を検証。大規模 PPTX (100 スライド超) はスライド単位分割 + サブエージェント並列分担に対応。「PPTX を Markdown に変換」「スライドを MD にして」「PowerPoint を読める形に」「設計書 PPTX を解析」等で起動。SKIP: 入力が Markdown (convert-pptx) / 出力が HTML (convert-html) / PDF (convert-pdf)。
+description: "PowerPoint (PPTX) ファイルを Claude が解釈可能な Markdown に変換するスキル（入力 PPTX → 出力 MD）。3 フェーズ構成 - Phase 1 (Python) で全 shape の位置・サイズ・フォント・色・接続情報を構造化 JSON に dump、Phase 2 (Claude) で JSON を文脈解釈し装飾とコンテンツを区別した Markdown を生成、Phase 3 (Python + Claude) で生成 MD を元 PPTX と機械的に突き合わせて漏れ・誤転記を検証。大規模 PPTX (100 スライド超) はスライド単位分割 + サブエージェント並列分担に対応。「PPTX を Markdown に変換」「スライドを MD にして」「PowerPoint を読める形に」「設計書 PPTX を解析」等で起動。SKIP - 入力が Markdown (convert-pptx) / 出力が HTML (convert-html) / PDF (convert-pdf)。"
 ---
 
 # convert-from-pptx スキル

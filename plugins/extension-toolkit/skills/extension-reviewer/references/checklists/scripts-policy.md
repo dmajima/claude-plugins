@@ -51,18 +51,33 @@ ADR-024 / ADR-025 に従ったスクリプト配置・インラインスクリ�
 | SP-6-1 | Medium | `references/scripts/` 直下に `knowledge/` `lib/` `bin/` 等の禁止命名がない | [conventions.md](../../../references/conventions.md) 節 5.3 |
 | SP-6-2 | Medium | 拡張子別サブフォルダ（`py/` `sh/` `ps1/` 等）を使っていない | 同上 |
 
-## SP-7. PowerShell からの直接 Python 起動禁止
+## SP-7. PowerShell 経由実行とエンコーディング担保（shell-preference.md / python-encoding-mandatory.md）
+
+shell-preference.md (Bash 利用廃止) と python-encoding-mandatory.md (Python 実行時の必須3点セット) を併せて担保する。
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| SP-7-1 | High | 機械チェックスクリプトは **必ず Bash 経由 + venv 内 Python + JSON ファイル出力** で実施されている | [automated-checks.md](../automated-checks.md) |
-| SP-7-2 | High | PowerShell から `python` を直接起動する記述（`pwsh -c "python ..."` 等）が含まれない | 同上 |
-| SP-7-3 | Medium | `chcp 65001` / `[Console]::OutputEncoding=...` の手動切り替えが含まれない | 同上 |
-| SP-7-4 | Medium | Python スクリプトから日本語を **stdout に書き出していない**（必ずファイルに書く） | 同上 |
+| SP-7-1 | High | 機械チェックスクリプトは **PowerShell 経由 + venv 内 Python + JSON ファイル出力** で実施されている | [automated-checks.md](../automated-checks.md) / [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| SP-7-2 | High | `.ps1` 先頭で `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)` を明示している | [console-encoding.md](https://github.com/dmajima/claude-plugins) |
+| SP-7-3 | High | Python スクリプト先頭で `sys.stdout.reconfigure(encoding='utf-8')` を実施している（必須3点セット） | [python-encoding-mandatory.md](https://github.com/dmajima/claude-plugins) |
+| SP-7-4 | High | Python の `open()` で `encoding='utf-8'` を明示している（必須3点セット） | 同上 |
+| SP-7-5 | Medium | venv 内 Python は明示パス指定で呼び出している（`<venv>/Scripts/python` 直接実行） | [python-venv.md](https://github.com/dmajima/claude-plugins) |
 
-## SP-8. 機械チェックでの違反検出
+## SP-8. 機械チェックでの違反検出（自己整合性）
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
 | SP-8-1 | High | `run_checks.py` が md 内の 6 行以上のフェンス付きコードブロックを High 指摘として報告していない（=違反なし） | [scripts-policy.md](../../../references/scripts-policy.md) 節 7 |
 | SP-8-2 | High | `run_checks.py` がトップレベル `scripts/` 配下を High 指摘として報告していない（=違反なし） | 同上 |
+
+## SP-9. Bash/sh 利用禁止（PowerShell 移行担保、shell-preference.md）
+
+`~/.claude/rules/tools/shell-preference.md` で `Bash` ツール利用が原則禁止されたため、
+プラグイン側のスクリプト・hooks.json・ドキュメントも PowerShell ベースに統一する。
+
+| 項目 | 重大度 | 確認方法 | 出典 |
+|-----|-------|---------|-----|
+| SP-9-1 | High | `hooks/hooks.json` の `command` フィールドが `pwsh -NoProfile -File ...ps1` 形式（`bash ...` 起動なし） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| SP-9-2 | High | `references/scripts/` 配下に `.sh` が残存していない（すべて `.ps1` へ完全移行済み） | 同上 |
+| SP-9-3 | Medium | md ドキュメント内の実行例が `bash ...sh` ではなく `pwsh -NoProfile -File ...ps1` を使う | 同上 |
+| SP-9-4 | High | `run_checks.py` の `check_no_bash_invocation` が High 指摘として報告していない（=違反なし） | [automated-checks.md](../automated-checks.md) #12 |
