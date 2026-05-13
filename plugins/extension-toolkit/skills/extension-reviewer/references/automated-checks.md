@@ -72,6 +72,7 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 | 10 | クロスマーケットプレイス依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7） | `plugin.json` + 同階層 `README.md` | High | `check_cross_marketplace_readme` |
 | 11 | プラグインに MIT LICENSE 配備（ADR-029） | プラグイン直下 `LICENSE` + `plugin.json.license` + `README.md` | Critical / High | `check_mit_license` |
 | 12 | Bash/sh 利用禁止（PowerShell 移行担保、shell-preference.md）| `hooks.json` / `*.sh` / `*.md` | High / Medium | `check_no_bash_invocation` |
+| 13 | hook の `shell` フィールド明示（PowerShell 統一補強、shell-preference.md）| `hooks/hooks.json` | High | `check_hook_shell_field` |
 
 `run_checks.py` の出力 JSON 構造:
 
@@ -214,6 +215,25 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 - `.sh` は **すべて廃止**。プラグイン配下に `.sh` を含めてはならない
 - すべてのシェルスクリプトは `.ps1` で記述する
 - `hooks.json` は **常に** `pwsh -NoProfile -File ...ps1` 形式で記述する
+
+### 13. hook の `shell` フィールド明示チェック（PowerShell 統一補強）
+
+`command` を `pwsh -NoProfile -File ...` で書いていても、Claude Code の起動側シェルが
+Git Bash の場合に引数解釈・PATH 解決でエッジケースが発生しうる。これを抑制するため、
+各 hook エントリで `"shell": "powershell"` を **明示** することを必須化する。
+
+| 検査項目 | 重大度 | 検出方法 |
+|---------|-------|---------|
+| `hooks/hooks.json` 内の各 hook エントリ（`type: "command"` を持つ）に `"shell"` フィールドが存在する | High | JSON パース後に `hooks` → イベント名 → エントリ → `hooks` 配列の各要素を走査し、`type: "command"` であって `"shell"` キーが無いものを検出 |
+| `"shell"` フィールドの値が `"powershell"` または `"bash"` である | High | 値が上記いずれかでない場合は不正値として High 指摘 |
+| 本マーケットプレイスのプラグインで `"shell": "bash"` が設定されている | Medium | PowerShell 統一方針との不整合として Medium 指摘（許可ではあるが警告） |
+
+除外条件:
+
+- `templates/` / `template/` / `evals/` 配下（テンプレート・テスト fixture）
+- `type: "command"` 以外のエントリ（将来拡張に備える）
+
+実装関数: `check_hook_shell_field`
 
 ## 指摘出力フォーマット
 

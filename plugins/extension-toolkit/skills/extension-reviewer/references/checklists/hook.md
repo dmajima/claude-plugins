@@ -89,3 +89,16 @@
 | H-11-3 | High | `.ps1` 内で stdin / stdout / stderr が UTF-8 (no BOM) で扱われている | [console-encoding.md](https://github.com/dmajima/claude-plugins) |
 | H-11-4 | Medium | PowerShell 経由で Python を呼ぶ場合、venv 内 Python の明示パス指定 + `python-encoding-mandatory.md` の必須3点セットを遵守 | [python-encoding-mandatory.md](https://github.com/dmajima/claude-plugins) |
 | H-11-5 | High | `run_checks.py` の `check_no_bash_invocation` （automated-checks.md #12）が High 指摘として報告していない | [automated-checks.md](../automated-checks.md) #12 |
+
+## H-12. shell フィールド明示（MANDATORY / shell-preference.md / 補強）
+
+`pwsh -NoProfile -File ...` で書いていても、Claude Code 側の起動シェルが Git Bash の場合に
+引数解釈・PATH 解決でエッジケースが発生しうる。各 hook エントリの `type: "command"` と
+同階層に **`"shell": "powershell"`** を明示することで、PowerShell ホストでの起動を一義的に伝える。
+
+| 項目 | 重大度 | 確認方法 | 出典 |
+|-----|-------|---------|-----|
+| H-12-1 | High | `hooks.json` の各 hook エントリに `"shell": "powershell"` が **明示** されている（`type: "command"` と同階層） | [hook-events.md](../../../../hook-toolkit/references/hook-events.md) 節「shell 指定（MANDATORY）」 |
+| H-12-2 | High | `settings.json` の `hooks` セクションに追加するエントリも同様に `"shell": "powershell"` を明示している | 同上 |
+| H-12-3 | Medium | `"shell"` の値が `"powershell"` または `"bash"` のいずれか（本マーケットプレイスは `"powershell"` のみ採用） | 同上 |
+| H-12-4 | High | `run_checks.py` の `check_hook_shell_field` （automated-checks.md #13）が High 指摘として報告していない | [automated-checks.md](../automated-checks.md) #13 |

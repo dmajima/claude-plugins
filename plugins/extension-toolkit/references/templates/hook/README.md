@@ -28,6 +28,23 @@ Claude Code フックの設定テンプレート。`hooks/hooks.json` 1 ファ�
 - `${CLAUDE_PLUGIN_ROOT}` を活用してプラグイン内スクリプトを呼び出す
 - ローカル絶対パスのハードコード禁止（パスポータビリティ規約: `${CLAUDE_PLUGIN_ROOT}/references/path-portability.md`）
 - timeout は秒単位、デフォルト 60 秒
+- `shell` フィールドで実行シェルを **明示的に指定** する（後述「shell 指定（MANDATORY）」参照）
+
+## shell 指定（MANDATORY）
+
+各 hook エントリには `"shell"` フィールドを **必ず** 明示する。`type: "command"` と同じ階層に配置する。
+
+| 値 | 用途 |
+|---|---|
+| `"powershell"` | Windows PowerShell / pwsh（本マーケットプレイス標準。Git Bash 起動失敗回避のため必須） |
+| `"bash"` | POSIX bash（macOS / Linux 専用フックの場合のみ。本マーケットプレイスでは使用しない） |
+
+### 指定する理由
+
+- `command` が `pwsh -NoProfile -File ...` 形式でも、OS デフォルトシェルが Git Bash の場合に `pwsh.exe` の引数解釈や PATH 解決で不整合が起きうる
+- `"shell": "powershell"` を明示することで、Claude Code が PowerShell ホストで command を起動する意図を一義的に伝達できる
+- `shell` フィールド未指定（OS デフォルト依存）は本マーケットプレイス基準では **不可**
+- 既存 Claude Code バージョンが `shell` フィールドを認識しない場合でも無視されるだけで、後方互換性は維持される（[`shell-preference.md`](https://github.com/dmajima/claude-plugins) と整合）
 
 > **テンプレートファイル注記**: 本 README はテンプレート格納場所（`references/templates/hook/`）にあるため、相対リンクではなく `${CLAUDE_PLUGIN_ROOT}` 起点の絶対パス記法で参照を記述する。テンプレートが配備された後はそれぞれの場所からの相対パスで解決される。
 
@@ -41,18 +58,19 @@ Claude Code フックの設定テンプレート。`hooks/hooks.json` 1 ファ�
 
 ## サンプル
 
-### Bash 実行前にコマンドをログ記録
+### PreToolUse: コマンド実行前のログ記録
 
 ```json
 {
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "PowerShell",
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/log_command.js",
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log_command.ps1\"",
+            "shell": "powershell",
             "timeout": 5
           }
         ]
@@ -72,7 +90,9 @@ Claude Code フックの設定テンプレート。`hooks/hooks.json` 1 ファ�
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -c \"[console]::beep(800,200)\""
+            "command": "pwsh -NoProfile -Command \"[console]::beep(800,200)\"",
+            "shell": "powershell",
+            "timeout": 3
           }
         ]
       }

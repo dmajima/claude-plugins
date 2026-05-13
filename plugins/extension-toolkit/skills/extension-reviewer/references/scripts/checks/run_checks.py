@@ -45,6 +45,13 @@ import re
 import sys
 from typing import Any
 
+# ~/.claude/rules/tools/python-encoding-mandatory.md 必須3点セット (2):
+# 環境変数 PYTHONUTF8=1 / PYTHONIOENCODING=utf-8 の補強として、明示的に再構成する。
+# stdout は ASCII プレフィックス（[OK]/[ERROR]/[DONE]）のみ流す設計だが、
+# 例外スタックトレース等で日本語が混じる経路もあるため安全側に倒す。
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
 import yaml
 
 
@@ -945,6 +952,92 @@ def check_no_bash_invocation(target: pathlib.Path, collector: IssueCollector) ->
                 break  # 同一ファイル内で複数検出しても一度だけ記録
 
 
+# --------------------------------------------------------------------------- #
+# 13. hook の shell フィールド明示チェック（PowerShell 統一補強、shell-preference.md）
+# --------------------------------------------------------------------------- #
+
+# `pwsh -NoProfile -File ...` を書いていても Claude Code の起動側シェルが Git Bash
+# だと引数解釈や PATH 解決でエッジケースが発生しうる。各 hook エントリで
+# `"shell": "powershell"` を明示することを必須化する。
+_ALLOWED_SHELL_VALUES = {"powershell", "bash"}
+_HOOK_SHELL_EXCLUDED_DIRS = {"templates", "template", "evals"}
+
+
+def check_hook_shell_field(target: pathlib.Path, collector: IssueCollector) -> None:
+    """13. hook の shell フィールド明示チェック（PowerShell 統一補強）。
+
+    検出項目:
+        - hooks.json 内の `type: "command"` を持つエントリに `"shell"` キーが存在しない -> High
+        - `"shell"` 値が `"powershell"` / `"bash"` 以外                                    -> High
+        - 本マーケットプレイスで `"shell": "bash"`                                          -> Medium
+
+    除外:
+        - templates / template / evals 配下のテンプレート・テスト fixture
+        - hooks/ 配下以外の hooks.json（誤検出防止）
+    """
+    for hooks_json in target.rglob("hooks.json"):
+        if is_excluded_dir(hooks_json, target):
+            continue
+        try:
+            rel_parts = hooks_json.relative_to(target).parts
+        except ValueError:
+            rel_parts = ()
+        if any(part in _HOOK_SHELL_EXCLUDED_DIRS for part in rel_parts):
+            continue
+        if hooks_json.parent.name != "hooks":
+            continue
+        text = read_text_safe(hooks_json)
+        if text is None:
+            continue
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            continue  # JSON 不正は別チェックで検出済み
+
+        hooks_root = data.get("hooks") if isinstance(data, dict) else None
+        if not isinstance(hooks_root, dict):
+            continue
+
+        for event_name, event_entries in hooks_root.items():
+            if not isinstance(event_entries, list):
+                continue
+            for entry in event_entries:
+                if not isinstance(entry, dict):
+                    continue
+                inner_hooks = entry.get("hooks")
+                if not isinstance(inner_hooks, list):
+                    continue
+                for hook_def in inner_hooks:
+                    if not isinstance(hook_def, dict):
+                        continue
+                    if hook_def.get("type") != "command":
+                        continue
+                    if "shell" not in hook_def:
+                        collector.add(
+                            "High",
+                            "hook の `shell` フィールド未指定（PowerShell 統一補強、shell-preference.md）",
+                            hooks_json,
+                            f"event={event_name} command={mask_preview(str(hook_def.get('command', '')))}",
+                        )
+                        continue
+                    shell_value = hook_def.get("shell")
+                    if shell_value not in _ALLOWED_SHELL_VALUES:
+                        collector.add(
+                            "High",
+                            "hook の `shell` フィールド値が不正",
+                            hooks_json,
+                            f"event={event_name} shell={shell_value!r} (期待値: 'powershell' / 'bash')",
+                        )
+                        continue
+                    if shell_value == "bash":
+                        collector.add(
+                            "Medium",
+                            "hook で `shell: bash` 指定（本マーケットプレイスは PowerShell 統一）",
+                            hooks_json,
+                            f"event={event_name} (shell-preference.md と整合させるには 'powershell' を推奨)",
+                        )
+
+
 _MIT_COPYRIGHT_RE = re.compile(r"^Copyright \(c\) (\S+) (.+)$")
 
 
@@ -1119,6 +1212,7 @@ CHECKS = [
     ("クロスマーケ依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7）", check_cross_marketplace_readme),
     ("プラグイン MIT LICENSE 配備（ADR-029）", check_mit_license),
     ("Bash 利用禁止（PowerShell 移行担保、shell-preference.md）", check_no_bash_invocation),
+    ("hook の shell フィールド明示（PowerShell 統一補強、shell-preference.md）", check_hook_shell_field),
 ]
 
 
