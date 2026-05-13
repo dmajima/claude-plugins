@@ -384,9 +384,9 @@ plugins/skill-router/
 │   └── skill-router/
 │       ├── SKILL.md
 │       ├── README.md
-│       └── evals/                # 動作分岐検証用ケース集（21 ケース）
+│       └── evals/                # 動作分岐検証用ケース集（23 ケース）
 │           ├── README.md
-│           └── case-01_*.md ... case-21_*.md
+│           └── case-01_*.md ... case-23_*.md
 └── references/
     ├── scripts/
     │   ├── hooks/

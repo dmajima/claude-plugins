@@ -27,6 +27,8 @@ skill-router スキルの動作分岐検証用ケース集。`parse_evals.py` �
 | `case-19_air_gapped_model_dl_failure` | 負例 | v0.4 HF モデル DL 失敗時のフェイルオープン（エアギャップ） | 自動・エラー系 |
 | `case-20_embedding_model_switch` | 変形 | v0.4 `embedding.model` 変更時の全キャッシュ無効化 | 運用・モデル切替 |
 | `case-21_entries_sha256_tamper` | 負例 | v0.4 manifest.json `entries_sha256` 不一致時のフェイルオープン | 自動・エラー系 |
+| `case-22_ambiguous_intent_interactive` | 正例 | SKILL.md 実行モード判定第 3 分岐 (不明意図 → AskUserQuestion で操作 / 診断確定) | 対話・意図判定 |
+| `case-23_status_clean_noninteractive` | 変形 | `/router-status --clean` の 30 日超セッション削除（破壊的副作用） | 操作系・非対話・破壊的 |
 
 ## カバレッジ達成状況
 
@@ -35,7 +37,9 @@ skill-router スキルの動作分岐検証用ケース集。`parse_evals.py` �
 | コマンド分岐（rebuild / status / toggle on/off） | ✓ | case-01, 02, 03, 08 |
 | スコアリング正例 / 負例 | ✓ | case-02 (実値の正常範囲), case-04 (skip 発火) |
 | 診断 3 分岐 | ✓ | case-05, 06, 07 |
-| 対話モード / 非対話モード | ✓ | case-01〜08 (対話), case-09 (非対話) |
+| 対話モード / 非対話モード | ✓ | case-01〜08, 22 (対話), case-09, 17, 23 (非対話) |
+| 実行モード判定 (明確 / 症状 / 不明) | ✓ | case-01〜03 (明確), case-05〜07 (症状), case-22 (不明 → AskUserQuestion) |
+| 破壊的副作用を伴う非対話モード | ✓ | case-17 (`--clear`), case-23 (`--clean`) |
 | エラー系（フェイルオープン） | ✓ | case-10, case-14, case-19, case-21 |
 | v0.4 埋め込み有効化フロー | ✓ | case-11 (キャッシュヒット), case-12 (boost), case-13 (no-op) |
 | v0.4 `/router-embedding-cache` | ✓ | case-16 (統計), case-17 (--clear 非対話), case-18 (--show) |

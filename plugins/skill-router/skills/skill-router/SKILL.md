@@ -1,6 +1,6 @@
 ---
 name: skill-router
-description: skill-router の状態確認・index 再構築・埋め込みキャッシュ参照・トグル切替を案内する操作スキル。「router の状態」「インデックス再構築」「skill-router を停止」「埋め込みキャッシュ確認」等で起動。Use when operating skill-router. SKIP when editing routing logic (use hook-toolkit or edit route.py directly).
+description: skill-router の状態確認・index 再構築・埋め込みキャッシュ参照・トグル切替を案内する操作スキル（対象: <base>/index.json・route.log・config.json 等）。「router の状態を見たい」「インデックスを再構築」「skill-router を停止」「推奨が出ない」等で起動。Use when operating or diagnosing skill-router. SKIP when editing routing logic (use hook-toolkit or edit route.py directly).
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
@@ -130,7 +130,7 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 
 | 用途 | パス |
 |-----|------|
-| 動作分岐検証ケース | `${CLAUDE_SKILL_DIR}/evals/README.md`（case-01〜case-21 の 21 ケース：コマンド誘導 / 診断フロー / 非対話モード / フェイルオープン / 埋め込みキャッシュ操作） |
+| 動作分岐検証ケース | `${CLAUDE_SKILL_DIR}/evals/README.md`（case-01〜case-23 の 23 ケース：コマンド誘導 / 診断フロー / 対話・非対話・不明意図モード / フェイルオープン / 埋め込みキャッシュ操作 / 破壊的副作用） |
 | ルーティング本体 | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/route.py` |
 | インデクサ | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/build_index.py` |
 | evals パーサ | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/parse_evals.py` |

@@ -7,7 +7,7 @@ Windows 環境で `<base>/embeddings_cache/models/` のフルパス長が 100 �
 | 項目 | 内容 |
 |-----|------|
 | OS | Windows |
-| 既存状態 | `embedding.enabled=true`、`embedding.cache_dir` 未指定（`null`）、`<base>` が深いパス（例: `C:\inetpub\wwwroot\dmajima-claude-plugins\plugins\skill-router\.claude\.local\work\xxx\workspace\verify-base`）配下にある |
+| 既存状態 | `embedding.enabled=true`、`embedding.cache_dir` 未指定（`null`）、`<base>` が深いパス（例: `<repo-root>\.claude\.local\work\<session>\workspace\verify-base` のように合算 100 文字超）配下にある |
 | モード | 非対話（自動・SessionStart）|
 
 ## トリガープロンプト

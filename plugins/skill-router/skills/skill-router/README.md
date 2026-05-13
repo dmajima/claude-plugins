@@ -12,7 +12,7 @@ skill-router プラグインの **操作・診断ガイド** スキル。Claude 
 skills/skill-router/
 ├── SKILL.md            # スキル定義（Claude Code が実行時に読み込む）
 ├── README.md           # このファイル（人間向け）
-└── evals/              # 動作分岐検証用ケース集（21 ケース）
+└── evals/              # 動作分岐検証用ケース集（23 ケース）
     ├── README.md       # ケース一覧・実行確認方法
     ├── case-01_rebuild.md                              # 操作系: /router-rebuild 案内
     ├── case-02_status.md                               # 操作系: /router-status 案内
@@ -34,7 +34,9 @@ skills/skill-router/
     ├── case-18_router_embedding_cache_show.md          # 操作系: --show 単一スキル
     ├── case-19_air_gapped_model_dl_failure.md          # 埋め込み: エアギャップ DL 失敗
     ├── case-20_embedding_model_switch.md               # 埋め込み: モデル切替時の全件無効化
-    └── case-21_entries_sha256_tamper.md                # 埋め込み: entries_sha256 改竄検出
+    ├── case-21_entries_sha256_tamper.md                # 埋め込み: entries_sha256 改竄検出
+    ├── case-22_ambiguous_intent_interactive.md         # 対話: 不明意図 → AskUserQuestion
+    └── case-23_status_clean_noninteractive.md          # 非対話: /router-status --clean 30 日超削除
 ```
 
 実行ロジックはプラグイン直下の `references/scripts/lib/` に集約されており、本スキル内には Python ソースを置かない（ADR-024 / ADR-025 準拠）。
