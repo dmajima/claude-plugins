@@ -2,21 +2,18 @@
 
 Run from the repository root with the standard library only::
 
-    python -m unittest plugins/skill-router/tests/test_build_index.py
+    python -m unittest plugins/skill-router/references/scripts/tests/test_build_index.py
 """
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
-_LIB = (
-    Path(__file__).resolve().parent.parent
-    / "references"
-    / "scripts"
-    / "lib"
-)
+_LIB = Path(__file__).resolve().parent.parent / "lib"
 sys.path.insert(0, str(_LIB))
 
 import build_index  # noqa: E402  (path adjusted above)
@@ -110,7 +107,11 @@ class ResolveInstallPathTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
-        self.real_dir = Path(self._tmp.name)
+        # ``_resolve_install_path`` calls ``Path.resolve(strict=True)`` which
+        # canonicalises Windows 8.3 short paths (e.g. ``WWDMAJ~1``) into their
+        # long-name form.  Mirror that here so equality assertions hold on
+        # any Windows runner regardless of the user profile name length.
+        self.real_dir = Path(self._tmp.name).resolve()
 
     def _v2(self, entries):
         return {"version": 2, "plugins": {"foo@bar": entries}}
@@ -216,6 +217,83 @@ class ResolveInstallPathTests(unittest.TestCase):
             "foo@bar",
         )
         self.assertIn(result, {a, b})
+
+
+class BuildEntryPointSmokeTests(unittest.TestCase):
+    """End-to-end coverage for the v0.4 build() with embedding disabled.
+
+    ``embedding.enabled = false`` (the default) is the existing-user
+    code path; if it ever started touching the LLM/embedding stack the
+    on-disk index would gain unintended fields.  This test pins the
+    output schema (SCHEMA_VERSION = 3, ``stats.embedding`` present).
+    """
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.addCleanup(self._close_log_handlers)
+        self.base = Path(self._tmp.name)
+        self._patch_base = mock.patch.object(
+            build_index, "resolve_base_dir", return_value=self.base
+        )
+        self._patch_base.start()
+        self.addCleanup(self._patch_base.stop)
+        self._patch_read = mock.patch.object(
+            build_index, "_read_json", return_value=None
+        )
+        self._patch_read.start()
+        self.addCleanup(self._patch_read.stop)
+
+    @staticmethod
+    def _close_log_handlers() -> None:
+        import logging as _logging
+
+        lg = _logging.getLogger("skill_router.build_index")
+        for handler in list(lg.handlers):
+            try:
+                handler.close()
+            except Exception:
+                pass
+            lg.removeHandler(handler)
+
+    def test_build_emits_schema_v3_and_stats_embedding_disabled(self) -> None:
+        index = build_index.build()
+        self.assertEqual(index["schema_version"], 3)
+        self.assertIn("embedding", index["stats"])
+        self.assertFalse(index["stats"]["embedding"]["enabled"])
+        self.assertEqual(index["stats"]["embedding"]["skills_vectorised"], 0)
+        self.assertEqual(index["skills"], [])
+        self.assertTrue((self.base / "index.json").is_file())
+        on_disk = json.loads((self.base / "index.json").read_text(encoding="utf-8"))
+        self.assertEqual(on_disk["schema_version"], 3)
+        self.assertFalse(on_disk["stats"]["embedding"]["enabled"])
+
+    def test_build_passes_user_config_into_embedding_pipeline(self) -> None:
+        # Place a config.json that turns embedding on.  ensure_skill_vectors
+        # is patched to assert it was called with enabled=True and the
+        # supplied model name.
+        (self.base).mkdir(parents=True, exist_ok=True)
+        (self.base / "config.json").write_text(
+            json.dumps(
+                {
+                    "embedding": {
+                        "enabled": True,
+                        "model": "BAAI/bge-small-en-v1.5",
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        with mock.patch.object(
+            build_index.embedding_enrich,
+            "ensure_skill_vectors",
+            return_value=({}, None),
+        ) as ensure:
+            build_index.build()
+        self.assertEqual(ensure.call_count, 1)
+        cfg = ensure.call_args[0][2]
+        self.assertTrue(cfg.enabled)
+        self.assertEqual(cfg.model, "BAAI/bge-small-en-v1.5")
 
 
 if __name__ == "__main__":

@@ -37,12 +37,12 @@ HTML にして
 
 ## 分岐の根拠
 
-設計書 v2 セクション 5.2.1（`skip_phrase_combo` / `skip_phrase_single`）で C1 改訂として導入された負例抑制機構の代表ケース。動詞 + 名詞共起と単独発火の両分岐をテストする。
+`references/scripts/lib/route.py` の `_skip_phrase_signals` および `score_skill` の `weights.skip_phrase_combo` / `skip_phrase_single`。動詞 + 名詞共起と単独発火の両分岐をテストする負例抑制機構の代表ケース。
 
 ## 関連ケース
 
 - `case-01_rebuild` / `case-02_status` — 正例ケース群
-- `case-10_single_candidate`（未実装、Phase 1 後半で追加予定）— top2 = 0 時の tier 判定
+- `case-10_fail_open` — index 破損時の挙動
 
 ## 備考
 

@@ -1,6 +1,6 @@
 ---
 name: skill-router
-description: skill-router の `<base>/index.json` / disabled / ログを操作・診断するスキル。「router の状態確認」「インデックス再構築」「skill-router を停止」等の依頼で起動し、`/router-rebuild` `/router-status` `/router-toggle` の使い分けと配置場所を説明する。Use when operating skill-router. SKIP when editing routing logic (use hook-toolkit or edit route.py).
+description: skill-router の状態確認・index 再構築・埋め込みキャッシュ参照・トグル切替を案内する操作スキル（対象: <base>/index.json・route.log・config.json 等）。「router の状態を見たい」「インデックスを再構築」「skill-router を停止」「推奨が出ない」等で起動。Use when operating or diagnosing skill-router. SKIP when editing routing logic (use hook-toolkit or edit route.py directly).
 allowed-tools: Read, Grep, Glob, Bash
 ---
 
@@ -79,24 +79,45 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 
 | ファイル | 役割 |
 |---------|------|
-| `<base>/config.json` | 重み・閾値の外部化 |
-| `<base>/index.json` + `index.pkl` | インデックス本体 |
+| `<base>/config.json` | 重み・閾値・埋め込み設定の外部化 |
+| `<base>/index.json` | インデックス本体（schema_version=3 から `stats.embedding` 含む） |
 | `<base>/inverted_index.json` | 逆引き索引 |
+| `<base>/embeddings_cache/vectors.npz` | 各スキルの埋め込みベクトル（NumPy 配列） |
+| `<base>/embeddings_cache/manifest.json` | スキル名 → ベクトル行番号・content_hash・model の対応 |
+| `<base>/embeddings_cache/models/` | fastembed の ONNX モデルキャッシュ |
 | `<base>/disabled` | トグル無効化フラグ |
 | `<base>/sessions/<id>/prompts.jsonl` | プロンプト履歴 |
-| `<base>/sessions/<id>/route_decisions.jsonl` | ルーティング決定履歴 |
+| `<base>/sessions/<id>/route_decisions.jsonl` | ルーティング決定履歴（`embedding_used` を含む） |
 
 ## 関連スキル / コマンド
 
 | 種別 | 名前 | 用途 |
 |-----|------|------|
-| コマンド | `/router-rebuild` | index 手動再構築 |
-| コマンド | `/router-status` | 統計・直近決定・スコア分布表示（`--clean` で 30 日超セッション削除） |
+| コマンド | `/router-rebuild` | index 手動再構築（embedding 有効時はベクトルも差分更新） |
+| コマンド | `/router-status` | 統計・直近決定・スコア分布表示（`--clean` で 30 日超セッション削除）。`stats.embedding` も含めて表示 |
 | コマンド | `/router-toggle` | `on` / `off` 切り替え |
+| コマンド | `/router-embedding-cache` | 埋め込みキャッシュ参照・クリア（v0.4） |
 
-## evals
+## 埋め込み判定（v0.4+）
 
-`evals/case-01_rebuild.md` 〜 `evals/case-10_fail_open.md` の 10 ケースで、コマンド誘導・ルーティング判定の負例・診断フロー・非対話モード・フェイルオープン挙動をカバーする。詳細は `evals/README.md` を参照。
+`<base>/config.json` の `embedding` セクションで **完全ローカル** の意味的類似度判定を有効化できる。外部 API には一切接続しない。デフォルトは無効（`embedding.enabled: false`）で、有効化前後の挙動・初回モデル DL・ディスク占有・トラブルシュート方法をユーザに案内すること。
+
+| キー | 既定 | 説明 |
+|-----|------|------|
+| `embedding.enabled` | `false` | 親スイッチ |
+| `embedding.model` | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | fastembed が対応する多言語埋め込みモデル |
+| `embedding.cache_dir` | `null` | モデル ONNX キャッシュ先（null は `<base>/embeddings_cache/models/`） |
+| `embedding.weight` | `3.0` | コサイン類似度に乗じる係数 |
+| `embedding.min_similarity` | `0.3` | この値未満はスコア加算しない（ノイズ抑制） |
+| `embedding.max_skills_per_run` | `200` | 1 SessionStart で再ベクトル化するスキル数の上限 |
+
+動作:
+- **SessionStart**: 各スキルの description / use_when / skip_when / trigger_phrases / evals.prompt を結合して fastembed で 384 次元ベクトルに変換し `<base>/embeddings_cache/vectors.npz` に保存（content hash で差分のみ再計算）
+- **UserPromptSubmit**: プロンプトをベクトル化し、heuristic 候補との **コサイン類似度** を計算。`boosted = heuristic + weight * max(0, sim - min_similarity)` でスコアを補正
+
+外部通信は **初回モデル DL のみ**（HuggingFace ハブから）。エアギャップ環境では事前に `embeddings_cache/models/` を配置してください。
+
+埋め込み機能の状態は `/router-status` の `stats.embedding` で確認できる。キャッシュ参照は `/router-embedding-cache` を案内すること。
 
 ## 重要な制約
 
@@ -109,9 +130,13 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 
 | 用途 | パス |
 |-----|------|
+| 動作分岐検証ケース | `${CLAUDE_SKILL_DIR}/evals/README.md`（case-01〜case-23 の 23 ケース：コマンド誘導 / 診断フロー / 対話・非対話・不明意図モード / フェイルオープン / 埋め込みキャッシュ操作 / 破壊的副作用） |
 | ルーティング本体 | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/route.py` |
 | インデクサ | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/build_index.py` |
 | evals パーサ | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/parse_evals.py` |
 | セッション状態 | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/session_state.py` |
-| spike 一覧 | `${CLAUDE_PLUGIN_ROOT}/references/spike/` |
+| 埋め込みクライアント (v0.4) | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/embedding_client.py` |
+| スキルベクトル化 (v0.4) | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/embedding_enrich.py` |
+| 類似度補助スコア (v0.4) | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/embedding_route.py` |
+| 設計時調査記録（research） | `${CLAUDE_PLUGIN_ROOT}/references/research/` |
 | 設定既定値 | `${CLAUDE_PLUGIN_ROOT}/references/templates/config.default.json` |

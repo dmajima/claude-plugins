@@ -16,6 +16,19 @@ skill-router スキルの動作分岐検証用ケース集。`parse_evals.py` �
 | `case-08_toggle_on` | 正例 | `/router-toggle on` + 全階層フラグ削除 | 操作系・対話・べき等 |
 | `case-09_non_interactive` | 変形 | `/router-toggle off` 非対話モード | 操作系・非対話 |
 | `case-10_fail_open` | 負例 | index 破損時のフェイルオープン挙動 | 自動・エラー系 |
+| `case-11_embedding_cache_hit` | 正例 | v0.4 `embedding.enabled=true` 時の SessionStart キャッシュヒット | 自動・キャッシュ |
+| `case-12_embedding_boost_reorder` | 正例 | v0.4 コサイン類似度ブーストによる上位候補入れ替え | 自動・スコアリング |
+| `case-13_embedding_disabled` | 正例 | v0.4 `embedding.enabled=false` 既定での後方互換 no-op | 自動・後方互換 |
+| `case-14_cache_tamper_failopen` | 負例 | v0.4 vectors.npz 改竄検出時のフェイルオープン | 自動・エラー系 |
+| `case-15_max_path_fallback` | 変形 | v0.4 Windows MAX_PATH 超過時の cache_dir 自動フォールバック | OS 別・運用 |
+| `case-16_router_embedding_cache_modes` | 正例 | v0.4 `/router-embedding-cache` 統計表示モード | 操作系・対話 |
+| `case-17_router_embedding_cache_clear_noninteractive` | 変形 | v0.4 `/router-embedding-cache --clear` 非対話モード | 操作系・非対話 |
+| `case-18_router_embedding_cache_show` | 正例 | v0.4 `/router-embedding-cache --show <qn>` 単一スキル詳細 | 操作系・非対話 |
+| `case-19_air_gapped_model_dl_failure` | 負例 | v0.4 HF モデル DL 失敗時のフェイルオープン（エアギャップ） | 自動・エラー系 |
+| `case-20_embedding_model_switch` | 変形 | v0.4 `embedding.model` 変更時の全キャッシュ無効化 | 運用・モデル切替 |
+| `case-21_entries_sha256_tamper` | 負例 | v0.4 manifest.json `entries_sha256` 不一致時のフェイルオープン | 自動・エラー系 |
+| `case-22_ambiguous_intent_interactive` | 正例 | SKILL.md 実行モード判定第 3 分岐 (不明意図 → AskUserQuestion で操作 / 診断確定) | 対話・意図判定 |
+| `case-23_status_clean_noninteractive` | 変形 | `/router-status --clean` の 30 日超セッション削除（破壊的副作用） | 操作系・非対話・破壊的 |
 
 ## カバレッジ達成状況
 
@@ -24,8 +37,16 @@ skill-router スキルの動作分岐検証用ケース集。`parse_evals.py` �
 | コマンド分岐（rebuild / status / toggle on/off） | ✓ | case-01, 02, 03, 08 |
 | スコアリング正例 / 負例 | ✓ | case-02 (実値の正常範囲), case-04 (skip 発火) |
 | 診断 3 分岐 | ✓ | case-05, 06, 07 |
-| 対話モード / 非対話モード | ✓ | case-01〜08 (対話), case-09 (非対話) |
-| エラー系（フェイルオープン） | ✓ | case-10 |
+| 対話モード / 非対話モード | ✓ | case-01〜08, 22 (対話), case-09, 17, 23 (非対話) |
+| 実行モード判定 (明確 / 症状 / 不明) | ✓ | case-01〜03 (明確), case-05〜07 (症状), case-22 (不明 → AskUserQuestion) |
+| 破壊的副作用を伴う非対話モード | ✓ | case-17 (`--clear`), case-23 (`--clean`) |
+| エラー系（フェイルオープン） | ✓ | case-10, case-14, case-19, case-21 |
+| v0.4 埋め込み有効化フロー | ✓ | case-11 (キャッシュヒット), case-12 (boost), case-13 (no-op) |
+| v0.4 `/router-embedding-cache` | ✓ | case-16 (統計), case-17 (--clear 非対話), case-18 (--show) |
+| v0.4 改竄検出フェイルオープン | ✓ | case-14 (vectors.npz), case-21 (manifest.json) |
+| v0.4 Windows MAX_PATH フォールバック | ✓ | case-15 |
+| v0.4 エアギャップ / モデル DL 失敗 | ✓ | case-19 |
+| v0.4 モデル切替時の全無効化 | ✓ | case-20 |
 
 ## 実行確認方法
 

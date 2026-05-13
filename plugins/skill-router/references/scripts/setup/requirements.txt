@@ -1,10 +1,17 @@
 # skill-router requirements
 #
-# This plugin is intentionally stdlib-only (design v2 section 14.1).
-# Phase 2 dependencies (e.g. tinysegmenter) can be added by appending
-# pinned lines below; an empty file or a comment-only file is treated as
-# "no dependencies" by venv_lifecycle and skips venv construction
-# entirely.
+# v0.4.0 introduces optional local embedding-based routing.  The
+# dependencies below are installed eagerly by venv_lifecycle when the
+# user opts in (``embedding.enabled = true``); they remain unused at
+# import time when the feature is disabled because embedding_client
+# falls back to a no-op path if fastembed cannot be imported.
+#
+# Approximate disk footprint after install:
+#   fastembed       ~400 MB (vendored onnxruntime wheels)
+#   onnxruntime      ~80 MB
+#   numpy            ~50 MB
+#   model on first use  ~120 MB (paraphrase-multilingual-MiniLM-L12-v2)
+# Total ~650 MB; remains under the 1 GB design budget.
 #
 # venv lifecycle is managed in-tree by
 # references/scripts/lib/venv_lifecycle.py and invoked from the
@@ -18,3 +25,11 @@
 #   * teardown   : when the venv is older than 72 h, evaluated at the
 #                  end of the UserPromptSubmit hook so the user-facing
 #                  response is never blocked.
+
+fastembed>=0.3,<1.0
+numpy>=1.24,<3.0
+# Pinned explicitly even though fastembed already depends on it: this
+# lets operators apply CVE patches (or freeze a known-good version)
+# without having to wait for a new fastembed release.  See security
+# review M-6.
+onnxruntime>=1.17,<2.0

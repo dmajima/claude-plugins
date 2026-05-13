@@ -1,14 +1,13 @@
-"""Spike S4: verify that SessionStart matcher='clear' actually fires on /clear.
+"""Research S1: confirm whether UserPromptSubmit stdin JSON provides session_id.
 
-Wire this script as a SessionStart hook with matcher 'startup|resume|clear'
-(temporary local hooks.json).  It records each invocation with the
-hook_event_name + matcher payload so a /clear sequence can be tested end-to-end.
+How to run:
+  - Wire this script as a temporary UserPromptSubmit hook (see header docstring).
+  - Send a few prompts and check the produced log lines.
+  - On success, every record contains a non-empty session_id field, allowing
+    the v2 fallback chain in session_state.py to be simplified.
 
-Expected log progression for a typical session:
-  startup -> /clear -> clear -> resume(?)
-
-If 'clear' never appears, design v2 D1/H2 must adjust to a manual
-/router-rebuild fallback.
+The script reads stdin as JSON, logs presence/absence of the session_id and
+transcript_path fields, and always exits 0.
 """
 from __future__ import annotations
 
@@ -21,10 +20,10 @@ from pathlib import Path
 
 def _log_path() -> Path:
     base = Path(os.environ.get("CLAUDE_PLUGIN_DATA", "")).expanduser()
-    if not str(base):
-        base = Path.home() / ".claude" / ".local" / "plugins" / "skill-router" / "spike"
+    if not base or not str(base):
+        base = Path.home() / ".claude" / ".local" / "plugins" / "skill-router" / "research"
     base.mkdir(parents=True, exist_ok=True)
-    return base / "s4_session_start_clear.log"
+    return base / "s1_session_id.log"
 
 
 def main() -> int:
@@ -34,9 +33,11 @@ def main() -> int:
         payload = {}
     record = {
         "ts": datetime.now(timezone.utc).isoformat(),
-        "hook_event_name": payload.get("hook_event_name"),
-        "matcher_value": payload.get("matcher"),
+        "has_session_id": bool(payload.get("session_id")),
         "session_id_preview": (payload.get("session_id") or "")[:8],
+        "has_transcript_path": bool(payload.get("transcript_path")),
+        "hook_event_name": payload.get("hook_event_name"),
+        "cwd": payload.get("cwd"),
     }
     try:
         with _log_path().open("a", encoding="utf-8") as fh:

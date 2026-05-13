@@ -32,18 +32,29 @@ if [[ -z "${PYTHON_BIN}" ]]; then
   exit 0
 fi
 
-# Toggle check. Resolution order matches design v2 section 4.4:
-#   1. CLAUDE_PLUGIN_DATA/disabled   (if the variable is provided)
-#   2. <pwd>/.claude/.local/plugins/skill-router/disabled  (repository scope)
-#   3. <user-home>/.claude/.local/plugins/skill-router/disabled (user scope, last resort)
+# Toggle check. Resolution order matches build_index.resolve_base_dir
+# (Python) and references/scripts/commands/resolve_base.sh (Bash CLI):
+#   1. CLAUDE_PLUGIN_DATA/disabled                        (if set)
+#   2. <repo-root>/.claude/.local/plugins/skill-router/disabled
+#                                                         (.git upward search)
+#   3. <user-home>/.claude/.local/plugins/skill-router/disabled
+#                                                         (last resort)
+# Disabled flag at *any* layer disables routing (logical OR), matching the
+# /router-toggle status / on / off semantics and avoiding the Python/Bash
+# inconsistency raised by architect H1/H2.
 # Windows compatibility: HOME may be unset; fall back to USERPROFILE.
 HOME_DIR="${HOME:-${USERPROFILE:-}}"
+
+# shellcheck source=../commands/resolve_base.sh
+source "${PLUGIN_ROOT}/references/scripts/commands/resolve_base.sh"
 
 if [[ -n "${CLAUDE_PLUGIN_DATA:-}" && -f "${CLAUDE_PLUGIN_DATA}/disabled" ]]; then
   exit 0
 fi
-if [[ -f "${PWD}/.claude/.local/plugins/skill-router/disabled" ]]; then
-  exit 0
+if _repo="$(project_root)"; then
+  if [[ -f "${_repo}/.claude/.local/plugins/skill-router/disabled" ]]; then
+    exit 0
+  fi
 fi
 if [[ -n "${HOME_DIR}" && -f "${HOME_DIR}/.claude/.local/plugins/skill-router/disabled" ]]; then
   exit 0

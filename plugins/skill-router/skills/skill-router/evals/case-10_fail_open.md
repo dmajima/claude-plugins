@@ -39,12 +39,12 @@
 
 ## 分岐の根拠
 
-設計書 v2 セクション 9.3「フェイルオープン原則」と D2「Bash 側 JSON パース禁止」。ルーティング処理は補助機能でありユーザの本来作業をブロックしてはならないため、すべての例外パスで exit 0 を貫く。
+`references/scripts/lib/route.py` と `build_index.py` の `main()` の `try/except` フェイルオープン構造、および `references/scripts/hooks/route_prompt.sh` の「Bash 側で JSON パースしない」原則。ルーティング処理は補助機能でありユーザの本来作業をブロックしてはならないため、すべての例外パスで exit 0 を貫く。
 
 ## 関連ケース
 
 - `case-04_skip_negative` — 正常系のスコアリング動作
-- spike `s2_hook_concat.py` — 複数フック additionalContext 競合時の挙動
+- `references/research/s2_hook_concat.py` — 複数フック additionalContext 競合時の挙動
 
 ## 備考
 

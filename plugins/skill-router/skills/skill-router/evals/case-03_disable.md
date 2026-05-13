@@ -35,11 +35,11 @@ skill-router を一時停止して
 
 ## 分岐の根拠
 
-設計書 v2 セクション 7「スラッシュコマンド仕様」とセクション 4.4「base 解決順位」に基づく即時無効化機構。`route_prompt.sh` のトグル参照順位と一致しており、Claude Code 再起動なしで反映される。
+`commands/router-toggle.md` と `references/scripts/hooks/route_prompt.sh` のトグル参照順位に基づく即時無効化機構。`route_prompt.sh` の base 解決順位と一致しており、Claude Code 再起動なしで反映される。
 
 ## 関連ケース
 
-- `case-08_toggle_on`（未実装、Phase 1 後半で追加予定）— 再有効化（`/router-toggle on`）分岐
+- `case-08_toggle_on` — 再有効化（`/router-toggle on`）分岐
 - `case-02_status` — disabled フラグ存在時の status 表示（OFF 表示確認）
 
 ## 備考
