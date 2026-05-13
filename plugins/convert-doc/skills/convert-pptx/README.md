@@ -14,7 +14,7 @@ Markdown を Wiki デザインの PowerPoint (PPTX) に変換するスキル。`
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-依存パッケージ（python-pptx / Pillow / requests / Pygments）は初回実行時に `references/scripts/setup/setup_venv.sh` が自動で venv を構築してインストールします。mermaid 図の取得には `mermaid.ink` への HTTPS 接続が必要です（オフライン環境ではテキストコードブロックにフォールバックします）。
+依存パッケージ（python-pptx / Pillow / requests / Pygments）は初回実行時に `references/scripts/setup/setup_venv.ps1` が自動で venv を構築してインストールします。mermaid 図の取得には `mermaid.ink` への HTTPS 接続が必要です（オフライン環境ではテキストコードブロックにフォールバックします）。
 
 ## 仕組み
 
@@ -55,8 +55,8 @@ skills/convert-pptx/
     │   └── convert_pptx.py
     └── setup/
         ├── requirements.txt
-        ├── setup_venv.sh
-        └── teardown_venv.sh
+        ├── setup_venv.ps1
+        └── teardown_venv.ps1
 ```
 
 ## カスタマイズ

@@ -17,7 +17,7 @@ Markdown ファイルを Wiki スタイルのデザインが適用された自�
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-依存パッケージ（markdown / Pygments / rcssmin / rjsmin / Pillow）は初回実行時に `references/scripts/setup/setup_venv.sh` が自動で venv を構築してインストールします。
+依存パッケージ（markdown / Pygments / rcssmin / rjsmin / Pillow）は初回実行時に `references/scripts/setup/setup_venv.ps1` が自動で venv を構築してインストールします。
 
 ## 使い方
 
@@ -143,8 +143,8 @@ convert-html/
 ├── scripts/
 │   ├── setup/                        # 環境構築
 │   │   ├── requirements.txt          # Python 依存パッケージ
-│   │   ├── setup_venv.sh             # venv 構築スクリプト
-│   │   └── teardown_venv.sh          # venv 削除スクリプト
+│   │   ├── setup_venv.ps1            # venv 構築スクリプト
+│   │   └── teardown_venv.ps1         # venv 削除スクリプト
 │   └── convert/                      # 変換処理
 │       └── convert.py                # Markdown → HTML 変換スクリプト
 └── references/
