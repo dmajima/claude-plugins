@@ -282,6 +282,12 @@ class PPTXMarkdownConverter:
             Path(args.structured_json).resolve() if getattr(args, "structured_json", None) else None
         )
         self.json_only = bool(getattr(args, "json_only", False))
+        self.per_slide_json_dir = (
+            Path(args.per_slide_json).resolve() if getattr(args, "per_slide_json", None) else None
+        )
+        self.compact_view_dir = (
+            Path(args.compact_view).resolve() if getattr(args, "compact_view", None) else None
+        )
 
     # ---------- エントリ ----------
 
@@ -365,6 +371,189 @@ class PPTXMarkdownConverter:
         with open(self.structured_json_path, "w", encoding="utf-8", newline="\n") as fh:
             json.dump(document, fh, ensure_ascii=False, indent=2)
         return self.structured_json_path
+
+    def export_per_slide_json(self) -> int:
+        """大規模 PPTX 向け: スライド単位 JSON とメタデータ JSON を出力する。
+
+        出力構成:
+            <per-slide-dir>/metadata.json     -- 全体メタ（slide_count, 寸法, template_decoration_texts）
+            <per-slide-dir>/slide-01.json     -- スライドごとの shape/connector データ
+            <per-slide-dir>/slide-02.json
+            ...
+
+        Phase 2 で Claude がスライド単位に Read することで、コンテキスト ウィンドウへの
+        負荷を分散できる（サブエージェント並列分担にも適する）。
+        """
+        import json
+
+        _validate_pptx(self.input_path)
+        presentation = Presentation(str(self.input_path))
+        self.images_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            self._slide_width_emu = presentation.slide_width
+            self._slide_height_emu = presentation.slide_height
+        except Exception:
+            self._slide_width_emu = None
+            self._slide_height_emu = None
+
+        template_texts = list(self._collect_template_texts(presentation))
+
+        assert self.per_slide_json_dir is not None
+        self.per_slide_json_dir.mkdir(parents=True, exist_ok=True)
+
+        slide_summaries: List[dict] = []
+        emitted = 0
+        for slide in presentation.slides:
+            if self._is_hidden(slide) and not self.include_hidden:
+                continue
+            emitted += 1
+            slide_data = self._slide_to_dict(slide, emitted)
+            slide_path = self.per_slide_json_dir / f"slide-{emitted:02d}.json"
+            with open(slide_path, "w", encoding="utf-8", newline="\n") as fh:
+                json.dump(slide_data, fh, ensure_ascii=False, indent=2)
+            slide_summaries.append({
+                "slide_no": emitted,
+                "layout_name": slide_data["layout_name"],
+                "is_section_cover_layout": slide_data["is_section_cover_layout"],
+                "shape_count": len(slide_data["shapes"]),
+                "connector_count": len(slide_data["connectors"]),
+                "has_notes": bool(slide_data["notes"]),
+                "file": slide_path.name,
+            })
+
+        metadata = {
+            "input_path": str(self.input_path),
+            "slide_count": emitted,
+            "slide_width_emu": self._slide_width_emu,
+            "slide_height_emu": self._slide_height_emu,
+            "images_dir": str(self.images_dir),
+            "template_decoration_texts": template_texts,
+            "schema_version": "1.0",
+            "slides_index": slide_summaries,
+        }
+        with open(self.per_slide_json_dir / "metadata.json", "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(metadata, fh, ensure_ascii=False, indent=2)
+        return emitted
+
+    def export_compact_view(self) -> int:
+        """大規模 PPTX 向け: 1 スライド 1 ファイルの人間/LLM 可読な簡潔ビューを出力する。
+
+        各 shape は 1 行で「pos (top,left) / size (h,w) / フォント / プレースホルダ / フラグ / テキスト」を表示する。
+        Claude が Read で読み込み Phase 2 解釈する際の標準フォーマット。
+        """
+        _validate_pptx(self.input_path)
+        presentation = Presentation(str(self.input_path))
+        self.images_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            self._slide_width_emu = presentation.slide_width
+            self._slide_height_emu = presentation.slide_height
+        except Exception:
+            self._slide_width_emu = None
+            self._slide_height_emu = None
+
+        template_texts = self._collect_template_texts(presentation)
+
+        assert self.compact_view_dir is not None
+        self.compact_view_dir.mkdir(parents=True, exist_ok=True)
+
+        emitted = 0
+        for slide in presentation.slides:
+            if self._is_hidden(slide) and not self.include_hidden:
+                continue
+            emitted += 1
+            view_text = self._render_compact_slide_view(slide, emitted, template_texts)
+            view_path = self.compact_view_dir / f"slide-{emitted:02d}.txt"
+            with open(view_path, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(view_text)
+        return emitted
+
+    def _render_compact_slide_view(self, slide, slide_no: int, template_texts: set) -> str:
+        """1 スライドを人間/LLM 可読な簡潔ビュー文字列にする。"""
+        try:
+            layout_name = slide.slide_layout.name or ""
+        except Exception:
+            layout_name = ""
+        is_cover = self._is_section_cover_layout(slide)
+
+        # shape を再帰展開して位置情報付きで集める
+        shapes_data: List[dict] = []
+        connectors_data: List[dict] = []
+        self._walk_shape_to_dict(slide.shapes, slide_no, shapes_data, connectors_data, parent_path=[])
+
+        lines: List[str] = []
+        lines.append(f"=== Slide {slide_no} ===")
+        lines.append(f"layout: {layout_name!r}")
+        lines.append(f"is_section_cover: {is_cover}")
+        lines.append(f"shape_count: {len(shapes_data)}, connector_count: {len(connectors_data)}")
+        lines.append("")
+
+        # 視覚順 (top, left)
+        sorted_shapes = sorted(
+            shapes_data,
+            key=lambda s: (
+                (s["geometry"].get("top_ratio") or 0),
+                (s["geometry"].get("left_ratio") or 0),
+            ),
+        )
+
+        for idx, shape in enumerate(sorted_shapes):
+            g = shape["geometry"]
+            top_r = g.get("top_ratio") or 0
+            left_r = g.get("left_ratio") or 0
+            h_r = g.get("height_ratio") or 0
+            w_r = g.get("width_ratio") or 0
+            ph = shape.get("placeholder")
+            ph_str = f"ph={ph['type']}" if ph else "ph=-"
+            auto = shape.get("auto_shape_type") or ""
+            auto_str = f"auto={auto}" if auto else ""
+            text = (shape.get("text") or "").replace("\n", "\\n")
+            if len(text) > 200:
+                text = text[:197] + "..."
+            font_sz = shape.get("font_size_max_pt")
+            color = shape.get("font_color")
+            flags = []
+            if shape.get("is_grayish_color"):
+                flags.append("gray")
+            if shape.get("text") and shape["text"].strip() in template_texts:
+                flags.append("TEMPLATE")
+            if shape.get("kind") and shape["kind"] != "TEXT_FRAME":
+                flags.append(shape["kind"])
+            if shape.get("group_path"):
+                flags.append(f"grp={len(shape['group_path'])}")
+            flag_str = " ".join(flags)
+            table_info = ""
+            if shape.get("table"):
+                t = shape["table"]
+                table_info = f" TABLE({t['row_count']}x{t['col_count']})"
+            image_info = " IMAGE" if shape.get("image") else ""
+            lines.append(
+                f"  [{idx:02d}] id={shape['shape_id']:>4} "
+                f"pos=({top_r:.2f},{left_r:.2f}) "
+                f"size=({h_r:.2f},{w_r:.2f}) "
+                f"font={font_sz} color={color} "
+                f"{ph_str} {auto_str} {flag_str}{table_info}{image_info}"
+            )
+            lines.append(f"        text={text!r}")
+            lines.append("")
+
+        if connectors_data:
+            lines.append("--- connectors ---")
+            for c in connectors_data:
+                lines.append(f"  {c.get('begin_shape_id')} -> {c.get('end_shape_id')}")
+            lines.append("")
+
+        try:
+            if slide.has_notes_slide and slide.notes_slide is not None:
+                notes = _safe_text(slide.notes_slide.notes_text_frame.text)
+                if notes:
+                    lines.append("--- notes ---")
+                    lines.append(notes)
+        except Exception:
+            pass
+
+        return "\n".join(lines) + "\n"
 
     def _slide_to_dict(self, slide, slide_no: int) -> dict:
         """1 スライドを JSON 形式の dict にする。"""
@@ -1737,6 +1926,24 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         action="store_true",
         help="When set with --structured-json, suppress Markdown output and only emit JSON.",
     )
+    parser.add_argument(
+        "--per-slide-json",
+        default=None,
+        help=(
+            "Emit one JSON file per slide into the given directory (slide-NN.json) plus "
+            "metadata.json. Useful for large PPTX where a monolithic JSON exceeds the LLM "
+            "context window."
+        ),
+    )
+    parser.add_argument(
+        "--compact-view",
+        default=None,
+        help=(
+            "Emit one human/LLM-friendly text view per slide into the given directory "
+            "(slide-NN.txt). Each shape is rendered as one row with id/position/font/text. "
+            "Designed for Phase 2 (LLM interpretation) of large PPTX."
+        ),
+    )
     return parser.parse_args(list(argv))
 
 
@@ -1748,14 +1955,27 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         return 1
     try:
         converter = PPTXMarkdownConverter(args)
+        wrote_anything = False
         # 構造化 JSON モード（参考: PPTX → 機械抽出 JSON → LLM 解釈 → MD の 2 段階処理）
         if converter.structured_json_path is not None:
             json_path = converter.export_structured_json()
             print(f"Wrote JSON: {json_path}")
+            wrote_anything = True
+        # スライド分割 JSON（大規模 PPTX 向け）
+        if converter.per_slide_json_dir is not None:
+            count = converter.export_per_slide_json()
+            print(f"Wrote per-slide JSON: {converter.per_slide_json_dir} ({count} slides)")
+            wrote_anything = True
+        # コンパクト ビュー（人間/LLM 可読の簡潔表現）
+        if converter.compact_view_dir is not None:
+            count = converter.export_compact_view()
+            print(f"Wrote compact view: {converter.compact_view_dir} ({count} slides)")
+            wrote_anything = True
+        if wrote_anything:
             print(f"Images dir: {converter.images_dir}")
             if converter.json_only:
                 return 0
-        # JSON 単独指定でなければ従来通り Markdown を生成（フォールバック）
+        # JSON 系オプション未指定 or --json-only 無し → 従来の Markdown 直接出力
         output_path = converter.convert()
         print(f"Wrote: {output_path}")
         print(f"Images dir: {converter.images_dir}")

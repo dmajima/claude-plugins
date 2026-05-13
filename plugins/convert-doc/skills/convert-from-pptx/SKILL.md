@@ -1,6 +1,6 @@
 ---
 name: convert-from-pptx
-description: PowerPoint (PPTX) ファイルを Claude が解釈可能な Markdown に変換するスキル（入力 PPTX → 出力 MD）。2 フェーズ構成: Phase 1 で Python (python-pptx) が全 shape の位置・サイズ・フォント・色・接続情報を構造化 JSON に dump、Phase 2 で Claude が JSON を文脈解釈し、テンプレ装飾とコンテンツを区別しつつ要素の関係性を保持した Markdown を生成。タイトル推定・装飾除去・フロー図 Mermaid 化・視覚順整列は Claude が判断。「PPTX を Markdown に変換」「スライドを MD にして」「PowerPoint を読める形に」「設計書 PPTX を解析」等で起動。SKIP: 入力が Markdown (convert-pptx) / 出力が HTML (convert-html) / PDF (convert-pdf)。
+description: PowerPoint (PPTX) ファイルを Claude が解釈可能な Markdown に変換するスキル（入力 PPTX → 出力 MD）。3 フェーズ構成: Phase 1 (Python) で全 shape の位置・サイズ・フォント・色・接続情報を構造化 JSON に dump、Phase 2 (Claude) で JSON を文脈解釈し装飾とコンテンツを区別した Markdown を生成、Phase 3 (Python + Claude) で生成 MD を元 PPTX と機械的に突き合わせて漏れ・誤転記を検証。大規模 PPTX (100 スライド超) はスライド単位分割 + サブエージェント並列分担に対応。「PPTX を Markdown に変換」「スライドを MD にして」「PowerPoint を読める形に」「設計書 PPTX を解析」等で起動。SKIP: 入力が Markdown (convert-pptx) / 出力が HTML (convert-html) / PDF (convert-pdf)。
 ---
 
 # convert-from-pptx スキル
@@ -77,6 +77,16 @@ PowerPoint (PPTX) を「機械抽出 + LLM 意味解釈」の 2 フェーズで 
 | `--no-mermaid` / `--include-notes` / `--include-hidden` 等の指定 | カスタム | 指定オプションに従って処理 |
 | 上記以外（自然言語依頼） | 対話 | 不足パラメータを `AskUserQuestion` でユーザに確認 |
 
+## サイズ別フロー選択
+
+| 規模 | 目安 | 推奨フロー | 詳細 |
+|------|------|-----------|------|
+| 小規模 | スライド数 30 以下 / JSON 1 MB 以下 | 単一 JSON 全読み込み（下記 2 フェーズ） | このページの「実行フロー（2 フェーズ）」 |
+| 中規模 | スライド数 30〜100 | per-slide JSON + compact view（メインで逐次 Read） | [`references/large-pptx-workflow.md`](references/large-pptx-workflow.md) 節 2 |
+| 大規模 | スライド数 100 超 | per-slide JSON + サブエージェント並列分担 | [`references/large-pptx-workflow.md`](references/large-pptx-workflow.md) 節 3 |
+
+判断は **shape 数の総和** が支配的（密度の高いスライドが多いと中規模でも分割推奨）。`metadata.json` の `slides_index` で確認。
+
 ## 実行フロー（2 フェーズ・推奨）
 
 1. **ワークディレクトリ作成**（`.claude/.local/work/yyyyMMdd_nn_convert_from_pptx/{inputs,workspace}`）
@@ -100,7 +110,18 @@ PowerPoint (PPTX) を「機械抽出 + LLM 意味解釈」の 2 フェーズで 
      - 視覚順での要素並べ替え（`geometry.top_ratio` / `left_ratio`）
    - 構造化された Markdown を出力ファイルに Write
 5. **画像ファイル**は Phase 1 で `<basename>_images/` に既に抽出済み（Markdown から相対参照可能）
-6. **venv 削除**（必要に応じて）
+6. **Phase 3: カバレッジ検証**
+   ```bash
+   <workspace>/.venv/Scripts/python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py" \
+     <入力 PPTX パス> \
+     <生成 MD パス> \
+     --report <セッション>/coverage_report.json \
+     --threshold 0.85
+   ```
+   - Python が機械的にテキスト/テーブル/画像/コネクタのカバレッジを集計
+   - PASSED の場合は完了、FAILED の場合は Claude が `missing_texts` / `suspicious_md_phrases` を文脈分類し MD を修正 → 再検証ループ
+   - 詳細: [`references/validation.md`](references/validation.md)
+7. **venv 削除**（必要に応じて）
 
 詳細な実行手順は [`references/procedures.md`](references/procedures.md)、環境構築は [`references/setup.md`](references/setup.md) を参照。
 
@@ -139,14 +160,17 @@ LLM 呼び出しが行えない自動処理コンテキストでは、従来通�
 ## アセットの場所
 
 - 変換スクリプト: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py`
+- 検証スクリプト: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py`
 - venv セットアップ: `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh`
 
 ## オプション
 
 | オプション | 省略値 | 内容 |
 |-----------|-------|------|
-| `--structured-json <PATH>` | なし | Phase 1 用の機械抽出 JSON 出力先 |
-| `--json-only` | OFF | JSON のみ出力（Markdown 直接生成をスキップ。Phase 2 で Claude が MD 化する場合に指定） |
+| `--structured-json <PATH>` | なし | Phase 1 用の機械抽出 JSON 出力先（単一 JSON 全部入り） |
+| `--per-slide-json <DIR>` | なし | スライドごとに `slide-NN.json` を分割出力 + `metadata.json`（中〜大規模 PPTX 向け） |
+| `--compact-view <DIR>` | なし | スライドごとに人間/LLM 可読の簡潔ビュー `slide-NN.txt` を出力（Phase 2 で軽量に Read） |
+| `--json-only` | OFF | JSON / ビューのみ出力（Markdown 直接生成をスキップ。Phase 2 で Claude が MD 化する場合に指定） |
 | `--images-dir <DIR>` | `<出力MD basename>_images/` | 画像抽出先 |
 | `--no-mermaid` | OFF | フロー図 / SmartArt の Mermaid 変換を無効化（フォールバック用） |
 | `--include-notes` | OFF | スピーカーノートを含める |
@@ -170,4 +194,6 @@ LLM 呼び出しが行えない自動処理コンテキストでは、従来通�
 | 環境構築 | [`references/setup.md`](references/setup.md) |
 | 変換実行手順 | [`references/procedures.md`](references/procedures.md) |
 | JSON スキーマと Phase 2 解釈ガイド | [`references/json-schema.md`](references/json-schema.md) |
+| Phase 3 検証ガイド（漏れ・誤転記の担保） | [`references/validation.md`](references/validation.md) |
+| 大規模 PPTX のサイズ別フロー | [`references/large-pptx-workflow.md`](references/large-pptx-workflow.md) |
 | 動作分岐の期待挙動ケース | [`evals/`](evals/) |
