@@ -273,6 +273,11 @@ class PPTXMarkdownConverter:
         self._current_title_shape_id: Optional[int] = None
         self._current_is_section_cover: bool = False
         self._current_repeated_texts: set[str] = set()
+        self._slide_width_emu: Optional[int] = None
+        self._slide_height_emu: Optional[int] = None
+        self._current_max_font_pt: Optional[float] = None
+        self._current_median_font_pt: Optional[float] = None
+        self._current_decoration_shape_ids: set[int] = set()
 
     # ---------- エントリ ----------
 
@@ -282,6 +287,12 @@ class PPTXMarkdownConverter:
         self.images_dir.mkdir(parents=True, exist_ok=True)
 
         self._template_texts = self._collect_template_texts(presentation)
+        try:
+            self._slide_width_emu = presentation.slide_width
+            self._slide_height_emu = presentation.slide_height
+        except Exception:
+            self._slide_width_emu = None
+            self._slide_height_emu = None
 
         markdown_chunks: List[str] = []
         emitted_slide_no = 0
@@ -311,9 +322,12 @@ class PPTXMarkdownConverter:
             return False
 
     def _convert_slide(self, slide, slide_no: int) -> str:
+        # スライド単位のフォント・装飾統計を事前計算（視覚的役割推定の基礎データ）
+        self._current_is_section_cover = self._is_section_cover_layout(slide)
+        self._compute_slide_visual_stats(slide)
+
         title, title_shape_id = self._extract_title(slide)
         self._current_title_shape_id = title_shape_id
-        self._current_is_section_cover = self._is_section_cover_layout(slide)
         # スライド内で同一テキストが複数回出現する shape を装飾とみなす集合
         self._current_repeated_texts = self._collect_repeated_slide_texts(slide)
         if slide_no == 1 and self.first_slide_as_title:
@@ -335,24 +349,35 @@ class PPTXMarkdownConverter:
             mermaid_md = extractor.build_mermaid()
             used_ids = extractor.used_node_ids
 
+        # 視覚順 (top → left) でコンテンツブロックを並べ替える。
+        # PPTX 内部の Z 順序ではなく、読者が画面で目で追う順序に近づける。
+        collected.sort(key=lambda it: (it.get("top") or 0, it.get("left") or 0))
+
+        # Mermaid 化されたノードのテキストは本文側で除外（行マージ前に行うこと）
         title_text_norm = (title or "").strip()
-        body_blocks: List[str] = []
+        filtered: List[dict] = []
         for item in collected:
             if (
                 item["kind"] == "text"
-                and item["shape_id"] is not None
+                and item.get("shape_id") is not None
                 and item["shape_id"] in used_ids
             ):
                 continue
-            text_block = item["text"]
-            if not text_block:
-                continue
-            # タイトルと同一テキストの本文ブロックは装飾としてスキップ
-            #   "- タイトル" / "タイトル" のどちらも重複として除外
-            if title_text_norm:
-                stripped = text_block.lstrip("- ").strip()
+            if title_text_norm and item["kind"] == "text":
+                stripped = (item.get("text") or "").lstrip("- ").strip()
                 if stripped == title_text_norm:
                     continue
+            filtered.append(item)
+
+        # 同一行 (top の差が小さい) の連続する text 要素は左→右で結合する。
+        # PowerPoint で「番号 + 章名」のように水平に並ぶ shape を 1 行として扱う。
+        filtered = self._merge_horizontal_text_rows(filtered)
+
+        body_blocks: List[str] = []
+        for item in filtered:
+            text_block = item.get("text") or ""
+            if not text_block:
+                continue
             body_blocks.append(text_block)
 
         if mermaid_md:
@@ -396,19 +421,32 @@ class PPTXMarkdownConverter:
         return None, None
 
     def _guess_title_shape(self, slide):
-        """slide.shapes.title 不在時の代替: 最上部・短文・横長 shape を推定."""
-        # 最上部の閾値（EMU）: スライド上部から約 1.6cm 以内
-        TOP_THRESHOLD = 1_500_000
-        # 高さ閾値: 約 1.5cm 以下の薄い帯
-        HEIGHT_THRESHOLD = 1_400_000
-        # 文字数閾値
+        """slide.shapes.title 不在時の代替: 視覚的に最上部にあるタイトルらしい shape を推定.
+
+        条件 (いずれかを満たす shape を候補化):
+            A. スライド上端 (top <= 1.6cm) かつ薄い帯 (height <= 1.4cm) かつ短文 (<= 80字)
+            B. スライド中央上部 (top <= 50%) かつ最大フォントサイズに近い (>=80%)
+               フォント・短文（章扉スライド：中央に大きな章タイトル）
+        どちらも、テンプレ装飾 / 装飾 shape は除外する。
+        """
+        TOP_THRESHOLD_EMU = 1_500_000
+        HEIGHT_THRESHOLD_EMU = 1_400_000
         MAX_TITLE_LEN = 80
 
-        candidates = []
+        slide_h = self._slide_height_emu or 0
+        max_font = self._current_max_font_pt
+        candidates = []  # (priority, top, left, shape)
+
         for shape in slide.shapes:
             if not (getattr(shape, "has_text_frame", False) and shape.has_text_frame):
                 continue
             if self._is_template_placeholder(shape):
+                continue
+            try:
+                shape_id = shape.shape_id
+            except Exception:
+                shape_id = None
+            if shape_id is not None and shape_id in self._current_decoration_shape_ids:
                 continue
             try:
                 top = shape.top or 0
@@ -416,34 +454,38 @@ class PPTXMarkdownConverter:
                 height = shape.height or 0
             except Exception:
                 continue
-            if top > TOP_THRESHOLD:
-                continue
-            if height > HEIGHT_THRESHOLD:
-                continue
             text = _safe_text(shape.text_frame.text)
             if not text or len(text) > MAX_TITLE_LEN:
                 continue
             if text in self._template_texts:
                 continue
-            candidates.append((top, left, shape))
+
+            font_pt = self._extract_max_font_size_pt(shape)
+
+            # A: 最上部・薄い帯・短文
+            if top <= TOP_THRESHOLD_EMU and height <= HEIGHT_THRESHOLD_EMU:
+                candidates.append((1, top, left, shape))
+                continue
+
+            # B: スライド上半分かつ最大フォントに近い大型テキスト（章扉中央タイトル等）
+            if max_font and font_pt and font_pt >= max_font * 0.8 and slide_h and top <= slide_h * 0.5:
+                candidates.append((2, top, left, shape))
+                continue
 
         if not candidates:
             return None
-        candidates.sort(key=lambda x: (x[0], x[1]))
-        return candidates[0][2]
+        candidates.sort(key=lambda x: (x[0], x[1], x[2]))
+        return candidates[0][3]
 
     @staticmethod
     def _collect_template_texts(presentation) -> set:
         """テンプレ装飾として除外するテキスト集合を構築する。
 
-        収集対象: スライドマスタ / レイアウトに登場するテキスト。
-        （フッタ・コピーライト・サンプル文等のテンプレ装飾を捕捉）
-
-        全スライド頻度集計は実装しない理由:
-            本文として複数スライドで意図的に繰り返される単語
-            （例: "CSチーム" / 章タイトル等）を装飾と誤判定する
-            副作用が大きいため。同一スライド内重複は
-            ``_matches_repeated_slide_text`` 側で個別に処理する。
+        収集対象:
+            1. スライドマスタ / レイアウトに登場するテキスト
+            2. 全スライドの 3 スライド以上に同テキストで出現する ASCII 短文
+               (例: "Core Colors" / "Sub Colors" 等の凡例ラベル) のみ。
+               日本語本文ワードや混合テキストは誤除外回避のため対象外。
         """
         texts: set = set()
 
@@ -471,6 +513,53 @@ class PPTXMarkdownConverter:
                     continue
         except Exception:
             return texts
+
+        # ASCII 短文 (英数字 + 空白) の全スライド頻出パターンを凡例ラベルとして検出
+        try:
+            slides = list(presentation.slides)
+        except Exception:
+            return texts
+        if len(slides) < 3:
+            return texts
+
+        def _iter_text_shapes(shape_iter):
+            for shape in shape_iter:
+                try:
+                    if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                        yield from _iter_text_shapes(shape.shapes)
+                        continue
+                except Exception:
+                    pass
+                try:
+                    if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
+                        yield shape
+                except Exception:
+                    continue
+
+        appearance: dict = {}
+        for slide in slides:
+            seen: set = set()
+            try:
+                for shape in _iter_text_shapes(slide.shapes):
+                    t = _safe_text(shape.text_frame.text)
+                    if not t or len(t) > 25:
+                        continue
+                    # ASCII 範囲のみ（半角英数字 + 記号 + 空白）に限定
+                    if not all((ord(c) < 128) for c in t):
+                        continue
+                    # 数字のみは章番号と紛らわしいので対象外
+                    if t.isdigit():
+                        continue
+                    seen.add(t)
+            except Exception:
+                continue
+            for t in seen:
+                appearance[t] = appearance.get(t, 0) + 1
+
+        # 3 スライド以上で出現する ASCII 短文を装飾ラベルとみなす
+        for t, cnt in appearance.items():
+            if cnt >= 3:
+                texts.add(t)
         return texts
 
     @staticmethod
@@ -501,6 +590,91 @@ class PPTXMarkdownConverter:
             return text in self._template_texts
         except Exception:
             return False
+
+    def _compute_slide_visual_stats(self, slide) -> None:
+        """スライド内全 shape の最大/中央値フォントサイズと装飾候補 shape を識別する。
+
+        - 装飾候補: 薄いグレー色 / 極小フォント (中央値の 70% 未満) /
+          スライド端 (右下) の極小 shape / 全 shape が小さい場合は除外。
+        - decoration_shape_ids を集合に格納し、後段の _collect_shape で参照する。
+        """
+        self._current_max_font_pt = None
+        self._current_median_font_pt = None
+        self._current_decoration_shape_ids = set()
+
+        # スライド寸法（基準）
+        slide_w = self._slide_width_emu or 0
+        slide_h = self._slide_height_emu or 0
+
+        shapes_metrics: List[dict] = []
+        try:
+            self._gather_metrics_recursive(slide.shapes, shapes_metrics)
+        except Exception:
+            return
+
+        font_sizes = [m["font_size_pt"] for m in shapes_metrics if m.get("font_size_pt")]
+        if font_sizes:
+            self._current_max_font_pt = max(font_sizes)
+            sorted_sizes = sorted(font_sizes)
+            mid = len(sorted_sizes) // 2
+            if len(sorted_sizes) % 2 == 0 and len(sorted_sizes) >= 2:
+                self._current_median_font_pt = (sorted_sizes[mid - 1] + sorted_sizes[mid]) / 2
+            else:
+                self._current_median_font_pt = sorted_sizes[mid]
+
+        # 装飾判定
+        median = self._current_median_font_pt
+        for meta in shapes_metrics:
+            shape_id = meta["shape_id"]
+            text = (meta.get("text") or "").strip()
+            if not text:
+                continue
+            font_pt = meta.get("font_size_pt")
+            is_gray = meta.get("is_grayish", False)
+            char_count = meta.get("char_count", 0)
+            top = meta.get("top") or 0
+            left = meta.get("left") or 0
+            width = meta.get("width") or 0
+            height = meta.get("height") or 0
+
+            decoration_reasons = 0
+
+            # 1) 極小フォント（スライド中央値の 70% 未満）かつ短文
+            if font_pt is not None and median is not None and font_pt < median * 0.7 and char_count <= 30:
+                decoration_reasons += 1
+
+            # 2) フォント色が薄いグレー系
+            if is_gray:
+                decoration_reasons += 1
+
+            # 3) shape が極端に小さい (面積がスライドの 0.3% 未満) かつ短文
+            if slide_w and slide_h:
+                area = (width or 0) * (height or 0)
+                slide_area = slide_w * slide_h
+                if slide_area > 0 and area > 0 and (area / slide_area) < 0.003 and char_count <= 20:
+                    decoration_reasons += 1
+
+            # 4) 右下の端 (top > 75%, left > 75%) に位置する短文
+            if slide_w and slide_h and (top / slide_h) > 0.75 and (left / slide_w) > 0.55 and char_count <= 25:
+                decoration_reasons += 1
+
+            if decoration_reasons >= 2:
+                self._current_decoration_shape_ids.add(shape_id)
+
+    def _gather_metrics_recursive(self, shape_iter, out: list) -> None:
+        """グループを再帰展開しながら全 shape のメタデータを集める."""
+        for shape in shape_iter:
+            try:
+                if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                    self._gather_metrics_recursive(shape.shapes, out)
+                    continue
+            except Exception:
+                pass
+            try:
+                if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
+                    out.append(self._shape_meta(shape))
+            except Exception:
+                continue
 
     @staticmethod
     def _is_section_cover_layout(slide) -> bool:
@@ -603,26 +777,35 @@ class PPTXMarkdownConverter:
         if self._current_is_section_cover and self._is_decoration_number(shape):
             return
 
+        # 視覚統計ベースの装飾判定: 極小フォント・薄いグレー・極小サイズ・隅の短文を装飾扱い
+        try:
+            if shape.shape_id in self._current_decoration_shape_ids:
+                return
+        except Exception:
+            pass
+
         if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
             for sub in shape.shapes:
                 self._collect_shape(sub, slide_no, shapes_meta, connectors, collected)
             return
 
+        pos_top, pos_left = self._safe_position(shape)
+
         if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
             block = self._handle_picture(shape, slide_no)
             if block:
-                collected.append({"kind": "image", "shape_id": shape.shape_id, "text": block})
+                collected.append({"kind": "image", "shape_id": shape.shape_id, "text": block, "top": pos_top, "left": pos_left})
             return
 
         if getattr(shape, "has_table", False) and shape.has_table:
             block = self._convert_table(shape.table)
             if block:
-                collected.append({"kind": "table", "shape_id": shape.shape_id, "text": block})
+                collected.append({"kind": "table", "shape_id": shape.shape_id, "text": block, "top": pos_top, "left": pos_left})
             return
 
         if getattr(shape, "has_chart", False) and shape.has_chart:
             block = self._summarize_chart(shape.chart)
-            collected.append({"kind": "chart", "shape_id": shape.shape_id, "text": block})
+            collected.append({"kind": "chart", "shape_id": shape.shape_id, "text": block, "top": pos_top, "left": pos_left})
             return
 
         if shape.shape_type == MSO_SHAPE_TYPE.LINE or self._is_connector(shape):
@@ -635,11 +818,11 @@ class PPTXMarkdownConverter:
                 mermaid = self._smartart_to_mermaid(shape)
             if mermaid:
                 collected.append(
-                    {"kind": "mermaid", "shape_id": shape.shape_id, "text": f"```mermaid\n{mermaid}\n```"}
+                    {"kind": "mermaid", "shape_id": shape.shape_id, "text": f"```mermaid\n{mermaid}\n```", "top": pos_top, "left": pos_left}
                 )
             else:
                 collected.append(
-                    {"kind": "smartart", "shape_id": shape.shape_id, "text": self._smartart_fallback_text(shape)}
+                    {"kind": "smartart", "shape_id": shape.shape_id, "text": self._smartart_fallback_text(shape), "top": pos_top, "left": pos_left}
                 )
             return
 
@@ -652,8 +835,74 @@ class PPTXMarkdownConverter:
             default_bullet = self._is_body_placeholder(shape)
             text = self._convert_text_frame(shape.text_frame, default_bullet=default_bullet)
             if text:
-                collected.append({"kind": "text", "shape_id": shape.shape_id, "text": text})
+                collected.append({"kind": "text", "shape_id": shape.shape_id, "text": text, "top": pos_top, "left": pos_left})
             return
+
+    @staticmethod
+    def _merge_horizontal_text_rows(items: list) -> list:
+        """top が近い連続 text 要素を 1 行 (スペース区切り) として結合する。
+
+        対象は kind == "text" のみ。画像・テーブル・mermaid 等は独立ブロックを維持。
+        top の差が 250_000 EMU (約 0.25cm) 以内のものを同一行とみなす。
+        """
+        if not items:
+            return items
+        TOP_TOLERANCE = 250_000
+
+        merged: list = []
+        current_row: list = []
+        for item in items:
+            if item.get("kind") != "text":
+                if current_row:
+                    merged.append(PPTXMarkdownConverter._fuse_row(current_row))
+                    current_row = []
+                merged.append(item)
+                continue
+            if not current_row:
+                current_row = [item]
+                continue
+            prev_top = current_row[-1].get("top") or 0
+            cur_top = item.get("top") or 0
+            if abs(cur_top - prev_top) <= TOP_TOLERANCE:
+                current_row.append(item)
+            else:
+                merged.append(PPTXMarkdownConverter._fuse_row(current_row))
+                current_row = [item]
+        if current_row:
+            merged.append(PPTXMarkdownConverter._fuse_row(current_row))
+        return merged
+
+    @staticmethod
+    def _fuse_row(row_items: list) -> dict:
+        """同一行に並ぶ複数 text item を 1 ブロックに結合."""
+        if len(row_items) == 1:
+            return row_items[0]
+        row_items_sorted = sorted(row_items, key=lambda x: (x.get("left") or 0))
+        joined = "　".join(
+            (it.get("text") or "").replace("\n", " ").strip()
+            for it in row_items_sorted
+            if (it.get("text") or "").strip()
+        )
+        return {
+            "kind": "text",
+            "shape_id": None,
+            "text": joined,
+            "top": row_items_sorted[0].get("top"),
+            "left": row_items_sorted[0].get("left"),
+        }
+
+    @staticmethod
+    def _safe_position(shape) -> tuple:
+        """shape の (top, left) を取得。取得失敗時は (0, 0) を返す."""
+        try:
+            top = shape.top or 0
+        except Exception:
+            top = 0
+        try:
+            left = shape.left or 0
+        except Exception:
+            left = 0
+        return top, left
 
     @staticmethod
     def _is_title_shape(shape) -> bool:
@@ -717,6 +966,8 @@ class PPTXMarkdownConverter:
             auto = str(shape.auto_shape_type) if getattr(shape, "auto_shape_type", None) else ""
         except Exception:
             auto = ""
+        font_size_max = PPTXMarkdownConverter._extract_max_font_size_pt(shape)
+        font_color_hex = PPTXMarkdownConverter._extract_dominant_font_color(shape)
         return {
             "shape_id": shape.shape_id,
             "name": shape.name,
@@ -726,7 +977,89 @@ class PPTXMarkdownConverter:
             "top": shape.top,
             "width": shape.width,
             "height": shape.height,
+            "font_size_pt": font_size_max,
+            "font_color": font_color_hex,
+            "is_grayish": PPTXMarkdownConverter._is_grayish_color(font_color_hex),
+            "char_count": len(text),
         }
+
+    @staticmethod
+    def _extract_max_font_size_pt(shape) -> Optional[float]:
+        """shape 内の最大フォントサイズ (pt) を返す。取得できない場合は None."""
+        try:
+            if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+                return None
+        except Exception:
+            return None
+        max_pt: Optional[float] = None
+        try:
+            for paragraph in shape.text_frame.paragraphs:
+                # paragraph レベルのフォントサイズも見る
+                try:
+                    p_size = paragraph.font.size
+                    if p_size is not None:
+                        pt_val = p_size.pt
+                        if max_pt is None or pt_val > max_pt:
+                            max_pt = pt_val
+                except Exception:
+                    pass
+                for run in paragraph.runs:
+                    try:
+                        size = run.font.size
+                        if size is None:
+                            continue
+                        pt_val = size.pt
+                        if max_pt is None or pt_val > max_pt:
+                            max_pt = pt_val
+                    except Exception:
+                        continue
+        except Exception:
+            return max_pt
+        return max_pt
+
+    @staticmethod
+    def _extract_dominant_font_color(shape) -> Optional[str]:
+        """shape 内の最初に取得できた RGB 色を hex 文字列で返す."""
+        try:
+            if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
+                return None
+        except Exception:
+            return None
+        try:
+            for paragraph in shape.text_frame.paragraphs:
+                for run in paragraph.runs:
+                    try:
+                        color = run.font.color
+                        if color is None:
+                            continue
+                        rgb = color.rgb
+                        if rgb is None:
+                            continue
+                        # rgb は RGBColor 型。str() で "RRGGBB" を返す
+                        return str(rgb).upper()
+                    except Exception:
+                        continue
+        except Exception:
+            return None
+        return None
+
+    @staticmethod
+    def _is_grayish_color(hex_color: Optional[str]) -> bool:
+        """フォント色が薄いグレー / 装飾色っぽいかを判定."""
+        if not hex_color or len(hex_color) != 6:
+            return False
+        try:
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+        except Exception:
+            return False
+        # 3 チャネルがいずれも 0x80 (128) 以上で、互いの差が小さい → 薄いグレー系
+        if r < 0x80 or g < 0x80 or b < 0x80:
+            return False
+        max_c = max(r, g, b)
+        min_c = min(r, g, b)
+        return (max_c - min_c) <= 20
 
     def _collect_connector(self, shape, connectors: list) -> None:
         try:
