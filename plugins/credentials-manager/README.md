@@ -13,9 +13,9 @@ Claude Code セッションをまたいで認証情報（API キー・トーク�
 | `credentials-reader` | スキル | 取得（retrieve）／一覧（list、参照目的）／URL 自動マッチ／プロアクティブ検出。フック経由で最優先起動される軽量スキル |
 | `credentials-manager` | スキル | 追加（save）／編集（update）／削除（delete）／修復（repair）。書き込み系の管理操作を担当 |
 | `/credentials-manager:manage` | コマンド | `AskUserQuestion` ベースの対話メニュー UI で reader と manager を呼び分ける設定 UI |
-| `install_rule_template.sh` | フック (SessionStart) | スコープ判定（user / project）に応じて最重要ルール `credentials-management.md` を `.claude/rules/security/` 配下へ自動配置（既存ファイルは温存） |
-| `preempt_credentials_check.sh` | フック (PreToolUse) | 外部通信・認証情報系ファイル・コンテンツ内シークレット検出時に Claude へ「`credentials-reader` を最優先起動」と注意喚起 |
-| `detect_credentials_in_prompt.sh` | フック (UserPromptSubmit) | ユーザー入力にシークレットパターン検出時、Claude へ「マスキング + `credentials-reader` 起動 + 必要時 `credentials-manager` 引き継ぎ」と通知 |
+| `install_rule_template.ps1` | フック (SessionStart) | スコープ判定（user / project）に応じて最重要ルール `credentials-management.md` を `.claude/rules/security/` 配下へ自動配置（既存ファイルは温存） |
+| `preempt_credentials_check.ps1` | フック (PreToolUse) | 外部通信・認証情報系ファイル・コンテンツ内シークレット検出時に Claude へ「`credentials-reader` を最優先起動」と注意喚起 |
+| `detect_credentials_in_prompt.ps1` | フック (UserPromptSubmit) | ユーザー入力にシークレットパターン検出時、Claude へ「マスキング + `credentials-reader` 起動 + 必要時 `credentials-manager` 引き継ぎ」と通知 |
 
 ## 導入手順
 
@@ -271,9 +271,9 @@ plugins/credentials-manager/
 ├── references/
 │   ├── scripts/
 │   │   └── hooks/
-│   │       ├── install_rule_template.sh               # SessionStart：テンプレート配置
-│   │       ├── preempt_credentials_check.sh           # PreToolUse：reader 起動指示
-│   │       └── detect_credentials_in_prompt.sh       # UserPromptSubmit：マスキング + reader 起動指示
+│   │       ├── install_rule_template.ps1               # SessionStart：テンプレート配置
+│   │       ├── preempt_credentials_check.ps1           # PreToolUse：reader 起動指示
+│   │       └── detect_credentials_in_prompt.ps1       # UserPromptSubmit：マスキング + reader 起動指示
 │   └── templates/
 │       └── rules/
 │           └── security/
@@ -322,7 +322,7 @@ plugins/credentials-manager/
 
 ### 採用技術
 
-- Markdown / JSON / Bash
+- Markdown / JSON / PowerShell
 - Claude Code Skills API（`SKILL.md` の description ベースの自動トリガー判定を活用）
 - Claude Code Hooks API（SessionStart / PreToolUse / UserPromptSubmit）
 - Claude Code Commands API（`/credentials-manager:manage`）

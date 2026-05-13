@@ -14,7 +14,7 @@ PowerPoint (PPTX) を Claude が読み込める Markdown に変換するスキ�
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-依存パッケージ（python-pptx / Pillow / lxml）は初回実行時に `references/scripts/setup/setup_venv.sh` が自動で venv を構築してインストールします。本スキルは外部ネットワークアクセスを行いません（オフライン環境でも動作）。
+依存パッケージ（python-pptx / Pillow / lxml）は初回実行時に `references/scripts/setup/setup_venv.ps1` が自動で venv を構築してインストールします。本スキルは外部ネットワークアクセスを行いません（オフライン環境でも動作）。
 
 ## 仕組み
 
@@ -52,8 +52,8 @@ plugins/convert-doc/
 ├── references/scripts/
 │   ├── setup/                       # 統合 venv 構築（プラグイン共通、ADR-024）
 │   │   ├── requirements.txt         # 全 4 スキル分の依存をマージ
-│   │   ├── setup_venv.sh
-│   │   └── teardown_venv.sh
+│   │   ├── setup_venv.ps1
+│   │   └── teardown_venv.ps1
 │   └── convert-from-pptx/           # 本スキル業務スクリプト（ADR-025）
 │       └── convert_from_pptx.py
 └── skills/convert-from-pptx/
