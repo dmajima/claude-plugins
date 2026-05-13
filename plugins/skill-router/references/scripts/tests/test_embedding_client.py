@@ -267,7 +267,15 @@ class GetModelTests(unittest.TestCase):
             return sentinel
 
         cfg = embedding_client.EmbeddingConfig(enabled=True)
-        with mock.patch.object(embedding_client, "_TextEmbedding", fake_ctor):
+        # ``get_model`` short-circuits to ``None`` when ``is_sdk_available``
+        # returns ``False``, and that helper inspects both ``_TextEmbedding``
+        # *and* ``_np``.  Patching only the former leaves the test
+        # environment-dependent (it passes in venvs where numpy happens to
+        # be installed and fails in stdlib-only environments).  Patch both
+        # so the singleton-caching contract under test is the only thing
+        # observed, regardless of whether numpy is available in the runner.
+        with mock.patch.object(embedding_client, "_TextEmbedding", fake_ctor), \
+             mock.patch.object(embedding_client, "_np", object()):
             a = embedding_client.get_model(cfg, self.base)
             b = embedding_client.get_model(cfg, self.base)
         self.assertIs(a, sentinel)

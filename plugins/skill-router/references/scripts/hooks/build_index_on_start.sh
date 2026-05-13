@@ -19,6 +19,21 @@
 set -uo pipefail
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/../../.." && pwd)}"
+
+# Windows compatibility: when running under Git Bash / MSYS / Cygwin,
+# ${CLAUDE_PLUGIN_ROOT} may arrive as a POSIX-form path like
+# "/c/Users/<user>/.claude/...".  Windows-native python.exe cannot parse that
+# form and interprets the leading "/c/" as a literal "\c\" directory beneath
+# the current drive root, producing
+#   "C:\c\Users\<user>\.claude\..."  →  ENOENT.
+# Convert to the "mixed" form ("C:/Users/...") with cygpath -m, which is
+# interpretable by both Bash (for source/dirname/etc.) and native Python
+# (for argv path resolution).  cygpath is absent on Linux/macOS, where the
+# conversion is correctly skipped.
+if command -v cygpath >/dev/null 2>&1; then
+    PLUGIN_ROOT="$(cygpath -m "${PLUGIN_ROOT}" 2>/dev/null || echo "${PLUGIN_ROOT}")"
+fi
+
 PYTHON_BIN="$(command -v python3 || command -v python || true)"
 
 if [[ -z "${PYTHON_BIN}" ]]; then
