@@ -103,9 +103,13 @@ def _is_monospace_font(font_name: Optional[str]) -> bool:
 
 
 def _mermaid_escape_label(text: str) -> str:
-    text = (text or "").replace('"', "'").replace("\n", "<br/>")
+    text = (text or "").replace('"', "'")
+    # 改行は <br/> として Mermaid に描画させたいので、HTML エスケープ後に復元する
+    SENTINEL = "\x00BR\x00"
+    text = text.replace("\n", SENTINEL)
     # Mermaid のメタ文字をエスケープ（後段 HTML 化時の XSS 対策含む）
     text = text.replace("<", "&lt;").replace(">", "&gt;")
+    text = text.replace(SENTINEL, "<br/>")
     if len(text) > 80:
         text = text[:77] + "..."
     return text or " "
@@ -265,6 +269,10 @@ class PPTXMarkdownConverter:
         self.first_slide_as_title = not bool(args.no_first_slide_as_title)
         self.max_image_bytes = int(args.max_image_size)
         self._image_seq: dict[int, int] = {}
+        self._template_texts: set[str] = set()
+        self._current_title_shape_id: Optional[int] = None
+        self._current_is_section_cover: bool = False
+        self._current_repeated_texts: set[str] = set()
 
     # ---------- エントリ ----------
 
@@ -272,6 +280,8 @@ class PPTXMarkdownConverter:
         _validate_pptx(self.input_path)
         presentation = Presentation(str(self.input_path))
         self.images_dir.mkdir(parents=True, exist_ok=True)
+
+        self._template_texts = self._collect_template_texts(presentation)
 
         markdown_chunks: List[str] = []
         emitted_slide_no = 0
@@ -301,7 +311,11 @@ class PPTXMarkdownConverter:
             return False
 
     def _convert_slide(self, slide, slide_no: int) -> str:
-        title = self._extract_title(slide)
+        title, title_shape_id = self._extract_title(slide)
+        self._current_title_shape_id = title_shape_id
+        self._current_is_section_cover = self._is_section_cover_layout(slide)
+        # スライド内で同一テキストが複数回出現する shape を装飾とみなす集合
+        self._current_repeated_texts = self._collect_repeated_slide_texts(slide)
         if slide_no == 1 and self.first_slide_as_title:
             heading = f"# {title or 'タイトル'}"
         else:
@@ -321,6 +335,7 @@ class PPTXMarkdownConverter:
             mermaid_md = extractor.build_mermaid()
             used_ids = extractor.used_node_ids
 
+        title_text_norm = (title or "").strip()
         body_blocks: List[str] = []
         for item in collected:
             if (
@@ -329,8 +344,16 @@ class PPTXMarkdownConverter:
                 and item["shape_id"] in used_ids
             ):
                 continue
-            if item["text"]:
-                body_blocks.append(item["text"])
+            text_block = item["text"]
+            if not text_block:
+                continue
+            # タイトルと同一テキストの本文ブロックは装飾としてスキップ
+            #   "- タイトル" / "タイトル" のどちらも重複として除外
+            if title_text_norm:
+                stripped = text_block.lstrip("- ").strip()
+                if stripped == title_text_norm:
+                    continue
+            body_blocks.append(text_block)
 
         if mermaid_md:
             body_blocks.append(f"```mermaid\n{mermaid_md}\n```")
@@ -340,18 +363,213 @@ class PPTXMarkdownConverter:
             if notes:
                 body_blocks.append(notes)
 
+        # タイトルも本文も空ならスライド見出しごと出力を抑制（テンプレ装飾のみで本体が無いスライド）
+        if not title and not any(b.strip() for b in body_blocks):
+            return ""
+
         parts = [heading] + [b for b in body_blocks if b]
         return "\n\n".join(parts)
 
-    @staticmethod
-    def _extract_title(slide) -> Optional[str]:
+    def _extract_title(self, slide) -> tuple:
+        """タイトル文字列とその shape_id を返す。
+
+        優先順位:
+        1. slide.shapes.title （CENTER_TITLE / TITLE placeholder）
+        2. スライド最上部の短文 placeholder / textbox（テキストボックスで描画されたタイトル対応）
+        """
         try:
             title_shape = slide.shapes.title
-            if title_shape is not None and title_shape.has_text_frame:
-                return _safe_text(title_shape.text_frame.text)
+            if (
+                title_shape is not None
+                and getattr(title_shape, "has_text_frame", False)
+                and title_shape.has_text_frame
+                and title_shape.text_frame.text.strip()
+            ):
+                return _safe_text(title_shape.text_frame.text), title_shape.shape_id
         except Exception:
+            pass
+
+        candidate = self._guess_title_shape(slide)
+        if candidate is not None:
+            return _safe_text(candidate.text_frame.text), candidate.shape_id
+
+        return None, None
+
+    def _guess_title_shape(self, slide):
+        """slide.shapes.title 不在時の代替: 最上部・短文・横長 shape を推定."""
+        # 最上部の閾値（EMU）: スライド上部から約 1.6cm 以内
+        TOP_THRESHOLD = 1_500_000
+        # 高さ閾値: 約 1.5cm 以下の薄い帯
+        HEIGHT_THRESHOLD = 1_400_000
+        # 文字数閾値
+        MAX_TITLE_LEN = 80
+
+        candidates = []
+        for shape in slide.shapes:
+            if not (getattr(shape, "has_text_frame", False) and shape.has_text_frame):
+                continue
+            if self._is_template_placeholder(shape):
+                continue
+            try:
+                top = shape.top or 0
+                left = shape.left or 0
+                height = shape.height or 0
+            except Exception:
+                continue
+            if top > TOP_THRESHOLD:
+                continue
+            if height > HEIGHT_THRESHOLD:
+                continue
+            text = _safe_text(shape.text_frame.text)
+            if not text or len(text) > MAX_TITLE_LEN:
+                continue
+            if text in self._template_texts:
+                continue
+            candidates.append((top, left, shape))
+
+        if not candidates:
             return None
-        return None
+        candidates.sort(key=lambda x: (x[0], x[1]))
+        return candidates[0][2]
+
+    @staticmethod
+    def _collect_template_texts(presentation) -> set:
+        """テンプレ装飾として除外するテキスト集合を構築する。
+
+        収集対象: スライドマスタ / レイアウトに登場するテキスト。
+        （フッタ・コピーライト・サンプル文等のテンプレ装飾を捕捉）
+
+        全スライド頻度集計は実装しない理由:
+            本文として複数スライドで意図的に繰り返される単語
+            （例: "CSチーム" / 章タイトル等）を装飾と誤判定する
+            副作用が大きいため。同一スライド内重複は
+            ``_matches_repeated_slide_text`` 側で個別に処理する。
+        """
+        texts: set = set()
+
+        def _gather(container):
+            try:
+                shapes = container.shapes
+            except Exception:
+                return
+            for shape in shapes:
+                try:
+                    if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
+                        t = _safe_text(shape.text_frame.text)
+                        if t:
+                            texts.add(t)
+                except Exception:
+                    continue
+
+        try:
+            for master in presentation.slide_masters:
+                _gather(master)
+                try:
+                    for layout in master.slide_layouts:
+                        _gather(layout)
+                except Exception:
+                    continue
+        except Exception:
+            return texts
+        return texts
+
+    @staticmethod
+    def _is_template_placeholder(shape) -> bool:
+        """FOOTER / SLIDE_NUMBER / DATE プレースホルダ判定。"""
+        try:
+            ph = shape.placeholder_format
+            if ph is None:
+                return False
+            ph_type = ph.type
+            if ph_type is None:
+                return False
+            type_str = str(ph_type)
+            return any(kw in type_str for kw in ("FOOTER", "SLIDE_NUMBER", "DATE"))
+        except Exception:
+            return False
+
+    def _matches_template_text(self, shape) -> bool:
+        """マスタ/レイアウトに同一テキストで存在する shape を装飾扱いにする。"""
+        if not self._template_texts:
+            return False
+        try:
+            if not (getattr(shape, "has_text_frame", False) and shape.has_text_frame):
+                return False
+            text = _safe_text(shape.text_frame.text)
+            if not text:
+                return False
+            return text in self._template_texts
+        except Exception:
+            return False
+
+    @staticmethod
+    def _is_section_cover_layout(slide) -> bool:
+        """章扉スライド (innerCoverA / cover 系レイアウト) を判定."""
+        try:
+            name = (slide.slide_layout.name or "").lower()
+        except Exception:
+            return False
+        if not name:
+            return False
+        return any(kw in name for kw in ("innercover", "cover", "section", "chapter", "扉"))
+
+    @staticmethod
+    def _is_decoration_number(shape) -> bool:
+        """純数字 (1〜3 桁) のテキスト shape を装飾的章番号と判定."""
+        try:
+            if not (getattr(shape, "has_text_frame", False) and shape.has_text_frame):
+                return False
+            text = _safe_text(shape.text_frame.text)
+        except Exception:
+            return False
+        if not text:
+            return False
+        return text.isdigit() and 1 <= len(text) <= 3
+
+    @staticmethod
+    def _collect_repeated_slide_texts(slide) -> set:
+        """同一スライド内で 2 回以上出現する短いテキスト (<= 30 文字) を集める."""
+        counts: dict = {}
+        try:
+            shapes = list(slide.shapes)
+        except Exception:
+            return set()
+
+        def _walk(shape_iter):
+            for shape in shape_iter:
+                try:
+                    if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                        _walk(shape.shapes)
+                        continue
+                except Exception:
+                    pass
+                try:
+                    if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
+                        text = _safe_text(shape.text_frame.text)
+                        if text and len(text) <= 30:
+                            counts[text] = counts.get(text, 0) + 1
+                except Exception:
+                    continue
+
+        _walk(shapes)
+        # 凡例ラベル等の装飾は同一スライド内で 3 回以上繰り返される傾向にある。
+        # 2 回出現の場合は組織図のように内容として意図的な重複の可能性が高いため対象外。
+        return {t for t, c in counts.items() if c >= 3}
+
+    def _matches_repeated_slide_text(self, shape) -> bool:
+        """同一スライド内に重複出現するテキスト shape を装飾扱いにする."""
+        repeated = getattr(self, "_current_repeated_texts", None)
+        if not repeated:
+            return False
+        try:
+            if not (getattr(shape, "has_text_frame", False) and shape.has_text_frame):
+                return False
+            text = _safe_text(shape.text_frame.text)
+            if not text:
+                return False
+            return text in repeated
+        except Exception:
+            return False
 
     # ---------- シェイプ単位 ----------
 
@@ -364,6 +582,25 @@ class PPTXMarkdownConverter:
         collected: list,
     ) -> None:
         if self._is_title_shape(shape):
+            return
+
+        # 当該スライドのタイトルとして使用済みの shape は重複出力を避ける
+        try:
+            if self._current_title_shape_id is not None and shape.shape_id == self._current_title_shape_id:
+                return
+        except Exception:
+            pass
+
+        # フッタ / スライド番号 / 日付プレースホルダはテンプレ装飾として除外
+        if self._is_template_placeholder(shape):
+            return
+
+        # マスタ / レイアウトに同じテキストで定義された装飾要素を除外
+        if self._matches_template_text(shape):
+            return
+
+        # 章扉スライドの装飾的章番号 (純数字 1〜3 桁) を除外
+        if self._current_is_section_cover and self._is_decoration_number(shape):
             return
 
         if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
@@ -407,7 +644,11 @@ class PPTXMarkdownConverter:
             return
 
         if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
+            # Mermaid 化に必要なメタ情報は重複テキストでも収集する
             shapes_meta.append(self._shape_meta(shape))
+            # 同一スライド内で繰り返し出現する短文（凡例ラベル等）は本文化を抑制
+            if self._matches_repeated_slide_text(shape):
+                return
             default_bullet = self._is_body_placeholder(shape)
             text = self._convert_text_frame(shape.text_frame, default_bullet=default_bullet)
             if text:
@@ -616,6 +857,17 @@ class PPTXMarkdownConverter:
         header_cells = [self._cell_text(cell) for cell in rows[0].cells]
         col_count = len(header_cells)
         if col_count == 0:
+            return ""
+        # 全セルが空のテーブルはレイアウト装飾とみなして抑制
+        all_cells_empty = True
+        for row in rows:
+            for cell in row.cells:
+                if self._cell_text(cell).strip():
+                    all_cells_empty = False
+                    break
+            if not all_cells_empty:
+                break
+        if all_cells_empty:
             return ""
         lines = [
             "| " + " | ".join(_escape_md_pipe(c) for c in header_cells) + " |",
