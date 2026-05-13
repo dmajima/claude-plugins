@@ -1,6 +1,6 @@
 {
   "name": "skill-router",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "プロンプト送信時に available-skills を自動スコアリングしてフック注入で適合スキルを推奨。ロジック編集は対象外",
   "author": {
     "name": "dmajima"
