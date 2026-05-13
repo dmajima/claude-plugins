@@ -278,6 +278,10 @@ class PPTXMarkdownConverter:
         self._current_max_font_pt: Optional[float] = None
         self._current_median_font_pt: Optional[float] = None
         self._current_decoration_shape_ids: set[int] = set()
+        self.structured_json_path = (
+            Path(args.structured_json).resolve() if getattr(args, "structured_json", None) else None
+        )
+        self.json_only = bool(getattr(args, "json_only", False))
 
     # ---------- エントリ ----------
 
@@ -311,6 +315,297 @@ class PPTXMarkdownConverter:
         with open(self.output_path, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(body)
         return self.output_path
+
+    def export_structured_json(self) -> Path:
+        """PPTX の全 shape を機械的に dump した構造化 JSON を出力する。
+
+        装飾フィルタや並べ替えは適用せず、LLM が後段で文脈的に解釈できる
+        生の情報を保持する。スキーマは references/json-schema.md を参照。
+        """
+        import json
+
+        _validate_pptx(self.input_path)
+        presentation = Presentation(str(self.input_path))
+        self.images_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            self._slide_width_emu = presentation.slide_width
+            self._slide_height_emu = presentation.slide_height
+        except Exception:
+            self._slide_width_emu = None
+            self._slide_height_emu = None
+
+        # マスタ/レイアウト由来のテキストは "装飾候補" として参考情報のみ提供（除外はしない）
+        template_texts = list(self._collect_template_texts(presentation))
+
+        slides_data = []
+        emitted_slide_no = 0
+        # 画像は MD 出力時と同様に抽出（pictures をスキャンして PNG を吐く）
+        for slide in presentation.slides:
+            if self._is_hidden(slide) and not self.include_hidden:
+                continue
+            emitted_slide_no += 1
+            slides_data.append(self._slide_to_dict(slide, emitted_slide_no))
+
+        document = {
+            "metadata": {
+                "input_path": str(self.input_path),
+                "slide_count": len(slides_data),
+                "slide_width_emu": self._slide_width_emu,
+                "slide_height_emu": self._slide_height_emu,
+                "images_dir": str(self.images_dir),
+                "template_decoration_texts": template_texts,
+                "schema_version": "1.0",
+            },
+            "slides": slides_data,
+        }
+
+        assert self.structured_json_path is not None
+        self.structured_json_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.structured_json_path, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(document, fh, ensure_ascii=False, indent=2)
+        return self.structured_json_path
+
+    def _slide_to_dict(self, slide, slide_no: int) -> dict:
+        """1 スライドを JSON 形式の dict にする。"""
+        try:
+            layout_name = slide.slide_layout.name or ""
+        except Exception:
+            layout_name = ""
+
+        shapes_list: List[dict] = []
+        connectors_list: List[dict] = []
+        self._walk_shape_to_dict(slide.shapes, slide_no, shapes_list, connectors_list, parent_path=[])
+
+        notes_text = ""
+        try:
+            if slide.has_notes_slide and slide.notes_slide is not None:
+                notes_text = _safe_text(slide.notes_slide.notes_text_frame.text)
+        except Exception:
+            notes_text = ""
+
+        return {
+            "slide_no": slide_no,
+            "layout_name": layout_name,
+            "is_section_cover_layout": self._is_section_cover_layout(slide),
+            "shapes": shapes_list,
+            "connectors": connectors_list,
+            "notes": notes_text,
+        }
+
+    def _walk_shape_to_dict(self, shape_iter, slide_no: int, shapes_out: list, connectors_out: list, parent_path: list) -> None:
+        """shape ツリーを再帰的に走査し、JSON 用辞書を構築する。"""
+        for shape in shape_iter:
+            try:
+                if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+                    group_id = shape.shape_id
+                    group_name = shape.name
+                    new_path = parent_path + [{"shape_id": group_id, "name": group_name}]
+                    self._walk_shape_to_dict(shape.shapes, slide_no, shapes_out, connectors_out, new_path)
+                    continue
+            except Exception:
+                pass
+
+            # コネクタは別配列にも格納する
+            try:
+                if shape.shape_type == MSO_SHAPE_TYPE.LINE or self._is_connector(shape):
+                    info = self._extract_connector_info(shape)
+                    if info:
+                        connectors_out.append(info)
+            except Exception:
+                pass
+
+            entry = self._shape_to_dict(shape, slide_no, parent_path)
+            if entry is not None:
+                shapes_out.append(entry)
+
+    def _shape_to_dict(self, shape, slide_no: int, parent_path: list) -> Optional[dict]:
+        """1 shape を JSON 用辞書化."""
+        try:
+            shape_id = shape.shape_id
+            name = shape.name
+        except Exception:
+            return None
+
+        try:
+            top = int(shape.top) if shape.top is not None else None
+        except Exception:
+            top = None
+        try:
+            left = int(shape.left) if shape.left is not None else None
+        except Exception:
+            left = None
+        try:
+            width = int(shape.width) if shape.width is not None else None
+        except Exception:
+            width = None
+        try:
+            height = int(shape.height) if shape.height is not None else None
+        except Exception:
+            height = None
+
+        slide_w = self._slide_width_emu
+        slide_h = self._slide_height_emu
+        top_ratio = (top / slide_h) if (top is not None and slide_h) else None
+        left_ratio = (left / slide_w) if (left is not None and slide_w) else None
+        width_ratio = (width / slide_w) if (width is not None and slide_w) else None
+        height_ratio = (height / slide_h) if (height is not None and slide_h) else None
+
+        # 種別判定
+        kind = "OTHER"
+        try:
+            shape_type = shape.shape_type
+        except Exception:
+            shape_type = None
+
+        if shape_type == MSO_SHAPE_TYPE.PICTURE:
+            kind = "PICTURE"
+        elif getattr(shape, "has_table", False) and getattr(shape, "has_table", False):
+            try:
+                if shape.has_table:
+                    kind = "TABLE"
+            except Exception:
+                pass
+        elif shape_type == MSO_SHAPE_TYPE.LINE or self._is_connector(shape):
+            kind = "CONNECTOR"
+        elif self._is_smartart(shape):
+            kind = "SMARTART"
+        elif getattr(shape, "has_chart", False):
+            try:
+                if shape.has_chart:
+                    kind = "CHART"
+            except Exception:
+                pass
+        elif getattr(shape, "has_text_frame", False) and shape.has_text_frame:
+            kind = "TEXT_FRAME"
+
+        # placeholder 情報
+        ph_info: Optional[dict] = None
+        try:
+            ph = shape.placeholder_format
+            if ph is not None:
+                ph_info = {
+                    "idx": ph.idx,
+                    "type": str(ph.type) if ph.type is not None else None,
+                }
+        except Exception:
+            ph_info = None
+
+        # auto_shape_type
+        auto_type = ""
+        try:
+            auto_type = str(shape.auto_shape_type) if getattr(shape, "auto_shape_type", None) else ""
+        except Exception:
+            auto_type = ""
+
+        # テキスト
+        text = ""
+        paragraphs_data: List[dict] = []
+        try:
+            if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
+                text = _safe_text(shape.text_frame.text)
+                for para in shape.text_frame.paragraphs:
+                    runs_data = []
+                    for run in para.runs:
+                        run_text = run.text or ""
+                        if not run_text:
+                            continue
+                        rf = {"text": run_text}
+                        try:
+                            sz = run.font.size
+                            if sz is not None:
+                                rf["font_size_pt"] = float(sz.pt)
+                        except Exception:
+                            pass
+                        try:
+                            rf["bold"] = bool(run.font.bold)
+                        except Exception:
+                            pass
+                        try:
+                            color = run.font.color
+                            if color is not None:
+                                rgb = color.rgb
+                                if rgb is not None:
+                                    rf["color"] = str(rgb).upper()
+                        except Exception:
+                            pass
+                        runs_data.append(rf)
+                    paragraphs_data.append({
+                        "level": int(para.level or 0),
+                        "runs": runs_data,
+                    })
+        except Exception:
+            pass
+
+        # テーブル
+        table_data: Optional[dict] = None
+        try:
+            if getattr(shape, "has_table", False) and shape.has_table:
+                rows_out = []
+                for row in shape.table.rows:
+                    cells_out = []
+                    for cell in row.cells:
+                        cells_out.append(_safe_text(cell.text or ""))
+                    rows_out.append(cells_out)
+                table_data = {
+                    "rows": rows_out,
+                    "row_count": len(rows_out),
+                    "col_count": len(rows_out[0]) if rows_out else 0,
+                }
+        except Exception:
+            table_data = None
+
+        # 画像
+        image_data: Optional[dict] = None
+        if kind == "PICTURE":
+            block = self._handle_picture(shape, slide_no)
+            if block:
+                # block は "![alt](images_dir/file.png)" 形式の Markdown 文字列
+                image_data = {"markdown_link": block}
+
+        font_size_max = self._extract_max_font_size_pt(shape)
+        font_color = self._extract_dominant_font_color(shape)
+
+        return {
+            "shape_id": shape_id,
+            "name": name,
+            "kind": kind,
+            "auto_shape_type": auto_type,
+            "placeholder": ph_info,
+            "group_path": parent_path,
+            "geometry": {
+                "top_emu": top,
+                "left_emu": left,
+                "width_emu": width,
+                "height_emu": height,
+                "top_ratio": top_ratio,
+                "left_ratio": left_ratio,
+                "width_ratio": width_ratio,
+                "height_ratio": height_ratio,
+            },
+            "text": text,
+            "paragraphs": paragraphs_data,
+            "font_size_max_pt": font_size_max,
+            "font_color": font_color,
+            "is_grayish_color": self._is_grayish_color(font_color),
+            "table": table_data,
+            "image": image_data,
+        }
+
+    def _extract_connector_info(self, shape) -> Optional[dict]:
+        """コネクタの接続元/接続先 shape_id を返す."""
+        try:
+            begin = None
+            end = None
+            for element in shape.element.iter():
+                tag = element.tag
+                if tag.endswith("}stCxn") and element.get("id"):
+                    begin = int(element.get("id"))
+                elif tag.endswith("}endCxn") and element.get("id"):
+                    end = int(element.get("id"))
+            return {"begin_shape_id": begin, "end_shape_id": end, "connector_shape_id": shape.shape_id}
+        except Exception:
+            return None
 
     # ---------- スライド単位 ----------
 
@@ -1429,6 +1724,19 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         default=DEFAULT_MAX_IMAGE_BYTES,
         help="Maximum bytes per image (default 5 MiB)",
     )
+    parser.add_argument(
+        "--structured-json",
+        default=None,
+        help=(
+            "Output a machine-readable structured JSON instead of (or in addition to) Markdown. "
+            "If specified alone, only JSON is written. Use this for LLM-driven semantic conversion."
+        ),
+    )
+    parser.add_argument(
+        "--json-only",
+        action="store_true",
+        help="When set with --structured-json, suppress Markdown output and only emit JSON.",
+    )
     return parser.parse_args(list(argv))
 
 
@@ -1440,6 +1748,14 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         return 1
     try:
         converter = PPTXMarkdownConverter(args)
+        # 構造化 JSON モード（参考: PPTX → 機械抽出 JSON → LLM 解釈 → MD の 2 段階処理）
+        if converter.structured_json_path is not None:
+            json_path = converter.export_structured_json()
+            print(f"Wrote JSON: {json_path}")
+            print(f"Images dir: {converter.images_dir}")
+            if converter.json_only:
+                return 0
+        # JSON 単独指定でなければ従来通り Markdown を生成（フォールバック）
         output_path = converter.convert()
         print(f"Wrote: {output_path}")
         print(f"Images dir: {converter.images_dir}")
