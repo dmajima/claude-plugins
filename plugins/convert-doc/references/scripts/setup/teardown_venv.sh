@@ -6,7 +6,11 @@
 
 set -euo pipefail
 
-WORK_DIR="${1:?エラー: WORK_DIR を第1引数に指定してください。例: teardown_venv.sh .claude/.local/work/{yyyyMMdd_nn_summary}/workspace}"
+if [ -z "${1:-}" ]; then
+  echo "エラー: WORK_DIR を第1引数に指定してください。例: teardown_venv.sh .claude/.local/work/(session)/workspace" >&2
+  exit 1
+fi
+WORK_DIR="$1"
 VENV_DIR="$WORK_DIR/.venv"
 
 if [ -d "$VENV_DIR" ]; then

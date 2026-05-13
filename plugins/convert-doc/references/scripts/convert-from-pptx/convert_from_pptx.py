@@ -408,7 +408,8 @@ class PPTXMarkdownConverter:
 
         if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
             shapes_meta.append(self._shape_meta(shape))
-            text = self._convert_text_frame(shape.text_frame)
+            default_bullet = self._is_body_placeholder(shape)
+            text = self._convert_text_frame(shape.text_frame, default_bullet=default_bullet)
             if text:
                 collected.append({"kind": "text", "shape_id": shape.shape_id, "text": text})
             return
@@ -419,10 +420,27 @@ class PPTXMarkdownConverter:
             placeholder = shape.placeholder_format
             if placeholder is None:
                 return False
+            placeholder_type = placeholder.type
+            type_str = str(placeholder_type) if placeholder_type is not None else ""
+            if "SUBTITLE" in type_str:
+                return False
             if placeholder.idx == 0:
                 return True
+            return "TITLE" in type_str
+        except Exception:
+            return False
+
+    @staticmethod
+    def _is_body_placeholder(shape) -> bool:
+        try:
+            placeholder = shape.placeholder_format
+            if placeholder is None:
+                return False
             placeholder_type = placeholder.type
-            return placeholder_type is not None and "TITLE" in str(placeholder_type)
+            if placeholder_type is None:
+                return False
+            type_str = str(placeholder_type)
+            return any(kw in type_str for kw in ("BODY", "OBJECT", "CONTENT"))
         except Exception:
             return False
 
@@ -486,7 +504,7 @@ class PPTXMarkdownConverter:
 
     # ---------- テキストフレーム ----------
 
-    def _convert_text_frame(self, text_frame) -> str:
+    def _convert_text_frame(self, text_frame, *, default_bullet: bool = False) -> str:
         rendered_paragraphs: List[str] = []
         code_buffer: List[str] = []
 
@@ -510,10 +528,13 @@ class PPTXMarkdownConverter:
 
             flush_code()
 
+            bullet_state = self._bullet_state(paragraph)
+            is_bulleted = bullet_state is True or (bullet_state is None and default_bullet)
+
             if level > 0:
                 indent = "  " * level
                 rendered_paragraphs.append(f"{indent}- {text}")
-            elif self._has_bullet(paragraph):
+            elif is_bulleted:
                 rendered_paragraphs.append(f"- {text}")
             else:
                 rendered_paragraphs.append(text)
@@ -522,11 +543,18 @@ class PPTXMarkdownConverter:
         return "\n".join(rendered_paragraphs)
 
     @staticmethod
-    def _has_bullet(paragraph) -> bool:
+    def _bullet_state(paragraph):
+        """段落の bullet 設定を判定する。
+
+        戻り値:
+            True  -- 段落に明示的な bullet 指定がある (buChar / buAutoNum)
+            False -- 段落に明示的な「bullet なし」指定がある (buNone)
+            None  -- 段落側に指定がなく、レイアウト側のデフォルトに従う
+        """
         try:
             p_pr = paragraph._pPr
             if p_pr is None:
-                return False
+                return None
             for child in p_pr.iter():
                 tag = child.tag
                 if tag.endswith("}buChar") or tag.endswith("}buAutoNum"):
@@ -534,8 +562,8 @@ class PPTXMarkdownConverter:
                 if tag.endswith("}buNone"):
                     return False
         except Exception:
-            return False
-        return False
+            return None
+        return None
 
     @staticmethod
     def _render_paragraph_runs(paragraph) -> str:

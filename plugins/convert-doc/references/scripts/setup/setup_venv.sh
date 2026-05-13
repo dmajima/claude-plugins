@@ -10,7 +10,11 @@
 
 set -euo pipefail
 
-WORK_DIR="${1:?エラー: WORK_DIR を第1引数に指定してください。例: setup_venv.sh .claude/.local/work/{yyyyMMdd_nn_summary}/workspace}"
+if [ -z "${1:-}" ]; then
+  echo "エラー: WORK_DIR を第1引数に指定してください。例: setup_venv.sh .claude/.local/work/(session)/workspace" >&2
+  exit 1
+fi
+WORK_DIR="$1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$WORK_DIR/.venv"
 REQUIREMENTS="$SCRIPT_DIR/requirements.txt"
