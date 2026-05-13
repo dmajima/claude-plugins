@@ -39,7 +39,7 @@ skill-router の推奨が全然出ない
 
 ## 分岐の根拠
 
-設計書 v2 セクション 5.3「閾値判定」とセクション 4.5「config.json」、セクション 9.3「フェイルオープン原則」のクロス参照。低帯比率が高い場合は閾値・skip_keywords・index 鮮度のいずれかが原因となるため、診断の最初の入口として配置。
+`references/scripts/lib/route.py` の `determine_tier` および `config.json` の `thresholds` セクション + フェイルオープン原則のクロス参照。低帯比率が高い場合は閾値・skip_keywords・index 鮮度のいずれかが原因となるため、診断の最初の入口として配置。
 
 ## 関連ケース
 

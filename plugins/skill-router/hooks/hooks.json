@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/build_index_on_start.sh\"",
-            "timeout": 240
+            "timeout": 360
           }
         ]
       }

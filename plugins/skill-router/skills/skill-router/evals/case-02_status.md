@@ -36,7 +36,7 @@ router の状態を確認したい
 
 ## 分岐の根拠
 
-設計書 v2 セクション 7「スラッシュコマンド仕様」と L3「スコア分布ヒストグラム追加」で定義された監視・診断のエントリポイント。チューニング時に `config.json` 編集と組み合わせて使う。
+`commands/router-status.md` と `references/scripts/lib/build_index.py` の `stats` 構造に基づく監視・診断のエントリポイント。チューニング時に `config.json` 編集と組み合わせて使う。
 
 ## 関連ケース
 

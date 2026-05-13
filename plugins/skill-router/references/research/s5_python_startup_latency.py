@@ -1,11 +1,11 @@
-"""Spike S5: measure Python cold/warm startup + skill-router import latency.
+"""Research S5: measure Python cold/warm startup + skill-router import latency.
 
 Design v2 section 3.2.5 / 8.2 budget the per-prompt route at < 200ms total, with
-~100ms reserved for the Python interpreter itself.  This spike measures the
-actual numbers on the target machine.
+~100ms reserved for the Python interpreter itself.  This research script measures
+the actual numbers on the target machine.
 
 Run directly (not as a hook):
-  python references/spike/s5_python_startup_latency.py
+  python references/research/s5_python_startup_latency.py
 
 Output: 5-iteration table of:
   - subprocess startup time (cold per-invocation, what the hook actually pays)
@@ -36,7 +36,7 @@ def _self_measure() -> dict[str, float]:
     t1 = time.perf_counter()
 
     # Use a deliberately tiny payload; we only want to exercise import + dispatch.
-    payload = {"session_id": "spike-s5", "prompt": "/spike-noop"}
+    payload = {"session_id": "research-s5", "prompt": "/research-noop"}
     t2 = time.perf_counter()
     _ = route.route(payload)
     t3 = time.perf_counter()
@@ -58,7 +58,7 @@ def _subprocess_round() -> dict[str, float]:
             "t0=time.perf_counter();"
             "import build_index, session_state, route;"
             "t1=time.perf_counter();"
-            "route.route({'session_id':'spike-s5','prompt':'/x'});"
+            "route.route({'session_id':'research-s5','prompt':'/x'});"
             "t2=time.perf_counter();"
             "print(json.dumps({'import_ms':(t1-t0)*1000,'route_call_ms':(t2-t1)*1000}))"
         ),

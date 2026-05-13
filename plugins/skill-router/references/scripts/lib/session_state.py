@@ -16,6 +16,7 @@ import re
 import socket
 import sys
 import time
+from collections import deque
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -35,8 +36,15 @@ _SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (
 )
 
 
-def mask_secrets(text: str) -> str:
-    """Replace any matched secret with the first 4 chars + '***' + last 4."""
+def mask_secrets(text: str | None) -> str | None:
+    """Replace any matched secret with the first 4 chars + '***' + last 4.
+
+    Returns the input unchanged for ``None`` and empty-string inputs so the
+    caller's type expectation matches the actual runtime contract.  Previously
+    the annotation was ``(text: str) -> str`` while the implementation handled
+    ``None`` via ``if not text: return text``; the discrepancy showed up in
+    mypy strict mode and confused readers (impl review M-9).
+    """
     if not text:
         return text
     masked = text
@@ -55,17 +63,42 @@ def _hash_path(path: str) -> str:
     return hashlib.sha256(path.encode("utf-8", errors="replace")).hexdigest()
 
 
+# Whitelist for session_id directory names: alphanumerics + . _ - only,
+# 1..128 chars. Anything outside this set (path separators, '..',
+# control characters, NUL bytes, etc.) MUST be replaced with a
+# deterministic hash to prevent the value being used to escape the
+# <base>/sessions/ subtree (CWE-22 / security review M-1).
+_SAFE_SID_RE = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
+
+
+def _normalise_session_id(sid: str) -> str:
+    """Reduce ``sid`` to a path-safe token.
+
+    Returns the input verbatim when it matches the whitelist; otherwise
+    returns a deterministic SHA-256 hex digest of the original value so
+    callers see a stable id without the risk of path traversal.
+    """
+    if _SAFE_SID_RE.fullmatch(sid):
+        return sid
+    return _hash_path(sid)
+
+
 def resolve_session_id(stdin_payload: dict[str, Any]) -> str:
-    """Resolve session_id following v2 section 3.3.3 priority."""
+    """Resolve session_id following v2 section 3.3.3 priority.
+
+    Every return path is funnelled through :func:`_normalise_session_id`
+    so an attacker that can influence ``stdin_payload`` /
+    ``CLAUDE_SESSION_ID`` cannot inject path-traversal sequences.
+    """
     sid = (stdin_payload.get("session_id") or "").strip()
     if sid:
-        return sid
+        return _normalise_session_id(sid)
     transcript = (stdin_payload.get("transcript_path") or "").strip()
     if transcript:
         return _hash_path(transcript)
     env_sid = (os.environ.get("CLAUDE_SESSION_ID") or "").strip()
     if env_sid:
-        return env_sid
+        return _normalise_session_id(env_sid)
     seed = "|".join(
         [
             socket.gethostname(),
@@ -85,13 +118,22 @@ def session_dir(base: Path, session_id: str) -> Path:
 
 
 def append_prompt(base: Path, session_id: str, payload: dict[str, Any]) -> None:
-    """Append a sanitized record to prompts.jsonl. Fail-open."""
+    """Append a sanitized record to prompts.jsonl. Fail-open.
+
+    Both ``prompt`` and ``cwd`` pass through ``mask_secrets`` because a
+    cwd value can carry a path under e.g. ``.../credentials/...`` or
+    similar that an operator pasted token-bearing fragments into
+    (security review M-2 / CWE-532).
+    """
     try:
+        cwd = payload.get("cwd")
+        if isinstance(cwd, str):
+            cwd = mask_secrets(cwd)
         record = {
             "ts": time.time(),
             "session_id": session_id,
             "prompt": mask_secrets(payload.get("prompt", "")),
-            "cwd": payload.get("cwd"),
+            "cwd": cwd,
         }
         path = session_dir(base, session_id) / "prompts.jsonl"
         with path.open("a", encoding="utf-8") as fh:
@@ -137,12 +179,19 @@ def tail_recent_prompts(
 
 
 def _iter_tail(fh: Iterable[str], n: int) -> list[str]:
-    buf: list[str] = []
+    """Return the last ``n`` lines of ``fh`` as a list (newline-stripped).
+
+    Uses :class:`collections.deque` with ``maxlen=n`` so the trim is O(1)
+    per line instead of O(N) ``list.pop(0)``.  This keeps
+    ``tail_recent_prompts`` cheap even for long-running sessions where
+    ``prompts.jsonl`` grows to thousands of lines (impl review M-10).
+    """
+    if n <= 0:
+        return []
+    buf: deque[str] = deque(maxlen=n)
     for line in fh:
         buf.append(line.rstrip("\n"))
-        if len(buf) > n:
-            buf.pop(0)
-    return buf
+    return list(buf)
 
 
 if __name__ == "__main__":

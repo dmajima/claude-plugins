@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import json
 import logging
+import logging.handlers
 import os
 import re
 import socket
@@ -46,12 +47,16 @@ from pathlib import Path
 from typing import Any
 
 _HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(_HERE))
+if str(_HERE) not in sys.path:
+    sys.path.insert(0, str(_HERE))
 
 import parse_evals  # noqa: E402  (sibling module, see design v2 section 3.2.6)
+import config_io  # noqa: E402
+import embedding_client  # noqa: E402
+import embedding_enrich  # noqa: E402
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 INVERTED_SCHEMA_VERSION = 1
 MAX_POSTINGS_PER_KEYWORD = 50
 # Versions of ~/.claude/plugins/installed_plugins.json that this builder
@@ -131,13 +136,25 @@ def resolve_base_dir() -> Path:
     return Path(os.path.expanduser("~")) / ".claude" / ".local" / "plugins" / "skill-router"
 
 
+_LOG_MAX_BYTES = 1_048_576  # 1 MiB per log file
+_LOG_BACKUP_COUNT = 3  # rotate to .1 / .2 / .3, then drop
+
+
 def _setup_logger(base: Path) -> logging.Logger:
     base.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger("skill_router.build_index")
     logger.setLevel(logging.INFO)
     if logger.handlers:
         return logger
-    handler = logging.FileHandler(base / "index.log", encoding="utf-8")
+    # Rotating handler (1 MiB x 3 backups = 4 MiB cap) prevents the log
+    # from growing unboundedly across long-lived dev environments
+    # (security review Suggestion / CWE-779).
+    handler = logging.handlers.RotatingFileHandler(
+        base / "index.log",
+        maxBytes=_LOG_MAX_BYTES,
+        backupCount=_LOG_BACKUP_COUNT,
+        encoding="utf-8",
+    )
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logger.addHandler(handler)
     return logger
@@ -154,6 +171,17 @@ def _read_json(path: Path) -> Any:
             return json.load(fh)
     except (OSError, json.JSONDecodeError):
         return None
+
+
+def _load_user_config(base: Path) -> dict[str, Any]:
+    """Read ``<base>/config.json`` for sections build_index needs (the
+    ``embedding`` block in v0.4).  Returns ``{}`` when missing/malformed.
+
+    Thin wrapper kept for readability at the call sites; delegates the
+    actual I/O to :func:`config_io.load_raw_config` which is shared
+    with :func:`route.load_config` (review architect M-2).
+    """
+    return config_io.load_raw_config(base)
 
 
 def _enabled_plugin_keys(settings: Any) -> set[str]:
@@ -346,8 +374,12 @@ def _extract_skill_record(
     fm = _parse_frontmatter(text)
     name = fm.get("name") or skill_md.parent.name
     description = fm.get("description", "")
-    use_when = (_USE_WHEN_RE.search(description) or [None, ""])[1].strip() if _USE_WHEN_RE.search(description) else ""
-    skip_when = (_SKIP_WHEN_RE.search(description) or [None, ""])[1].strip() if _SKIP_WHEN_RE.search(description) else ""
+    # Reuse the single match object instead of running each regex twice
+    # (impl review Suggestion).
+    use_match = _USE_WHEN_RE.search(description)
+    use_when = use_match.group(1).strip() if use_match else ""
+    skip_match = _SKIP_WHEN_RE.search(description)
+    skip_when = skip_match.group(1).strip() if skip_match else ""
     skip_verbs, skip_nouns = _split_skip_phrases(skip_when)
     trigger_phrases = _extract_trigger_phrases(description)
     evals = parse_evals.parse_skill_evals(skill_md.parent)
@@ -498,7 +530,37 @@ def build() -> dict[str, Any]:
             if record is not None:
                 skills.append(record)
 
+    # ------------------------------------------------------------------
+    # Optional embedding-based skill vectorisation (v0.4+).
+    #
+    # Gated by ``embedding.enabled`` in the user's ``config.json``.
+    # When disabled, missing SDK, or any failure, the helper returns
+    # ``({}, None)`` and the heuristic-only behaviour is preserved.
+    # ------------------------------------------------------------------
+    user_config = _load_user_config(base)
+    embedding_section = (
+        user_config.get("embedding", {}) if isinstance(user_config, dict) else {}
+    )
+    if not isinstance(embedding_section, dict):
+        embedding_section = {}
+    embedding_cfg = embedding_client.EmbeddingConfig.from_dict(embedding_section)
+    embed_started = time.perf_counter()
+    embed_qn_to_idx: dict[str, int] = {}
+    try:
+        embed_qn_to_idx, _matrix = embedding_enrich.ensure_skill_vectors(
+            skills, base, embedding_cfg
+        )
+    except Exception:  # pragma: no cover - fail-open
+        logger.exception("embedding vectorisation failed; continuing with heuristic only")
+        embed_qn_to_idx = {}
+    embed_duration_ms = int((time.perf_counter() - embed_started) * 1000)
+
     duration_ms = int((time.perf_counter() - started) * 1000)
+    embedding_active = (
+        embedding_cfg.enabled
+        and embedding_client.is_sdk_available()
+        and bool(embed_qn_to_idx)
+    )
     index = {
         "schema_version": SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
@@ -516,17 +578,24 @@ def build() -> dict[str, Any]:
             "skills_with_evals": sum(1 for s in skills if s["evals"]),
             "skipped_plugins": skipped_plugins,
             "scan_duration_ms": duration_ms,
+            "embedding": {
+                "enabled": bool(embedding_active),
+                "model": embedding_cfg.model if embedding_active else None,
+                "skills_vectorised": len(embed_qn_to_idx),
+                "build_duration_ms": embed_duration_ms,
+            },
         },
         "skills": skills,
     }
     inverted = build_inverted_index(skills)
     _write_outputs(base, index, inverted)
     logger.info(
-        "indexed skills=%d enabled=%d skipped=%d duration_ms=%d",
+        "indexed skills=%d enabled=%d skipped=%d duration_ms=%d embedding=%s",
         len(skills),
         len(enabled),
         skipped_plugins,
         duration_ms,
+        "on" if embedding_active else "off",
     )
     return index
 
@@ -538,11 +607,20 @@ def main() -> int:
         try:
             base = resolve_base_dir()
             base.mkdir(parents=True, exist_ok=True)
-            with (base / "error.log").open("a", encoding="utf-8") as fh:
-                import traceback
+            import traceback
 
+            import session_state  # local import: keeps build()'s hot path lean
+
+            # Mask secret-shaped substrings (sk-/ghp_/Bearer/...) before
+            # persisting the traceback; SessionStart-time exceptions can
+            # capture environment values or prompt fragments
+            # (security review L-3, CWE-209).
+            masked_tb = session_state.mask_secrets(traceback.format_exc())
+            with (base / "error.log").open("a", encoding="utf-8") as fh:
                 fh.write(f"=== {datetime.now(timezone.utc).isoformat()} ===\n")
-                traceback.print_exc(file=fh)
+                fh.write(masked_tb)
+                if not masked_tb.endswith("\n"):
+                    fh.write("\n")
         except OSError:
             pass
     return 0

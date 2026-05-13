@@ -1,4 +1,4 @@
-"""Spike S2: observe how Claude Code merges additionalContext from multiple hooks.
+"""Research S2: observe how Claude Code merges additionalContext from multiple hooks.
 
 The script can play either of two roles, selected by the --role flag, so a
 single file can be wired up as two independent UserPromptSubmit hooks for
@@ -11,7 +11,7 @@ Usage in hooks.json (temporary, local only):
     {"hooks": [{"type": "command", "command": "python s2_hook_concat.py --role B"}]}
   ]
 
-Each invocation writes to the spike log, then emits a hookSpecificOutput with
+Each invocation writes to the research log, then emits a hookSpecificOutput with
 a clearly identifiable additionalContext line.  Inspect the next assistant
 turn to determine: are both lines present? in order? prefixed correctly?
 """
@@ -28,7 +28,7 @@ from pathlib import Path
 def _log_path() -> Path:
     base = Path(os.environ.get("CLAUDE_PLUGIN_DATA", "")).expanduser()
     if not str(base):
-        base = Path.home() / ".claude" / ".local" / "plugins" / "skill-router" / "spike"
+        base = Path.home() / ".claude" / ".local" / "plugins" / "skill-router" / "research"
     base.mkdir(parents=True, exist_ok=True)
     return base / "s2_hook_concat.log"
 

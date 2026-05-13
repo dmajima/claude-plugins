@@ -99,7 +99,7 @@
     {
       "name": "skill-router",
       "source": "./plugins/skill-router",
-      "description": "ユーザプロンプトに応じた最適スキルを UserPromptSubmit フックで自動推奨し、スキル起動率を高めるプラグイン",
+      "description": "プロンプト送信時に available-skills を自動スコアリングしてフック注入で適合スキルを推奨。ロジック編集は対象外",
       "author": {
         "name": "dmajima"
       },
@@ -111,7 +111,10 @@
         "session-start",
         "skill-invocation",
         "additional-context",
-        "hooks"
+        "hooks",
+        "embedding",
+        "fastembed",
+        "offline"
       ]
     },
     {

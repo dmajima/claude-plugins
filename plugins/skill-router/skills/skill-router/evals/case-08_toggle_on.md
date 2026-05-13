@@ -36,7 +36,7 @@ skill-router を再有効化して
 
 ## 分岐の根拠
 
-設計書 v2 セクション 7「`/router-toggle on|off`」とセクション 4.4「base 解決順位」。`route_prompt.sh` は 3 階層を OR 条件で参照するため、再有効化時には全階層を順次削除する必要がある（`/router-toggle off` で `${CLAUDE_PLUGIN_DATA}` に作られたフラグを `${HOME}` 階層の確認だけでは消せない）。
+`commands/router-toggle.md` の有効化処理と `references/scripts/hooks/route_prompt.sh` のトグル参照順位（base 解決の 3 階層）。`route_prompt.sh` は 3 階層を OR 条件で参照するため、再有効化時には全階層を順次削除する必要がある（`/router-toggle off` で `${CLAUDE_PLUGIN_DATA}` に作られたフラグを `${HOME}` 階層の確認だけでは消せない）。
 
 ## 関連ケース
 

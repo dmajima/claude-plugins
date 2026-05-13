@@ -1,11 +1,11 @@
 ---
-description: skill-router の統計・直近決定・スコア分布表示（--clean で 30 日超セッション削除）
+description: skill-router の統計・直近決定・スコア分布を確認（チューニング時 / 異常診断時）
 argument-hint: "[--clean]"
 ---
 
 ユーザの引数: $ARGUMENTS
 
-`skill-router` プラグインの状態を確認します。`--clean` オプションが指定された場合は 30 日以上前のセッションディレクトリを削除します（設計書 v2 セクション 7）。
+`skill-router` プラグインの状態を確認します。`--clean` オプションが指定された場合は 30 日以上前のセッションディレクトリを削除します（`commands/router-status.md` 本ファイルの動作モード表参照）。
 
 ## 動作モード
 
@@ -37,15 +37,13 @@ argument-hint: "[--clean]"
 
 ## --clean 指定時の追加動作
 
+セッション削除は `references/scripts/commands/clean_old_sessions.py` に切り出しています（ADR-025 / scripts-policy 準拠）。
+
 ```bash
-# 30 日 = 2592000 秒
-python -c "import os,time,shutil,sys; from pathlib import Path; \
-base=Path(sys.argv[1]); root=base/'sessions'; \
-[shutil.rmtree(p, ignore_errors=True) for p in root.glob('*') if p.is_dir() and (time.time() - p.stat().st_mtime) > 2592000]" \
-  "<base>"
+python "${CLAUDE_PLUGIN_ROOT}/references/scripts/commands/clean_old_sessions.py" "$BASE"
 ```
 
-実行後、削除したセッションディレクトリ数を提示する。
+実行後、削除したセッションディレクトリ数を提示する（標準出力 1 行）。
 
 ## 失敗時
 
@@ -55,14 +53,11 @@ base=Path(sys.argv[1]); root=base/'sessions'; \
 
 ## 実行手順
 
-1. base ディレクトリを Bash で解決:
+1. base ディレクトリを共通ヘルパーで解決（ADR-025 準拠、`references/scripts/commands/resolve_base.sh`）:
    ```bash
-   HOME_DIR="${HOME:-${USERPROFILE:-}}"
-   if [[ -n "${CLAUDE_PLUGIN_DATA:-}" && -d "${CLAUDE_PLUGIN_DATA}" ]]; then BASE="${CLAUDE_PLUGIN_DATA}"; \
-   elif [[ -d "${PWD}/.claude/.local/plugins/skill-router" ]]; then BASE="${PWD}/.claude/.local/plugins/skill-router"; \
-   else BASE="${HOME_DIR}/.claude/.local/plugins/skill-router"; fi; echo "$BASE"
+   BASE="$(bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/commands/resolve_base.sh")"
    ```
 2. 上記 `$BASE` を使って `index.json` / `inverted_index.json` を Read。
 3. `$BASE/sessions/` を Glob で列挙し、最新 10 件の `route_decisions.jsonl` を tail。
 4. レポートを整形して提示。
-5. `--clean` 指定時は事前に削除を実行。
+5. `--clean` 指定時は事前に `clean_old_sessions.py` を実行。
