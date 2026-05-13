@@ -4,7 +4,7 @@
 
 | 項目 | 値 |
 |-----|---|
-| 起動フレーズ | "認証情報を保存。name=anthropic-api-key, type=api_key, value=sk-ant-abcdefghij1234567890, domain=api.anthropic.com, --non-interactive" |
+| 起動フレーズ | "認証情報を保存。name=anthropic-api-key, type=api_key, value=sk-ant-<anthropic-key-sample>, domain=api.anthropic.com, --non-interactive" |
 | 引数 | name / type / value / domain を全指定 |
 | フラグ | `--non-interactive` |
 | 既存状態 | `credentials.json` 不在 |

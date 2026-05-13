@@ -7,13 +7,13 @@
 | 起動フレーズ | 他スキル（例: `extension-reviewer`）から `Skill(skill: "environment-setup-toolkit", args: "setup ...")` で呼ばれる |
 | 引数 | `setup --work-dir .claude/.local/work/20260501_03_self_review/workspace --requirements ${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt` |
 | フラグ | なし |
-| 既存状態 | `extension-toolkit` プラグインがインストール済 / プラグイン直下 `references/scripts/setup/{setup_venv.sh,teardown_venv.sh,requirements.txt}` が配置済 |
+| 既存状態 | `extension-toolkit` プラグインがインストール済 / プラグイン直下 `references/scripts/setup/{setup_venv.ps1,teardown_venv.ps1,requirements.txt}` が配置済 |
 
 ## 期待動作
 
 ### Phase 1: 委譲先スクリプトの解決
 
-`environment-setup-toolkit` は **自前で setup ロジックを保持しない**（ADR-024）。`${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh` の存在を確認する。
+`environment-setup-toolkit` は **自前で setup ロジックを保持しない**（ADR-024）。`$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1` の存在を確認する。
 
 | 状況 | アクション |
 |-----|---------|
@@ -22,10 +22,10 @@
 
 ### Phase 2: 起動
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
-  "$WORK_DIR" \
-  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
+```powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
+  -WorkDir "$WorkDir" `
+  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 ```
 
 スクリプト内部で:
@@ -43,7 +43,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
 | 状況 | 提示内容 |
 |-----|---------|
 | プラグイン直下 `references/scripts/setup/` 不在 | 「対象プラグインに ADR-024 準拠の setup スクリプトが配置されていません。`extension-toolkit` 自身の `references/scripts/setup/` を雛形として作成しますか?」を `AskUserQuestion` で確認 |
-| 雛形作成承認 | `setup_venv.sh` / `teardown_venv.sh` / `requirements.txt`（空）をプラグイン直下に作成 |
+| 雛形作成承認 | `setup_venv.ps1` / `teardown_venv.ps1` / `requirements.txt`（空）をプラグイン直下に作成 |
 | 拒否 | 中断、ユーザに手動作成を案内 |
 
 ## 期待出力
@@ -67,13 +67,13 @@ setup と対称に、teardown も他スキルから本スキル経由でプラ�
 Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>")
 ```
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" "$WORK_DIR"
+```powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir "$WorkDir"
 ```
 
 | 観点 | 内容 |
 |-----|------|
-| 安全装置 | teardown_venv.sh 内 3 段ガード（realpath 正規化 + `.claude/.local/` 限定 + システムパス除外）が常に動作 |
+| 安全装置 | teardown_venv.ps1 内 2 段ガード（`[System.IO.Path]::GetFullPath` 正規化 + `.claude/.local/` 限定）が常に動作 |
 | 失敗時の振る舞い | 安全装置に引っかかった場合は exit 1 で fail-closed、venv は削除されない |
 | プラグイン直下スクリプト不在時 | setup と同じく ADR-024 雛形作成案内（Phase 4）を提示 |
 

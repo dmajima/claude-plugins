@@ -4,7 +4,7 @@
 
 | 項目 | 値 |
 |-----|---|
-| 起動フレーズ | "OpenAI の API キー `sk-proj-abcdefghij1234567890` を保存して。" |
+| 起動フレーズ | "OpenAI の API キー `sk-proj-<openai-proj-key-sample>` を保存して。" |
 | 引数 | なし |
 | フラグ | なし |
 | 既存状態 | 現在のワーキングディレクトリの祖先に `.git` が存在しない（リポジトリ外）。`~/.claude/.local/plugins/credentials-manager/credentials.json` は不在 |

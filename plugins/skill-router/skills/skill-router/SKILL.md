@@ -1,7 +1,7 @@
 ---
 name: skill-router
-description: skill-router の状態確認・index 再構築・埋め込みキャッシュ参照・トグル切替を案内する操作スキル（対象: <base>/index.json・route.log・config.json 等）。「router の状態を見たい」「インデックスを再構築」「skill-router を停止」「推奨が出ない」等で起動。Use when operating or diagnosing skill-router. SKIP when editing routing logic (use hook-toolkit or edit route.py directly).
-allowed-tools: Read, Grep, Glob, Bash
+description: "skill-router の状態確認・index 再構築・埋め込みキャッシュ参照・トグル切替を案内する操作スキル（対象 - <base>/index.json・route.log・config.json 等）。「router の状態を見たい」「インデックスを再構築」「skill-router を停止」「推奨が出ない」等で起動。Use when operating or diagnosing skill-router. SKIP when editing routing logic (use hook-toolkit or edit route.py directly)."
+allowed-tools: "Read, Grep, Glob, PowerShell"
 ---
 
 # skill-router
