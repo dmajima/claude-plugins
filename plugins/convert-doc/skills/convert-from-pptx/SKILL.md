@@ -1,6 +1,6 @@
 ---
 name: convert-from-pptx
-description: PowerPoint (PPTX) ファイルを Claude が解釈可能な Markdown に変換するスキル（入力 PPTX → 出力 MD）。3 フェーズ構成: Phase 1 (Python) で全 shape の位置・サイズ・フォント・色・接続情報を構造化 JSON に dump、Phase 2 (Claude) で JSON を文脈解釈し装飾とコンテンツを区別した Markdown を生成、Phase 3 (Python + Claude) で生成 MD を元 PPTX と機械的に突き合わせて漏れ・誤転記を検証。大規模 PPTX (100 スライド超) はスライド単位分割 + サブエージェント並列分担に対応。「PPTX を Markdown に変換」「スライドを MD にして」「PowerPoint を読める形に」「設計書 PPTX を解析」等で起動。SKIP: 入力が Markdown (convert-pptx) / 出力が HTML (convert-html) / PDF (convert-pdf)。
+description: PowerPoint (PPTX) を Markdown に変換するスキル。入力 PPTX → 出力 MD。「PPTX を Markdown に変換」「スライドを MD にして」「PowerPoint を読める形に」「設計書 PPTX を解析」「.pptx をテキスト化」等で起動。Use when converting PowerPoint to Markdown. SKIP 入力が Markdown (convert-pptx) / 出力が HTML (convert-html) / PDF (convert-pdf)。
 ---
 
 # convert-from-pptx スキル
@@ -9,11 +9,7 @@ PowerPoint (PPTX) を「機械抽出 + LLM 意味解釈」の 2 フェーズで 
 
 ## 設計方針
 
-参考: PPTX → Markdown 変換の実装事例（Open XML SDK / python-pptx + LLM 意味解釈）。
-
-- Python 単独でルールベースに装飾を判定する従来方式は、テンプレート構造の多様性により本文消失や装飾混入の誤検出が避けられない。
-- 本スキルは Python で **構造データを完全抽出した JSON** を生成し、Claude が **文脈で意味解釈** して Markdown を作る 2 段階構成を採用する。
-- 装飾フィルタリング・タイトル推定・フロー図の Mermaid 化・要素並べ替えは **Claude メインコンテキストの責務** とする。
+Python で全 shape の構造データを完全抽出して JSON に dump し、Claude が文脈解釈して Markdown を生成する 2 段階構成。装飾フィルタリング・タイトル推定・Mermaid 化・要素並べ替えは Claude メインコンテキストの責務。詳細は [`references/design.md`](references/design.md) を参照。
 
 ## 責務
 
@@ -90,13 +86,14 @@ PowerPoint (PPTX) を「機械抽出 + LLM 意味解釈」の 2 フェーズで 
 ## 実行フロー（2 フェーズ・推奨）
 
 1. **ワークディレクトリ作成**（`.claude/.local/work/yyyyMMdd_nn_convert_from_pptx/{inputs,workspace}`）
-2. **venv 構築**（`workspace/.venv` 配下、`${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh`）
+2. **venv 構築**（`workspace/.venv` 配下、`${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1`）
 3. **Phase 1: 構造化 JSON 抽出**
-   ```bash
-   <workspace>/.venv/Scripts/python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" \
-     <入力 PPTX パス> \
-     --structured-json <セッション>/structured.json \
-     --json-only \
+   ```powershell
+   & "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+     "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
+     "<入力 PPTX パス>" `
+     --structured-json "<セッション>/structured.json" `
+     --json-only `
      [--include-notes] [--include-hidden]
    ```
 4. **Phase 2: Claude による意味解釈**
@@ -111,11 +108,12 @@ PowerPoint (PPTX) を「機械抽出 + LLM 意味解釈」の 2 フェーズで 
    - 構造化された Markdown を出力ファイルに Write
 5. **画像ファイル**は Phase 1 で `<basename>_images/` に既に抽出済み（Markdown から相対参照可能）
 6. **Phase 3: カバレッジ検証**
-   ```bash
-   <workspace>/.venv/Scripts/python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py" \
-     <入力 PPTX パス> \
-     <生成 MD パス> \
-     --report <セッション>/coverage_report.json \
+   ```powershell
+   & "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+     "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py" `
+     "<入力 PPTX パス>" `
+     "<生成 MD パス>" `
+     --report "<セッション>/coverage_report.json" `
      --threshold 0.85
    ```
    - Python が機械的にテキスト/テーブル/画像/コネクタのカバレッジを集計
@@ -129,54 +127,28 @@ PowerPoint (PPTX) を「機械抽出 + LLM 意味解釈」の 2 フェーズで 
 
 LLM 呼び出しが行えない自動処理コンテキストでは、従来通り Python 単独で Markdown を直接生成する:
 
-```bash
-<workspace>/.venv/Scripts/python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" \
-  <入力 PPTX> <出力 MD> [--include-notes]
+```powershell
+& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
+  "<入力 PPTX>" "<出力 MD>" [--include-notes]
 ```
 
 この場合、装飾フィルタ・タイトル推定・Mermaid 化は Python 内のヒューリスティック（フォントサイズ統計・位置統計・色判定）で実行される。品質は対話モード（2 フェーズ）に劣るが、人手介入なしで完結する。
 
-## スライド → Markdown の対応規則（Phase 2 ガイドライン）
+## スライド → Markdown の対応規則
 
-| PPTX 要素 | Markdown 出力 |
-|---------|-------------|
-| 1 枚目のメインタイトル | `# <タイトル>` |
-| 2 枚目以降のスライドタイトル | `## <タイトル>` |
-| タイトルが推定できないスライド | `## スライド<N>`（最終手段） |
-| 本文 placeholder の段落 | 段落（空行区切り） |
-| 本文 placeholder の箇条書き | `-` インデント付き箇条書き（2 スペース／レベル） |
-| 太字 / 斜体 / 取り消し線 | `**`, `*`, `~~` |
-| モノスペースフォント段落 | コードブロック ` ``` ` |
-| テーブル (`kind=TABLE`) | GFM パイプ表 |
-| 画像 (`kind=PICTURE`) | `![alt](<basename>_images/slideN_imgM.<ext>)` |
-| 図形群 + コネクタ | ```mermaid flowchart ... ``` |
-| SmartArt | ```mermaid flowchart ... ```（解析可能な範囲） |
-| チャート | `> チャート: ...` のメタ情報 |
-| スピーカーノート | `--include-notes` 指定時のみ `> [!NOTE]\n> ...` |
-| FOOTER / SLIDE_NUMBER placeholder | **出力しない**（テンプレ装飾） |
-| `template_decoration_texts` 一致テキスト | **出力しない** |
-| 凡例ラベル（薄いグレー / 極小フォント / 同テキスト 3 回以上） | **出力しない** |
+Phase 2 で Claude が JSON を解釈する際の規則は [`references/design.md`](references/design.md) を参照。
 
 ## アセットの場所
 
-- 変換スクリプト: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py`
-- 検証スクリプト: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py`
-- venv セットアップ: `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh`
+- 変換スクリプト: `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py`
+- 検証スクリプト: `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py`
+- venv セットアップ: `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1`（PowerShell 推奨・Windows 11）/ `setup_venv.sh`（POSIX 互換）
+- venv 撤去: `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.ps1` / `teardown_venv.sh`
 
 ## オプション
 
-| オプション | 省略値 | 内容 |
-|-----------|-------|------|
-| `--structured-json <PATH>` | なし | Phase 1 用の機械抽出 JSON 出力先（単一 JSON 全部入り） |
-| `--per-slide-json <DIR>` | なし | スライドごとに `slide-NN.json` を分割出力 + `metadata.json`（中〜大規模 PPTX 向け） |
-| `--compact-view <DIR>` | なし | スライドごとに人間/LLM 可読の簡潔ビュー `slide-NN.txt` を出力（Phase 2 で軽量に Read） |
-| `--json-only` | OFF | JSON / ビューのみ出力（Markdown 直接生成をスキップ。Phase 2 で Claude が MD 化する場合に指定） |
-| `--images-dir <DIR>` | `<出力MD basename>_images/` | 画像抽出先 |
-| `--no-mermaid` | OFF | フロー図 / SmartArt の Mermaid 変換を無効化（フォールバック用） |
-| `--include-notes` | OFF | スピーカーノートを含める |
-| `--include-hidden` | OFF | 非表示スライドも出力に含める |
-| `--no-first-slide-as-title` | ON | 1 枚目も `## スライド1` として H2 扱い |
-| `--max-image-size <BYTES>` | `5242880`（5 MiB） | 画像 1 枚あたりの最大バイト数 |
+CLI オプションの一覧と選択ガイドは [`references/options.md`](references/options.md) を参照。
 
 ## 重要な制約
 
@@ -191,8 +163,10 @@ LLM 呼び出しが行えない自動処理コンテキストでは、従来通�
 
 | 用途 | ファイル |
 |-----|---------|
+| 設計方針・対応規則 | [`references/design.md`](references/design.md) |
 | 環境構築 | [`references/setup.md`](references/setup.md) |
 | 変換実行手順 | [`references/procedures.md`](references/procedures.md) |
+| CLI オプション一覧 | [`references/options.md`](references/options.md) |
 | JSON スキーマと Phase 2 解釈ガイド | [`references/json-schema.md`](references/json-schema.md) |
 | Phase 3 検証ガイド（漏れ・誤転記の担保） | [`references/validation.md`](references/validation.md) |
 | 大規模 PPTX のサイズ別フロー | [`references/large-pptx-workflow.md`](references/large-pptx-workflow.md) |

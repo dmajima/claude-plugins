@@ -17,11 +17,12 @@ PPTX → Markdown 変換の最終フェーズとして、生成された Markdow
 
 ### 2.1 実行
 
-```bash
-<workspace>/.venv/Scripts/python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py" \
-  <入力 PPTX> \
-  <生成 MD> \
-  --report <セッション>/coverage_report.json \
+```powershell
+& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py" `
+  "<入力 PPTX>" `
+  "<生成 MD>" `
+  --report "<セッション>/coverage_report.json" `
   --threshold 0.85
 ```
 
@@ -116,7 +117,7 @@ PPTX → Markdown 変換の最終フェーズとして、生成された Markdow
 
 ## 6. 検証出力の保存場所
 
-セッション フォルダ直下に保存（[work-directory.md](../../../../../../.claude/.local/work/) の規約に準拠）:
+セッション フォルダ直下に保存（グローバルルール `~/.claude/rules/claude/work-directory.md` の規約に準拠）:
 
 ```
 .claude/.local/work/{session}/

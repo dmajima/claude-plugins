@@ -39,6 +39,12 @@ else
   PYTHON="$VENV_DIR/bin/python"
 fi
 
+# pip 自身を最新化（PowerShell 版 setup_venv.ps1 と挙動を統一する。
+# 旧バージョン pip は requirements 解決時に CVE 公表済みの脆弱性経路を踏みうるため、
+# プラグイン共通 venv の安全性を統合 venv 単位で揃える）
+echo "pip をアップグレードしています"
+"$PIP" install --upgrade pip --quiet
+
 echo "パッケージをインストールしています: $REQUIREMENTS"
 "$PIP" install --quiet -r "$REQUIREMENTS"
 

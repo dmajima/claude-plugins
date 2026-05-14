@@ -4,16 +4,16 @@
 
 ## 変換スクリプト実行
 
-```bash
-"$SESSION_DIR/workspace/.venv/Scripts/python" \
-  "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" \
-  "<入力PPTXファイルパス>" \
-  "<出力MDファイルパス>" \
-  [--images-dir <DIR>] \
-  [--no-mermaid] \
-  [--include-notes] \
-  [--include-hidden] \
-  [--no-first-slide-as-title] \
+```powershell
+& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
+  "<入力PPTXファイルパス>" `
+  "<出力MDファイルパス>" `
+  [--images-dir <DIR>] `
+  [--no-mermaid] `
+  [--include-notes] `
+  [--include-hidden] `
+  [--no-first-slide-as-title] `
   [--max-image-size <BYTES>]
 ```
 
