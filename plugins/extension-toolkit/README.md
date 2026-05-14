@@ -211,9 +211,10 @@ Claude（要約）:
 
 | 配置 | 内容 |
 |-----|-----|
-| `hooks/hooks.json` | フック設定（`PreToolUse Edit\|Write\|MultiEdit` + `Stop`）|
-| `references/scripts/hooks/enforce_toolkit_routing.sh` | PreToolUse: 推奨スキル名の提示 |
-| `references/scripts/hooks/check_version_bump.sh` | Stop: version 更新検証 |
+| `hooks/hooks.json` | フック設定（`PreToolUse Edit\|Write\|MultiEdit` + `PreToolUse Bash`（git commit 検出）+ `Stop`）。各 hook は `"shell": "powershell"` を明示 |
+| `references/scripts/hooks/enforce_toolkit_routing.ps1` | PreToolUse Edit\|Write\|MultiEdit: 推奨スキル名の提示 |
+| `references/scripts/hooks/check_version_bump_on_commit.ps1` | PreToolUse Bash: `git commit` 検出時に check_version_bump.ps1 に委譲（ADR-027） |
+| `references/scripts/hooks/check_version_bump.ps1` | Stop: version 更新検証 |
 | 除外パス | `.claude/.local/` / `.git/` / `/tmp/` 配下、git 利用不可環境、リポジトリ外 |
 
 「軽微な編集（typo・1〜数行修正）は直接編集 OK / 新規・大規模変更時は toolkit 経由」という運用バランスを取り、コミット前に必ずバージョン更新が促される設計です。詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) ADR-026 を参照。

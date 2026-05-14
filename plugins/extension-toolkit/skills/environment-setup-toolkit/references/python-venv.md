@@ -137,18 +137,18 @@ plugins/{plugin-name}/
 
 ## 10.5 Python バージョン要件チェック
 
-`setup_venv.sh` は第 3 引数で **最小 Python バージョン要件** を受け付ける:
+`setup_venv.ps1` は `-MinPythonVersion` パラメータで **最小 Python バージョン要件** を受け付ける:
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
-  <work_dir> [<requirements_path>] [<min_python_version>]
+```powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
+  -WorkDir <work_dir> [-RequirementsPath <path>] [-MinPythonVersion <ver>]
 ```
 
 例: Python 3.10 以上を要求する場合
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
-  "${WORK_DIR}" "${REQ_PATH}" "3.10"
+```powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
+  -WorkDir "$WorkDir" -RequirementsPath "$ReqPath" -MinPythonVersion "3.10"
 ```
 
 要件を満たさない場合はエラー終了し、ユーザに pyenv 等での切替を案内する。要件未指定時はチェックをスキップする。

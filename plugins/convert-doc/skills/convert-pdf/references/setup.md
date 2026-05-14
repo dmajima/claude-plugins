@@ -17,28 +17,28 @@
 
 セッション作業領域の workspace 配下に venv を構築する。
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/references/scripts/setup/setup_venv.sh" "$SESSION_DIR/workspace"
+```powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" -WorkDir "$SessionDir/workspace"
 ```
 
-setup_venv.sh は以下を自動実行する:
+setup_venv.ps1 は以下を自動実行する:
 
-1. `$WORK_DIR/.venv` に Python venv を作成
-2. `$SCRIPT_DIR/requirements.txt` からパッケージをインストール
+1. `$WorkDir/.venv` に Python venv を作成
+2. `$ScriptDir/requirements.txt` からパッケージをインストール
 3. `playwright install chromium` で Chromium バイナリをダウンロード（初回のみ、~120MB）
 
 ## 削除スクリプト
 
 セッション完了後は venv を削除する。
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/references/scripts/setup/teardown_venv.sh" "$SESSION_DIR/workspace"
+```powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir "$SessionDir/workspace"
 ```
 
 ## Chromium の再ダウンロードを避けたい場合
 
 `PLAYWRIGHT_BROWSERS_PATH` 環境変数で共有キャッシュディレクトリを指定するとダウンロードが 1 回で済む。
 
-```bash
-export PLAYWRIGHT_BROWSERS_PATH="$HOME/.cache/ms-playwright"
+```powershell
+$env:PLAYWRIGHT_BROWSERS_PATH = "$env:USERPROFILE/.cache/ms-playwright"
 ```

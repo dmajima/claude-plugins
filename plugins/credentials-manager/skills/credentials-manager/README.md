@@ -38,7 +38,7 @@ Claude Code セッションをまたいで認証情報の **追加・編集・�
 ### 最小例
 
 ユーザ:
-> OpenAI の API キー `sk-proj-abcdefghij1234567890` を保存して
+> OpenAI の API キー `sk-proj-<openai-proj-key-sample>` を保存して
 
 Claude（要約）:
 > `openai-api-key` として保存しました（api_key）。値: `sk-p****7890` 保存先: `<repo>/.claude/.local/plugins/credentials-manager/credentials.json`（project-scoped）

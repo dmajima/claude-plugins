@@ -45,6 +45,13 @@ import re
 import sys
 from typing import Any
 
+# ~/.claude/rules/tools/python-encoding-mandatory.md 必須3点セット (2):
+# 環境変数 PYTHONUTF8=1 / PYTHONIOENCODING=utf-8 の補強として、明示的に再構成する。
+# stdout は ASCII プレフィックス（[OK]/[ERROR]/[DONE]）のみ流す設計だが、
+# 例外スタックトレース等で日本語が混じる経路もあるため安全側に倒す。
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
 import yaml
 
 
@@ -215,7 +222,7 @@ PATH_PORTABILITY_PATTERNS: list[tuple[str, str]] = [
 
 # パスポータビリティ チェックの除外条件
 PATH_PORTABILITY_EXCLUDED_FILES = {".gitignore", ".gitattributes"}
-PATH_PORTABILITY_EXCLUDED_DIRS = {"evals", "templates"}
+PATH_PORTABILITY_EXCLUDED_DIRS = {"evals", "templates", "tests"}
 
 
 def _strip_backtick_spans(line: str) -> str:
@@ -656,12 +663,28 @@ def is_placeholder_value(value: str) -> bool:
     return any(re.search(pat, value) for pat in PLACEHOLDER_VALUE_PATTERNS)
 
 
+# シークレット混入チェックの除外ディレクトリ
+# tests / evals / templates 配下はテスト fixture / テンプレートのためダミーパターンを許容する
+SECRET_SCAN_EXCLUDED_DIRS = {"tests", "evals", "templates", "template"}
+
+
 def check_secrets(target: pathlib.Path, collector: IssueCollector) -> None:
-    """10. シークレット混入チェック。"""
+    """10. シークレット混入チェック。
+
+    除外:
+        - tests / evals / templates 配下のテスト fixture / テンプレート
+          （ダミーパターン・サンプル値を意図的に含むため、 CWE-532 を侵さない範囲で許容）
+    """
     for path in target.rglob("*"):
         if not path.is_file():
             continue
         if is_excluded_dir(path, target):
+            continue
+        try:
+            rel_parts = path.relative_to(target).parts
+        except ValueError:
+            rel_parts = ()
+        if any(part in SECRET_SCAN_EXCLUDED_DIRS for part in rel_parts):
             continue
         # ファイル名照合
         if not path.name.endswith(EXCLUDE_SUFFIX):
@@ -807,6 +830,212 @@ def check_cross_marketplace_readme(target: pathlib.Path, collector: IssueCollect
                 readme,
                 f"missing={','.join(missing)} cross_marketplaces={','.join(cross_dep_mps)}",
             )
+
+
+# --------------------------------------------------------------------------- #
+# 12. Bash/sh 利用検出（PowerShell 移行担保、shell-preference.md）
+# --------------------------------------------------------------------------- #
+
+# Bash 起動例の検出パターン（md 内）。
+# 単語境界の直後に `bash` があり、続いて `.sh` ファイルを指す形を検出する。
+# 「PowerShell から bash を呼ぶ」「bash 製のレガシースクリプトを呼ぶ」両方を捕捉。
+_BASH_INVOCATION_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_/.\-])bash\s+[\"']?[^\s\"']*\.sh\b",
+)
+
+# hooks.json の command フィールド先頭が `bash ...` で始まるパターン
+_HOOK_BASH_COMMAND_PATTERN = re.compile(r"^\s*bash\s+", re.IGNORECASE)
+
+# .sh / .ps1 併存チェックの除外条件
+_BASH_USAGE_EXCLUDED_DIRS = {"templates", "template", "evals", "node_modules"}
+# automated-checks.md と shell-preference.md は説明文中に「bash」「.sh」を含むため自己参照として除外
+_BASH_USAGE_EXCLUDED_MD_FILES = {
+    "automated-checks.md",
+    "shell-preference.md",
+    "run_checks.py",
+}
+
+
+def check_no_bash_invocation(target: pathlib.Path, collector: IssueCollector) -> None:
+    """12. Bash/sh 利用検出（PowerShell 移行担保、shell-preference.md）.
+
+    検出項目:
+        - hooks.json の command フィールドが `bash ...` で始まる   -> High
+        - .sh ファイルが残存している（完全廃止）                   -> High
+        - md 内に `bash ...sh` 起動例がコードフェンス・バッククォート外で残存 -> Medium
+
+    除外:
+        - templates / template / evals / checklists 配下
+        - automated-checks.md / shell-preference.md / run_checks.py (自己参照)
+        - run_checks.py 自身（このスクリプト）
+    """
+    # 1. hooks.json の command が bash で始まらないこと
+    for hooks_json in target.rglob("hooks.json"):
+        if is_excluded_dir(hooks_json, target):
+            continue
+        try:
+            rel_parts = hooks_json.relative_to(target).parts
+        except ValueError:
+            rel_parts = ()
+        if any(part in _BASH_USAGE_EXCLUDED_DIRS for part in rel_parts):
+            continue
+        if hooks_json.parent.name != "hooks":
+            continue
+        text = read_text_safe(hooks_json)
+        if text is None:
+            continue
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            continue  # JSON 不正は別チェックで検出済み
+
+        def _walk(obj: Any) -> None:
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    if k == "command" and isinstance(v, str):
+                        if _HOOK_BASH_COMMAND_PATTERN.match(v):
+                            collector.add(
+                                "High",
+                                "Bash 呼び出し検出 (hooks.json command): pwsh -NoProfile -File への移行が必要",
+                                hooks_json,
+                                mask_preview(v),
+                            )
+                    else:
+                        _walk(v)
+            elif isinstance(obj, list):
+                for item in obj:
+                    _walk(item)
+
+        _walk(data)
+
+    # 2. .sh は完全廃止 (shell-preference.md)。残存していれば High 指摘
+    for sh_path in target.rglob("*.sh"):
+        if is_excluded_dir(sh_path, target):
+            continue
+        try:
+            rel_parts = sh_path.relative_to(target).parts
+        except ValueError:
+            rel_parts = ()
+        if any(part in _BASH_USAGE_EXCLUDED_DIRS for part in rel_parts):
+            continue
+        collector.add(
+            "High",
+            "Bash スクリプト残存 (shell-preference.md / .sh は完全廃止)",
+            sh_path,
+            f".sh は完全廃止のため削除し、必要なら .ps1 に置き換えること ({sh_path.name})",
+        )
+
+    # 3. md 内の `bash ...sh` 起動例（コードフェンス・バッククォート外）
+    for path in target.rglob("*.md"):
+        if is_excluded_dir(path, target):
+            continue
+        try:
+            rel_parts = path.relative_to(target).parts
+        except ValueError:
+            rel_parts = ()
+        if any(part in _BASH_USAGE_EXCLUDED_DIRS or part == "checklists" for part in rel_parts):
+            continue
+        if path.name in _BASH_USAGE_EXCLUDED_MD_FILES:
+            continue
+        text = read_text_safe(path)
+        if text is None:
+            continue
+        for line_num, line, check_target in iter_inspectable_lines(path, text):
+            if _BASH_INVOCATION_PATTERN.search(check_target):
+                collector.add(
+                    "Medium",
+                    "md 内に bash 起動例残存 (PowerShell 移行推奨、shell-preference.md)",
+                    path,
+                    mask_preview(line),
+                    line=line_num,
+                )
+                break  # 同一ファイル内で複数検出しても一度だけ記録
+
+
+# --------------------------------------------------------------------------- #
+# 13. hook の shell フィールド明示チェック（PowerShell 統一補強、shell-preference.md）
+# --------------------------------------------------------------------------- #
+
+# `pwsh -NoProfile -File ...` を書いていても Claude Code の起動側シェルが Git Bash
+# だと引数解釈や PATH 解決でエッジケースが発生しうる。各 hook エントリで
+# `"shell": "powershell"` を明示することを必須化する。
+_ALLOWED_SHELL_VALUES = {"powershell", "bash"}
+_HOOK_SHELL_EXCLUDED_DIRS = {"templates", "template", "evals"}
+
+
+def check_hook_shell_field(target: pathlib.Path, collector: IssueCollector) -> None:
+    """13. hook の shell フィールド明示チェック（PowerShell 統一補強）。
+
+    検出項目:
+        - hooks.json 内の `type: "command"` を持つエントリに `"shell"` キーが存在しない -> High
+        - `"shell"` 値が `"powershell"` / `"bash"` 以外                                    -> High
+        - 本マーケットプレイスで `"shell": "bash"`                                          -> Medium
+
+    除外:
+        - templates / template / evals 配下のテンプレート・テスト fixture
+        - hooks/ 配下以外の hooks.json（誤検出防止）
+    """
+    for hooks_json in target.rglob("hooks.json"):
+        if is_excluded_dir(hooks_json, target):
+            continue
+        try:
+            rel_parts = hooks_json.relative_to(target).parts
+        except ValueError:
+            rel_parts = ()
+        if any(part in _HOOK_SHELL_EXCLUDED_DIRS for part in rel_parts):
+            continue
+        if hooks_json.parent.name != "hooks":
+            continue
+        text = read_text_safe(hooks_json)
+        if text is None:
+            continue
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            continue  # JSON 不正は別チェックで検出済み
+
+        hooks_root = data.get("hooks") if isinstance(data, dict) else None
+        if not isinstance(hooks_root, dict):
+            continue
+
+        for event_name, event_entries in hooks_root.items():
+            if not isinstance(event_entries, list):
+                continue
+            for entry in event_entries:
+                if not isinstance(entry, dict):
+                    continue
+                inner_hooks = entry.get("hooks")
+                if not isinstance(inner_hooks, list):
+                    continue
+                for hook_def in inner_hooks:
+                    if not isinstance(hook_def, dict):
+                        continue
+                    if hook_def.get("type") != "command":
+                        continue
+                    if "shell" not in hook_def:
+                        collector.add(
+                            "High",
+                            "hook の `shell` フィールド未指定（PowerShell 統一補強、shell-preference.md）",
+                            hooks_json,
+                            f"event={event_name} command={mask_preview(str(hook_def.get('command', '')))}",
+                        )
+                        continue
+                    shell_value = hook_def.get("shell")
+                    if shell_value not in _ALLOWED_SHELL_VALUES:
+                        collector.add(
+                            "High",
+                            "hook の `shell` フィールド値が不正",
+                            hooks_json,
+                            f"event={event_name} shell={shell_value!r} (期待値: 'powershell' / 'bash')",
+                        )
+                        continue
+                    if shell_value == "bash":
+                        collector.add(
+                            "Medium",
+                            "hook で `shell: bash` 指定（本マーケットプレイスは PowerShell 統一）",
+                            hooks_json,
+                            f"event={event_name} (shell-preference.md と整合させるには 'powershell' を推奨)",
+                        )
 
 
 _MIT_COPYRIGHT_RE = re.compile(r"^Copyright \(c\) (\S+) (.+)$")
@@ -982,6 +1211,8 @@ CHECKS = [
     ("シークレット混入", check_secrets),
     ("クロスマーケ依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7）", check_cross_marketplace_readme),
     ("プラグイン MIT LICENSE 配備（ADR-029）", check_mit_license),
+    ("Bash 利用禁止（PowerShell 移行担保、shell-preference.md）", check_no_bash_invocation),
+    ("hook の shell フィールド明示（PowerShell 統一補強、shell-preference.md）", check_hook_shell_field),
 ]
 
 

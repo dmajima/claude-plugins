@@ -5,7 +5,7 @@
 | 項目 | 値 |
 |-----|---|
 | 起動フレーズ | "プロジェクトの settings.json に Stop イベントの通知音を追加" |
-| 引数 | `--scope project --event Stop --command "powershell -c \"[console]::beep(800,200)\"" --timeout 3` |
+| 引数 | `--scope project --event Stop --command "pwsh -NoProfile -Command \"[console]::beep(800,200)\"" --shell powershell --timeout 3` |
 | フラグ | なし |
 | 既存状態 | `<repo>/.claude/settings.json` 既存、`hooks` セクションは未定義 |
 
@@ -21,12 +21,13 @@
 
 ### Phase 3: マージ書き戻し
 
-既存エントリを破壊せず `hooks.Stop` に新エントリを追加。Python 経由で書き戻し（エンコーディング維持のため）。
+既存エントリを破壊せず `hooks.Stop` に新エントリを追加。Python 経由で書き戻し（エンコーディング維持のため）。新エントリの hook には `"shell": "powershell"` を `type: "command"` と同階層で明示する。
 
 ### Phase 4: 検証
 
 - 既存の他の設定（permissions、env 等）が無傷
 - 新エントリが正しく挿入されている
+- `"shell": "powershell"` が明示されている
 
 ## 期待出力
 

@@ -1,6 +1,6 @@
 {
   "name": "credentials-manager",
-  "version": "2.0.0",
+  "version": "2.1.1",
   "description": "認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン",
   "author": {
     "name": "dmajima"

@@ -150,7 +150,7 @@ git checkout main
 /router-embedding-cache --show <qn>   # 指定スキルのキャッシュ詳細を表示
 ```
 
-`disabled` フラグファイルは以下の優先順位で `route_prompt.sh` から参照されます（最初に見つかった時点でルーティングをスキップします）。
+`disabled` フラグファイルは以下の優先順位で `route_prompt.ps1` から参照されます（最初に見つかった時点でルーティングをスキップします）。
 
 | 優先 | パス | スコープ |
 |-----|------|---------|
@@ -390,8 +390,8 @@ plugins/skill-router/
 └── references/
     ├── scripts/
     │   ├── hooks/
-    │   │   ├── build_index_on_start.sh
-    │   │   └── route_prompt.sh
+    │   │   ├── build_index_on_start.ps1
+    │   │   └── route_prompt.ps1
     │   ├── lib/
     │   │   ├── build_index.py        # v0.4 で embedding 統合
     │   │   ├── route.py              # v0.4 で embedding 統合

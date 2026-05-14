@@ -39,15 +39,56 @@ Claude Code のフックイベント別の意味と使い方。
 {
   "type": "command",
   "command": "<実行コマンド>",
+  "shell": "powershell",
   "timeout": 30
 }
 ```
 
-| フィールド | 内容 |
-|----------|------|
-| `type` | `command` 固定 |
-| `command` | シェルコマンド本体 |
-| `timeout` | 秒単位、デフォルト 60 |
+| フィールド | 必須 | 内容 |
+|----------|-----|------|
+| `type` | はい | `command` 固定 |
+| `command` | はい | シェルコマンド本体 |
+| `shell` | **はい** | 実行シェル名（`"powershell"` または `"bash"`）。本マーケットプレイスでは **必ず `"powershell"` を明示** する。詳細は本ファイル「shell 指定（MANDATORY）」を参照 |
+| `timeout` | いいえ | 秒単位、デフォルト 60 |
+
+### shell 指定（MANDATORY）
+
+各 hook エントリで実行シェルを明示する。`type: "command"` と同階層に `"shell"` フィールドを置く。
+
+| 値 | 用途 | 推奨度 |
+|---|---|------|
+| `"powershell"` | Windows PowerShell / pwsh で実行 | 本マーケットプレイスのデフォルト |
+| `"bash"` | POSIX bash で実行 | macOS / Linux 限定（本マーケットプレイスでは未使用） |
+
+#### 必須化の根拠
+
+- `command` を `pwsh -NoProfile -File "..."` 形式で記述しても、Claude Code が起動する **ホスト側シェル** が Git Bash 等の場合に、引数解釈や PATH 解決でエッジケースが発生しうる
+- `~/.claude/rules/tools/shell-preference.md`（`Bash` ツール禁止、`PowerShell` ツール優先）の方針と整合させるため、フック実行も PowerShell ホストで起動する意図を一義的に伝える必要がある
+- `"shell": "powershell"` を明示することで、Claude Code が PowerShell ホストでコマンドを起動する意図をプラグイン側で表明できる
+- `shell` フィールド未対応の古い Claude Code では無視されるため、後方互換性は維持される
+
+#### NG / OK の対比
+
+NG（shell 未指定。OS デフォルトに依存し Git Bash で起動される可能性がある）:
+
+```json
+{
+  "type": "command",
+  "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/foo.ps1\"",
+  "timeout": 10
+}
+```
+
+OK（shell 明示）:
+
+```json
+{
+  "type": "command",
+  "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/foo.ps1\"",
+  "shell": "powershell",
+  "timeout": 10
+}
+```
 
 ### パスポータビリティ
 
@@ -94,40 +135,43 @@ Claude Code のフックイベント別の意味と使い方。
 ```json
 {
   "type": "command",
-  "command": "${CLAUDE_PLUGIN_ROOT}/scripts/log-tool-use.sh",
+  "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-tool-use.ps1\"",
+  "shell": "powershell",
   "timeout": 5
 }
 ```
 
-スクリプト側で `set -euo pipefail` と適切なクォート（`"$1"` 等）を行う。
+スクリプト側で `Set-StrictMode -Version Latest` と `$ErrorActionPreference = 'Stop'` を設定し、stdin から JSON を `ConvertFrom-Json` で読み取って構造化処理する。
 
 #### 悪い例（避けるべき）
 
 ```json
 {
   "type": "command",
-  "command": "echo \"$(curl https://example.invalid/$USER_INPUT)\""
+  "command": "pwsh -NoProfile -Command \"Invoke-RestMethod https://example.invalid/$($input.user)\"",
+  "shell": "powershell"
 }
 ```
 
-外部入力を直接文字列補間しているため、`$USER_INPUT` に `` `cmd` `` や `;` を含む値が来た場合に任意コード実行となる。
+外部入力を直接文字列補間しているため、`$input.user` に `;` や `` ` `` を含む値が来た場合に任意コード実行となる。
 
 これらは `hook-security-team` のレビュー観点としても扱われる（[`../../../references/teams/hook-security-team.md`](../../../references/teams/hook-security-team.md) 参照）。
 
 ## サンプル
 
-### PreToolUse: Bash 実行前のコマンドログ
+### PreToolUse: PowerShell 実行前のコマンドログ
 
 ```json
 {
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "PowerShell",
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/log_command.js",
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log_command.ps1\"",
+            "shell": "powershell",
             "timeout": 5
           }
         ]
@@ -147,7 +191,8 @@ Claude Code のフックイベント別の意味と使い方。
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -c \"[console]::beep(800,200)\"",
+            "command": "pwsh -NoProfile -Command \"[console]::beep(800,200)\"",
+            "shell": "powershell",
             "timeout": 3
           }
         ]
@@ -169,7 +214,8 @@ Claude Code のフックイベント別の意味と使い方。
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/log-session-start.sh",
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-session-start.ps1\"",
+            "shell": "powershell",
             "timeout": 2
           }
         ]
@@ -179,7 +225,7 @@ Claude Code のフックイベント別の意味と使い方。
 }
 ```
 
-`log-session-start.sh` 側で `set -euo pipefail` のもと、必要な処理（タイムスタンプ取得・ログ書き込み等）を実装する。`command` 内で直接 `$(date)` を実行する形は、利用者が動的入力を含むよう書き換える誘惑を招くため非推奨。
+`log-session-start.ps1` 側で `Set-StrictMode -Version Latest` と `$ErrorActionPreference = 'Stop'` のもと、必要な処理（タイムスタンプ取得・ログ書き込み等）を実装する。`command` 内で直接 `Get-Date` を実行する形は、利用者が動的入力を含むよう書き換える誘惑を招くため非推奨。
 
 ### PreToolUse: 危険コマンドのブロック
 
@@ -188,11 +234,12 @@ Claude Code のフックイベント別の意味と使い方。
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "PowerShell",
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/scripts/block_dangerous.js",
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/block_dangerous.ps1\"",
+            "shell": "powershell",
             "timeout": 5
           }
         ]
@@ -202,7 +249,7 @@ Claude Code のフックイベント別の意味と使い方。
 }
 ```
 
-`block_dangerous.js` で危険コマンドを検出した場合、終了コード 2 を返してブロックする。
+`block_dangerous.ps1` で危険コマンドを検出した場合、終了コード 2 を返してブロックする。
 
 ## settings.json への追加時の注意
 
@@ -221,8 +268,13 @@ if 'PreToolUse' not in settings['hooks']:
     settings['hooks']['PreToolUse'] = []
 
 settings['hooks']['PreToolUse'].append({
-    "matcher": "Bash",
-    "hooks": [{"type": "command", "command": "...", "timeout": 5}]
+    "matcher": "PowerShell",
+    "hooks": [{
+        "type": "command",
+        "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/foo.ps1\"",
+        "shell": "powershell",
+        "timeout": 5,
+    }],
 })
 
 with open(settings_path, 'w', encoding='utf-8', newline='\n') as f:

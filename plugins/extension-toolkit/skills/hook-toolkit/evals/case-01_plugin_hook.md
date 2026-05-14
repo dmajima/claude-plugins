@@ -17,15 +17,15 @@
 
 ### Phase 2: テンプレート展開
 
-`${CLAUDE_PLUGIN_ROOT}/references/templates/hook/hooks.json` をコピー、引数値を反映。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/hook/hooks.json` をコピー、引数値を反映。テンプレートに含まれる `"shell": "powershell"` 指定は **必ず保持** する（PowerShell 統一補強、shell-preference.md）。
 
-### Phase 3: パスポータビリティチェック
+### Phase 3: パスポータビリティ + shell 指定チェック
 
-`command` フィールドが `${CLAUDE_PLUGIN_ROOT}` を使っていることを確認。ローカル絶対パスがあれば修正提案。
+`command` フィールドが `${CLAUDE_PLUGIN_ROOT}` を使っていることを確認。ローカル絶対パスがあれば修正提案。各 hook エントリに `"shell": "powershell"` が `type: "command"` と同階層で明示されていることを確認（[`references/hook-events.md`](../references/hook-events.md) 節「shell 指定（MANDATORY）」）。
 
 ### Phase 4: 検証 + 引き渡し
 
-JSON valid、timeout 指定あり、matcher 正規表現 valid。
+JSON valid、timeout 指定あり、matcher 正規表現 valid、`shell` フィールド明示あり。
 
 ## 期待出力
 

@@ -57,19 +57,22 @@ Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>"
 | `--requirements` | setup | 任意 | requirements.txt のパス（省略時は依存インストールをスキップ） |
 | `--min-python-version` | setup | 任意 | 最小 Python バージョン要件（例: `3.10`） |
 
-### シェル直叩き（プラグイン同梱配布時のみ動作、位置引数）
+### シェル直叩き（プラグイン同梱配布時のみ動作、PowerShell 名前付きパラメータ）
 
-ADR-024 に基づき、setup スクリプトは **対象プラグインの `references/scripts/setup/`** に配置されている。`environment-setup-toolkit` 自身は実スクリプトを保有しない:
+ADR-024 に基づき、setup スクリプトは **対象プラグインの `references/scripts/setup/`** に配置されている。`environment-setup-toolkit` 自身は実スクリプトを保有しない。
+shell-preference.md (Bash 利用廃止) に従い PowerShell 版 `.ps1` を優先する。
 
-```bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" <work_dir> [<requirements_path>] [<min_python_version>]
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" <work_dir>
+```powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
+  -WorkDir <work_dir> [-RequirementsPath <path>] [-MinPythonVersion <ver>]
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" `
+  -WorkDir <work_dir>
 ```
 
-位置引数の順序は上記のまま固定。`<requirements_path>` を省略して `<min_python_version>` だけ指定する場合は、空文字列 `""` を第 2 引数に渡す:
+PowerShell の名前付きパラメータを使用するため、`-RequirementsPath` を省略して `-MinPythonVersion` だけ指定することができる:
 
-```bash
-bash setup_venv.sh "${WORK_DIR}" "" "3.10"
+```powershell
+pwsh -NoProfile -File setup_venv.ps1 -WorkDir "$WorkDir" -MinPythonVersion "3.10"
 ```
 
 ## 各 *-toolkit スキルからの利用
@@ -85,15 +88,15 @@ Python 利用時は `environment-setup-toolkit` スキルに委譲する。**`Sk
 Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --requirements <requirements>")
 \`\`\`
 
-直接スクリプト呼び出しが必要な場合（プラグイン同梱配布時のみ動作）:
+直接スクリプト呼び出しが必要な場合（プラグイン同梱配布時のみ動作、PowerShell 経由）:
 
-\`\`\`bash
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
-  "$WORK_DIR" \
-  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
+\`\`\`powershell
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
+  -WorkDir "$WorkDir" `
+  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 \`\`\`
 
-`${CLAUDE_PLUGIN_ROOT}` は **当該プラグイン由来のスキル/コマンド/フック実行時のみ** Claude Code が解決する。スタンドアロン配布のスキル（`<repo>/.claude/skills/{name}/` 等）からは未定義となるため `Skill` ツール経由を選ぶこと。
+`$env:CLAUDE_PLUGIN_ROOT` は **当該プラグイン由来のスキル/コマンド/フック実行時のみ** Claude Code が解決する。スタンドアロン配布のスキル（`<repo>/.claude/skills/{name}/` 等）からは未定義となるため `Skill` ツール経由を選ぶこと。
 ```
 
 ## requirements.txt の配置（ADR-024）
@@ -105,8 +108,8 @@ plugins/{plugin-name}/
 ├── references/
 │   └── scripts/
 │       └── setup/
-│           ├── setup_venv.sh
-│           ├── teardown_venv.sh
+│           ├── setup_venv.ps1
+│           ├── teardown_venv.ps1
 │           └── requirements.txt    # 全スキルの依存をマージ
 └── skills/
     └── {skill-name}/
@@ -123,14 +126,14 @@ setup 実行前のチェック項目:
 | 項目 | チェック内容 | 失敗時 |
 |-----|------------|--------|
 | Python | `python3` または `python` が PATH に存在 | エラー終了、インストール案内 |
-| Python バージョン | `>=3.10` 等の指定があれば `setup_venv.sh` 内で検証 | スクリプトは fail-closed（exit 1）。続行が必要な場合、スキルが事前に Claude コンテキストでバージョンを取得し `AskUserQuestion` でユーザ確認のうえ、`<min_python_version>` を渡さずに呼ぶ判断を行う |
+| Python バージョン | `>=3.10` 等の指定があれば `setup_venv.ps1` 内で検証 | スクリプトは fail-closed（exit 1）。続行が必要な場合、スキルが事前に Claude コンテキストでバージョンを取得し `AskUserQuestion` でユーザ確認のうえ、`-MinPythonVersion` を渡さずに呼ぶ判断を行う |
 | 作業ディレクトリ | 書き込み可能 | エラー終了 |
 | ディスク空き容量 | 200MB 以上推奨 | 警告 |
 | 既存 venv | 既存があれば再利用 or refresh | ユーザ確認 |
 
-**Python コマンドの解決順序（setup_venv.sh 内）**: `python` → `python3` → `py` の順で `-m venv --help` の実行可否を検証して候補を採用する。pyenv-win 環境では `python3` shim が `-m venv` 実行時に WinError 2 を返す既知の問題があるため、`python` を優先候補としている。すべて利用不可の場合はエラー終了。
+**Python コマンドの解決順序（setup_venv.ps1 内）**: `python` → `python3` → `py` の順で `-m venv --help` の実行可否を検証して候補を採用する。pyenv-win 環境では `python3` shim が `-m venv` 実行時に WinError 2 を返す既知の問題があるため、`python` を優先候補としている。すべて利用不可の場合はエラー終了。
 
-**バージョン引数の安全性**: `<min_python_version>` は `^[0-9]+(\.[0-9]+){0,2}$` の正規表現でバリデーションされ、Python 側へは環境変数経由で渡される（bash 文字列補間によるコード注入を排除）。
+**バージョン引数の安全性**: `-MinPythonVersion` は `^[0-9]+(\.[0-9]+){0,2}$` の正規表現でバリデーションされ、Python 側へは環境変数経由で渡される（PowerShell 文字列補間によるコード注入を排除）。
 
 ## 失敗時のリカバリ
 

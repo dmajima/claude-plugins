@@ -6,7 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/build_index_on_start.sh\"",
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/build_index_on_start.ps1\"",
+            "shell": "powershell",
             "timeout": 360
           }
         ]
@@ -17,7 +18,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/route_prompt.sh\"",
+            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/route_prompt.ps1\"",
+            "shell": "powershell",
             "timeout": 10
           }
         ]

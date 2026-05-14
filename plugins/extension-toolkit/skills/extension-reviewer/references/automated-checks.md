@@ -4,51 +4,55 @@
 
 ## 実行方式（MANDATORY）
 
-機械チェックは **必ず Bash 経由 + venv 内 Python + JSON ファイル出力** で実施すること。
-PowerShell から Python を直接起動することは禁止する。
+機械チェックは **必ず PowerShell 経由 + venv 内 Python + JSON ファイル出力** で実施すること
+（`~/.claude/rules/tools/shell-preference.md` に従い `Bash` ツールではなく `PowerShell` ツールを使う）。
 
-### 禁止事項（文字化け防止）
+### エンコーディング前提
 
-以下の組み合わせは Claude Code の stdout 解釈と衝突し、UTF-8 → Latin-1 mojibake
-（`â€` パターン等）を発生させるため **使用禁止**:
+`~/.claude/settings.json` の `env` で `PYTHONIOENCODING=utf-8` / `PYTHONUTF8=1` がグローバル設定されており、
+PowerShell ツール経由で起動される全 Python プロセスは UTF-8 で動作する
+（`~/.claude/rules/tools/python-encoding-mandatory.md` 参照）。
 
-- `PowerShell` から `python` を直接起動（`pwsh -c "python ..."` など）
-- `chcp 65001` / `[Console]::OutputEncoding=[Text.Encoding]::UTF8` の手動切り替え
-- Python スクリプトから日本語を **stdout に書き出す**（必ずファイルに書く）
-- `$env:PYTHONIOENCODING='utf-8'` の手動付与による回避策
-
-これらは PowerShell サブプロセスのコンソール CP が親ターミナルへ伝播・干渉するため、
-Python 側で `sys.stdout.reconfigure(encoding='utf-8')` を入れても根本解決にならない。
+各 `.ps1` の先頭で `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)` を明示するため、
+日本語混在出力も文字化けしない。Python 側でも先頭で `sys.stdout.reconfigure(encoding='utf-8')` を実施する
+（必須3点セットの2項目）。
 
 ### 正しい起動方法
 
-すべてのチェックは `references/scripts/checks/run_checks.py` に統合済み。Bash 経由で起動する。
-venv 関連スクリプトはプラグイン直下（ADR-024）。
+すべてのチェックは `references/scripts/checks/run_checks.py` に統合済み。
+PowerShell ツール経由で venv 内 Python を直接呼ぶ。
+venv 関連スクリプトはプラグイン直下の `.ps1` を利用する（ADR-024）。
 
-```bash
-SESSION_DIR=".claude/.local/work/{yyyyMMdd_nn_summary}"
+```powershell
+$SessionDir = ".claude/.local/work/{yyyyMMdd_nn_summary}"
 
 # 1. venv 構築（初回のみ・プラグイン共通）
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
-  "$SESSION_DIR/workspace" \
-  "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
+  -WorkDir "$SessionDir/workspace" `
+  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 
 # 2. レビュー対象ごとに run_checks.py を実行（出力は JSON ファイル）
-"$SESSION_DIR/workspace/.venv/Scripts/python" \
-  "${CLAUDE_SKILL_DIR}/references/scripts/checks/run_checks.py" \
-  --target "<レビュー対象パス>" \
-  --scope-root "<スコープルート（パストラバーサル防止）>" \
-  --output "$SESSION_DIR/workspace/checks_<対象名>.json"
+& "$SessionDir/workspace/.venv/Scripts/python" `
+  "$env:CLAUDE_SKILL_DIR/references/scripts/checks/run_checks.py" `
+  --target "<レビュー対象パス>" `
+  --scope-root "<スコープルート (パストラバーサル防止)>" `
+  --output "$SessionDir/workspace/checks_<対象名>.json"
 
 # 3. 結果は JSON ファイルから Read ツールで読み取って統合する
-#    （標準出力には進捗ログのみ・日本語ログも Bash 経由なので mojibake は発生しない）
+#    (標準出力には進捗ログのみ。日本語ログも UTF-8 で出力されるため mojibake は発生しない)
 
 # 4. 作業完了後の venv 削除（プラグイン共通）
-bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
-  "$SESSION_DIR/workspace"
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" `
+  -WorkDir "$SessionDir/workspace"
 ```
 
 詳細な引数仕様は `references/scripts/checks/run_checks.py --help` を参照すること。
+
+### `.sh` の取り扱い（完全廃止）
+
+`~/.claude/rules/tools/shell-preference.md` に従い、プラグイン配下の `.sh` は **完全に廃止** している。
+`references/scripts/` 配下のすべてのスクリプトは `.ps1` で実装する。
+`run_checks.py` の項目 #12 (Bash 利用禁止) で、`.sh` 残存・`bash` 起動例残存を自動検出する。
 
 ## チェック項目一覧
 
@@ -67,6 +71,8 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" \
 | 9 | シークレット混入 | プラグイン全体 | Critical | `check_secrets`（`marketplace-publisher` の `secret-scan.md` と同等） |
 | 10 | クロスマーケットプレイス依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7） | `plugin.json` + 同階層 `README.md` | High | `check_cross_marketplace_readme` |
 | 11 | プラグインに MIT LICENSE 配備（ADR-029） | プラグイン直下 `LICENSE` + `plugin.json.license` + `README.md` | Critical / High | `check_mit_license` |
+| 12 | Bash/sh 利用禁止（PowerShell 移行担保、shell-preference.md）| `hooks.json` / `*.sh` / `*.md` | High / Medium | `check_no_bash_invocation` |
+| 13 | hook の `shell` フィールド明示（PowerShell 統一補強、shell-preference.md）| `hooks/hooks.json` | High | `check_hook_shell_field` |
 
 `run_checks.py` の出力 JSON 構造:
 
@@ -187,6 +193,47 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 `run_checks.py` の `check_mit_license` 関数で機械チェック実装済み。`$CLAUDE_PLUGIN_ROOT/skills/mit-license-toolkit/references/template/LICENSE` を SSOT として参照し、本文の行単位比較（copyright 行除く）+ Copyright 行の正規表現検証 + `plugin.json.license == "MIT"` を一括検査する。
 
 詳細仕様は [`../../../references/license-policy.md`](../../../references/license-policy.md) を参照。
+
+### 12. Bash/sh 利用禁止チェック（PowerShell 移行担保）
+
+`~/.claude/rules/tools/shell-preference.md` で `Bash` ツール利用が禁止されたため、
+プラグイン側でも以下を機械チェックで担保する。
+
+| 検査項目 | 重大度 | 検出方法 |
+|---------|-------|---------|
+| `hooks/hooks.json` の `command` フィールド先頭が `bash` で始まる | High | JSON パース後に再帰的に `command` キーを走査し、正規表現 `^\s*bash\s+` をマッチ |
+| `.sh` ファイルが残存している | High | `target.rglob("*.sh")` を走査し、検出されれば High 指摘（`.sh` は完全廃止のため） |
+| `.md` 内に `bash ...sh` 起動例がコードフェンス・バッククォート外で残存 | Medium | `iter_inspectable_lines` 経由で正規表現 `(?<![A-Za-z0-9_/.\-])bash\s+["']?[^\s"']*\.sh\b` をマッチ |
+
+除外条件:
+
+- `templates/` / `template/` / `evals/` / `checklists/` 配下（テンプレート・チェック項目記述自体は許容）
+- `automated-checks.md` / `shell-preference.md` / `run_checks.py`（自己参照）
+
+運用ポリシー:
+
+- `.sh` は **すべて廃止**。プラグイン配下に `.sh` を含めてはならない
+- すべてのシェルスクリプトは `.ps1` で記述する
+- `hooks.json` は **常に** `pwsh -NoProfile -File ...ps1` 形式で記述する
+
+### 13. hook の `shell` フィールド明示チェック（PowerShell 統一補強）
+
+`command` を `pwsh -NoProfile -File ...` で書いていても、Claude Code の起動側シェルが
+Git Bash の場合に引数解釈・PATH 解決でエッジケースが発生しうる。これを抑制するため、
+各 hook エントリで `"shell": "powershell"` を **明示** することを必須化する。
+
+| 検査項目 | 重大度 | 検出方法 |
+|---------|-------|---------|
+| `hooks/hooks.json` 内の各 hook エントリ（`type: "command"` を持つ）に `"shell"` フィールドが存在する | High | JSON パース後に `hooks` → イベント名 → エントリ → `hooks` 配列の各要素を走査し、`type: "command"` であって `"shell"` キーが無いものを検出 |
+| `"shell"` フィールドの値が `"powershell"` または `"bash"` である | High | 値が上記いずれかでない場合は不正値として High 指摘 |
+| 本マーケットプレイスのプラグインで `"shell": "bash"` が設定されている | Medium | PowerShell 統一方針との不整合として Medium 指摘（許可ではあるが警告） |
+
+除外条件:
+
+- `templates/` / `template/` / `evals/` 配下（テンプレート・テスト fixture）
+- `type: "command"` 以外のエントリ（将来拡張に備える）
+
+実装関数: `check_hook_shell_field`
 
 ## 指摘出力フォーマット
 

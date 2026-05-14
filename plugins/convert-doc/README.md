@@ -68,7 +68,7 @@ git clone https://github.com/dmajima/claude-plugins.git
 
 ### D. 依存関係のインストール
 
-4 スキルとも Python 仮想環境を利用します。スキル初回起動時に `references/scripts/setup/setup_venv.sh` が自動実行され、以下の依存パッケージがインストールされます。
+4 スキルとも Python 仮想環境を利用します。スキル初回起動時に `references/scripts/setup/setup_venv.ps1` が自動実行され、以下の依存パッケージがインストールされます。
 
 | スキル | 主要パッケージ | 追加ダウンロード |
 |-------|--------------|----------------|
@@ -187,8 +187,8 @@ plugins/convert-doc/
 │   └── scripts/                      # プラグイン単位 venv + 業務スクリプト（ADR-024 / ADR-025）
 │       ├── setup/                    # 統合 venv 構築（4 スキル分の依存をマージ）
 │       │   ├── requirements.txt
-│       │   ├── setup_venv.sh
-│       │   └── teardown_venv.sh
+│       │   ├── setup_venv.ps1
+│       │   └── teardown_venv.ps1
 │       ├── convert-html/
 │       │   └── convert.py
 │       ├── convert-pdf/
@@ -251,7 +251,7 @@ plugins/convert-doc/
 | 項目 | 内容 |
 |------|------|
 | 状態 | Accepted（extension-toolkit ADR-024 に準拠）|
-| 決定 | `plugins/convert-doc/references/scripts/setup/{setup_venv.sh, teardown_venv.sh, requirements.txt}` をプラグイン共通として 1 箇所に集約。requirements.txt は全 4 スキル分の依存をマージし、venv は `<work_dir>/.venv` にプラグイン単位で 1 つ作成して全スキルで共有 |
+| 決定 | `plugins/convert-doc/references/scripts/setup/{setup_venv.ps1, teardown_venv.ps1, requirements.txt}` をプラグイン共通として 1 箇所に集約。requirements.txt は全 4 スキル分の依存をマージし、venv は `<work_dir>/.venv` にプラグイン単位で 1 つ作成して全スキルで共有 |
 | 文脈 | スキル単位 venv は同一プラグイン内で重複構築されコストが大きい。`environment-setup-toolkit` への委譲は extension-toolkit 環境に依存するが、本プラグインは ADR-024 のプラグイン単位 venv 採用で簡便性と単体配布性を両立する |
 | 上流 SSOT | [extension-toolkit ADR-024](../extension-toolkit/references/architecture-decisions.md)（プラグイン単位 venv と `references/scripts/setup/` 配置）|
 | 代替案 | スキルごとに個別 venv（ADR-024 違反・廃止）/ `environment-setup-toolkit` への委譲（外部依存増加）|
