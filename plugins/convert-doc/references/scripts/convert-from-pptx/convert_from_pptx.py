@@ -14,6 +14,7 @@ import argparse
 import re
 import sys
 import zipfile
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, List, Optional
 
@@ -22,6 +23,34 @@ try:
     sys.stderr.reconfigure(encoding="utf-8")
 except Exception:
     pass
+
+# defusedxml で lxml をハードニング（XXE / Billion Laughs / DTD / external entity 対策、
+# CWE-611 / CWE-776）. python-pptx 内部の lxml にも適用するため、pptx import の前に
+# monkey patch する. デフォルトはフェイルクローズ（HR-C: セキュア既定）.
+# 環境変数 CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1 で警告継続に切替可能（オプトアウト）.
+import os as _os
+_allow_unhardened_xml = _os.environ.get("CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML", "") == "1"
+try:
+    import defusedxml.lxml as _defused_lxml
+    _defused_lxml.monkey_patch_lxml()
+except ImportError:
+    _xml_msg = (
+        "defusedxml is required for safe XML handling (CWE-611 / CWE-776). "
+        "Install with: pip install defusedxml. "
+        "To bypass at your own risk, set CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1."
+    )
+    if _allow_unhardened_xml:
+        print(f"Warning: {_xml_msg}", file=sys.stderr)
+    else:
+        print(f"Error: {_xml_msg}", file=sys.stderr)
+        sys.exit(2)
+except Exception as _defused_exc:
+    _xml_msg = f"defusedxml monkey patch failed: {_defused_exc}"
+    if _allow_unhardened_xml:
+        print(f"Warning: {_xml_msg}", file=sys.stderr)
+    else:
+        print(f"Error: {_xml_msg}", file=sys.stderr)
+        sys.exit(2)
 
 try:
     from pptx import Presentation
@@ -63,6 +92,19 @@ DEFAULT_MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MiB
 MAX_TOTAL_UNCOMPRESSED_BYTES = 256 * 1024 * 1024  # 256 MiB (ZIP bomb 防御)
 MAX_COMPRESSION_RATIO = 200  # compress_size に対する展開サイズ倍率上限
 
+# DoS 防御: shape 数 / スライド数 / 再帰深度 / テキスト長 / 画像総量の上限
+MAX_SLIDES = 1000
+MAX_SHAPES_PER_SLIDE = 5000
+MAX_GROUP_DEPTH = 20
+MAX_TEXT_PER_SHAPE = 1_000_000  # 1 MB 相当
+MAX_TOTAL_IMAGE_BYTES = 256 * 1024 * 1024  # 256 MiB (画像総量)
+MAX_IMAGE_COUNT_PER_PPTX = 1000
+MAX_ID_STRING_LEN = 32  # 数値属性文字列の長さ上限 (CWE-754, int_max_str_digits 対策)
+
+# 双方向制御文字 (Bidi / homograph 偽装対策、CWE-1007)
+_BIDI_CONTROL_CHARS = "‎‏‪‫‬‭‮⁦⁧⁨⁩"
+_BIDI_CONTROL_RE = re.compile(f"[{_BIDI_CONTROL_CHARS}]")
+
 ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "gif", "bmp", "tiff", "webp", "emf", "wmf"}
 
 NS_A = "http://schemas.openxmlformats.org/drawingml/2006/main"
@@ -87,9 +129,22 @@ def _hardened_xml_parser() -> "etree.XMLParser":
 
 
 def _safe_text(value: Optional[str]) -> str:
+    """テキストを安全な形に正規化する.
+
+    - `\\r` 除去 + 前後空白 strip
+    - 双方向制御文字（Bidi override 等）の除去（homograph 偽装対策・CWE-1007）
+    - サロゲートペア破損対策（UTF-8 round trip）
+    - 長さ上限を超える場合は切り詰め（DoS 防御）
+    """
     if not value:
         return ""
-    return value.replace("\r", "").strip()
+    text = value.replace("\r", "").strip()
+    text = _BIDI_CONTROL_RE.sub("", text)
+    # サロゲート文字の round trip 防御（JSON dump の UnicodeEncodeError 回避）
+    text = text.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
+    if len(text) > MAX_TEXT_PER_SHAPE:
+        text = text[:MAX_TEXT_PER_SHAPE]
+    return text
 
 
 def _escape_md_pipe(value: str) -> str:
@@ -103,12 +158,25 @@ def _is_monospace_font(font_name: Optional[str]) -> bool:
 
 
 def _mermaid_escape_label(text: str) -> str:
-    text = (text or "").replace('"', "'")
-    # 改行は <br/> として Mermaid に描画させたいので、HTML エスケープ後に復元する
-    SENTINEL = "\x00BR\x00"
+    """Mermaid ラベルの HTML エスケープ（HR-G: XSS / SVG onclick / 構文破壊対策の強化版）.
+
+    エスケープ対象: `&` / `<` / `>` / `"` / `'` / `` ` `` / `\\`.
+    `&` を最優先で `&amp;` にエスケープし、後段の `&lt;` 等を二重デコードさせない.
+    改行は Unicode 非文字 SENTINEL で退避し、HTML エスケープ後に `<br/>` へ復元する.
+    Mermaid ラベルはノード描画時に SVG/HTML として展開されうるため、危険記号を
+    包括的に HTML エンティティ化することで後段 convert-html での XSS を防ぐ.
+    """
+    text = text or ""
+    # `&` を先にエスケープ（後段の `&lt;` 等を二重デコードさせないため）
+    text = text.replace("&", "&amp;")
+    # 改行は Unicode 非文字 SENTINEL で退避（入力に出現しないため衝突しない）
+    SENTINEL = "￿BR￾"
     text = text.replace("\n", SENTINEL)
-    # Mermaid のメタ文字をエスケープ（後段 HTML 化時の XSS 対策含む）
+    # HTML / Mermaid メタ文字を包括的にエスケープ（XSS / SVG onclick / 構文破壊対策）
     text = text.replace("<", "&lt;").replace(">", "&gt;")
+    text = text.replace('"', "&quot;").replace("'", "&#39;")
+    text = text.replace("`", "&#96;").replace("\\", "&#92;")
+    # SENTINEL を Mermaid の <br/> に復元
     text = text.replace(SENTINEL, "<br/>")
     if len(text) > 80:
         text = text[:77] + "..."
@@ -162,20 +230,86 @@ def _validate_pptx(path: Path) -> None:
         raise ValueError(f"Input file is not a PresentationML document: {path}")
 
 
+def _enforce_under(
+    base: Path,
+    candidate: Path,
+    label: str,
+    msg_suffix: str = "workspace root",
+) -> Path:
+    """candidate が base 配下に解決されることを検証し、絶対パスを返す.
+
+    パストラバーサル攻撃の防止用（CWE-22 / CWE-73）。出力先パス引数すべてに
+    共通適用される。candidate は絶対 / 相対のいずれでも受け付け、base からの
+    相対解決後に base 配下に収まることを `relative_to` で確認する。
+
+    シンボリックリンクは `resolve()` が追跡するため、リンク先が base 外なら拒否する
+    （CWE-59 / CWE-367 部分対策。完全な TOCTOU 対策は書き込み時の is_symlink チェック
+    を併用する）。
+    """
+    base_resolved = base.resolve(strict=False)
+    if candidate.is_absolute():
+        cand_resolved = candidate.resolve(strict=False)
+    else:
+        cand_resolved = (base / candidate).resolve(strict=False)
+    try:
+        cand_resolved.relative_to(base_resolved)
+    except ValueError as exc:
+        raise ValueError(
+            f"{label} must be under {msg_suffix} (path traversal blocked): {cand_resolved}"
+        ) from exc
+    return cand_resolved
+
+
+def _check_safe_output(path: Path, force: bool = False) -> None:
+    """書込前の安全チェック（CWE-59 / CWE-377 対策）.
+
+    - 既存ファイルがシンボリックリンクなら拒否（TOCTOU 対策）
+    - 既存ファイル + `force=False` なら拒否（無確認上書き防止）
+    """
+    if path.exists():
+        if path.is_symlink():
+            raise ValueError(f"Refusing to write through symlink: {path}")
+        if not force:
+            raise ValueError(f"Output already exists (use --force to overwrite): {path}")
+
+
+def _apply_safe_perm(path: Path) -> None:
+    """書込後のファイル権限を 0o600 に絞る（POSIX のみ・CWE-732 対策）."""
+    try:
+        path.chmod(0o600)
+    except (OSError, NotImplementedError):
+        # Windows / 非 POSIX 環境では chmod が無効。続行する
+        pass
+
+
+def _safe_write_bytes(path: Path, data: bytes, force: bool = False) -> None:
+    """ファイルにバイト書き込みする際の安全策（_check_safe_output + _apply_safe_perm を統合）."""
+    _check_safe_output(path, force)
+    path.write_bytes(data)
+    _apply_safe_perm(path)
+
+
+def _safe_int_from_str(value: Optional[str], max_len: int = MAX_ID_STRING_LEN) -> Optional[int]:
+    """XML 由来の数値文字列を安全に int に変換する.
+
+    長すぎる文字列（DoS 攻撃）は None を返す。CWE-754 / int_max_str_digits 対策。
+    """
+    if value is None:
+        return None
+    if len(value) > max_len:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _resolve_images_dir(output_md: Path, images_dir_opt: Optional[str]) -> Path:
     base = output_md.parent.resolve()
     if images_dir_opt:
-        candidate = Path(images_dir_opt)
-        if not candidate.is_absolute():
-            candidate = output_md.parent / candidate
-        candidate = candidate.resolve()
-        try:
-            candidate.relative_to(base)
-        except ValueError as exc:
-            raise ValueError(
-                f"images-dir must be under output MD directory (path traversal blocked): {candidate}"
-            ) from exc
-        return candidate
+        return _enforce_under(
+            base, Path(images_dir_opt), "images-dir", "output MD directory"
+        )
     return (base / f"{output_md.stem}_images").resolve()
 
 
@@ -215,8 +349,10 @@ class FlowExtractor:
             return None
         direction = self._infer_direction()
         lines = [f"flowchart {direction}"]
+        # O(N) ルックアップを O(1) 化するため shape_id → meta の辞書を事前構築
+        id_to_meta = {m["shape_id"]: m for m in self.shapes_meta}
         for nid in sorted(self.used_node_ids):
-            meta = next((m for m in self.shapes_meta if m["shape_id"] == nid), None)
+            meta = id_to_meta.get(nid)
             label = _mermaid_escape_label(id_to_label.get(nid, f"shape{nid}"))
             open_b, close_b = self._bracket_for_shape(meta)
             lines.append(f'    N{nid}{open_b}"{label}"{close_b}')
@@ -254,14 +390,64 @@ class FlowExtractor:
 # ----------------------------------------------------------------------------- #
 
 
+@dataclass
+class SlideContext:
+    """1 スライド処理中のローカル状態（Suggestion 12: 状態変数の集約）.
+
+    PPTXMarkdownConverter のインスタンス変数 `_current_*` 群を集約することで、
+    スライド処理の純関数化とテスタビリティ向上の準備とする.
+    既存の `self._current_*` 参照は property 経由でこの dataclass のフィールドに
+    委譲されるため、既存呼び出しは無傷で、新規実装は `self._slide_ctx` を直接
+    参照できる. 将来的に `self._current_*` を撤去して `self._slide_ctx` に完全
+    移行することを想定する.
+    """
+    title_shape_id: Optional[int] = None
+    is_section_cover: bool = False
+    repeated_texts: set = field(default_factory=set)
+    max_font_pt: Optional[float] = None
+    median_font_pt: Optional[float] = None
+    decoration_shape_ids: set = field(default_factory=set)
+
+    def reset(self) -> None:
+        """スライド処理の境界でローカル状態を初期化する."""
+        self.title_shape_id = None
+        self.is_section_cover = False
+        self.repeated_texts = set()
+        self.max_font_pt = None
+        self.median_font_pt = None
+        self.decoration_shape_ids = set()
+
+
 class PPTXMarkdownConverter:
     """python-pptx で読んだプレゼンを Markdown に転記する."""
 
     def __init__(self, args: argparse.Namespace) -> None:
-        self.input_path = Path(args.input).resolve()
-        self.output_path = (
-            Path(args.output).resolve() if args.output else self.input_path.with_suffix(".md")
+        # HR-δ: 入力 PPTX のシンボリックリンクを拒否（CWE-59 / CWE-367 TOCTOU 対策）.
+        # verify_md.py の _check_input_path と対称化.
+        input_arg = Path(args.input)
+        if input_arg.is_symlink():
+            raise ValueError(
+                f"Input PPTX is a symbolic link (refused for safety): {input_arg}"
+            )
+        self.input_path = input_arg.resolve()
+        # workspace_root: 全副次出力のパストラバーサル検証 (CWE-22 / CWE-73) で共通利用するベース.
+        # --workspace-root が明示された場合は output_path 本体もそこに強制（HR-B 修正）.
+        # 未指定なら output_path.parent を workspace_root とする（後方互換）.
+        workspace_arg = getattr(args, "workspace_root", None)
+        default_output = (
+            Path(args.output) if args.output else self.input_path.with_suffix(".md")
         )
+        if workspace_arg:
+            self._workspace_root: Path = Path(workspace_arg).resolve()
+            self.output_path = _enforce_under(
+                self._workspace_root,
+                default_output,
+                "--output (output MD path)",
+                "workspace root (--workspace-root)",
+            )
+        else:
+            self.output_path = default_output.resolve()
+            self._workspace_root = self.output_path.parent.resolve()
         self.images_dir = _resolve_images_dir(self.output_path, args.images_dir)
         self.no_mermaid = bool(args.no_mermaid)
         self.include_notes = bool(args.include_notes)
@@ -270,39 +456,165 @@ class PPTXMarkdownConverter:
         self.max_image_bytes = int(args.max_image_size)
         self._image_seq: dict[int, int] = {}
         self._template_texts: set[str] = set()
-        self._current_title_shape_id: Optional[int] = None
-        self._current_is_section_cover: bool = False
-        self._current_repeated_texts: set[str] = set()
+        # SlideContext: 1 スライド処理中のローカル状態を集約.
+        # 既存の self._current_* は property 経由でこの _slide_ctx を参照する（後方互換）.
+        # property setter 経由で代入を受けるため、_slide_ctx を最初に初期化する必要がある.
+        self._slide_ctx: SlideContext = SlideContext()
+        self._current_title_shape_id = None
+        self._current_is_section_cover = False
+        self._current_repeated_texts = set()
         self._slide_width_emu: Optional[int] = None
         self._slide_height_emu: Optional[int] = None
-        self._current_max_font_pt: Optional[float] = None
-        self._current_median_font_pt: Optional[float] = None
-        self._current_decoration_shape_ids: set[int] = set()
+        self._current_max_font_pt = None
+        self._current_median_font_pt = None
+        self._current_decoration_shape_ids = set()
+        # Presentation インスタンスを 1 回だけ読み込んで複数 export メソッドで再利用する
+        # ためのキャッシュ。_load_presentation() 経由でアクセスする
+        self._presentation_cache: Optional["Presentation"] = None
+        # マスタ/レイアウト由来のテンプレ装飾テキスト集合のキャッシュ（複数 export メソッド共有）
+        self._template_texts_cache: Optional[set] = None
+        # 既存ファイルの上書き許可フラグ（CWE-377 対策）
+        self._force: bool = bool(getattr(args, "force", False))
+        # 画像の総書込バイト数と枚数（MAX_TOTAL_IMAGE_BYTES / MAX_IMAGE_COUNT_PER_PPTX）
+        self._image_total_bytes: int = 0
+        self._image_total_count: int = 0
         self.structured_json_path = (
-            Path(args.structured_json).resolve() if getattr(args, "structured_json", None) else None
+            _enforce_under(
+                self._workspace_root,
+                Path(args.structured_json),
+                "--structured-json",
+                "workspace root",
+            )
+            if getattr(args, "structured_json", None)
+            else None
         )
         self.json_only = bool(getattr(args, "json_only", False))
         self.per_slide_json_dir = (
-            Path(args.per_slide_json).resolve() if getattr(args, "per_slide_json", None) else None
+            _enforce_under(
+                self._workspace_root,
+                Path(args.per_slide_json),
+                "--per-slide-json",
+                "workspace root",
+            )
+            if getattr(args, "per_slide_json", None)
+            else None
         )
         self.compact_view_dir = (
-            Path(args.compact_view).resolve() if getattr(args, "compact_view", None) else None
+            _enforce_under(
+                self._workspace_root,
+                Path(args.compact_view),
+                "--compact-view",
+                "workspace root",
+            )
+            if getattr(args, "compact_view", None)
+            else None
         )
+
+    # ---------- SlideContext property（後方互換、Suggestion 12）----------
+    # 既存の `self._current_*` 参照を SlideContext のフィールドに委譲する.
+    # 既存呼び出しは無傷で、内部的にはスライド状態を 1 つの dataclass に集約.
+
+    @property
+    def _current_title_shape_id(self) -> Optional[int]:
+        return self._slide_ctx.title_shape_id
+
+    @_current_title_shape_id.setter
+    def _current_title_shape_id(self, value: Optional[int]) -> None:
+        self._slide_ctx.title_shape_id = value
+
+    @property
+    def _current_is_section_cover(self) -> bool:
+        return self._slide_ctx.is_section_cover
+
+    @_current_is_section_cover.setter
+    def _current_is_section_cover(self, value: bool) -> None:
+        self._slide_ctx.is_section_cover = bool(value)
+
+    @property
+    def _current_repeated_texts(self) -> set:
+        return self._slide_ctx.repeated_texts
+
+    @_current_repeated_texts.setter
+    def _current_repeated_texts(self, value: set) -> None:
+        self._slide_ctx.repeated_texts = value
+
+    @property
+    def _current_max_font_pt(self) -> Optional[float]:
+        return self._slide_ctx.max_font_pt
+
+    @_current_max_font_pt.setter
+    def _current_max_font_pt(self, value: Optional[float]) -> None:
+        self._slide_ctx.max_font_pt = value
+
+    @property
+    def _current_median_font_pt(self) -> Optional[float]:
+        return self._slide_ctx.median_font_pt
+
+    @_current_median_font_pt.setter
+    def _current_median_font_pt(self, value: Optional[float]) -> None:
+        self._slide_ctx.median_font_pt = value
+
+    @property
+    def _current_decoration_shape_ids(self) -> set:
+        return self._slide_ctx.decoration_shape_ids
+
+    @_current_decoration_shape_ids.setter
+    def _current_decoration_shape_ids(self, value: set) -> None:
+        self._slide_ctx.decoration_shape_ids = value
 
     # ---------- エントリ ----------
 
+    def _load_presentation(self) -> "Presentation":
+        """PPTX を 1 回だけ検証・読込し、キャッシュを返す.
+
+        複数の export メソッド（convert / export_structured_json /
+        export_per_slide_json / export_compact_view）が同一の Presentation
+        インスタンスを再利用することで、PPTX を毎回開き直す重複初期化を解消する.
+
+        注意: python-pptx 内部の lxml パーサは `_hardened_xml_parser` を経由しない.
+        悪意 PPTX の Billion Laughs / 巨大 entity 展開リスクが残るため、
+        `_validate_pptx` の ZIP bomb 検査と上限定数（MAX_SLIDES 等）を併用する.
+        さらなる保護が必要な環境では `defusedxml.lxml.monkey_patch_lxml()` を
+        起動時に呼ぶことを推奨する.
+        """
+        if self._presentation_cache is None:
+            _validate_pptx(self.input_path)
+            self._presentation_cache = Presentation(str(self.input_path))
+            try:
+                self._slide_width_emu = self._presentation_cache.slide_width
+                self._slide_height_emu = self._presentation_cache.slide_height
+            except Exception:
+                self._slide_width_emu = None
+                self._slide_height_emu = None
+            # スライド数の上限チェック（DoS 防御・CWE-400）
+            try:
+                slide_count = len(list(self._presentation_cache.slides))
+                if slide_count > MAX_SLIDES:
+                    raise ValueError(
+                        f"slide count {slide_count} exceeds MAX_SLIDES ({MAX_SLIDES})"
+                    )
+            except ValueError:
+                raise
+            except Exception:
+                pass
+        return self._presentation_cache
+
+    def _get_template_texts(self) -> set:
+        """マスタ/レイアウト由来のテンプレ装飾テキスト集合を取得（キャッシュ付き）.
+
+        複数の export メソッドが同じデータを使うため、初回呼び出しで構築して
+        キャッシュする（MR-2: 重複走査の解消）。
+        """
+        if self._template_texts_cache is None:
+            presentation = self._load_presentation()
+            self._template_texts_cache = self._collect_template_texts(presentation)
+        return self._template_texts_cache
+
     def convert(self) -> Path:
-        _validate_pptx(self.input_path)
-        presentation = Presentation(str(self.input_path))
+        presentation = self._load_presentation()
         self.images_dir.mkdir(parents=True, exist_ok=True)
 
-        self._template_texts = self._collect_template_texts(presentation)
-        try:
-            self._slide_width_emu = presentation.slide_width
-            self._slide_height_emu = presentation.slide_height
-        except Exception:
-            self._slide_width_emu = None
-            self._slide_height_emu = None
+        self._template_texts = self._get_template_texts()
 
         markdown_chunks: List[str] = []
         emitted_slide_no = 0
@@ -318,8 +630,10 @@ class PPTXMarkdownConverter:
         body = "\n\n".join(markdown_chunks)
         if not body.endswith("\n"):
             body += "\n"
+        _check_safe_output(self.output_path, self._force)
         with open(self.output_path, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(body)
+        _apply_safe_perm(self.output_path)
         return self.output_path
 
     def export_structured_json(self) -> Path:
@@ -330,19 +644,11 @@ class PPTXMarkdownConverter:
         """
         import json
 
-        _validate_pptx(self.input_path)
-        presentation = Presentation(str(self.input_path))
+        presentation = self._load_presentation()
         self.images_dir.mkdir(parents=True, exist_ok=True)
 
-        try:
-            self._slide_width_emu = presentation.slide_width
-            self._slide_height_emu = presentation.slide_height
-        except Exception:
-            self._slide_width_emu = None
-            self._slide_height_emu = None
-
         # マスタ/レイアウト由来のテキストは "装飾候補" として参考情報のみ提供（除外はしない）
-        template_texts = list(self._collect_template_texts(presentation))
+        template_texts = list(self._get_template_texts())
 
         slides_data = []
         emitted_slide_no = 0
@@ -366,10 +672,13 @@ class PPTXMarkdownConverter:
             "slides": slides_data,
         }
 
-        assert self.structured_json_path is not None
+        if self.structured_json_path is None:
+            raise ValueError("structured_json_path is required for export_structured_json()")
         self.structured_json_path.parent.mkdir(parents=True, exist_ok=True)
+        _check_safe_output(self.structured_json_path, self._force)
         with open(self.structured_json_path, "w", encoding="utf-8", newline="\n") as fh:
             json.dump(document, fh, ensure_ascii=False, indent=2)
+        _apply_safe_perm(self.structured_json_path)
         return self.structured_json_path
 
     def export_per_slide_json(self) -> int:
@@ -386,20 +695,13 @@ class PPTXMarkdownConverter:
         """
         import json
 
-        _validate_pptx(self.input_path)
-        presentation = Presentation(str(self.input_path))
+        presentation = self._load_presentation()
         self.images_dir.mkdir(parents=True, exist_ok=True)
 
-        try:
-            self._slide_width_emu = presentation.slide_width
-            self._slide_height_emu = presentation.slide_height
-        except Exception:
-            self._slide_width_emu = None
-            self._slide_height_emu = None
+        template_texts = list(self._get_template_texts())
 
-        template_texts = list(self._collect_template_texts(presentation))
-
-        assert self.per_slide_json_dir is not None
+        if self.per_slide_json_dir is None:
+            raise ValueError("per_slide_json_dir is required for export_per_slide_json()")
         self.per_slide_json_dir.mkdir(parents=True, exist_ok=True)
 
         slide_summaries: List[dict] = []
@@ -410,8 +712,10 @@ class PPTXMarkdownConverter:
             emitted += 1
             slide_data = self._slide_to_dict(slide, emitted)
             slide_path = self.per_slide_json_dir / f"slide-{emitted:02d}.json"
+            _check_safe_output(slide_path, self._force)
             with open(slide_path, "w", encoding="utf-8", newline="\n") as fh:
                 json.dump(slide_data, fh, ensure_ascii=False, indent=2)
+            _apply_safe_perm(slide_path)
             slide_summaries.append({
                 "slide_no": emitted,
                 "layout_name": slide_data["layout_name"],
@@ -432,8 +736,11 @@ class PPTXMarkdownConverter:
             "schema_version": "1.0",
             "slides_index": slide_summaries,
         }
-        with open(self.per_slide_json_dir / "metadata.json", "w", encoding="utf-8", newline="\n") as fh:
+        metadata_path = self.per_slide_json_dir / "metadata.json"
+        _check_safe_output(metadata_path, self._force)
+        with open(metadata_path, "w", encoding="utf-8", newline="\n") as fh:
             json.dump(metadata, fh, ensure_ascii=False, indent=2)
+        _apply_safe_perm(metadata_path)
         return emitted
 
     def export_compact_view(self) -> int:
@@ -442,20 +749,13 @@ class PPTXMarkdownConverter:
         各 shape は 1 行で「pos (top,left) / size (h,w) / フォント / プレースホルダ / フラグ / テキスト」を表示する。
         Claude が Read で読み込み Phase 2 解釈する際の標準フォーマット。
         """
-        _validate_pptx(self.input_path)
-        presentation = Presentation(str(self.input_path))
+        presentation = self._load_presentation()
         self.images_dir.mkdir(parents=True, exist_ok=True)
 
-        try:
-            self._slide_width_emu = presentation.slide_width
-            self._slide_height_emu = presentation.slide_height
-        except Exception:
-            self._slide_width_emu = None
-            self._slide_height_emu = None
+        template_texts = self._get_template_texts()
 
-        template_texts = self._collect_template_texts(presentation)
-
-        assert self.compact_view_dir is not None
+        if self.compact_view_dir is None:
+            raise ValueError("compact_view_dir is required for export_compact_view()")
         self.compact_view_dir.mkdir(parents=True, exist_ok=True)
 
         emitted = 0
@@ -465,8 +765,10 @@ class PPTXMarkdownConverter:
             emitted += 1
             view_text = self._render_compact_slide_view(slide, emitted, template_texts)
             view_path = self.compact_view_dir / f"slide-{emitted:02d}.txt"
+            _check_safe_output(view_path, self._force)
             with open(view_path, "w", encoding="utf-8", newline="\n") as fh:
                 fh.write(view_text)
+            _apply_safe_perm(view_path)
         return emitted
 
     def _render_compact_slide_view(self, slide, slide_no: int, template_texts: set) -> str:
@@ -582,16 +884,37 @@ class PPTXMarkdownConverter:
             "notes": notes_text,
         }
 
-    def _walk_shape_to_dict(self, shape_iter, slide_no: int, shapes_out: list, connectors_out: list, parent_path: list) -> None:
-        """shape ツリーを再帰的に走査し、JSON 用辞書を構築する。"""
+    def _walk_shape_to_dict(self, shape_iter, slide_no: int, shapes_out: list, connectors_out: list, parent_path: list, depth: int = 0) -> None:
+        """shape ツリーを再帰的に走査し、JSON 用辞書を構築する.
+
+        DoS 防御:
+        - グループのネスト深度を MAX_GROUP_DEPTH で制限（CWE-674）
+        - 1 スライドあたりの shape 数を MAX_SHAPES_PER_SLIDE で制限（CWE-400）
+        - グループ shape 自身が装飾扱いの場合は子の再帰走査もスキップ（誤フィルタ防止）
+        """
+        if depth > MAX_GROUP_DEPTH:
+            raise ValueError(
+                f"Group nesting exceeds MAX_GROUP_DEPTH ({MAX_GROUP_DEPTH}) on slide {slide_no}"
+            )
         for shape in shape_iter:
+            if len(shapes_out) >= MAX_SHAPES_PER_SLIDE:
+                raise ValueError(
+                    f"shape count exceeds MAX_SHAPES_PER_SLIDE ({MAX_SHAPES_PER_SLIDE}) on slide {slide_no}"
+                )
             try:
                 if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
                     group_id = shape.shape_id
+                    # グループ自身が装飾扱いなら子もスキップ（HR-2: 誤フィルタ防止）
+                    if group_id in self._current_decoration_shape_ids:
+                        continue
                     group_name = shape.name
                     new_path = parent_path + [{"shape_id": group_id, "name": group_name}]
-                    self._walk_shape_to_dict(shape.shapes, slide_no, shapes_out, connectors_out, new_path)
+                    self._walk_shape_to_dict(
+                        shape.shapes, slide_no, shapes_out, connectors_out, new_path, depth=depth + 1
+                    )
                     continue
+            except ValueError:
+                raise
             except Exception:
                 pass
 
@@ -649,7 +972,7 @@ class PPTXMarkdownConverter:
 
         if shape_type == MSO_SHAPE_TYPE.PICTURE:
             kind = "PICTURE"
-        elif getattr(shape, "has_table", False) and getattr(shape, "has_table", False):
+        elif getattr(shape, "has_table", False):
             try:
                 if shape.has_table:
                     kind = "TABLE"
@@ -789,9 +1112,9 @@ class PPTXMarkdownConverter:
             for element in shape.element.iter():
                 tag = element.tag
                 if tag.endswith("}stCxn") and element.get("id"):
-                    begin = int(element.get("id"))
+                    begin = _safe_int_from_str(element.get("id"))
                 elif tag.endswith("}endCxn") and element.get("id"):
-                    end = int(element.get("id"))
+                    end = _safe_int_from_str(element.get("id"))
             return {"begin_shape_id": begin, "end_shape_id": end, "connector_shape_id": shape.shape_id}
         except Exception:
             return None
@@ -1006,11 +1329,14 @@ class PPTXMarkdownConverter:
         if len(slides) < 3:
             return texts
 
-        def _iter_text_shapes(shape_iter):
+        def _iter_text_shapes(shape_iter, depth: int = 0):
+            # HR-η: グループの再帰深度を MAX_GROUP_DEPTH で打切（CWE-674 対策）
+            if depth > MAX_GROUP_DEPTH:
+                return
             for shape in shape_iter:
                 try:
                     if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
-                        yield from _iter_text_shapes(shape.shapes)
+                        yield from _iter_text_shapes(shape.shapes, depth + 1)
                         continue
                 except Exception:
                     pass
@@ -1145,12 +1471,17 @@ class PPTXMarkdownConverter:
             if decoration_reasons >= 2:
                 self._current_decoration_shape_ids.add(shape_id)
 
-    def _gather_metrics_recursive(self, shape_iter, out: list) -> None:
-        """グループを再帰展開しながら全 shape のメタデータを集める."""
+    def _gather_metrics_recursive(self, shape_iter, out: list, depth: int = 0) -> None:
+        """グループを再帰展開しながら全 shape のメタデータを集める.
+
+        HR-η: 再帰深度を MAX_GROUP_DEPTH で打切（CWE-674 対策、_walk_shape_to_dict と対称化）.
+        """
+        if depth > MAX_GROUP_DEPTH:
+            return
         for shape in shape_iter:
             try:
                 if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
-                    self._gather_metrics_recursive(shape.shapes, out)
+                    self._gather_metrics_recursive(shape.shapes, out, depth + 1)
                     continue
             except Exception:
                 pass
@@ -1552,9 +1883,9 @@ class PPTXMarkdownConverter:
             for element in shape.element.iter():
                 tag = element.tag
                 if tag.endswith("}stCxn") and element.get("id"):
-                    begin = int(element.get("id"))
+                    begin = _safe_int_from_str(element.get("id"))
                 elif tag.endswith("}endCxn") and element.get("id"):
-                    end = int(element.get("id"))
+                    end = _safe_int_from_str(element.get("id"))
             if begin is not None and end is not None:
                 connectors.append({"begin": begin, "end": end})
         except Exception:
@@ -1741,9 +2072,23 @@ class PPTXMarkdownConverter:
         self._image_seq[slide_no] += 1
         img_no = self._image_seq[slide_no]
         filename = f"slide{slide_no}_img{img_no}.{ext}"
+        # MR-6: 画像総量・枚数の上限チェック（CWE-400 / CWE-770）
+        if self._image_total_count >= MAX_IMAGE_COUNT_PER_PPTX:
+            raise ValueError(
+                f"image count exceeds MAX_IMAGE_COUNT_PER_PPTX ({MAX_IMAGE_COUNT_PER_PPTX})"
+            )
+        if self._image_total_bytes + len(blob) > MAX_TOTAL_IMAGE_BYTES:
+            raise ValueError(
+                f"total image bytes would exceed MAX_TOTAL_IMAGE_BYTES ({MAX_TOTAL_IMAGE_BYTES})"
+            )
         out_path = self.images_dir / filename
         try:
-            out_path.write_bytes(blob)
+            _safe_write_bytes(out_path, blob, force=self._force)
+            self._image_total_bytes += len(blob)
+            self._image_total_count += 1
+        except ValueError as exc:
+            print(f"Warning: failed to write image (path issue): {exc}", file=sys.stderr)
+            return None
         except OSError as exc:
             print(f"Warning: failed to write image: {exc}", file=sys.stderr)
             return None
@@ -1757,13 +2102,34 @@ class PPTXMarkdownConverter:
 
     @staticmethod
     def _image_alt(shape, img_no: int) -> str:
+        """画像 shape の alt テキスト（descr 属性）を取得.
+
+        python-pptx の private 属性 `_element` と lxml の `xpath()` 依存を避け、
+        public API (`shape.description`) または `shape.element.iter()` で再帰探索する.
+        戻り値は `_safe_text` で正規化し、Bidi 制御文字・サロゲート・過長文字列を除去する
+        （HR-F: 後段 convert-html での XSS / homograph 偽装対策 + 一貫したサニタイズ）.
+        """
+        result = None
         try:
-            descr = shape._element.xpath("string(.//@descr)")
+            # python-pptx 0.6.21+ の Public API（存在すれば最優先）
+            descr = getattr(shape, "description", None)
             if descr:
-                return descr
+                result = descr
+            else:
+                # element 属性（new public）または _element（fallback）で XML 要素を取得
+                elem = getattr(shape, "element", None) or getattr(shape, "_element", None)
+                if elem is not None:
+                    for sub in elem.iter():
+                        v = sub.get("descr")
+                        if v:
+                            result = v
+                            break
         except Exception:
             pass
-        return shape.name or f"image{img_no}"
+        if not result:
+            result = shape.name or f"image{img_no}"
+        # _safe_text で Bidi / サロゲート / 過長文字列を除去（HR-F）
+        return _safe_text(result) or f"image{img_no}"
 
     # ---------- チャート ----------
 
@@ -1942,6 +2308,24 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
             "Emit one human/LLM-friendly text view per slide into the given directory "
             "(slide-NN.txt). Each shape is rendered as one row with id/position/font/text. "
             "Designed for Phase 2 (LLM interpretation) of large PPTX."
+        ),
+    )
+    parser.add_argument(
+        "--workspace-root",
+        default=None,
+        help=(
+            "Workspace root directory for output path validation. All secondary output "
+            "paths (--structured-json / --per-slide-json / --compact-view / --images-dir) "
+            "must resolve under this directory to defeat path traversal (CWE-22). "
+            "Default: parent directory of the resolved output MD path."
+        ),
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Overwrite existing output files without confirmation. Without this flag, "
+            "writing to an existing file aborts with an error (CWE-377 protection)."
         ),
     )
     return parser.parse_args(list(argv))
