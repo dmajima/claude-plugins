@@ -29,9 +29,44 @@
 | [case-21a_zip_bomb_total_size.md](case-21a_zip_bomb_total_size.md) | ZIP bomb 防御（総展開サイズ超過） |
 | [case-21b_zip_bomb_compression_ratio.md](case-21b_zip_bomb_compression_ratio.md) | ZIP bomb 防御（圧縮率異常） |
 | [case-22_image_extension_allowlist.md](case-22_image_extension_allowlist.md) | 画像拡張子 allowlist による正規化 |
+| [case-23a_structured_json_normal.md](case-23a_structured_json_normal.md) | Phase 1 JSON モード（`--structured-json` + `--json-only`）正常系 |
+| [case-23b_json_only_alone.md](case-23b_json_only_alone.md) | `--json-only` 単独指定（無効組み合わせ） |
+| [case-24a_per_slide_json.md](case-24a_per_slide_json.md) | `--per-slide-json` スライド単位 JSON 出力 |
+| [case-24b_compact_view.md](case-24b_compact_view.md) | `--compact-view` 簡潔ビュー出力 |
+| [case-25a_verify_pass.md](case-25a_verify_pass.md) | Phase 3 `verify_md.py` カバレッジ PASS |
+| [case-25b_verify_fail.md](case-25b_verify_fail.md) | Phase 3 カバレッジ閾値未達 FAIL |
+| [case-25c_verify_suspicious.md](case-25c_verify_suspicious.md) | Phase 3 誤転記候補 `suspicious_md_phrases` 検出 |
+| [case-26_interactive_mode.md](case-26_interactive_mode.md) | 対話モード（AskUserQuestion フロー） |
+| [case-27_fallback_mode.md](case-27_fallback_mode.md) | フォールバックモード（Python 単独 Markdown 直接生成） |
+| [case-28_lr_flowchart.md](case-28_lr_flowchart.md) | フロー図 `LR`（横方向）Mermaid 出力 |
+| [case-29_content_types_missing.md](case-29_content_types_missing.md) | `[Content_Types].xml` 欠落（KeyError パス） |
+| [case-30_title_estimation_fallback.md](case-30_title_estimation_fallback.md) | タイトル代替推定（`_guess_title_shape` の優先順位 A/B 経路） |
+| [case-31_workspace_root_traversal.md](case-31_workspace_root_traversal.md) | `--workspace-root` 経由のパストラバーサル拒否（CWE-22） |
+| [case-32_json_and_md_dual_output.md](case-32_json_and_md_dual_output.md) | `--json-only` なし + `--structured-json` で JSON + MD 同時出力 |
+| [case-33_decoration_reasons_boundary.md](case-33_decoration_reasons_boundary.md) | 装飾判定 `decoration_reasons >= 2` の境界値 |
+| [case-34_verify_image_50pct_boundary.md](case-34_verify_image_50pct_boundary.md) | `verify_md.py` 画像カバレッジ 50% 境界値 |
+| [case-35_verify_connector_threshold_5.md](case-35_verify_connector_threshold_5.md) | `verify_md.py` コネクタ閾値 5 件境界値 |
+| [case-36_default_md_output_path.md](case-36_default_md_output_path.md) | 出力 MD パス省略時のデフォルト解決（`<入力>.md`） |
+| [case-37_title_estimation_boundary.md](case-37_title_estimation_boundary.md) | `_guess_title_shape` 優先順位 A/B の EMU 境界値 |
+| [case-38_merged_cell_table.md](case-38_merged_cell_table.md) | マージセル（colspan / rowspan）を含むテーブル |
+| [case-39_empty_table_skip.md](case-39_empty_table_skip.md) | 全セル空テーブルの除外 |
+| [case-40_horizontal_text_merge.md](case-40_horizontal_text_merge.md) | 水平方向の連続テキスト行結合（`_merge_horizontal_text_rows`） |
+| [case-41a_force_overwrite.md](case-41a_force_overwrite.md) | `--force` フラグによる既存ファイル上書き許可 |
+| [case-41b_symlink_output_rejected.md](case-41b_symlink_output_rejected.md) | 出力先が symlink なら `--force` 有無を問わず拒否（CWE-59） |
+| [case-42a_max_slides_exceeded.md](case-42a_max_slides_exceeded.md) | `MAX_SLIDES` 上限超過時の拒否（DoS 防御） |
+| [case-42b_max_shapes_exceeded.md](case-42b_max_shapes_exceeded.md) | `MAX_SHAPES_PER_SLIDE` 上限超過時の拒否（DoS 防御） |
+| [case-42c_max_group_depth_exceeded.md](case-42c_max_group_depth_exceeded.md) | `MAX_GROUP_DEPTH` 上限超過時の拒否（CWE-674） |
+| [case-42d_max_image_count_exceeded.md](case-42d_max_image_count_exceeded.md) | 画像総量・枚数の上限超過時の拒否（DoS 防御） |
+| [case-43_large_pptx_subagent_flow.md](case-43_large_pptx_subagent_flow.md) | 大規模 PPTX（100 スライド超）でのサブエージェント並列分担フロー |
+| [case-44a_defusedxml_missing_default.md](case-44a_defusedxml_missing_default.md) | `defusedxml` 未インストール時のフェイルクローズ（デフォルト exit 2） |
+| [case-44b_defusedxml_missing_opt_out.md](case-44b_defusedxml_missing_opt_out.md) | `defusedxml` 未インストール + `CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1` で警告継続 |
+| [case-45_medium_pptx_flow.md](case-45_medium_pptx_flow.md) | 中規模 PPTX（30〜100 スライド）でのメイン逐次 Read フロー |
+| [case-46_section_cover_number_excluded.md](case-46_section_cover_number_excluded.md) | 章扉スライドでの装飾的章番号除外（`_is_decoration_number`） |
 
 ## 実行確認方法
 
-```bash
-python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" <入力PPTX> <出力MD> [オプション]
+```powershell
+& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
+  "<入力PPTX>" "<出力MD>" [オプション]
 ```
