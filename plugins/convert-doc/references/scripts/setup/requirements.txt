@@ -1,3 +1,11 @@
+# 依存パッケージ（完全固定: pip install で同一バージョンを強制）
+#
+# 【CVE 監視ポリシー】L-11 / extension-reviewer security 指摘
+# - 定期的に `pip-audit` または `osv-scanner` を実行し、各パッケージの CVE 公開状況を確認すること
+# - 特に lxml (CVE-2021-43818 / CVE-2022-2309 等の履歴あり) と Pillow (画像処理系で頻繁に CVE 公表) は要監視
+# - python-pptx 内部の lxml ハードニング非保証のため、悪意 PPTX を扱う場合は defusedxml.lxml.monkey_patch_lxml() の導入を検討
+# - バージョン上げ時は pip install で動作確認のうえ pin 更新する
+
 markdown==3.7
 Pygments==2.18.0
 rcssmin==1.1.2
@@ -7,3 +15,6 @@ playwright==1.48.0
 python-pptx==1.0.2
 requests==2.32.3
 lxml==5.3.0
+# XML 攻撃（XXE / Billion Laughs / DTD / external entity）対策のため、
+# python-pptx 内部の lxml に monkey patch を適用する目的で必須
+defusedxml==0.7.1

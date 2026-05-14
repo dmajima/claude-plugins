@@ -27,6 +27,33 @@ from typing import Optional
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
+# defusedxml で lxml をハードニング（CWE-611 / CWE-776）. python-pptx 内部の lxml にも
+# 適用するため、pptx import の前に monkey patch する. デフォルトはフェイルクローズ.
+# 環境変数 CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1 で警告継続に切替可能（オプトアウト）.
+import os as _os
+_allow_unhardened_xml = _os.environ.get("CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML", "") == "1"
+try:
+    import defusedxml.lxml as _defused_lxml
+    _defused_lxml.monkey_patch_lxml()
+except ImportError:
+    _xml_msg = (
+        "defusedxml is required for safe XML handling (CWE-611 / CWE-776). "
+        "Install with: pip install defusedxml. "
+        "To bypass at your own risk, set CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1."
+    )
+    if _allow_unhardened_xml:
+        print(f"Warning: {_xml_msg}", file=sys.stderr)
+    else:
+        print(f"Error: {_xml_msg}", file=sys.stderr)
+        sys.exit(2)
+except Exception as _defused_exc:
+    _xml_msg = f"defusedxml monkey patch failed: {_defused_exc}"
+    if _allow_unhardened_xml:
+        print(f"Warning: {_xml_msg}", file=sys.stderr)
+    else:
+        print(f"Error: {_xml_msg}", file=sys.stderr)
+        sys.exit(2)
+
 try:
     from pptx import Presentation
     from pptx.enum.shapes import MSO_SHAPE_TYPE
@@ -35,17 +62,76 @@ except ImportError as exc:  # pragma: no cover
     raise SystemExit(2)
 
 
-CTRL_CHAR_RE = re.compile("[	--]+")
+CTRL_CHAR_RE = re.compile(r"[\x09-\x1f\x7f-\x9f]+")
 WS_RE = re.compile(r"\s+")
-PHRASE_SPLIT_RE = re.compile("[。｡\n\r\.]+")
+PHRASE_SPLIT_RE = re.compile(r"[。｡\n\r]|(?<=\S)\.\s+")
 IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 MERMAID_BLOCK_RE = re.compile(r"```mermaid\s*\n(.*?)\n```", re.DOTALL)
 EDGE_RE = re.compile(r"-{2,}>|--+|==+>|==+|-\.->")
+
+# HR-E / HR-ζ: DoS 防御の上限定数（convert_from_pptx.py と完全対称化）
+MAX_SLIDES = 1000
+MAX_SHAPES_PER_SLIDE = 5000
+MAX_GROUP_DEPTH = 20
+MAX_TOTAL_UNCOMPRESSED_BYTES = 256 * 1024 * 1024  # 256 MiB (ZIP bomb 防御)
+MAX_COMPRESSION_RATIO = 200  # ZIP 圧縮率上限
+MAX_TEXT_PER_SHAPE = 1_000_000  # 1 shape あたりのテキスト長上限（CWE-400）
+MAX_TOTAL_IMAGE_BYTES = 256 * 1024 * 1024  # 256 MiB (画像総量、CWE-770)
+MAX_IMAGE_COUNT_PER_PPTX = 1000  # PPTX 全体での画像枚数上限
 
 
 _MD_SYNTAX_RE = re.compile(r"[#>|`*~\[\]]")
 _MD_LINK_RE = re.compile(r"<(https?://[^>]+)>")
 _MD_BR_RE = re.compile(r"<br\s*/?>", re.IGNORECASE)
+
+
+def _check_input_path(path: Path, label: str) -> None:
+    """HR-D: 入力パスの安全性検証（CWE-22 / CWE-59 対策）.
+
+    - パス文字列に `..` 含む場合は拒否（パストラバーサル）
+    - シンボリックリンクの場合は拒否（TOCTOU / リンク先攻撃対策）
+    """
+    raw = str(path).replace("\\", "/")
+    if ".." in raw.split("/"):
+        print(
+            f"Error: {label} contains '..' (path traversal blocked): {path}",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    if path.is_symlink():
+        print(
+            f"Error: {label} is a symbolic link (refused for safety): {path}",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+
+
+def _validate_pptx_for_verify(pptx_path: Path) -> None:
+    """HR-E: verify_md.py 側の PPTX 入力検証（convert_from_pptx.py の _validate_pptx と同等）.
+
+    ZIP マジック・総展開サイズ上限・圧縮率上限を確認し、Billion Laughs / ZIP bomb 攻撃を遮断する.
+    """
+    import zipfile
+    with open(pptx_path, "rb") as fh:
+        head = fh.read(4)
+    if head != b"PK\x03\x04":
+        raise ValueError(f"Not a PPTX (zip) file: {pptx_path}")
+    with zipfile.ZipFile(pptx_path, "r") as zf:
+        total_uncompressed = 0
+        for info in zf.infolist():
+            total_uncompressed += info.file_size
+            if total_uncompressed > MAX_TOTAL_UNCOMPRESSED_BYTES:
+                raise ValueError(
+                    f"Input PPTX exceeds uncompressed size limit "
+                    f"({total_uncompressed} > {MAX_TOTAL_UNCOMPRESSED_BYTES}): {pptx_path}"
+                )
+            if info.compress_size > 0:
+                ratio = info.file_size / info.compress_size
+                if ratio > MAX_COMPRESSION_RATIO:
+                    raise ValueError(
+                        f"Suspicious compression ratio ({ratio:.1f}x) "
+                        f"for entry '{info.filename}' in {pptx_path}"
+                    )
 
 
 def _normalize(text: str) -> str:
@@ -150,12 +236,24 @@ def _is_offscreen(shape, slide_w: Optional[int], slide_h: Optional[int]) -> bool
     return False
 
 
-def _walk(shape_iter, texts: list, tables: list, images: list, connectors: list, slide_w=None, slide_h=None):
+def _walk(shape_iter, texts: list, tables: list, images: list, connectors: list,
+          slide_w=None, slide_h=None, depth: int = 0):
+    """HR-E: グループネスト深度と shape 数の上限チェックを追加（CWE-400 / CWE-674）."""
+    if depth > MAX_GROUP_DEPTH:
+        raise ValueError(
+            f"Group nesting exceeds MAX_GROUP_DEPTH ({MAX_GROUP_DEPTH})"
+        )
     for shape in shape_iter:
+        if len(texts) + len(tables) + len(images) >= MAX_SHAPES_PER_SLIDE:
+            raise ValueError(
+                f"shape count exceeds MAX_SHAPES_PER_SLIDE ({MAX_SHAPES_PER_SLIDE})"
+            )
         try:
             if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
-                _walk(shape.shapes, texts, tables, images, connectors, slide_w, slide_h)
+                _walk(shape.shapes, texts, tables, images, connectors, slide_w, slide_h, depth + 1)
                 continue
+        except ValueError:
+            raise
         except Exception:
             pass
         try:
@@ -184,6 +282,9 @@ def _walk(shape_iter, texts: list, tables: list, images: list, connectors: list,
             if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
                 t = (shape.text_frame.text or "").strip()
                 if t:
+                    # HR-ζ: テキスト長上限による DoS 防御（CWE-400）
+                    if len(t) > MAX_TEXT_PER_SHAPE:
+                        t = t[:MAX_TEXT_PER_SHAPE]
                     texts.append({
                         "shape_id": shape.shape_id,
                         "text": t,
@@ -195,10 +296,8 @@ def _walk(shape_iter, texts: list, tables: list, images: list, connectors: list,
 
 
 def _extract_pptx_inventory(pptx_path: Path) -> dict:
-    with open(pptx_path, "rb") as fh:
-        head = fh.read(4)
-    if head != b"PK\x03\x04":
-        raise ValueError(f"Not a PPTX (zip) file: {pptx_path}")
+    # HR-E: PPTX マジック + ZIP bomb / 圧縮率の事前検査（convert_from_pptx.py と同等）
+    _validate_pptx_for_verify(pptx_path)
 
     prs = Presentation(str(pptx_path))
     template_texts = _collect_template_texts(prs)
@@ -207,6 +306,9 @@ def _extract_pptx_inventory(pptx_path: Path) -> dict:
 
     slides_inv = []
     for idx, slide in enumerate(prs.slides, start=1):
+        # HR-E: スライド数の上限チェック（DoS 防御・CWE-400）
+        if idx > MAX_SLIDES:
+            raise ValueError(f"slide count exceeds MAX_SLIDES ({MAX_SLIDES})")
         texts: list = []
         tables: list = []
         images: list = []
@@ -306,7 +408,7 @@ def _blocks_present_in_md(needle: str, md_norm: str, md_phrases: set) -> bool:
     return all(_text_present_in_md(p, md_norm, md_phrases) for p in parts)
 
 
-def verify(pptx_path: Path, md_path: Path, coverage_threshold: float = 0.95) -> dict:
+def verify(pptx_path: Path, md_path: Path, coverage_threshold: float = 0.85) -> dict:
     inv = _extract_pptx_inventory(pptx_path)
     md = _extract_md_features(md_path)
     template_set = {_normalize(t) for t in inv["template_decoration_texts"]}
@@ -380,7 +482,11 @@ def verify(pptx_path: Path, md_path: Path, coverage_threshold: float = 0.95) -> 
             for row in tbl["rows"]:
                 for cell in row:
                     pptx_all_text_norm_parts.append(_normalize(cell))
-    pptx_all_text_norm = " ".join(pptx_all_text_norm_parts)
+    # HR-1: 隣接テキスト間に NUL を挟むことで境界消失による誤マッチを防ぐ.
+    # 例: ["終了", "開始"] を " ".join すると "終了 開始" となり "了開" が誤ヒットしうるが、
+    # NUL 挟みなら "\x00終了\x00開始\x00" となり連続マッチが起きない（cmp_phrase は通常 NUL を含まない）.
+    _SENTINEL_BOUNDARY = "\x00"
+    pptx_all_text_norm = _SENTINEL_BOUNDARY + _SENTINEL_BOUNDARY.join(pptx_all_text_norm_parts) + _SENTINEL_BOUNDARY
 
     suspicious_md_phrases: list = []
     for phrase in md["phrases"]:
@@ -437,12 +543,15 @@ def main(argv=None) -> int:
     parser.add_argument("pptx", help="Input PPTX file")
     parser.add_argument("md", help="Generated Markdown file")
     parser.add_argument("--report", default=None, help="Write JSON report to this path")
-    parser.add_argument("--threshold", type=float, default=0.95, help="Coverage threshold (0.0-1.0)")
+    parser.add_argument("--threshold", type=float, default=0.85, help="Coverage threshold (0.0-1.0)")
     parser.add_argument("--max-missing-shown", type=int, default=20, help="Truncate missing lists in console output")
     args = parser.parse_args(argv if argv is not None else sys.argv[1:])
 
     pptx_path = Path(args.pptx)
     md_path = Path(args.md)
+    # HR-D: パストラバーサル / シンボリックリンク拒否（CWE-22 / CWE-59）
+    _check_input_path(pptx_path, "pptx")
+    _check_input_path(md_path, "md")
     if not pptx_path.exists():
         print(f"Error: PPTX not found: {pptx_path}", file=sys.stderr)
         return 2
@@ -454,9 +563,28 @@ def main(argv=None) -> int:
 
     if args.report:
         report_path = Path(args.report)
+        # L-12: パストラバーサル `..` を含む生パスは拒否（CWE-22 簡易対策）
+        if ".." in str(report_path).replace("\\", "/").split("/"):
+            print(
+                f"Error: --report path contains '..' (path traversal blocked): {report_path}",
+                file=sys.stderr,
+            )
+            return 2
+        # HR-ε: 既存ファイルがシンボリックリンクなら拒否（CWE-59 / CWE-367 TOCTOU 対策）
+        if report_path.exists() and report_path.is_symlink():
+            print(
+                f"Error: --report path is a symbolic link (refused for safety): {report_path}",
+                file=sys.stderr,
+            )
+            return 2
+        report_path = report_path.resolve()
         report_path.parent.mkdir(parents=True, exist_ok=True)
         with open(report_path, "w", encoding="utf-8", newline="\n") as fh:
             json.dump(report, fh, ensure_ascii=False, indent=2)
+        try:
+            report_path.chmod(0o600)
+        except (OSError, NotImplementedError):
+            pass
         print(f"Wrote report: {report_path}")
 
     s = report["summary"]

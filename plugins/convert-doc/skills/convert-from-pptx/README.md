@@ -14,7 +14,7 @@ PowerPoint (PPTX) を Claude が読み込める Markdown に変換するスキ�
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-依存パッケージ（python-pptx / Pillow / lxml）は初回実行時に `references/scripts/setup/setup_venv.ps1` が自動で venv を構築してインストールします。本スキルは外部ネットワークアクセスを行いません（オフライン環境でも動作）。
+依存パッケージ（python-pptx / Pillow / lxml / defusedxml）は初回実行時に `references/scripts/setup/setup_venv.ps1`（Windows 11 推奨）または `setup_venv.sh`（POSIX 互換）が自動で venv を構築してインストールします。本スキルは外部ネットワークアクセスを行いません（オフライン環境でも動作）。
 
 ## 仕組み
 
@@ -30,6 +30,17 @@ PowerPoint (PPTX) を Claude が読み込める Markdown に変換するスキ�
 
 ## 使い方
 
+### 最小例
+
+```text
+ユーザ:
+> このPPTXをMarkdownに変換して
+
+Claude（要約）:
+> 入力PPTXを構造化JSONに抽出し、文脈解釈してMarkdownを生成しました。
+> 出力: report.md、画像: report_images/
+```
+
 ### 自然言語
 
 - 「この PPTX を Markdown に変換して」
@@ -38,12 +49,23 @@ PowerPoint (PPTX) を Claude が読み込める Markdown に変換するスキ�
 
 ### スクリプト直接実行
 
-```bash
-"$SESSION_DIR/workspace/.venv/Scripts/python" \
-  "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" \
-  "<入力PPTX>" "<出力MD>" \
+```powershell
+& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
+  "<入力PPTX>" "<出力MD>" `
   [--images-dir DIR] [--no-mermaid] [--include-notes]
 ```
+
+## 技術スタック / 動作要件
+
+| 項目 | 内容 |
+|------|------|
+| Python | 3.9 以上 |
+| 主要依存 | `python-pptx` (PPTX パース), `lxml` (SmartArt XML 解析・XXE 対策), `Pillow` (画像メタ取得) |
+| 依存リスト | `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt`（バージョン下限固定） |
+| シェル | PowerShell 7+（Windows 11 主動作環境）、`.sh` は POSIX 環境向けの互換版 |
+| 外部通信 | なし（オフライン動作） |
+| 出力エンコーディング | UTF-8 / LF / BOM なし |
 
 ## ファイル構成
 
@@ -51,47 +73,39 @@ PowerPoint (PPTX) を Claude が読み込める Markdown に変換するスキ�
 plugins/convert-doc/
 ├── references/scripts/
 │   ├── setup/                       # 統合 venv 構築（プラグイン共通、ADR-024）
-│   │   ├── requirements.txt         # 全 4 スキル分の依存をマージ
-│   │   ├── setup_venv.ps1
-│   │   └── teardown_venv.ps1
+│   │   ├── requirements.txt         # 全スキル分の依存をマージ（バージョン下限固定）
+│   │   ├── setup_venv.ps1           # PowerShell 版（推奨・Windows 11）
+│   │   ├── teardown_venv.ps1
+│   │   ├── setup_venv.sh            # POSIX 互換版
+│   │   └── teardown_venv.sh
 │   └── convert-from-pptx/           # 本スキル業務スクリプト（ADR-025）
-│       └── convert_from_pptx.py
+│       ├── convert_from_pptx.py     # PPTX → Markdown / JSON 変換
+│       └── verify_md.py             # Phase 3 カバレッジ検証
 └── skills/convert-from-pptx/
     ├── SKILL.md
     ├── README.md
     ├── references/
-    │   ├── procedures.md
-    │   └── setup.md
+    │   ├── design.md                # 設計方針・対応規則
+    │   ├── procedures.md            # 標準実行手順
+    │   ├── setup.md                 # 環境構築
+    │   ├── options.md               # CLI オプション一覧
+    │   ├── json-schema.md           # 構造化 JSON スキーマ
+    │   ├── validation.md            # Phase 3 検証ガイド
+    │   └── large-pptx-workflow.md   # 大規模 PPTX フロー
     └── evals/
         ├── README.md
-        ├── case-01_normal_with_title.md
-        ├── case-02_no_title_placeholder.md
-        ├── case-03_table_conversion.md
-        ├── case-04_image_extraction.md
-        ├── case-05_flowchart_mermaid.md
-        ├── case-06_smartart_mermaid.md
-        ├── case-07_speaker_notes.md
-        ├── case-08_hidden_slide.md
-        ├── case-09_input_not_found.md
-        ├── case-10_path_traversal_images_dir.md
-        ├── case-11_invalid_pptx_magic.md
-        ├── case-12_max_image_size_overflow.md
-        ├── case-13_monospace_code_block.md
-        ├── case-14_no_mermaid_flag.md
-        ├── case-15_empty_pptx.md
-        ├── case-16_invalid_content_types.md
-        ├── case-17_invalid_extension.md
-        ├── case-18_no_first_slide_as_title.md
-        ├── case-19_chart_shape.md
-        ├── case-20_smartart_fallback.md
-        ├── case-21a_zip_bomb_total_size.md
-        ├── case-21b_zip_bomb_compression_ratio.md
-        └── case-22_image_extension_allowlist.md
+        ├── case-01_normal_with_title.md 〜 case-22_image_extension_allowlist.md（基本ケース 22 件）
+        ├── case-23a_structured_json_normal.md / case-23b_json_only_alone.md（Phase 1 JSON モード）
+        ├── case-24a_per_slide_json.md / case-24b_compact_view.md（中〜大規模対応）
+        ├── case-25a/25b/25c（Phase 3 検証）
+        ├── case-26_interactive_mode.md / case-27_fallback_mode.md
+        ├── case-28_lr_flowchart.md / case-29_content_types_missing.md / case-30_title_estimation_fallback.md
+        └── case-31〜case-40（境界値・--workspace-root traversal・JSON+MD 同時出力 等 10 件）
 ```
 
 ## カスタマイズ
 
-- Mermaid 変換のしきい値（コネクタ最小本数、対象シェイプ種別など）は `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py` 冒頭の定数を編集する
+- Mermaid 変換のしきい値（コネクタ最小本数、対象シェイプ種別など）は `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py` 冒頭の定数を編集する
 - モノスペース判定対象フォント名は `MONOSPACE_FONTS` 定数で管理する
 - 画像の最大サイズや出力ファイル名規則は `--max-image-size` および `_image_filename()` を編集する
 - スピーカーノートのプレフィックス（`> [!NOTE]`）は `_format_notes()` を編集する

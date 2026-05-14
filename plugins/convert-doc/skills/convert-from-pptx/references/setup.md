@@ -14,13 +14,16 @@
 セッション作業領域の workspace 配下に venv を構築する。
 
 ```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" -WorkDir "$SessionDir/workspace"
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" `
+  -WorkDir "$SESSION_DIR/workspace" `
+  -RequirementsPath "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
 ```
 
 ## 削除スクリプト
 
 ```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir "$SessionDir/workspace"
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.ps1" `
+  -WorkDir "$SESSION_DIR/workspace"
 ```
 
 ## オフライン要件

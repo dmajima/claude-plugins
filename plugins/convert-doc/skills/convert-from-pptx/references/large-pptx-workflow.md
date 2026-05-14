@@ -16,12 +16,13 @@
 
 ### 2.1 抽出
 
-```bash
-<workspace>/.venv/Scripts/python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" \
-  <入力 PPTX> \
-  --per-slide-json   <セッション>/json/ \
-  --compact-view     <セッション>/views/ \
-  --json-only \
+```powershell
+& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
+  "<入力 PPTX>" `
+  --per-slide-json   "<セッション>/json/" `
+  --compact-view     "<セッション>/views/" `
+  --json-only `
   [--include-notes] [--include-hidden]
 ```
 
