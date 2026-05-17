@@ -25,14 +25,23 @@
 
 不一致のディレクトリは安全のため無視（Verbose ログには出力）。
 
-### 1.3 最終更新日時の取得
+### 1.3 atime（最終アクセス日時）の取得
 
-セッションフォルダ自身の mtime ではなく、配下の全ファイルを再帰走査して最も新しい mtime を採用する。これにより `workspace/` 内で更新があったセッションを「進行中」として正しく検出できる。
+「最終アクセス日時」は **`progress.md` の `LastWriteTimeUtc`** を採用する（`atime_strategy = "progress_md"`）。これは Claude Code のセッション運用と整合する戦略であり、NTFS 既定で無効化されている真の atime（`LastAccessTimeUtc`）の不安定さを回避する。
+
+`progress.md` が存在しないセッションは **フォールバック**（セッションフォルダ自身の mtime + 配下最大 mtime）を採用する。
 
 ```powershell
-$lastWrite = $session.LastWriteTimeUtc
-Get-ChildItem -Path $session.FullName -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
-    if ($_.LastWriteTimeUtc -gt $lastWrite) { $lastWrite = $_.LastWriteTimeUtc }
+$progressPath = Join-Path $session.FullName 'progress.md'
+if (Test-Path -LiteralPath $progressPath) {
+    # 推奨経路: progress.md mtime を atime とする
+    $lastAccess = (Get-Item -LiteralPath $progressPath).LastWriteTimeUtc
+} else {
+    # フォールバック: 配下最大 mtime
+    $lastAccess = $session.LastWriteTimeUtc
+    Get-ChildItem -LiteralPath $session.FullName -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+        if ($_.LastWriteTimeUtc -gt $lastAccess) { $lastAccess = $_.LastWriteTimeUtc }
+    }
 }
 ```
 
@@ -42,18 +51,21 @@ Get-ChildItem -Path $session.FullName -Recurse -File -ErrorAction SilentlyContin
 
 | 条件 | 動作 |
 |-----|------|
-| `lastWrite < UtcNow - Days` | 候補に追加 |
-| `lastWrite >= UtcNow - Days` | スキップ |
+| `lastAccess < UtcNow - Days` | 候補に追加 |
+| `lastAccess >= UtcNow - Days` | スキップ |
+
+`Days` の既定値は `cleanup-config.json` の `default_days`（初期値 30）。引数 `--Days` で上書き可能。
 
 ### 2.2 進行中セッション保護
 
-`progress.md` の mtime が UtcNow から 5 分以内なら、古さ判定を満たしても候補から除外する。
+`progress.md` の mtime が UtcNow から `active_session_minutes` 分以内（初期値 5 分）なら、古さ判定を満たしても候補から除外する。閾値は `cleanup-config.json` の `active_session_minutes` で変更可能（`/cleanup-config --set-active-minutes N` または `cleanup-config.ps1 -SetActiveSessionMinutes N`）。
 
 ```powershell
+$activeThreshold = $nowUtc.AddMinutes(-[int]$config.active_session_minutes)
 $progressPath = Join-Path $session.FullName 'progress.md'
 if (Test-Path $progressPath) {
     $progMtime = (Get-Item $progressPath).LastWriteTimeUtc
-    if ($progMtime -gt $nowUtc.AddMinutes(-5)) { continue }
+    if ($progMtime -gt $activeThreshold) { continue }
 }
 ```
 

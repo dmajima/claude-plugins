@@ -57,9 +57,11 @@ Claude Code のセッション作業領域 `.claude/.local/work/` に蓄積し�
 
 ### 1. 引数解析
 
-| 引数 | 既定 | 説明 |
+引数省略時の既定値は `~/.claude/.local/plugins/maintenance/cleanup-config.json`（グローバル配下）から読み込まれる。設定ファイル不在時は内蔵デフォルト（下表「初期値」）を採用。設定変更には `/cleanup-config` コマンドを使用する。
+
+| 引数 | 初期値 | 説明 |
 |-----|------|------|
-| `--days N` | 30 | クリーンアップ閾値日数（mtime 比較） |
+| `--days N` | 30 | クリーンアップ閾値日数（atime ベース比較） |
 | `--scope <global\|project\|both>` | both | 対象スコープ |
 | `--dry-run` | false | ドライラン（実削除なし） |
 | `--keep-recent N` | 0 | 最新 N 件のセッションを古さ条件に関係なく保持 |
@@ -74,10 +76,10 @@ Claude Code のセッション作業領域 `.claude/.local/work/` に蓄積し�
 - プロジェクト: 現在のリポジトリルート（`git rev-parse --show-toplevel`）の `.claude/.local/work/*/`
 - 同一パスの重複は除去
 
-### 3. 古さ判定 + keep-recent 適用
+### 3. atime 戦略・古さ判定・keep-recent 適用
 
-- 各セッションフォルダの再帰的な最終更新日時（含む全ファイル）を取得
-- `--days` 閾値より古いものを候補に追加
+- **atime（最終アクセス日時）の解決**: 各セッションフォルダの `progress.md` の `LastWriteTimeUtc` を「最終アクセス日時」として採用する。`progress.md` が存在しないセッションは **フォールバック**（セッションフォルダ自身 + 配下最大 mtime）で代用する
+- 解決された atime が `--days` 閾値より古いものを候補に追加
 - `--keep-recent N` 指定時はスコープごとに新しい順 N 件を候補から除外
 
 ### 4. バリデーション（必須・省略不可）
@@ -87,7 +89,7 @@ Claude Code のセッション作業領域 `.claude/.local/work/` に蓄積し�
 - パスが `.claude/.local/work/` 配下の `yyyyMMdd_nn_*` 形式であることを正規表現照合
 - 親ディレクトリ（`work/` 自体・`.claude/.local/` 自体）は絶対に対象外
 - シンボリックリンクは追従しない（リンク自体も削除対象外）
-- 進行中セッション（`progress.md` の mtime が 5 分以内）は保護
+- 進行中セッション（`progress.md` mtime が `active_session_minutes` 分以内、初期値 5 分）は保護
 
 ### 5. ドライラン or 削除前確認
 
@@ -137,7 +139,8 @@ Claude Code のセッション作業領域 `.claude/.local/work/` に蓄積し�
 - `--yes` / `--non-interactive` 指定でもバリデーションは省略不可
 - 親ディレクトリ（`work/`・`.claude/.local/`・`.claude/`）の削除は禁止
 - シンボリックリンクの追従禁止（リンク自体の削除も対象外）
-- 進行中セッションの削除は禁止（`progress.md` の最新更新が 5 分以内なら保護）
+- 進行中セッションの削除は禁止（`progress.md` の最新更新が `active_session_minutes` 分以内、初期値 5 分なら保護）
+- 「最終アクセス日時」の解決は `progress.md` mtime → 配下最大 mtime（フォールバック）の順で行う（NTFS atime が Windows 既定で無効化されているため、Claude Code セッション運用に整合する戦略を採用）
 - パス記法はポータブルに保つ（ローカル絶対パスのハードコード禁止）
 - 既存ファイル更新時のエンコーディング・改行コードを維持する（`~/.claude/rules/common/file-encoding.md` 参照）
 - ユーザに選択を求める場合は `AskUserQuestion` を使用する
@@ -150,7 +153,10 @@ Claude Code のセッション作業領域 `.claude/.local/work/` に蓄積し�
 |-----|---------|
 | 詳細実行手順 | [references/procedures.md](references/procedures.md) |
 | 安全装置の詳細 | [references/safety.md](references/safety.md) |
-| 実装スクリプト | [`references/scripts/cleanup/cleanup.ps1`](references/scripts/cleanup/cleanup.ps1) |
+| 実装スクリプト（cleanup 本体） | [`references/scripts/cleanup/cleanup.ps1`](references/scripts/cleanup/cleanup.ps1) |
+| 実装スクリプト（設定操作） | [`references/scripts/cleanup/cleanup-config.ps1`](references/scripts/cleanup/cleanup-config.ps1) |
+| 設定ファイル本体 | `~/.claude/.local/plugins/maintenance/cleanup-config.json`（グローバル配下に集約）|
+| 設定変更コマンド | `/cleanup-config`（`commands/cleanup-config.md`）|
 | セッションフォルダ規約（global rule） | `~/.claude/rules/claude/work-directory.md` |
 | ローカルデータ領域規約（global rule） | `~/.claude/rules/claude/local-data-directory.md` |
 | 動作例 | [evals/](evals/) |

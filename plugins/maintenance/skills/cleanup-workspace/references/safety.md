@@ -87,24 +87,26 @@ Windows ではディレクトリのハードリンクは作成不可。ファイ
 
 ### 4.1 検出ロジック
 
-セッションフォルダ直下の `progress.md` の `LastWriteTimeUtc` が現在時刻から 5 分以内であれば、当該セッションは進行中と判定する。
+セッションフォルダ直下の `progress.md` の `LastWriteTimeUtc` が現在時刻から `active_session_minutes` 分以内（**初期値 5 分**、設定ファイルで変更可）であれば、当該セッションは進行中と判定する。
 
 ```powershell
+$activeThreshold = $nowUtc.AddMinutes(-[int]$config.active_session_minutes)
 $progressPath = Join-Path $session.FullName 'progress.md'
 if (Test-Path $progressPath) {
     $progMtime = (Get-Item $progressPath).LastWriteTimeUtc
-    if ($progMtime -gt $nowUtc.AddMinutes(-5)) {
+    if ($progMtime -gt $activeThreshold) {
         # 進行中: 削除対象から除外
         return
     }
 }
 ```
 
-### 4.2 5 分閾値の根拠
+### 4.2 閾値の設計根拠
 
-- Claude Code の典型的なタスク粒度（数十秒〜数分）に対し十分な保護幅
+- Claude Code の典型的なタスク粒度（数十秒〜数分）に対し十分な保護幅となるよう **初期値 5 分** を採用
 - 連続タスクで `progress.md` が頻繁に更新される運用を前提
 - ユーザが明示的に古いセッションを掃除したいケースでは、対象は通常 5 分以上未更新であることが期待される
+- 環境・運用形態により閾値が不適切な場合は `/cleanup-config --set-active-minutes N` で変更可能
 
 ### 4.3 進行中セッションの強制削除
 

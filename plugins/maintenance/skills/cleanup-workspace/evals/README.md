@@ -18,6 +18,9 @@
 | case-10 | `--include-tmp` で tmp 追加削除 | `--include-tmp` 指定 |
 | case-11 | `--dry-run` と `--yes` 同時指定（dry-run 優先） | 両フラグ同時指定 |
 | case-12 | シンボリックリンク検出時のスキップ | `$item.LinkType` 非 `$null` |
+| case-13 | 閾値設定の表示（`/cleanup-config`） | 引数なし or `--show` |
+| case-14 | 閾値設定の変更（`/cleanup-config --set-days N` 等） | `--set-*` フラグ指定 |
+| case-15 | progress.md 不在時のフォールバック atime | `progress.md` の有無で atime 解決経路が分岐 |
 
 ## 実行確認方法
 

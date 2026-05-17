@@ -34,14 +34,14 @@
 
 [CmdletBinding()]
 param(
-    [int]$Days = 30,
+    [Nullable[int]]$Days = $null,
 
-    [ValidateSet('global', 'project', 'both')]
-    [string]$Scope = 'both',
+    [ValidateSet('', 'global', 'project', 'both')]
+    [string]$Scope = '',
 
     [switch]$DryRun,
 
-    [int]$KeepRecent = 0,
+    [Nullable[int]]$KeepRecent = $null,
 
     [switch]$IncludeTmp,
 
@@ -55,6 +55,35 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 
 # --- 定数 ---
 $SESSION_REGEX = '^\d{8}_\d{2}_[A-Za-z0-9._\-]+$'
+$CONFIG_FILE = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance\cleanup-config.json'
+
+# --- 設定ファイル読み込み（不在時は出荷時デフォルト） ---
+$config = [PSCustomObject]@{
+    version                 = 1
+    default_days            = 30
+    default_keep_recent     = 0
+    default_scope           = 'both'
+    active_session_minutes  = 5
+    atime_strategy          = 'progress_md'
+}
+if (Test-Path -LiteralPath $CONFIG_FILE) {
+    try {
+        $loaded = Get-Content -LiteralPath $CONFIG_FILE -Raw -Encoding UTF8 | ConvertFrom-Json
+        foreach ($p in @($config.PSObject.Properties)) {
+            $name = $p.Name
+            if ($loaded.PSObject.Properties.Name -contains $name) {
+                $config.$name = $loaded.$name
+            }
+        }
+    } catch {
+        Write-Warning "cleanup-config.json のパース失敗: $($_.Exception.Message). デフォルト値を使用します。"
+    }
+}
+
+# --- 引数未指定時は config の既定値を採用 ---
+if ($null -eq $Days)        { $Days = [int]$config.default_days }
+if (-not $Scope)            { $Scope = [string]$config.default_scope }
+if ($null -eq $KeepRecent)  { $KeepRecent = [int]$config.default_keep_recent }
 
 # --- 引数組み合わせの安全装置 ---
 if ($DryRun -and $Yes) {
@@ -131,9 +160,10 @@ if ($roots.Count -eq 0) {
 }
 
 # --- セッション列挙 + 古さ判定 + 進行中保護 ---
+# atime 戦略: progress.md の最終更新時刻を「最終アクセス日時」として扱う（フォールバックは配下最大 mtime）
 $nowUtc = [DateTime]::UtcNow
 $threshold = $nowUtc.AddDays(-$Days)
-$activeThreshold = $nowUtc.AddMinutes(-5)
+$activeThreshold = $nowUtc.AddMinutes(-[int]$config.active_session_minutes)
 
 $candidates = @()
 $script:protectedActive = 0
@@ -145,33 +175,38 @@ foreach ($root in $roots) {
             return
         }
 
-        # 配下ファイルを 1 回だけ列挙して mtime とサイズ両方を集計
+        # 配下ファイルを 1 回だけ列挙してサイズを集計（mtime 計算は別途）
         $files = @(Get-ChildItem -LiteralPath $_.FullName -Recurse -File -ErrorAction SilentlyContinue)
-        $lastWrite = $_.LastWriteTimeUtc
         $size = 0
         foreach ($f in $files) {
-            if ($f.LastWriteTimeUtc -gt $lastWrite) { $lastWrite = $f.LastWriteTimeUtc }
             $size += $f.Length
         }
 
-        # 進行中セッション保護
+        # atime 戦略の解決: progress.md があればその mtime、不在ならフォールバック
         $progressPath = Join-Path $_.FullName 'progress.md'
         if (Test-Path -LiteralPath $progressPath) {
-            $progMtime = (Get-Item -LiteralPath $progressPath).LastWriteTimeUtc
-            if ($progMtime -gt $activeThreshold) {
+            $lastAccess = (Get-Item -LiteralPath $progressPath).LastWriteTimeUtc
+            # 進行中セッション保護
+            if ($lastAccess -gt $activeThreshold) {
                 $script:protectedActive++
                 return
+            }
+        } else {
+            # フォールバック: セッションフォルダ自身 + 配下最大 mtime
+            $lastAccess = $_.LastWriteTimeUtc
+            foreach ($f in $files) {
+                if ($f.LastWriteTimeUtc -gt $lastAccess) { $lastAccess = $f.LastWriteTimeUtc }
             }
         }
 
         # 古さ判定
-        if ($lastWrite -ge $threshold) { return }
+        if ($lastAccess -ge $threshold) { return }
 
         $candidates += [PSCustomObject]@{
             Scope     = $root.Scope
             Path      = $_.FullName
             Name      = $_.Name
-            LastWrite = $lastWrite
+            LastWrite = $lastAccess
             SizeBytes = $size
         }
     }
