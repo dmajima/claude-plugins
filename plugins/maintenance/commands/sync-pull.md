@@ -24,15 +24,35 @@ argument-hint: "[--scope <global|project>] [--strategy <overwrite|merge|skip|int
 
 実行例（overwrite / merge / skip 戦略の場合）:
 
+`$ARGUMENTS` の文字列を直接 sync.ps1 に展開するのは引数インジェクションの
+余地が残るため、**個別フラグを明示的にパースして名前付き引数で渡す**こと。
+
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
 
-# 引数から --scope を抽出
-$scope = ''
-if ('$ARGUMENTS' -match '--scope\s+(global|project)') { $scope = $matches[1] }
+# --- 引数を個別に抽出（$ARGUMENTS 直展開は禁止） ---
+$argText = '$ARGUMENTS'
+$params  = @{}
 
-# sync.ps1 に -Mapping <scope> 形式で渡す
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync.ps1" -Mapping $scope $ARGUMENTS
+if ($argText -match '--scope\s+(global|project)\b')                                   { $params.Mapping     = $matches[1] }
+if ($argText -match '--strategy\s+(overwrite|merge|skip|interactive)\b')              { $params.Strategy    = $matches[1] }
+if ($argText -match '--project-path\s+"([^"]+)"|--project-path\s+(\S+)')              { $params.ProjectPath = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
+if ($argText -match '\B--dry-run\b')                                                  { $params.DryRun      = $true }
+if ($argText -match '\B--no-backup\b')                                                { $params.NoBackup    = $true }
+if ($argText -match '\B--prune\b')                                                    { $params.Prune       = $true }
+if ($argText -match '\B--yes\b')                                                      { $params.Yes         = $true }
+
+if (-not $params.ContainsKey('Mapping')) {
+    Write-Error "--scope <global|project> が必須です（対話モードでの起動は別フロー）。"
+    exit 1
+}
+
+# interactive は別フローへ分岐（下記 Step 2-B 参照）
+if ($params.Strategy -eq 'interactive') {
+    # interactive 戦略は Claude 主導のループ実装（下記参照）
+} else {
+    pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync.ps1" @params
+}
 ```
 
 `--strategy interactive` が指定された場合は、下記の interactive フローへ分岐する。

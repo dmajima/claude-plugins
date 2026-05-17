@@ -19,9 +19,20 @@ argument-hint: "[--scope <global|project>] [--project-path <path>] [--force]"
 
 実行例:
 
+`$ARGUMENTS` の文字列を直接 sync-mappings.ps1 に展開するのは引数インジェクションの
+余地が残るため、**個別フラグを明示的にパースして名前付き引数で渡す**こと。
+
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1" -Action delete $ARGUMENTS
+
+$argText = '$ARGUMENTS'
+$params  = @{ Action = 'delete' }
+
+if ($argText -match '--scope\s+(global|project)\b')                       { $params.Scope       = $matches[1] }
+if ($argText -match '--project-path\s+"([^"]+)"|--project-path\s+(\S+)')  { $params.ProjectPath = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
+if ($argText -match '\B--force\b')                                        { $params.Force       = $true }
+
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1" @params
 ```
 
 > **note**: `--force` が引数に含まれていない場合、スクリプト側で「`-Force` を併用してください」エラーで終了する。

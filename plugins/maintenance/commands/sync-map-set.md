@@ -21,9 +21,22 @@ argument-hint: "[--scope <global|project>] [--repo <url>] [--branch <branch>] [-
 
 実行例:
 
+`$ARGUMENTS` の文字列を直接 sync-mappings.ps1 に展開するのは引数インジェクションの
+余地が残るため、**個別フラグを明示的にパースして名前付き引数で渡す**こと。
+
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1" -Action set $ARGUMENTS
+
+$argText = '$ARGUMENTS'
+$params  = @{ Action = 'set' }
+
+if ($argText -match '--scope\s+(global|project)\b')                       { $params.Scope       = $matches[1] }
+if ($argText -match '--repo\s+"([^"]+)"|--repo\s+(\S+)')                  { $params.Repo        = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
+if ($argText -match '--branch\s+([A-Za-z0-9._/\-]+)')                     { $params.Branch      = $matches[1] }
+if ($argText -match '--targets\s+"([^"]+)"|--targets\s+(\S+)')            { $params.Targets     = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
+if ($argText -match '--project-path\s+"([^"]+)"|--project-path\s+(\S+)')  { $params.ProjectPath = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
+
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1" @params
 ```
 
 ## 2. 対話モード（`$ARGUMENTS` が空）

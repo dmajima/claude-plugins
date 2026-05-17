@@ -22,9 +22,24 @@ argument-hint: "[--show] [--set-days N] [--set-keep-recent N] [--set-scope <glob
 
 実行例:
 
+`$ARGUMENTS` の文字列を直接 cleanup-config.ps1 に展開するのは引数インジェクションの
+余地が残るため、**個別フラグを明示的にパースして名前付き引数で渡す**こと。
+
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.ps1" $ARGUMENTS
+
+$argText = '$ARGUMENTS'
+$params  = @{}
+
+if ($argText -match '\B--show\b')                              { $params.Show                    = $true }
+if ($argText -match '--set-days\s+(\d+)\b')                    { $params.SetDays                 = [int]$matches[1] }
+if ($argText -match '--set-keep-recent\s+(\d+)\b')             { $params.SetKeepRecent           = [int]$matches[1] }
+if ($argText -match '--set-scope\s+(global|project|both)\b')   { $params.SetScope                = $matches[1] }
+if ($argText -match '--set-active-minutes\s+(\d+)\b')          { $params.SetActiveSessionMinutes = [int]$matches[1] }
+if ($argText -match '\B--reset\b')                             { $params.Reset                   = $true }
+if ($argText -match '\B--yes\b')                               { $params.Yes                     = $true }
+
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.ps1" @params
 ```
 
 ## 2. 対話モード（`$ARGUMENTS` が空）
