@@ -1,0 +1,209 @@
+# 同期戦略の詳細
+
+`sync-settings` スキルが提供する 3 種類の同期戦略の動作詳細。
+
+## 戦略選択の指針
+
+| 戦略 | 推奨ユースケース |
+|-----|--------------|
+| `overwrite`（既定） | リモート repo を「正典」として扱う場合。チームで共通設定を強制したい時など |
+| `merge` | リモート repo を「ベース設定」として扱い、ローカル個別カスタマイズを温存したい場合 |
+| `skip` | リモートに新規ファイル・スキルがあれば取り込みたいが、既存ローカル設定は一切変更したくない場合 |
+
+## 1. overwrite 戦略
+
+### 1.1 動作
+
+| 状況 | 動作 |
+|-----|------|
+| リモートのみに存在 | ローカルに新規作成 |
+| 両方に存在 | リモートの内容で上書き（差分の有無に関わらず） |
+| ローカルのみに存在 | 保持（`--prune` 指定時のみ削除） |
+
+### 1.2 利点
+
+- リモートとローカルの完全一致を保証
+- 動作が予測しやすい（フォルダ単位のコピーと同等）
+- 競合解消ロジックがシンプル
+
+### 1.3 注意点
+
+- ローカルの個別カスタマイズが失われる
+- `--prune` 指定時はローカルのみのファイルも削除されるため、バックアップ必須
+
+### 1.4 実装
+
+```powershell
+function Sync-Overwrite {
+    param([string]$Source, [string]$Destination, [bool]$Prune)
+
+    # リモート側を走査して新規・更新
+    Get-ChildItem -LiteralPath $Source -Recurse -File | ForEach-Object {
+        $relative = $_.FullName.Substring($Source.Length).TrimStart('\','/')
+        $destFile = Join-Path $Destination $relative
+        $destDir = Split-Path -Parent $destFile
+        if (-not (Test-Path $destDir)) {
+            New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+        }
+        Copy-Item -LiteralPath $_.FullName -Destination $destFile -Force
+    }
+
+    # --prune 指定時はローカルのみのファイルを削除
+    if ($Prune) {
+        Get-ChildItem -LiteralPath $Destination -Recurse -File | ForEach-Object {
+            $relative = $_.FullName.Substring($Destination.Length).TrimStart('\','/')
+            $remoteFile = Join-Path $Source $relative
+            if (-not (Test-Path $remoteFile)) {
+                Remove-Item -LiteralPath $_.FullName -Force
+            }
+        }
+    }
+}
+```
+
+## 2. merge 戦略
+
+### 2.1 動作
+
+| 対象種別 | 動作 |
+|---------|-----|
+| `settings.json`（JSON ファイル） | 深い JSON マージ（配列は置換、オブジェクトはキーごとに再帰） |
+| その他ファイル | リモートで上書き（diff があれば） |
+| ディレクトリ配下のファイル | ファイル単位で同名なら上書き、ローカルのみのファイルは保持 |
+
+### 2.2 JSON マージのルール
+
+| ローカル値 | リモート値 | マージ結果 |
+|----------|----------|----------|
+| 不在 | 値あり | リモート値 |
+| 値あり | 不在 | ローカル値（保持） |
+| プリミティブ（差分あり） | プリミティブ | リモート値で上書き |
+| 配列 | 配列 | リモート値で置換（連結ではない） |
+| オブジェクト | オブジェクト | 再帰的にキー単位でマージ |
+
+### 2.3 利点
+
+- ローカル個別カスタマイズ（hook 設定の追加、env 拡張等）を保持
+- リモート側の新機能・新キーは自動取り込み
+
+### 2.4 注意点
+
+- ローカル独自キーが意図せず残り続ける可能性（リモート側で削除しても残る）
+- マージロジックを理解していないと予測困難
+- 配列の扱いに注意（連結ではなく置換）
+
+### 2.5 実装（JSON マージ部分）
+
+```powershell
+function Merge-Json {
+    param([object]$Local, [object]$Remote)
+
+    if ($null -eq $Local) { return $Remote }
+    if ($null -eq $Remote) { return $Local }
+
+    if ($Remote -is [array]) {
+        # 配列はリモートで置換
+        return $Remote
+    }
+
+    if ($Remote -is [hashtable] -or $Remote -is [PSCustomObject]) {
+        $result = [ordered]@{}
+        # ローカルのキーを先に取り込み
+        if ($Local -is [hashtable] -or $Local -is [PSCustomObject]) {
+            foreach ($key in $Local.PSObject.Properties.Name) {
+                $result[$key] = $Local.$key
+            }
+        }
+        # リモートのキーで上書き or 再帰マージ
+        foreach ($key in $Remote.PSObject.Properties.Name) {
+            if ($result.Contains($key) -and ($result[$key] -is [hashtable] -or $result[$key] -is [PSCustomObject])) {
+                $result[$key] = Merge-Json -Local $result[$key] -Remote $Remote.$key
+            } else {
+                $result[$key] = $Remote.$key
+            }
+        }
+        return [PSCustomObject]$result
+    }
+
+    # プリミティブはリモート値
+    return $Remote
+}
+```
+
+## 3. skip 戦略
+
+### 3.1 動作
+
+| 状況 | 動作 |
+|-----|------|
+| 両方に存在 | スキップ（既存保持） |
+| リモートのみ | 新規作成 |
+| ローカルのみ | 保持 |
+
+### 3.2 利点
+
+- 既存ローカル設定への影響ゼロ
+- リモートの新規追加分のみを安全に取り込み
+
+### 3.3 注意点
+
+- 既存ファイルの更新は取り込まれない（バグ修正等が反映されない）
+- 「初期セットアップのみ自動化、以降は手動同期」というユースケース向け
+
+### 3.4 実装
+
+```powershell
+function Sync-Skip {
+    param([string]$Source, [string]$Destination)
+
+    Get-ChildItem -LiteralPath $Source -Recurse -File | ForEach-Object {
+        $relative = $_.FullName.Substring($Source.Length).TrimStart('\','/')
+        $destFile = Join-Path $Destination $relative
+
+        if (-not (Test-Path $destFile)) {
+            $destDir = Split-Path -Parent $destFile
+            if (-not (Test-Path $destDir)) {
+                New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+            }
+            Copy-Item -LiteralPath $_.FullName -Destination $destFile -Force
+        }
+        # 既存ファイルはスキップ
+    }
+}
+```
+
+## 4. 戦略選択のフロー
+
+ユーザが対話モードで戦略を変更したい場合の AskUserQuestion 構造:
+
+```text
+AskUserQuestion({
+  questions: [{
+    question: "どの同期戦略を使用しますか？",
+    header: "戦略選択",
+    options: [
+      {
+        label: "overwrite (既定)",
+        description: "リモートで上書き。リモートを正典として扱う場合に推奨。"
+      },
+      {
+        label: "merge",
+        description: "JSON は深いマージ、ディレクトリは結合。ローカル個別設定を温存。"
+      },
+      {
+        label: "skip",
+        description: "新規ファイルのみ追加、既存ファイルは保持。"
+      }
+    ],
+    multiSelect: false
+  }]
+})
+```
+
+## 5. 戦略と --prune の組み合わせ
+
+| 戦略 | `--prune` の効果 |
+|-----|----------------|
+| `overwrite` | ローカルのみのファイル削除を有効化 |
+| `merge` | 無効（warning 出力）。ローカル個別カスタマイズ保持の意図と矛盾するため |
+| `skip` | 無効（warning 出力）。既存保持の意図と矛盾するため |

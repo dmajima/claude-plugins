@@ -1,0 +1,25 @@
+{
+  "name": "workspace-maintenance",
+  "version": "0.1.0",
+  "description": "Claude Code 環境のメンテナンス（古い作業フォルダのクリーンアップ + Git リポジトリ経由の設定同期）",
+  "author": {
+    "name": "dmajima"
+  },
+  "homepage": "https://github.com/dmajima/claude-plugins/tree/main/plugins/workspace-maintenance",
+  "repository": "https://github.com/dmajima/claude-plugins",
+  "license": "MIT",
+  "category": "maintenance",
+  "keywords": [
+    "workspace",
+    "maintenance",
+    "cleanup",
+    "sync",
+    "settings",
+    "git",
+    "session",
+    "housekeeping",
+    "cleanup-workspace",
+    "sync-settings"
+  ],
+  "dependencies": []
+}

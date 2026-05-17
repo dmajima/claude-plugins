@@ -136,6 +136,27 @@
         "interactive",
         "doctor-like"
       ]
+    },
+    {
+      "name": "workspace-maintenance",
+      "source": "./plugins/workspace-maintenance",
+      "description": "Claude Code 環境のメンテナンス（古い作業フォルダのクリーンアップ + Git リポジトリ経由の設定同期）",
+      "author": {
+        "name": "dmajima"
+      },
+      "category": "maintenance",
+      "keywords": [
+        "workspace",
+        "maintenance",
+        "cleanup",
+        "sync",
+        "settings",
+        "git",
+        "session",
+        "housekeeping",
+        "cleanup-workspace",
+        "sync-settings"
+      ]
     }
   ]
 }

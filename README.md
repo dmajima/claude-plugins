@@ -18,6 +18,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 | `convert-doc` | Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX → Markdown 取り込みも対応） | 3.2.0 | `/plugin install convert-doc@dmajima-claude-plugins` |
 | `skill-router` | プロンプト送信時に available-skills を自動スコアリングしてフック注入で適合スキルを推奨。ロジック編集は対象外 | 0.5.1 | `/plugin install skill-router@dmajima-claude-plugins` |
 | `session-usage` | カレントセッションのトークン消費量を JSONL から直接集計し、AskUserQuestion 対話メニュー（プレビュー表示・クリップボードコピー・再集計）で操作できる完全内製プラグイン | 1.0.0 | `/plugin install session-usage@dmajima-claude-plugins` |
+| `workspace-maintenance` | Claude Code 環境のメンテナンス（古い作業フォルダのクリーンアップ + Git リポジトリ経由の設定同期） | 0.1.0 | `/plugin install workspace-maintenance@dmajima-claude-plugins` |
 
 ## マーケットプレイスの追加方法
 
@@ -128,7 +129,8 @@ dmajima-claude-plugins/
     ├── extension-toolkit/
     ├── plugins-update/
     ├── session-usage/
-    └── skill-router/
+    ├── skill-router/
+    └── workspace-maintenance/
 ```
 
 ## ライセンス・連絡先
