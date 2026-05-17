@@ -24,6 +24,10 @@
 | case-16 | `/sync-map-delete` 対話モード（2 段階確認） | `$ARGUMENTS` 空・誤削除防止 |
 | case-17 | `/sync-pull --strategy interactive`（差分 1 件ずつ AskUserQuestion） | `--strategy interactive` 指定・差分件数で分岐（少数 1〜5 / 大量 6+）|
 | case-18 | `/sync-push` 基本動作（dry-run + 対話モード） | sync-push.ps1・マッピング解決→fetch+reset→ローカル→repo/ コピー→git add/commit/push |
+| case-19 | `--dry-run` と `--yes` 同時指定（dry-run 優先） | safety.md 6.2: 両フラグ同時指定時に dry-run を採用し warning 出力 |
+| case-20 | 非対話モードで Repo / Mapping 不足エラー | `--yes` 指定 + Repo 取得不能（即時 exit 1） |
+| case-21 | 不正 URL / Branch 名のバリデーション失敗（4 sub-case） | REPO_URL_REGEX / BRANCH_REGEX 違反 / マッピング由来値の再検証 |
+| case-22 | `/sync-push` の `--Yes` なし時の安全停止 | --Yes 未指定 + 差分あり → push 実行せず exit 0 |
 
 ## 実行確認方法
 

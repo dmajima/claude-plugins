@@ -149,33 +149,46 @@ maintenance/
 ├── README.md                                   # このファイル（人間向けリファレンス）
 ├── LICENSE                                     # MIT
 ├── commands/
-│   └── update-all.md                           # /update-all コマンド本体
+│   ├── update-all.md                           # /update-all コマンド本体（plugin-updater 委譲）
+│   ├── cleanup-config.md                       # /cleanup-config（cleanup-workspace 設定操作）
+│   ├── sync-pull.md                            # /sync-pull（マッピング pull 同期）
+│   ├── sync-push.md                            # /sync-push（マッピング push 同期 + PR 自動作成）
+│   ├── sync-map-set.md                         # /sync-map-set（マッピング設定/更新）
+│   ├── sync-map-list.md                        # /sync-map-list（マッピング一覧表示）
+│   └── sync-map-delete.md                      # /sync-map-delete（マッピング削除）
 └── skills/
     ├── plugin-updater/                         # /update-all の実作業スキル（Phase A-0〜G）
     │   ├── SKILL.md
     │   ├── README.md
-    │   └── references/
-    │       ├── phase-flow.md
-    │       ├── output-formats.md
-    │       ├── cross-cutting-rules.md
-    │       └── architecture-decisions.md       # ADR-PU-001〜010（ADR-PU-010 で maintenance 統合決定）
+    │   ├── references/
+    │   │   ├── phase-flow.md
+    │   │   ├── output-formats.md
+    │   │   ├── cross-cutting-rules.md
+    │   │   └── architecture-decisions.md       # ADR-PU-001〜011（ADR-PU-011 で sync-settings の SSOT 統一決定）
+    │   └── evals/                              # 14 ケース（dry-run / 各スコープ / 異常系 / Phase B/G / A-Sec 等）
     ├── cleanup-workspace/                      # 古い作業フォルダのクリーンアップ
     │   ├── SKILL.md
     │   ├── README.md
     │   ├── references/
     │   │   ├── procedures.md
     │   │   ├── safety.md
-    │   │   └── scripts/cleanup/cleanup.ps1
-    │   └── evals/                              # 12 ケース
-    └── sync-settings/                          # Git リポジトリから設定を同期
+    │   │   └── scripts/cleanup/
+    │   │       ├── cleanup.ps1                 # メイン削除スクリプト
+    │   │       └── cleanup-config.ps1          # 設定 CRUD スクリプト
+    │   └── evals/                              # 17 ケース（dry-run / 各スコープ / progress.md atime / config 操作 等）
+    └── sync-settings/                          # Git リポジトリと設定を同期（pull / push 双方向）
         ├── SKILL.md
         ├── README.md
         ├── references/
         │   ├── procedures.md
         │   ├── safety.md
         │   ├── strategies.md
-        │   └── scripts/sync/sync.ps1
-        └── evals/                              # 12 ケース
+        │   └── scripts/sync/
+        │       ├── sync-common.ps1             # 共通ライブラリ（除外リスト / バリデーション / SSOT 永続化）
+        │       ├── sync.ps1                    # pull 同期スクリプト
+        │       ├── sync-push.ps1               # push 同期スクリプト（新ブランチ + PR）
+        │       └── sync-mappings.ps1           # マッピング CRUD スクリプト
+        └── evals/                              # 22 ケース（各戦略 / interactive / マッピング / push 等）
 ```
 
 ## 関連プラグイン

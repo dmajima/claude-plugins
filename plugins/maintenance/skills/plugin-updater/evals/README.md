@@ -21,6 +21,7 @@
 | 12 | `case-12_a3_project_path_mismatch.md` | A-3 projectPath 不一致 → Skipped（現在のプロジェクト外） |
 | 13 | `case-13_phase_g_6plus_failed.md` | Phase G の Failed 6 件以上（個別判断 UI 非提示） |
 | 14 | `case-14_xr5_unknown_threshold.md` | XR-5 Unknown 閾値警告（Unknown 区分が試行済みの 20% 超）|
+| 15 | `case-15_a3_installed_plugins_oversize.md` | installed_plugins.json が 4000 行超 / version 非対応 → A-3 スキップ + フォールバック |
 
 ## 設計方針
 
