@@ -21,6 +21,7 @@
 | case-13 | 閾値設定の表示（`/cleanup-config`） | 引数なし or `--show` |
 | case-14 | 閾値設定の変更（`/cleanup-config --set-days N` 等） | `--set-*` フラグ指定 |
 | case-15 | progress.md 不在時のフォールバック atime | `progress.md` の有無で atime 解決経路が分岐 |
+| case-16 | `/cleanup-config` 対話モード（引数なし・4 質問同時発火） | `$ARGUMENTS` が空 → AskUserQuestion 1 回で 4 質問同時 |
 
 ## 実行確認方法
 
