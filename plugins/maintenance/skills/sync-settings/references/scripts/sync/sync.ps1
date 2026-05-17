@@ -54,7 +54,10 @@ param(
 
     [switch]$Prune,
 
-    [switch]$Yes
+    [switch]$Yes,
+
+    # interactive 戦略向け: 差分一覧を JSON ファイルに出力して exit（実適用なし）
+    [string]$EmitDiffJson = ''
 )
 
 # --- エンコーディング設定（必須） ---
@@ -392,6 +395,32 @@ if ($diffEntries.Count -gt 0) {
     foreach ($d in $diffEntries) {
         Write-Output ("  [{0}] {1}" -f $d.Op, $d.RelPath)
     }
+}
+
+# --- EmitDiffJson (interactive 戦略向け) ---
+# 差分一覧を JSON ファイルに出力して終了（実適用なし）。/sync-pull の interactive 戦略で利用される。
+if ($EmitDiffJson) {
+    $emitDir = Split-Path -Parent $EmitDiffJson
+    if ($emitDir -and -not (Test-Path -LiteralPath $emitDir)) {
+        New-Item -ItemType Directory -Force -Path $emitDir | Out-Null
+    }
+    # PowerShell の `@() | ConvertTo-Json` は空文字列を返すため、件数 0 のときは明示的に '[]' を書く
+    if ($diffEntries.Count -eq 0) {
+        Set-Content -LiteralPath $EmitDiffJson -Value '[]' -Encoding UTF8
+    } else {
+        # 単一エントリでも配列として JSON 化するため -AsArray は使わず、配列リテラルでラップ
+        $jsonText = ConvertTo-Json -InputObject (,@($diffEntries)) -Depth 10
+        # 上記が二重配列になるケースを避けるため、Count=1 の特別扱い
+        if ($diffEntries.Count -eq 1) {
+            $jsonText = "[$($diffEntries | ConvertTo-Json -Depth 10)]"
+        } else {
+            $jsonText = $diffEntries | ConvertTo-Json -Depth 10
+        }
+        Set-Content -LiteralPath $EmitDiffJson -Value $jsonText -Encoding UTF8
+    }
+    Write-Output ""
+    Write-Output ("[emit-diff-json] 差分一覧を JSON 出力しました: {0} ({1} 件)" -f $EmitDiffJson, $diffEntries.Count)
+    exit 0
 }
 
 # --- DryRun ---

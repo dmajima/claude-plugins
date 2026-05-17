@@ -22,6 +22,7 @@
 | case-14 | `/sync-map-set` 非対話モード（バリデーション含む） | `$ARGUMENTS` 非空 |
 | case-15 | `/sync-map-list` 一覧表示 | `--show` 有無で list/show 分岐 |
 | case-16 | `/sync-map-delete` 対話モード（2 段階確認） | `$ARGUMENTS` 空・誤削除防止 |
+| case-17 | `/sync-pull --strategy interactive`（差分 1 件ずつ AskUserQuestion） | `--strategy interactive` 指定・差分件数で分岐（少数 1〜5 / 大量 6+）|
 
 ## 実行確認方法
 
