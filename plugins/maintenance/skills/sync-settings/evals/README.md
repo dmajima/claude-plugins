@@ -18,6 +18,10 @@
 | case-10 | `--no-backup` でバックアップなし | `--no-backup` 指定（警告ログ出力） |
 | case-11 | バックアップ取得失敗時の中止 | バックアップディレクトリ作成 / コピー失敗（fail-closed） |
 | case-12 | ブランチ不在エラー | Git CLI `$LASTEXITCODE != 0` |
+| case-13 | `/sync-map-set` 対話モード（3 質問同時発火） | `$ARGUMENTS` 空・project スコープ既定 |
+| case-14 | `/sync-map-set` 非対話モード（バリデーション含む） | `$ARGUMENTS` 非空 |
+| case-15 | `/sync-map-list` 一覧表示 | `--show` 有無で list/show 分岐 |
+| case-16 | `/sync-map-delete` 対話モード（2 段階確認） | `$ARGUMENTS` 空・誤削除防止 |
 
 ## 実行確認方法
 
