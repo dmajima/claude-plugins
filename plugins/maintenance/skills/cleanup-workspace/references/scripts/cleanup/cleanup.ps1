@@ -139,12 +139,25 @@ function Test-ValidSessionPath {
     if ($null -eq $great -or $great.Name -ne '.claude') { return $false }
     if (Test-ReparsePoint -Item $great) { return $false }
 
-    # 絶対パス前方一致検証: グローバル or 任意のプロジェクトの .claude/.local/work/ 配下にあること
+    # 絶対パス前方一致検証: グローバル or 現在のリポジトリの .claude/.local/work/ 配下にあること
+    # $isProject も部分文字列一致ではなく、リポジトリルートからの前方一致で厳密に検証する。
     $globalRoot = Join-Path $env:USERPROFILE '.claude\.local\work'
     try { $globalResolved = (Resolve-Path -LiteralPath $globalRoot -ErrorAction Stop).Path } catch { $globalResolved = $globalRoot }
-    $expectedSuffix = [IO.Path]::DirectorySeparatorChar + '.claude' + [IO.Path]::DirectorySeparatorChar + '.local' + [IO.Path]::DirectorySeparatorChar + 'work' + [IO.Path]::DirectorySeparatorChar
     $isGlobal = $resolved.StartsWith($globalResolved + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
-    $isProject = $resolved.IndexOf($expectedSuffix, [StringComparison]::OrdinalIgnoreCase) -ge 0
+
+    $isProject = $false
+    try {
+        $tmpOut = & git rev-parse --show-toplevel 2>$null
+        if ($LASTEXITCODE -eq 0 -and $tmpOut) {
+            $repoRoot = $tmpOut.Trim()
+            $expectedProject = Join-Path $repoRoot '.claude\.local\work'
+            try { $expectedProjectResolved = (Resolve-Path -LiteralPath $expectedProject -ErrorAction Stop).Path } catch { $expectedProjectResolved = $expectedProject }
+            if ($resolved.StartsWith($expectedProjectResolved + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+                $isProject = $true
+            }
+        }
+    } catch {}
+
     if (-not ($isGlobal -or $isProject)) { return $false }
 
     return $true
@@ -199,9 +212,12 @@ foreach ($root in $roots) {
             Write-Verbose "Skipped (invalid): $($_.FullName)"
             return
         }
+        # セッション直下のシンボリックリンクは Get-ChildItem -Directory にも入りうるためここでも除外
+        if (Test-ReparsePoint -Item $_) { return }
 
         # 配下ファイルを 1 回だけ列挙してサイズを集計（mtime 計算は別途）
-        $files = @(Get-ChildItem -LiteralPath $_.FullName -Recurse -File -ErrorAction SilentlyContinue)
+        # NOTE: -Force を付けて隠しファイルも集計対象に入れる。reparse 配下はサイズ集計上は誤差として許容。
+        $files = @(Get-ChildItem -LiteralPath $_.FullName -Recurse -File -Force -ErrorAction SilentlyContinue | Where-Object { -not (Test-ReparsePoint -Item $_) })
         $size = 0
         foreach ($f in $files) {
             $size += $f.Length

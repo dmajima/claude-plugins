@@ -80,6 +80,9 @@ param(
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
+# --- 共通ライブラリ（除外リスト・バリデーション・ヘルパー関数の SSOT） ---
+. (Join-Path $PSScriptRoot 'sync-common.ps1')
+
 # --- 定数 ---
 $CONFIG_DIR = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance'
 $CONFIG_FILE = Join-Path $CONFIG_DIR 'sync-mappings.json'
@@ -119,10 +122,15 @@ function Get-MappingsStore {
 function Save-MappingsStore {
     param([PSCustomObject]$Store)
 
-    if (-not (Test-Path -LiteralPath $CONFIG_DIR)) {
-        New-Item -ItemType Directory -Force -Path $CONFIG_DIR | Out-Null
+    try {
+        if (-not (Test-Path -LiteralPath $CONFIG_DIR)) {
+            New-Item -ItemType Directory -Force -Path $CONFIG_DIR -ErrorAction Stop | Out-Null
+        }
+        $Store | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $CONFIG_FILE -Encoding UTF8 -ErrorAction Stop
+    } catch {
+        Write-Error "sync-mappings.json の保存に失敗しました: $($_.Exception.Message)"
+        exit 1
     }
-    $Store | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $CONFIG_FILE -Encoding UTF8
 }
 
 function Resolve-ProjectPath {
@@ -152,8 +160,9 @@ function Format-Mapping {
         Write-Output "  ${Title}: (未設定)"
         return
     }
+    # remote_repo に user:token@host 形式の認証情報が埋め込まれた場合に備え、Hide-SecretsInLine を通す
     Write-Output "  ${Title}:"
-    Write-Output ("    remote_repo:   {0}" -f $Mapping.remote_repo)
+    Write-Output ("    remote_repo:   {0}" -f (Hide-SecretsInLine $Mapping.remote_repo))
     Write-Output ("    remote_branch: {0}" -f $Mapping.remote_branch)
     $targetsStr = if ($Mapping.targets) { ($Mapping.targets -join ', ') } else { '(空)' }
     Write-Output ("    targets:       {0}" -f $targetsStr)
@@ -198,12 +207,12 @@ switch ($Action) {
         Write-Output "===== マッピング一覧 ====="
         $count = 0
         if ($store.global) {
-            Write-Output ("  [global] {0} (branch={1})" -f $store.global.remote_repo, $store.global.remote_branch)
+            Write-Output ("  [global] {0} (branch={1})" -f (Hide-SecretsInLine $store.global.remote_repo), $store.global.remote_branch)
             $count++
         }
         foreach ($p in @($store.projects.PSObject.Properties)) {
             $m = $p.Value
-            Write-Output ("  [project: {0}] {1} (branch={2})" -f $p.Name, $m.remote_repo, $m.remote_branch)
+            Write-Output ("  [project: {0}] {1} (branch={2})" -f $p.Name, (Hide-SecretsInLine $m.remote_repo), $m.remote_branch)
             $count++
         }
         if ($count -eq 0) { Write-Output "  (マッピングなし)" }

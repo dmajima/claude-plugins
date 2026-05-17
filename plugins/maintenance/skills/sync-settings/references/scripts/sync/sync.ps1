@@ -66,6 +66,9 @@ param(
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
+# --- 共通ライブラリ（除外リスト・バリデーション・ヘルパー関数の SSOT） ---
+. (Join-Path $PSScriptRoot 'sync-common.ps1')
+
 # --- 定数 ---
 $BASE_DIR = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance'
 $CONFIG_FILE = Join-Path $BASE_DIR 'sync-config.json'
@@ -75,6 +78,9 @@ $BACKUP_ROOT = Join-Path $BASE_DIR 'backup'
 $CLAUDE_HOME = Join-Path $env:USERPROFILE '.claude'
 
 $DEFAULT_TARGETS = @('settings.json', 'skills', 'rules', 'agents', 'hooks', 'CLAUDE.md')
+
+# settings.json マージ時にローカル優先で温存する危険キー（任意コード実行リスクの抑制）
+$MERGE_LOCAL_PRIORITY_KEYS = @('hooks', 'mcpServers', 'env', 'permissions')
 
 # --- Mapping 解決（-Mapping 指定時のみ） ---
 # -Mapping <global|project> が指定された場合、sync-mappings.json から repo / branch / targets を取得し、
@@ -124,51 +130,21 @@ if ($Mapping) {
     Write-Output ("[mapping] '$Mapping' から取得: repo={0}, branch={1}, targets={2} 件" -f $Repo, $Branch, $Targets.Count)
 
     # マッピング由来値の再検証（sync-mappings.json が外部書き換えられている可能性に備える）
-    # 注: REPO_URL_REGEX / BRANCH_REGEX は定数定義より前に評価される可能性があるため、ここでは再宣言してから検証する
-    $reRepo   = '^(https?|git|ssh)://|^git@[A-Za-z0-9._\-]+:'
-    $reBranch = '^[A-Za-z0-9._/\-]+$'
-    if ($Repo -notmatch $reRepo -or $Repo.StartsWith('-')) {
+    if (-not (Test-RepoUrlSafe -Repo $Repo)) {
         Write-Error "マッピング由来の remote_repo が無効です（外部書き換え疑い）: $Repo"
         exit 1
     }
-    if ($Branch -notmatch $reBranch -or $Branch.StartsWith('-')) {
+    if (-not (Test-BranchNameSafe -Branch $Branch)) {
         Write-Error "マッピング由来の remote_branch が無効です（外部書き換え疑い）: $Branch"
         exit 1
     }
 }
 
-# 同期対象から常に除外（安全装置）
-# credentials-management.md で列挙された認証情報系ファイル網羅 + 鍵 / 証明書 / クラウド認証
-$EXCLUDE_TARGETS = @(
-    # 認証情報ストア
-    'credentials.json', 'credential.json', 'credentials.yml', 'credentials.yaml',
-    'secrets.json', 'secret.json', 'secrets.yml', 'secrets.yaml',
-    # 環境変数 / シェル系認証
-    '.env', '.netrc', '.git-credentials', '.npmrc', '.pgpass', '.dockercfg',
-    # ディレクトリ全体（プラグイン領域や認証ディレクトリ）
-    '.local', '.git', 'plugins/cache',
-    '.ssh', '.gnupg', '.aws', '.docker', '.kube'
-)
-$EXCLUDE_PATTERNS = @(
-    # 鍵 / 証明書系
-    '*.pem', '*.key', '*.pfx', '*.p12', '*.jks', '*.keystore',
-    '*.crt', '*.cer', '*.der', '*.asc', '*.gpg',
-    # SSH 秘密鍵（拡張子なし）
-    'id_rsa', 'id_rsa.pub', 'id_dsa', 'id_dsa.pub', 'id_ecdsa', 'id_ecdsa.pub',
-    'id_ed25519', 'id_ed25519.pub', 'id_xmss', 'id_xmss.pub',
-    # クラウド認証ファイル
-    'serviceAccountKey.json', 'service-account.json',
-    'application_default_credentials.json', 'gcloud-credentials.json'
-)
-# .env / .env.* を正規表現で正確に判定（.env.example / .sample / .template / .dist / .test は除外しない設計）
-$ENV_FILE_REGEX = '^\.env($|\.)'
-
-# 同期元 URL の許容プロトコル
-$REPO_URL_REGEX = '^(https?|git|ssh)://|^git@[A-Za-z0-9._\-]+:'
-# ブランチ名の許容文字（オプション注入防止: '-' 始まり禁止 / コロン禁止 / refspec 形式禁止）
-$BRANCH_REGEX = '^[A-Za-z0-9._/\-]+$'
-# git CLI への危険プロトコル無効化（CVE-2018-17456 系の対策）
-$GIT_SAFE_OPTS = @('-c', 'protocol.file.allow=never', '-c', 'protocol.ext.allow=never')
+# 除外リスト / バリデーション / GIT_SAFE_OPTS は sync-common.ps1 から読み込み済み（SSOT）。
+# 旧コードで宣言していた以下の変数は本ファイルでは再宣言しない:
+#   $EXCLUDE_TARGETS / $EXCLUDE_PATTERNS / $ENV_FILE_REGEX
+#   $REPO_URL_REGEX / $BRANCH_REGEX / $GIT_SAFE_OPTS
+# sync-common.ps1 が $script: スコープで提供する。
 
 # --- 引数組み合わせの安全装置 ---
 if ($DryRun -and $Yes) {
@@ -201,8 +177,11 @@ if (-not $Repo) {
     if ($config -and $config.last_repo) {
         $Repo = $config.last_repo
         Write-Output "Repo を設定ファイルから取得: $Repo"
+        # ADR-PU-011: sync-config.json は v0.3.0 で廃止予定。新規利用者は /sync-map-set で
+        # マッピングを設定することを推奨する。
+        Write-Warning "[deprecated] sync-config.json 由来の last_repo を使用しました。v0.3.0 で sync-config.json は削除されます。/sync-map-set でマッピングを設定し、/sync-pull --scope <global|project> を利用してください。"
     } else {
-        Write-Error "Repo 引数が必要です（--Repo または sync-config.json）"
+        Write-Error "Repo 引数が必要です（--Repo または sync-config.json または --Mapping <scope> + /sync-map-set 経由のマッピング）"
         exit 1
     }
 }
@@ -215,37 +194,8 @@ if ($Targets.Count -eq 0) {
     }
 }
 
-# --- 除外対象が指定されていないかチェック（大小文字非感応・正規化済み） ---
-# パストラバーサル '..' を含むパスは除外対象として扱う（呼び出し元で実行を中止する）。
-function Test-TargetExcluded {
-    param([string]$Target)
-
-    # 正規化: バックスラッシュ → スラッシュ、先頭 ./ 除去（1 回のみ）、大小文字を小文字へ
-    # NOTE: TrimStart は char[] 引数のため、'./' 全体を 1 トークンとして扱えない。
-    #       先頭 './' は明示判定で除去し、その後 '/' のみ TrimStart で削除する。
-    $norm = $Target.Replace('\', '/')
-    if ($norm.StartsWith('./')) { $norm = $norm.Substring(2) }
-    $norm = $norm.TrimStart('/').ToLowerInvariant()
-
-    # パストラバーサル拒否（先頭・中間・末尾の '..' 全パターン）
-    if ($norm -match '(^|/)\.\.(/|$)') { return $true }
-    # 絶対パスも拒否（C:/... や /etc/... を target に指定させない）
-    if ($norm -match '^[a-z]:/' -or $norm.StartsWith('/')) { return $true }
-
-    # 名前単位での完全一致または前方一致
-    foreach ($ex in $EXCLUDE_TARGETS) {
-        $exNorm = $ex.ToLowerInvariant()
-        if ($norm -eq $exNorm -or $norm.StartsWith("$exNorm/")) { return $true }
-    }
-    # .env / .env.* の正規表現判定
-    $leaf = (Split-Path -Leaf $norm)
-    if ($leaf -match $ENV_FILE_REGEX) { return $true }
-    # *.pem / *.key / *.pfx 等のパターン
-    foreach ($pat in $EXCLUDE_PATTERNS) {
-        if ($leaf -like $pat.ToLowerInvariant()) { return $true }
-    }
-    return $false
-}
+# Test-TargetExcluded / Test-FileExcluded / Test-RepoUrlSafe / Test-BranchNameSafe は
+# sync-common.ps1 で定義済み（SSOT）。本ファイルでは再宣言しない。
 
 foreach ($t in $Targets) {
     if (Test-TargetExcluded -Target $t) {
@@ -254,19 +204,15 @@ foreach ($t in $Targets) {
     }
 }
 
-# --- Repo URL バリデーション（引数インジェクション対策） ---
-if ($Repo -notmatch $REPO_URL_REGEX) {
-    Write-Error "Repo URL の形式が無効です（https / http / git / ssh / git@host: のみ許可）: $Repo"
-    exit 1
-}
-if ($Repo.StartsWith('-')) {
-    Write-Error "Repo URL は '-' で始められません（git CLI のオプションとして解釈される危険があります）"
+# --- Repo URL バリデーション（共通ヘルパー） ---
+if (-not (Test-RepoUrlSafe -Repo $Repo)) {
+    Write-Error "Repo URL の形式が無効です（https / http / git / ssh / git@host: のみ許可、'-' 始まり / NUL バイト禁止）: $Repo"
     exit 1
 }
 
-# --- Branch 名バリデーション ---
-if ($Branch -notmatch $BRANCH_REGEX) {
-    Write-Error "Branch 名に無効な文字が含まれています: $Branch"
+# --- Branch 名バリデーション（共通ヘルパー: '..' / '/' 始まり / '/' 終わりも拒否） ---
+if (-not (Test-BranchNameSafe -Branch $Branch)) {
+    Write-Error "Branch 名に無効な文字が含まれています（'..' 含む / '/' 始まり・終わり / '-' 始まりは禁止）: $Branch"
     exit 1
 }
 
@@ -330,15 +276,23 @@ $commitSha = (& git rev-parse --short HEAD 2>$null).Trim()
 Pop-Location
 
 # --- 同期対象の存在確認 ---
+# パストラバーサル耐性: 解決されたパスが必ず $REPO_DIR 配下にあることを StartsWith で検証する。
 function Find-RemoteTarget {
     param([string]$Target)
 
-    $cand1 = Join-Path $REPO_DIR $Target
-    if (Test-Path -LiteralPath $cand1) { return $cand1 }
+    $repoResolved = $null
+    try { $repoResolved = (Resolve-Path -LiteralPath $REPO_DIR -ErrorAction Stop).Path } catch { return $null }
+    $repoPrefix = $repoResolved.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 
-    $cand2 = Join-Path $REPO_DIR (Join-Path 'claude' $Target)
-    if (Test-Path -LiteralPath $cand2) { return $cand2 }
-
+    foreach ($candidate in @($Target, (Join-Path 'claude' $Target))) {
+        $cand = Join-Path $REPO_DIR $candidate
+        if (-not (Test-Path -LiteralPath $cand)) { continue }
+        $resolved = $null
+        try { $resolved = (Resolve-Path -LiteralPath $cand -ErrorAction Stop).Path } catch { continue }
+        # repo/ 配下から逸脱していないか前方一致検証（symlink 経由の逸脱も排除）
+        if (-not $resolved.StartsWith($repoPrefix, [StringComparison]::OrdinalIgnoreCase)) { continue }
+        return $resolved
+    }
     return $null
 }
 
@@ -357,29 +311,7 @@ foreach ($t in $Targets) {
 }
 
 # --- 差分検出 ---
-function Test-FileExcluded {
-    param([string]$RelativePath)
-
-    # 正規化: バックスラッシュ → スラッシュ、先頭 ./ 除去（1 回のみ）、大小文字を小文字へ
-    # NOTE: TrimStart は char[] 引数のため、'./' 全体を 1 トークンとして扱えない。
-    $norm = $RelativePath.Replace('\', '/')
-    if ($norm.StartsWith('./')) { $norm = $norm.Substring(2) }
-    $norm = $norm.TrimStart('/').ToLowerInvariant()
-
-    # パストラバーサル拒否
-    if ($norm -match '(^|/)\.\.(/|$)') { return $true }
-
-    foreach ($ex in $EXCLUDE_TARGETS) {
-        $exNorm = $ex.ToLowerInvariant()
-        if ($norm -eq $exNorm -or $norm.StartsWith("$exNorm/")) { return $true }
-    }
-    $leaf = Split-Path -Leaf $norm
-    if ($leaf -match $ENV_FILE_REGEX) { return $true }
-    foreach ($pat in $EXCLUDE_PATTERNS) {
-        if ($leaf -like $pat.ToLowerInvariant()) { return $true }
-    }
-    return $false
-}
+# Test-FileExcluded は sync-common.ps1 で定義済み（SSOT）。本ファイルでは再宣言しない。
 
 function Get-FileHashSafe {
     param([string]$Path)
@@ -397,6 +329,12 @@ foreach ($rt in $resolvedTargets) {
             Write-Warning "除外対象のためスキップ: $($rt.Name)"
             continue
         }
+        # 単一ファイル自身が reparse point の場合もスキップ
+        $remoteItem = Get-Item -LiteralPath $rt.Remote -Force -ErrorAction SilentlyContinue
+        if (Test-ReparseItem -Item $remoteItem) {
+            Write-Warning "再解析ポイントのためスキップ: $($rt.Name)"
+            continue
+        }
         $remoteHash = Get-FileHashSafe -Path $rt.Remote
         $localHash = Get-FileHashSafe -Path $rt.Local
         if (-not (Test-Path -LiteralPath $rt.Local)) {
@@ -405,8 +343,8 @@ foreach ($rt in $resolvedTargets) {
             $diffEntries += [PSCustomObject]@{ Op='MOD'; Local=$rt.Local; Remote=$rt.Remote; RelPath=$rt.Name }
         }
     } elseif (Test-Path -LiteralPath $rt.Remote -PathType Container) {
-        # ディレクトリ
-        Get-ChildItem -LiteralPath $rt.Remote -Recurse -File | ForEach-Object {
+        # ディレクトリ: reparse point を辿らない自前再帰で列挙（symlink 経由のローカル機密漏洩を防止）
+        Get-NonReparseFileItems -Root $rt.Remote | ForEach-Object {
             $rel = $_.FullName.Substring($rt.Remote.Length).TrimStart('\', '/')
             $combinedRel = Join-Path $rt.Name $rel
             if (Test-FileExcluded -RelativePath $combinedRel) { return }
@@ -423,7 +361,7 @@ foreach ($rt in $resolvedTargets) {
         }
 
         if ($Prune -and $Strategy -eq 'overwrite' -and (Test-Path -LiteralPath $rt.Local)) {
-            Get-ChildItem -LiteralPath $rt.Local -Recurse -File | ForEach-Object {
+            Get-NonReparseFileItems -Root $rt.Local | ForEach-Object {
                 $rel = $_.FullName.Substring($rt.Local.Length).TrimStart('\', '/')
                 $combinedRel = Join-Path $rt.Name $rel
                 if (Test-FileExcluded -RelativePath $combinedRel) { return }
@@ -501,14 +439,15 @@ if ($diffEntries.Count -eq 0) {
     Write-Output "差分がありません。同期処理をスキップします。"
 
     # 設定保存（last_sync_at のみ更新）
+    # 注: ADR-PU-011 により sync-config.json は v0.3.0 で廃止予定（互換ストア扱い）。
     $newConfig = [PSCustomObject]@{
-        version = 1
-        last_repo = $Repo
-        last_branch = $Branch
-        last_targets = $Targets
+        version       = 1
+        last_repo     = $Repo
+        last_branch   = $Branch
+        last_targets  = $Targets
         last_strategy = $Strategy
-        last_sync_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-        history = if ($config -and $config.history) { @($config.history | Select-Object -First 9) } else { @() }
+        last_sync_at  = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        history       = if ($config -and $config.history) { @($config.history | Select-Object -First 9) } else { @() }
     }
     $newConfig | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $CONFIG_FILE -Encoding UTF8
     exit 0
@@ -534,6 +473,7 @@ if (-not $NoBackup) {
     Write-Output "===== バックアップ ====="
     Write-Output "Backup dir: $backupDir"
     # バックアップ取得時にも除外フィルタを適用し、認証情報が backup/ に複製されないようにする。
+    # ディレクトリ走査は Get-NonReparseFileItems を使用し、symlink 経由の機密ファイル混入を防ぐ。
     foreach ($t in $Targets) {
         $src = Join-Path $CLAUDE_HOME $t
         if (-not (Test-Path -LiteralPath $src)) { continue }
@@ -543,6 +483,11 @@ if (-not $NoBackup) {
                 Write-Warning "バックアップ除外（target）: $t"
                 continue
             }
+            $srcItem = Get-Item -LiteralPath $src -Force -ErrorAction SilentlyContinue
+            if (Test-ReparseItem -Item $srcItem) {
+                Write-Warning "バックアップ除外（reparse point）: $t"
+                continue
+            }
             $dst = Join-Path $backupDir $t
             $dstParent = Split-Path -Parent $dst
             if (-not (Test-Path -LiteralPath $dstParent)) {
@@ -550,8 +495,8 @@ if (-not $NoBackup) {
             }
             Copy-Item -LiteralPath $src -Destination $dst -Force
         } else {
-            # ディレクトリ: 再帰的にファイル単位で除外フィルタを適用しつつコピー
-            Get-ChildItem -LiteralPath $src -Recurse -File -Force -ErrorAction SilentlyContinue | ForEach-Object {
+            # ディレクトリ: 再帰的にファイル単位で除外フィルタを適用しつつコピー（reparse 安全）
+            Get-NonReparseFileItems -Root $src | ForEach-Object {
                 $rel = $_.FullName.Substring($src.Length).TrimStart('\', '/')
                 $combinedRel = Join-Path $t $rel
                 if (Test-FileExcluded -RelativePath $combinedRel) { return }
@@ -575,7 +520,13 @@ $applied = 0
 $failed = @()
 
 function Merge-JsonValue {
-    param($Local, $Remote)
+    param(
+        $Local,
+        $Remote,
+        # トップレベルマージ時のみ true。危険キー（hooks / mcpServers / env / permissions）を
+        # ローカル優先で温存し、悪意あるリモートからのコード実行リスクを抑制する。
+        [bool]$IsRootSettings = $false
+    )
     if ($null -eq $Local) { return $Remote }
     if ($null -eq $Remote) { return $Local }
     if ($Remote -is [array]) { return $Remote }
@@ -587,6 +538,17 @@ function Merge-JsonValue {
             }
         }
         foreach ($p in $Remote.PSObject.Properties) {
+            # settings.json トップレベルの危険キーはローカル優先で温存
+            if ($IsRootSettings -and ($MERGE_LOCAL_PRIORITY_KEYS -contains $p.Name)) {
+                if ($result.Contains($p.Name)) {
+                    Write-Warning ("[merge:safety] settings.json の '{0}' キーはローカルを保持します（リモート上書き禁止: 任意コード実行リスク）" -f $p.Name)
+                } else {
+                    # ローカル不在の場合のみリモート値を採用（新規追加扱い）
+                    $result[$p.Name] = $p.Value
+                    Write-Warning ("[merge:notice] settings.json の '{0}' キーはローカル不在のためリモート値を採用しました（次回以降は明示確認の上で更新してください）" -f $p.Name)
+                }
+                continue
+            }
             if ($result.Contains($p.Name) -and $result[$p.Name] -is [PSCustomObject] -and $p.Value -is [PSCustomObject]) {
                 $result[$p.Name] = Merge-JsonValue -Local $result[$p.Name] -Remote $p.Value
             } else {
@@ -624,7 +586,9 @@ foreach ($d in $diffEntries) {
                 if ($Strategy -eq 'merge' -and ($d.RelPath -like '*settings.json' -or (Split-Path -Leaf $d.RelPath) -eq 'settings.json')) {
                     $localJson = Get-Content -LiteralPath $d.Local -Raw -Encoding UTF8 | ConvertFrom-Json
                     $remoteJson = Get-Content -LiteralPath $d.Remote -Raw -Encoding UTF8 | ConvertFrom-Json
-                    $merged = Merge-JsonValue -Local $localJson -Remote $remoteJson
+                    # settings.json トップレベルでは危険キー（hooks / mcpServers / env / permissions）を
+                    # ローカル優先で温存（H-sec-3 対応 / safety.md 節 9）
+                    $merged = Merge-JsonValue -Local $localJson -Remote $remoteJson -IsRootSettings $true
                     $merged | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $d.Local -Encoding UTF8
                 } else {
                     Copy-Item -LiteralPath $d.Remote -Destination $d.Local -Force
