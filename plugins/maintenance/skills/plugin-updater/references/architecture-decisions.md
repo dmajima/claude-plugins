@@ -949,3 +949,76 @@ ADR-PU-001 では「単一プラグイン化」を採用し、`plugins-update` �
   `deprecated` ステータスを付与する仕組みを `extension-toolkit:marketplace-toolkit` に追加する案。
 - **横断ルール（XR-1〜5）の他スキルへの適用**: `cleanup-workspace` / `sync-settings` も
   破壊的操作を伴うため、XR-1（入力検証）/ XR-3（出力サニタイズ）の共通化を検討する。
+
+---
+
+## ADR-PU-011: sync-settings の設定ストアを sync-mappings.json に SSOT 統一
+
+### Context
+
+`sync-settings` スキルには現在 2 つの設定ストアが並存している:
+
+| ファイル | 内容 | 利用箇所 |
+|---------|------|---------|
+| `sync-config.json` | `last_repo` / `last_branch` / `last_targets` / `last_strategy` / `last_sync_at` / `history[]` | sync.ps1（pull 側） |
+| `sync-mappings.json` | global / projects[abs_path] それぞれの `remote_repo` / `remote_branch` / `targets` / `last_sync_at` | sync.ps1（マッピング解決時）/ sync-mappings.ps1（CRUD）/ sync-push.ps1 |
+
+Phase 3-A（マッピング機構導入）以降、`sync-mappings.json` がプライマリストアとなったが、
+互換性のため `sync-config.json` も並行的に書き込まれており、SSOT（Single Source of Truth）が
+不明確である（Cycle 1 アーキレビュー Critical C-1）。
+
+### Decision
+
+`sync-mappings.json` を sync-settings の唯一の設定 SSOT として位置付け、`sync-config.json` を
+段階的に廃止する。
+
+- **v0.2.x 系（互換期間）**: 既存の `sync-config.json` 書き込みロジックは維持するが、ドキュメント
+  上は **deprecated** と明記する。新規ユーザは `sync-mappings.json` 経由（`/sync-map-set` 利用）
+  での運用を案内する。
+- **v0.3.0**: `sync-config.json` の読み書きを sync.ps1 から削除する。`last_repo` / `last_branch`
+  / `last_targets` / `last_strategy` 等の暗黙利用はサポートしない（マッピング設定を `/sync-map-set`
+  で明示的に行うことを前提とする）。
+- **`history[]` の扱い**: 利用実績が小さく主要動線では参照されないため、v0.3.0 で削除する。再導入が
+  必要になった場合は別ファイル `sync-history.jsonl` として復活させる（JSON Lines 形式で追記専用）。
+
+### Rationale
+
+- **責務分離の明確化**: マッピング設定（永続）と同期履歴（揮発）を分離することで、各ファイルの責務
+  と保持期間ポリシーが明示できる。
+- **AI / ユーザの混乱回避**: 同一情報を 2 ファイルに重複保持していたため、片方を更新すると整合性が
+  保たれない問題があった。SSOT 化により回避する。
+- **v0.3.0 リリースタイミングの先行宣言**: 移行猶予を明示することで、既存スクリプトを利用するユーザ
+  への影響を最小化する。
+
+### Migration Plan
+
+1. **v0.2.x（本サイクル）**:
+   - `references/procedures.md` / `references/safety.md` で `sync-mappings.json` を SSOT と明記
+   - `sync-config.json` の互換性レイヤーとしての位置付けを README で説明
+   - 新規ドキュメント・evals では `sync-config.json` を参照しない
+2. **v0.3.0**:
+   - sync.ps1 から `sync-config.json` 読み書きを削除
+   - `--Repo` 引数省略時の暗黙取得（`config.last_repo` から）を廃止
+   - 既存 `sync-config.json` を検出した場合、warning でアナウンスし、変換ガイドを提示
+3. **v0.4.0+**:
+   - `sync-history.jsonl` の必要性を再評価し、要望があれば実装
+
+### Trade-offs
+
+- **既存ユーザへの影響**: `sync-config.json` に暗黙依存していた挙動は v0.3.0 で動作しなくなる。
+  移行猶予として v0.2.x 系で deprecated 警告を出し、影響を最小化する。
+- **history の喪失**: 既存利用者で history を参照していたケースは v0.3.0 以降途絶える。要望に応じて
+  v0.4.0+ で復活させる方針。
+
+### Alternatives Considered
+
+- **両ストア並存維持**: SSOT 不明瞭の問題が継続するため却下。
+- **sync-config.json を SSOT 化**: マッピング機構（global / projects[abs_path] 別エントリ）を
+  sync-config.json に押し込むと構造が複雑化する。マッピング機構のほうが拡張性が高いため却下。
+- **完全統合（マッピングと履歴を同一ファイル）**: マッピング更新の度に history を巻き込んで
+  書き換えることになり、原子性が低下する。分離が妥当として却下。
+
+### Future Direction
+
+- v0.3.0 リリースタイミングで `sync-config.json` の検出 → 自動マイグレーション（mapping 化）を
+  オプションで提供する案を検討する。

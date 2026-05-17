@@ -6,9 +6,14 @@
 
 ### 1.1 設定ファイルパス
 
-```
-~/.claude/.local/plugins/maintenance/sync-config.json
-```
+**SSOT（v0.2.0+）**: `~/.claude/.local/plugins/maintenance/sync-mappings.json`
+
+- global / projects[`<absolute_path>`] のスコープ別マッピングを保持
+- `/sync-map-set` / `/sync-map-list` / `/sync-map-delete` で CRUD
+- 各エントリは `remote_repo` / `remote_branch` / `targets` / `last_sync_at` を持つ
+
+**互換ストア（v0.3.0 で廃止予定 / ADR-PU-011）**:
+`~/.claude/.local/plugins/maintenance/sync-config.json`
 
 ### 1.2 設定ファイル構造
 
@@ -37,10 +42,15 @@
 | 優先 | 取得元 |
 |-----|-------|
 | 1（最優先） | 引数オーバーライド（`--repo` / `--branch` / `--targets` / `--strategy`） |
-| 2 | 設定ファイル `sync-config.json` の `last_*` フィールド |
-| 3 | 既定値（`branch="main"` / `targets=["settings.json","skills","rules","agents","hooks","CLAUDE.md"]` / `strategy="overwrite"`） |
+| 2 | マッピングストア `sync-mappings.json`（SSOT、`--scope` 指定時） |
+| 3 | 互換ストア `sync-config.json` の `last_*` フィールド（v0.3.0 で削除予定） |
+| 4 | 既定値（`branch="main"` / `targets=["settings.json","skills","rules","agents","hooks","CLAUDE.md"]` / `strategy="overwrite"`） |
 
 `repo` が不足している場合は対話で `AskUserQuestion` を経ずテキスト対話で取得（自由入力のため）。非対話モードでは `--repo` 不足はエラーで終了。
+
+> **v0.3.0 移行ガイド（ADR-PU-011）**: `sync-config.json` 経由の暗黙取得は v0.3.0 で廃止される。
+> 既存ユーザは `/sync-map-set` で マッピングを明示設定することを推奨。新規ユーザは最初から
+> マッピング設定での運用を行うこと。
 
 ## 2. リポジトリ取得と差分検出
 

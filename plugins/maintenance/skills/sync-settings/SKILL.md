@@ -39,7 +39,7 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 ## 前提
 
 1. Git CLI 2.30+ が利用可能
-2. 同期元リポジトリの URL（または `sync-config.json` から取得）
+2. 同期元リポジトリの URL（または `sync-mappings.json`（SSOT）/ 互換 `sync-config.json` から取得）
 3. 同期元リポジトリの想定構造: トップレベルに `settings.json` / `skills/` / `rules/` 等を含む（または `claude/` サブディレクトリ配下）
 4. プライベートリポジトリの場合は認証情報の設定済み（`credentials-manager` 連携推奨）
 
@@ -59,10 +59,13 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 
 | 取得元 | パス |
 |-------|-----|
-| 設定ファイル | `~/.claude/.local/plugins/maintenance/sync-config.json` |
+| **マッピングストア（SSOT）** | `~/.claude/.local/plugins/maintenance/sync-mappings.json` |
+| 旧設定ファイル（v0.3.0 で廃止予定） | `~/.claude/.local/plugins/maintenance/sync-config.json` |
 | 引数オーバーライド | `--repo` / `--branch` / `--targets` / `--strategy` |
 
-設定ファイル不在 + 引数不足の場合は対話で収集。
+SSOT は `sync-mappings.json`（`/sync-map-set` で設定）。`sync-config.json` は v0.2.x 系での
+互換性のため残っているが、v0.3.0 で削除予定（ADR-PU-011 参照）。マッピング不在 + 引数不足の
+場合は対話で収集。
 
 ### 2. リポジトリ取得
 
@@ -121,14 +124,18 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 
 ### 8. 設定状態の永続化
 
-成功時、`sync-config.json` に最後の `repo` / `branch` / `targets` / `strategy` / `last_sync_at` を記録する。
+成功時、`sync-mappings.json` の該当マッピングの `last_sync_at` を更新する。互換性のため
+`sync-config.json` にも `last_repo` / `last_branch` / `last_targets` / `last_strategy` /
+`last_sync_at` / `history[]` を書き込むが、v0.3.0 で sync-config.json への書き込みは
+廃止される（ADR-PU-011 参照）。
 
 ### 9. 検証
 
 - [ ] バックアップが取得されている（`--no-backup` 未指定時）
 - [ ] バックアップディレクトリのタイムスタンプが今回のセッションと一致
 - [ ] `~/.claude/` 配下が同期戦略どおりに更新されている
-- [ ] `sync-config.json` が更新されている
+- [ ] `sync-mappings.json` の該当マッピングの `last_sync_at` が更新されている
+- [ ] `sync-config.json` が更新されている（v0.3.0 で廃止予定）
 - [ ] パスポータビリティ合格
 
 ### 10. 引き渡し
