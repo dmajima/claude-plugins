@@ -126,8 +126,12 @@ if ($Targets.Count -eq 0) {
 function Test-TargetExcluded {
     param([string]$Target)
 
-    # 正規化: バックスラッシュ → スラッシュ、先頭 ./ 除去、大小文字を小文字へ
-    $norm = $Target.Replace('\', '/').TrimStart('./', '/').ToLowerInvariant()
+    # 正規化: バックスラッシュ → スラッシュ、先頭 ./ 除去（1 回のみ）、大小文字を小文字へ
+    # NOTE: TrimStart は char[] 引数のため、'./' 全体を 1 トークンとして扱えない。
+    #       先頭 './' は明示判定で除去し、その後 '/' のみ TrimStart で削除する。
+    $norm = $Target.Replace('\', '/')
+    if ($norm.StartsWith('./')) { $norm = $norm.Substring(2) }
+    $norm = $norm.TrimStart('/').ToLowerInvariant()
 
     # 名前単位での完全一致または前方一致
     foreach ($ex in $EXCLUDE_TARGETS) {
@@ -241,8 +245,11 @@ foreach ($t in $Targets) {
 function Test-FileExcluded {
     param([string]$RelativePath)
 
-    # 正規化: バックスラッシュ → スラッシュ、大小文字を小文字へ
-    $norm = $RelativePath.Replace('\', '/').TrimStart('./', '/').ToLowerInvariant()
+    # 正規化: バックスラッシュ → スラッシュ、先頭 ./ 除去（1 回のみ）、大小文字を小文字へ
+    # NOTE: TrimStart は char[] 引数のため、'./' 全体を 1 トークンとして扱えない。
+    $norm = $RelativePath.Replace('\', '/')
+    if ($norm.StartsWith('./')) { $norm = $norm.Substring(2) }
+    $norm = $norm.TrimStart('/').ToLowerInvariant()
 
     foreach ($ex in $EXCLUDE_TARGETS) {
         $exNorm = $ex.ToLowerInvariant()
