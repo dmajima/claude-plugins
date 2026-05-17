@@ -121,18 +121,53 @@ if ($Mapping) {
     if ($Targets.Count -eq 0 -and $mappingEntry.targets) { $Targets = @($mappingEntry.targets) }
 
     Write-Output ("[mapping] '$Mapping' から取得: repo={0}, branch={1}, targets={2} 件" -f $Repo, $Branch, $Targets.Count)
+
+    # マッピング由来値の再検証（sync-mappings.json が外部書き換えられている可能性に備える）
+    # 注: REPO_URL_REGEX / BRANCH_REGEX は定数定義より前に評価される可能性があるため、ここでは再宣言してから検証する
+    $reRepo   = '^(https?|git|ssh)://|^git@[A-Za-z0-9._\-]+:'
+    $reBranch = '^[A-Za-z0-9._/\-]+$'
+    if ($Repo -notmatch $reRepo -or $Repo.StartsWith('-')) {
+        Write-Error "マッピング由来の remote_repo が無効です（外部書き換え疑い）: $Repo"
+        exit 1
+    }
+    if ($Branch -notmatch $reBranch -or $Branch.StartsWith('-')) {
+        Write-Error "マッピング由来の remote_branch が無効です（外部書き換え疑い）: $Branch"
+        exit 1
+    }
 }
 
 # 同期対象から常に除外（安全装置）
-$EXCLUDE_TARGETS = @('credentials.json', '.env', '.local', '.git', 'plugins/cache')
-$EXCLUDE_PATTERNS = @('*.pem', '*.key', '*.pfx')
-# .env / .env.* を正規表現で正確に判定（行頭・終端・拡張子）
+# credentials-management.md で列挙された認証情報系ファイル網羅 + 鍵 / 証明書 / クラウド認証
+$EXCLUDE_TARGETS = @(
+    # 認証情報ストア
+    'credentials.json', 'credential.json', 'credentials.yml', 'credentials.yaml',
+    'secrets.json', 'secret.json', 'secrets.yml', 'secrets.yaml',
+    # 環境変数 / シェル系認証
+    '.env', '.netrc', '.git-credentials', '.npmrc', '.pgpass', '.dockercfg',
+    # ディレクトリ全体（プラグイン領域や認証ディレクトリ）
+    '.local', '.git', 'plugins/cache',
+    '.ssh', '.gnupg', '.aws', '.docker', '.kube'
+)
+$EXCLUDE_PATTERNS = @(
+    # 鍵 / 証明書系
+    '*.pem', '*.key', '*.pfx', '*.p12', '*.jks', '*.keystore',
+    '*.crt', '*.cer', '*.der', '*.asc', '*.gpg',
+    # SSH 秘密鍵（拡張子なし）
+    'id_rsa', 'id_rsa.pub', 'id_dsa', 'id_dsa.pub', 'id_ecdsa', 'id_ecdsa.pub',
+    'id_ed25519', 'id_ed25519.pub', 'id_xmss', 'id_xmss.pub',
+    # クラウド認証ファイル
+    'serviceAccountKey.json', 'service-account.json',
+    'application_default_credentials.json', 'gcloud-credentials.json'
+)
+# .env / .env.* を正規表現で正確に判定（.env.example / .sample / .template / .dist / .test は除外しない設計）
 $ENV_FILE_REGEX = '^\.env($|\.)'
 
 # 同期元 URL の許容プロトコル
 $REPO_URL_REGEX = '^(https?|git|ssh)://|^git@[A-Za-z0-9._\-]+:'
-# ブランチ名の許容文字
+# ブランチ名の許容文字（オプション注入防止: '-' 始まり禁止 / コロン禁止 / refspec 形式禁止）
 $BRANCH_REGEX = '^[A-Za-z0-9._/\-]+$'
+# git CLI への危険プロトコル無効化（CVE-2018-17456 系の対策）
+$GIT_SAFE_OPTS = @('-c', 'protocol.file.allow=never', '-c', 'protocol.ext.allow=never')
 
 # --- 引数組み合わせの安全装置 ---
 if ($DryRun -and $Yes) {
@@ -180,6 +215,7 @@ if ($Targets.Count -eq 0) {
 }
 
 # --- 除外対象が指定されていないかチェック（大小文字非感応・正規化済み） ---
+# パストラバーサル '..' を含むパスは除外対象として扱う（呼び出し元で実行を中止する）。
 function Test-TargetExcluded {
     param([string]$Target)
 
@@ -189,6 +225,11 @@ function Test-TargetExcluded {
     $norm = $Target.Replace('\', '/')
     if ($norm.StartsWith('./')) { $norm = $norm.Substring(2) }
     $norm = $norm.TrimStart('/').ToLowerInvariant()
+
+    # パストラバーサル拒否（先頭・中間・末尾の '..' 全パターン）
+    if ($norm -match '(^|/)\.\.(/|$)') { return $true }
+    # 絶対パスも拒否（C:/... や /etc/... を target に指定させない）
+    if ($norm -match '^[a-z]:/' -or $norm.StartsWith('/')) { return $true }
 
     # 名前単位での完全一致または前方一致
     foreach ($ex in $EXCLUDE_TARGETS) {
@@ -242,7 +283,7 @@ Write-Output "Repo:   $Repo"
 Write-Output "Branch: $Branch"
 
 if (-not (Test-Path -LiteralPath $REPO_DIR)) {
-    & git clone --depth 1 --branch $Branch $Repo $REPO_DIR 2>&1 | ForEach-Object { Write-Output "  $_" }
+    & git @GIT_SAFE_OPTS clone --depth 1 --branch $Branch -- $Repo $REPO_DIR 2>&1 | ForEach-Object { Write-Output "  $_" }
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Git clone 失敗: exit $LASTEXITCODE"
         exit 1
@@ -250,17 +291,33 @@ if (-not (Test-Path -LiteralPath $REPO_DIR)) {
 } else {
     Push-Location $REPO_DIR
     try {
-        & git fetch --depth 1 origin $Branch 2>&1 | ForEach-Object { Write-Output "  $_" }
+        # 既存 repo/ の origin が想定の URL と一致するか確認（攻撃者書き換え検出）
+        $currentOrigin = (& git remote get-url origin 2>$null)
+        if ($LASTEXITCODE -eq 0 -and $currentOrigin) {
+            $currentOrigin = $currentOrigin.Trim()
+            if ($currentOrigin -ne $Repo) {
+                Write-Warning "既存 repo/ の origin が期待値と異なります（期待: $Repo / 実際: $currentOrigin）。再 clone を実施します。"
+                Pop-Location
+                Remove-Item -LiteralPath $REPO_DIR -Recurse -Force -ErrorAction Stop
+                & git @GIT_SAFE_OPTS clone --depth 1 --branch $Branch -- $Repo $REPO_DIR 2>&1 | ForEach-Object { Write-Output "  $_" }
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Error "Git clone 失敗: exit $LASTEXITCODE"
+                    exit 1
+                }
+                Push-Location $REPO_DIR
+            }
+        }
+        & git @GIT_SAFE_OPTS fetch --depth 1 origin $Branch 2>&1 | ForEach-Object { Write-Output "  $_" }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Git fetch 失敗"
             exit 1
         }
-        & git reset --hard "origin/$Branch" 2>&1 | ForEach-Object { Write-Output "  $_" }
+        & git @GIT_SAFE_OPTS reset --hard "origin/$Branch" 2>&1 | ForEach-Object { Write-Output "  $_" }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Git reset 失敗"
             exit 1
         }
-        & git clean -fdx 2>&1 | Out-Null
+        & git @GIT_SAFE_OPTS clean -fdx 2>&1 | Out-Null
     } finally {
         Pop-Location
     }
@@ -307,6 +364,9 @@ function Test-FileExcluded {
     $norm = $RelativePath.Replace('\', '/')
     if ($norm.StartsWith('./')) { $norm = $norm.Substring(2) }
     $norm = $norm.TrimStart('/').ToLowerInvariant()
+
+    # パストラバーサル拒否
+    if ($norm -match '(^|/)\.\.(/|$)') { return $true }
 
     foreach ($ex in $EXCLUDE_TARGETS) {
         $exNorm = $ex.ToLowerInvariant()
@@ -405,16 +465,15 @@ if ($EmitDiffJson) {
         New-Item -ItemType Directory -Force -Path $emitDir | Out-Null
     }
     # PowerShell の `@() | ConvertTo-Json` は空文字列を返すため、件数 0 のときは明示的に '[]' を書く
+    # 1 件のときも単一オブジェクトに展開されないよう、ConvertTo-Json -InputObject で配列を明示渡しする。
     if ($diffEntries.Count -eq 0) {
         Set-Content -LiteralPath $EmitDiffJson -Value '[]' -Encoding UTF8
     } else {
-        # 単一エントリでも配列として JSON 化するため -AsArray は使わず、配列リテラルでラップ
-        $jsonText = ConvertTo-Json -InputObject (,@($diffEntries)) -Depth 10
-        # 上記が二重配列になるケースを避けるため、Count=1 の特別扱い
-        if ($diffEntries.Count -eq 1) {
-            $jsonText = "[$($diffEntries | ConvertTo-Json -Depth 10)]"
-        } else {
-            $jsonText = $diffEntries | ConvertTo-Json -Depth 10
+        # PowerShell 7+: -InputObject @(array) は要素数に関わらず配列として直列化される
+        $jsonText = ConvertTo-Json -InputObject @($diffEntries) -Depth 10
+        # PowerShell 5.1 互換性: Count=1 のときに ConvertTo-Json が単一オブジェクトを返す可能性がある場合のフェイルセーフ
+        if (-not $jsonText.TrimStart().StartsWith('[')) {
+            $jsonText = "[$jsonText]"
         }
         Set-Content -LiteralPath $EmitDiffJson -Value $jsonText -Encoding UTF8
     }
@@ -473,15 +532,35 @@ if (-not $NoBackup) {
     Write-Output ""
     Write-Output "===== バックアップ ====="
     Write-Output "Backup dir: $backupDir"
+    # バックアップ取得時にも除外フィルタを適用し、認証情報が backup/ に複製されないようにする。
     foreach ($t in $Targets) {
         $src = Join-Path $CLAUDE_HOME $t
-        if (Test-Path -LiteralPath $src) {
+        if (-not (Test-Path -LiteralPath $src)) { continue }
+        if (Test-Path -LiteralPath $src -PathType Leaf) {
+            # 単一ファイル: 除外フィルタを通す
+            if (Test-FileExcluded -RelativePath $t) {
+                Write-Warning "バックアップ除外（target）: $t"
+                continue
+            }
             $dst = Join-Path $backupDir $t
             $dstParent = Split-Path -Parent $dst
             if (-not (Test-Path -LiteralPath $dstParent)) {
                 New-Item -ItemType Directory -Force -Path $dstParent | Out-Null
             }
-            Copy-Item -LiteralPath $src -Destination $dst -Recurse -Force
+            Copy-Item -LiteralPath $src -Destination $dst -Force
+        } else {
+            # ディレクトリ: 再帰的にファイル単位で除外フィルタを適用しつつコピー
+            Get-ChildItem -LiteralPath $src -Recurse -File -Force -ErrorAction SilentlyContinue | ForEach-Object {
+                $rel = $_.FullName.Substring($src.Length).TrimStart('\', '/')
+                $combinedRel = Join-Path $t $rel
+                if (Test-FileExcluded -RelativePath $combinedRel) { return }
+                $dst = Join-Path $backupDir $combinedRel
+                $dstParent = Split-Path -Parent $dst
+                if (-not (Test-Path -LiteralPath $dstParent)) {
+                    New-Item -ItemType Directory -Force -Path $dstParent | Out-Null
+                }
+                Copy-Item -LiteralPath $_.FullName -Destination $dst -Force
+            }
         }
     }
 } else {

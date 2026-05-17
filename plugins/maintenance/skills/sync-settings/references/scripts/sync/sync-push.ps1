@@ -65,13 +65,72 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 # --- 定数 ---
 $BASE_DIR = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance'
 $MAPPINGS_FILE = Join-Path $BASE_DIR 'sync-mappings.json'
-$REPO_DIR = Join-Path $BASE_DIR 'repo'
+# push 専用の clone 領域: pull (sync.ps1) と分離して同時実行時の状態破壊を防ぐ
+$REPO_DIR = Join-Path $BASE_DIR 'repo-push'
 $CLAUDE_HOME = Join-Path $env:USERPROFILE '.claude'
 
 # 同期対象から常に除外（push でも厳格に適用）
-$EXCLUDE_TARGETS = @('credentials.json', '.env', '.local', '.git', 'plugins/cache')
-$EXCLUDE_PATTERNS = @('*.pem', '*.key', '*.pfx')
+# credentials-management.md で列挙された認証情報系ファイル網羅 + 鍵 / 証明書 / クラウド認証
+$EXCLUDE_TARGETS = @(
+    # 認証情報ストア
+    'credentials.json', 'credential.json', 'credentials.yml', 'credentials.yaml',
+    'secrets.json', 'secret.json', 'secrets.yml', 'secrets.yaml',
+    # 環境変数 / シェル系認証
+    '.env', '.netrc', '.git-credentials', '.npmrc', '.pgpass', '.dockercfg',
+    # ディレクトリ全体（プラグイン領域や認証ディレクトリ）
+    '.local', '.git', 'plugins/cache',
+    '.ssh', '.gnupg', '.aws', '.docker', '.kube'
+)
+$EXCLUDE_PATTERNS = @(
+    # 鍵 / 証明書系
+    '*.pem', '*.key', '*.pfx', '*.p12', '*.jks', '*.keystore',
+    '*.crt', '*.cer', '*.der', '*.asc', '*.gpg',
+    # SSH 秘密鍵
+    'id_rsa', 'id_rsa.pub', 'id_dsa', 'id_dsa.pub', 'id_ecdsa', 'id_ecdsa.pub',
+    'id_ed25519', 'id_ed25519.pub', 'id_xmss', 'id_xmss.pub',
+    # クラウド認証ファイル
+    'serviceAccountKey.json', 'service-account.json',
+    'application_default_credentials.json', 'gcloud-credentials.json'
+)
 $ENV_FILE_REGEX = '^\.env($|\.)'
+
+# Git CLI の危険プロトコル無効化（CVE-2018-17456 系の対策）
+$GIT_SAFE_OPTS = @('-c', 'protocol.file.allow=never', '-c', 'protocol.ext.allow=never')
+
+# Branch / Repo / BranchPrefix の許容文字（オプション注入防止）
+$REPO_URL_REGEX     = '^(https?|git|ssh)://|^git@[A-Za-z0-9._\-]+:'
+$BRANCH_REGEX       = '^[A-Za-z0-9._/\-]+$'
+$BRANCH_PREFIX_REGEX = '^[A-Za-z0-9._\-]+$'
+
+# 認証情報の二次マスク（ログ出力時に推奨パターンを検出して伏字化）
+$SECRET_PATTERNS = @(
+    'sk-[A-Za-z0-9]{16,}',
+    'ghp_[A-Za-z0-9]{20,}',
+    'gho_[A-Za-z0-9]{20,}',
+    'ghu_[A-Za-z0-9]{20,}',
+    'ghs_[A-Za-z0-9]{20,}',
+    'ghr_[A-Za-z0-9]{20,}',
+    'xox[bpars]-[A-Za-z0-9\-]{10,}',
+    'AKIA[A-Z0-9]{16}',
+    'AIza[A-Za-z0-9_\-]{35}',
+    'glpat-[A-Za-z0-9_\-]{20,}',
+    'Bearer\s+[A-Za-z0-9\._\-]{16,}'
+)
+
+function Hide-SecretsInLine {
+    param([string]$Line)
+    if (-not $Line) { return $Line }
+    $masked = $Line
+    foreach ($pat in $SECRET_PATTERNS) {
+        $masked = [regex]::Replace($masked, $pat, '[REDACTED]')
+    }
+    return $masked
+}
+
+function Write-MaskedOutput {
+    param([string]$Line)
+    Write-Output ("  " + (Hide-SecretsInLine $Line))
+}
 
 function Test-FileExcluded {
     param([string]$RelativePath)
@@ -79,6 +138,9 @@ function Test-FileExcluded {
     $norm = $RelativePath.Replace('\', '/')
     if ($norm.StartsWith('./')) { $norm = $norm.Substring(2) }
     $norm = $norm.TrimStart('/').ToLowerInvariant()
+
+    # パストラバーサル拒否
+    if ($norm -match '(^|/)\.\.(/|$)') { return $true }
 
     foreach ($ex in $EXCLUDE_TARGETS) {
         $exNorm = $ex.ToLowerInvariant()
@@ -90,6 +152,26 @@ function Test-FileExcluded {
         if ($leaf -like $pat.ToLowerInvariant()) { return $true }
     }
     return $false
+}
+
+# --- BranchPrefix / PrTitle / PrBody のバリデーション ---
+if ($BranchPrefix -notmatch $BRANCH_PREFIX_REGEX) {
+    Write-Error "BranchPrefix に無効な文字が含まれています（許容: 英数字 / . / _ / -）: $BranchPrefix"
+    exit 1
+}
+if ($BranchPrefix.StartsWith('-')) {
+    Write-Error "BranchPrefix は '-' で始められません（git CLI のオプションとして解釈される危険があります）"
+    exit 1
+}
+# 制御文字（CR / LF / 等）を含む PrTitle / PrBody を拒否（gh CLI の引数解釈撹乱防止）
+if ($PrTitle -and ($PrTitle -match '[\x00-\x1f]')) {
+    Write-Error "PrTitle に制御文字が含まれています"
+    exit 1
+}
+# PrBody は改行を許容するが、NUL バイトと CR は禁止
+if ($PrBody -and ($PrBody -match '[\x00\r]')) {
+    Write-Error "PrBody に NUL バイトまたは CR が含まれています"
+    exit 1
 }
 
 # --- マッピング解決 ---
@@ -135,6 +217,23 @@ $repo = $mappingEntry.remote_repo
 $branch = $mappingEntry.remote_branch
 $targets = @($mappingEntry.targets)
 
+# マッピング由来値の再検証（sync-mappings.json が外部書き換えられている可能性に備える）
+if (-not $repo -or $repo -notmatch $REPO_URL_REGEX -or $repo.StartsWith('-')) {
+    Write-Error "マッピング由来の remote_repo が無効です（外部書き換え疑い）: $repo"
+    exit 1
+}
+if (-not $branch -or $branch -notmatch $BRANCH_REGEX -or $branch.StartsWith('-')) {
+    Write-Error "マッピング由来の remote_branch が無効です（外部書き換え疑い）: $branch"
+    exit 1
+}
+# targets の再検証（パストラバーサル / 認証情報除外）
+foreach ($t in $targets) {
+    if (Test-FileExcluded -RelativePath $t) {
+        Write-Error "マッピング由来の target に除外対象が含まれています（外部書き換え疑い）: $t"
+        exit 1
+    }
+}
+
 Write-Output ("[mapping] {0} repo={1}, branch={2}, targets={3} 件" -f $Mapping, $repo, $branch, $targets.Count)
 Write-Output ("[local-base] {0}" -f $localBase)
 
@@ -149,7 +248,7 @@ if (-not $gitCmd) {
 Write-Output ""
 Write-Output "===== リポジトリ準備 ====="
 if (-not (Test-Path -LiteralPath $REPO_DIR)) {
-    & git clone --branch $branch $repo $REPO_DIR 2>&1 | ForEach-Object { Write-Output "  $_" }
+    & git @GIT_SAFE_OPTS clone --branch $branch -- $repo $REPO_DIR 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Git clone 失敗: exit $LASTEXITCODE"
         exit 1
@@ -157,10 +256,38 @@ if (-not (Test-Path -LiteralPath $REPO_DIR)) {
 } else {
     Push-Location $REPO_DIR
     try {
-        & git fetch origin $branch 2>&1 | ForEach-Object { Write-Output "  $_" }
-        & git checkout $branch 2>&1 | ForEach-Object { Write-Output "  $_" }
-        & git reset --hard "origin/$branch" 2>&1 | ForEach-Object { Write-Output "  $_" }
-        & git clean -fdx 2>&1 | Out-Null
+        # 既存 repo-push/ の origin が想定 URL と一致するか確認（攻撃者書き換え検出）
+        $currentOrigin = (& git remote get-url origin 2>$null)
+        if ($LASTEXITCODE -eq 0 -and $currentOrigin) {
+            $currentOrigin = $currentOrigin.Trim()
+            if ($currentOrigin -ne $repo) {
+                Write-Warning "既存 repo-push/ の origin が期待値と異なります（期待: $repo / 実際: $currentOrigin）。再 clone を実施します。"
+                Pop-Location
+                Remove-Item -LiteralPath $REPO_DIR -Recurse -Force -ErrorAction Stop
+                & git @GIT_SAFE_OPTS clone --branch $branch -- $repo $REPO_DIR 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Error "Git clone 失敗: exit $LASTEXITCODE"
+                    exit 1
+                }
+                Push-Location $REPO_DIR
+            }
+        }
+        & git @GIT_SAFE_OPTS fetch origin $branch 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Git fetch 失敗: exit $LASTEXITCODE"
+            exit 1
+        }
+        & git @GIT_SAFE_OPTS checkout $branch 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Git checkout 失敗: exit $LASTEXITCODE"
+            exit 1
+        }
+        & git @GIT_SAFE_OPTS reset --hard "origin/$branch" 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Git reset 失敗: exit $LASTEXITCODE"
+            exit 1
+        }
+        & git @GIT_SAFE_OPTS clean -fdx 2>&1 | Out-Null
     } finally {
         Pop-Location
     }
@@ -249,7 +376,7 @@ try {
     Write-Output "===== 新ブランチ作成 + commit + push ====="
     Write-Output ("新ブランチ: {0}" -f $newBranch)
 
-    & git checkout -b $newBranch 2>&1 | ForEach-Object { Write-Output "  $_" }
+    & git @GIT_SAFE_OPTS checkout -b $newBranch 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
     if ($LASTEXITCODE -ne 0) {
         Write-Error "新ブランチ作成失敗: exit $LASTEXITCODE"
         exit 1
@@ -261,34 +388,34 @@ try {
         $msg = "sync from local ${tsCommit}"
     }
 
-    & git add -A 2>&1 | ForEach-Object { Write-Output "  $_" }
+    & git @GIT_SAFE_OPTS add -A 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
     if ($LASTEXITCODE -ne 0) {
         Write-Error "git add 失敗: exit $LASTEXITCODE"
         # 規定ブランチへの復帰を試行（ベストエフォート）
-        & git checkout $branch 2>&1 | Out-Null
-        & git branch -D $newBranch 2>&1 | Out-Null
+        & git @GIT_SAFE_OPTS checkout $branch 2>&1 | Out-Null
+        & git @GIT_SAFE_OPTS branch -D $newBranch 2>&1 | Out-Null
         exit 1
     }
 
-    & git commit -m $msg 2>&1 | ForEach-Object { Write-Output "  $_" }
+    & git @GIT_SAFE_OPTS commit -m "$msg" 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
     if ($LASTEXITCODE -ne 0) {
         Write-Error "git commit 失敗: exit $LASTEXITCODE"
-        & git checkout $branch 2>&1 | Out-Null
-        & git branch -D $newBranch 2>&1 | Out-Null
+        & git @GIT_SAFE_OPTS checkout $branch 2>&1 | Out-Null
+        & git @GIT_SAFE_OPTS branch -D $newBranch 2>&1 | Out-Null
         exit 1
     }
 
-    & git push -u origin $newBranch 2>&1 | ForEach-Object { Write-Output "  $_" }
+    & git @GIT_SAFE_OPTS push -u origin $newBranch 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
     if ($LASTEXITCODE -ne 0) {
         Write-Error "git push 失敗: exit $LASTEXITCODE"
-        & git checkout $branch 2>&1 | Out-Null
+        & git @GIT_SAFE_OPTS checkout $branch 2>&1 | Out-Null
         exit 1
     }
 
     # --- 規定ブランチに復帰（スキル起動前と同様の状態に戻す） ---
     Write-Output ""
     Write-Output "===== 規定ブランチに復帰 ====="
-    & git checkout $branch 2>&1 | ForEach-Object { Write-Output "  $_" }
+    & git @GIT_SAFE_OPTS checkout $branch 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
     if ($LASTEXITCODE -ne 0) {
         Write-Warning "規定ブランチへの復帰失敗。手動で 'git checkout $branch' を実行してください。"
     }
@@ -316,11 +443,13 @@ try {
             }
             $resolvedPrBody = $PrBody
             if (-not $resolvedPrBody) {
+                # localBase の絶対パス漏洩を防ぐため、リポジトリ ID やプロジェクト名のみに匿名化
+                $anonymizedBase = if ($Mapping -eq 'global') { '~/.claude' } else { Split-Path -Leaf $localBase }
                 $resolvedPrBody = @"
 maintenance プラグインの sync-settings スキル (/sync-push) による自動同期です。
 
 - スコープ: $Mapping
-- ローカル基点: $localBase
+- ローカル基点: $anonymizedBase
 - targets: $($targets -join ', ')
 - commit: $msg
 - 新ブランチ: $newBranch
@@ -330,7 +459,8 @@ maintenance プラグインの sync-settings スキル (/sync-push) による自
 "@
             }
 
-            $ghOutput = & gh pr create --base $branch --head $newBranch --title $resolvedPrTitle --body $resolvedPrBody 2>&1
+            # gh pr create に --repo を明示し、現在の repo/ 由来でない他リポジトリへの誤投稿を防止
+            $ghOutput = & gh pr create --repo $repo --base $branch --head $newBranch --title "$resolvedPrTitle" --body "$resolvedPrBody" 2>&1
             if ($LASTEXITCODE -eq 0) {
                 $prCreated = $true
                 # gh pr create は URL を stdout に出す（最終行が PR URL）
@@ -344,7 +474,7 @@ maintenance プラグインの sync-settings スキル (/sync-push) による自
                 Write-Output ("  repo:  {0}" -f $repo)
                 Write-Output ""
                 Write-Output "gh 出力:"
-                $ghOutput | ForEach-Object { Write-Output "  $_" }
+                $ghOutput | ForEach-Object { Write-MaskedOutput $_ }
             }
         }
     }

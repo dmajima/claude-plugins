@@ -92,6 +92,23 @@ if ($DryRun -and $Yes) {
 }
 
 # --- パスバリデーション関数 ---
+# 多層検証: (1) ReparsePoint 属性確認 / (2) 名前パターン / (3) 親 3 階層の名前一致 + LinkType チェック
+# (4) 想定 work/ ルートの絶対パスに対する前方一致確認（StringComparison.OrdinalIgnoreCase）
+function Test-ReparsePoint {
+    param($Item)
+    if (-not $Item) { return $false }
+    # PowerShell の LinkType は SymbolicLink / Junction / HardLink のみ報告するため、
+    # ReparsePoint 属性（IO_REPARSE_TAG_* 全種別）を直接確認する
+    if ($Item.LinkType) { return $true }
+    try {
+        $attrs = $Item.Attributes
+        if (($attrs -band [IO.FileAttributes]::ReparsePoint) -eq [IO.FileAttributes]::ReparsePoint) {
+            return $true
+        }
+    } catch {}
+    return $false
+}
+
 function Test-ValidSessionPath {
     param([string]$Path)
 
@@ -102,25 +119,33 @@ function Test-ValidSessionPath {
         $resolved = (Resolve-Path -LiteralPath $Path -ErrorAction Stop).Path
     } catch { return $false }
 
-    $item = Get-Item -LiteralPath $resolved
-    # 非通常リンク（SymbolicLink / Junction / 将来追加された種別）はすべて拒否
-    if ($item.LinkType) { return $false }
+    $item = Get-Item -LiteralPath $resolved -Force
+    # 再解析ポイント全種別を拒否（SymbolicLink / Junction / MountPoint / その他 reparse tag）
+    if (Test-ReparsePoint -Item $item) { return $false }
 
     $name = $item.Name
     if ($name -notmatch $SESSION_REGEX) { return $false }
 
-    # 親 3 階層も DirectoryInfo として取得し、各階層が LinkType を持たないことを確認
+    # 親 3 階層も DirectoryInfo として取得し、各階層が再解析ポイントを持たないことを確認
     $parent = $item.Parent
     if ($null -eq $parent -or $parent.Name -ne 'work') { return $false }
-    if ($parent.LinkType) { return $false }
+    if (Test-ReparsePoint -Item $parent) { return $false }
 
     $grand = $parent.Parent
     if ($null -eq $grand -or $grand.Name -ne '.local') { return $false }
-    if ($grand.LinkType) { return $false }
+    if (Test-ReparsePoint -Item $grand) { return $false }
 
     $great = $grand.Parent
     if ($null -eq $great -or $great.Name -ne '.claude') { return $false }
-    if ($great.LinkType) { return $false }
+    if (Test-ReparsePoint -Item $great) { return $false }
+
+    # 絶対パス前方一致検証: グローバル or 任意のプロジェクトの .claude/.local/work/ 配下にあること
+    $globalRoot = Join-Path $env:USERPROFILE '.claude\.local\work'
+    try { $globalResolved = (Resolve-Path -LiteralPath $globalRoot -ErrorAction Stop).Path } catch { $globalResolved = $globalRoot }
+    $expectedSuffix = [IO.Path]::DirectorySeparatorChar + '.claude' + [IO.Path]::DirectorySeparatorChar + '.local' + [IO.Path]::DirectorySeparatorChar + 'work' + [IO.Path]::DirectorySeparatorChar
+    $isGlobal = $resolved.StartsWith($globalResolved + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)
+    $isProject = $resolved.IndexOf($expectedSuffix, [StringComparison]::OrdinalIgnoreCase) -ge 0
+    if (-not ($isGlobal -or $isProject)) { return $false }
 
     return $true
 }
