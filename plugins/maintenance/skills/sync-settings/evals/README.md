@@ -28,6 +28,7 @@
 | case-20 | 非対話モードで Repo / Mapping 不足エラー | `--yes` 指定 + Repo 取得不能（即時 exit 1） |
 | case-21 | 不正 URL / Branch 名のバリデーション失敗（4 sub-case） | REPO_URL_REGEX / BRANCH_REGEX 違反 / マッピング由来値の再検証 |
 | case-22 | `/sync-push` の `--Yes` なし時の安全停止 | --Yes 未指定 + 差分あり → push 実行せず exit 0 |
+| case-23 | `/sync-push` PR 作成失敗時のロールバック / 手動案内 | gh CLI 存在 + 認証エラー等で `gh pr create` 失敗 → warning + 手動案内（リモートブランチは残置）|
 
 ## 実行確認方法
 

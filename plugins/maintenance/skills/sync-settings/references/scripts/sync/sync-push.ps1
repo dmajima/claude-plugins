@@ -202,16 +202,20 @@ if (-not (Test-Path -LiteralPath $REPO_DIR)) {
         & git @GIT_SAFE_OPTS fetch --depth 1 origin $branch 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Git fetch 失敗: exit $LASTEXITCODE"
+            # try 内 exit は finally を迂回するため明示的に Pop-Location する
+            Pop-Location
             exit 1
         }
         & git @GIT_SAFE_OPTS checkout $branch 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Git checkout 失敗: exit $LASTEXITCODE"
+            Pop-Location
             exit 1
         }
         & git @GIT_SAFE_OPTS reset --hard "origin/$branch" 2>&1 | ForEach-Object { Write-MaskedOutput $_ }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Git reset 失敗: exit $LASTEXITCODE"
+            Pop-Location
             exit 1
         }
         & git @GIT_SAFE_OPTS clean -fdx 2>&1 | Out-Null
