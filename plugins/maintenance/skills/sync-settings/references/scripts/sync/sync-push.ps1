@@ -288,40 +288,40 @@ $skippedExcludedCount = $script:skippedExcludedCount
 Write-Output ("コピー: {0} 件、除外スキップ: {1} 件" -f $copiedCount, $skippedExcludedCount)
 
 # --- git status で変更検出 ---
-# 注: try ブロック内の `exit` は finally { Pop-Location } を迂回するため、
-# 各 exit 直前で明示的に Pop-Location を呼ぶ。同時に finally でも防御層として呼ぶ。
+# 線形管理: PowerShell の exit は finally を実行するため、try/finally と
+# 明示 Pop-Location を併用すると二重 Pop が発生する。
+# 本ブロックでは各 exit / 正常終了経路で Pop-Location を 1 回だけ呼ぶ。
 Write-Output ""
 Write-Output "===== Git 変更検出 ====="
 Push-Location $REPO_DIR
-try {
-    $statusOutput = @(& git status --short 2>&1)
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "git status 失敗: exit $LASTEXITCODE"
-        Pop-Location
-        exit 1
-    }
-    if ($statusOutput.Count -eq 0) {
-        Write-Output "(変更なし。push をスキップして終了)"
-        Pop-Location
-        exit 0
-    }
-    Write-Output ($statusOutput -join "`n")
+$statusOutput = @(& git status --short 2>&1)
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "git status 失敗: exit $LASTEXITCODE"
+    Pop-Location
+    exit 1
+}
+if ($statusOutput.Count -eq 0) {
+    Write-Output "(変更なし。push をスキップして終了)"
+    Pop-Location
+    exit 0
+}
+Write-Output ($statusOutput -join "`n")
 
-    # --- DryRun ---
-    if ($DryRun) {
-        Write-Output ""
-        Write-Output "(dry-run) git add / commit / push は行いません。"
-        Pop-Location
-        exit 0
-    }
+# --- DryRun ---
+if ($DryRun) {
+    Write-Output ""
+    Write-Output "(dry-run) git add / commit / push は行いません。"
+    Pop-Location
+    exit 0
+}
 
-    # --- Yes フラグなしでは push しない（呼び出し元 AI が AskUserQuestion 確認済み前提） ---
-    if (-not $Yes) {
-        Write-Output ""
-        Write-Output "実 push するには -Yes フラグを付けて再実行してください（AskUserQuestion 経由推奨）。"
-        Pop-Location
-        exit 0
-    }
+# --- Yes フラグなしでは push しない（呼び出し元 AI が AskUserQuestion 確認済み前提） ---
+if (-not $Yes) {
+    Write-Output ""
+    Write-Output "実 push するには -Yes フラグを付けて再実行してください（AskUserQuestion 経由推奨）。"
+    Pop-Location
+    exit 0
+}
 
     # --- 新ブランチ作成（規定ブランチには直接 push しない、PR ベースのワークフロー） ---
     $tsBranch = (Get-Date).ToUniversalTime().ToString('yyyyMMdd-HHmmss')
@@ -449,9 +449,7 @@ maintenance プラグインの sync-settings スキル (/sync-push) による自
     } elseif (-not $NoPr) {
         Write-Output "PR:          (未作成・手動対応が必要)"
     }
-} finally {
-    Pop-Location
-}
+Pop-Location
 
 # SSOT: sync-mappings.json の該当マッピングの last_sync_at を更新（ADR-PU-011）
 $nowIso = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
