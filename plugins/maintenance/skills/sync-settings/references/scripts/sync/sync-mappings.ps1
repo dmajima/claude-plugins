@@ -98,13 +98,14 @@ function Get-MappingsStore {
     }
     try {
         $loaded = Get-Content -LiteralPath $CONFIG_FILE -Raw -Encoding UTF8 | ConvertFrom-Json
-        if (-not $loaded.PSObject.Properties.Name -contains 'version') {
+        # 演算子優先順位: '-not' を '-contains' より先に評価させないよう、明示的に括弧でグループ化する。
+        if (-not ($loaded.PSObject.Properties.Name -contains 'version')) {
             $loaded | Add-Member -NotePropertyName version -NotePropertyValue 2 -Force
         }
-        if (-not $loaded.PSObject.Properties.Name -contains 'global') {
+        if (-not ($loaded.PSObject.Properties.Name -contains 'global')) {
             $loaded | Add-Member -NotePropertyName global -NotePropertyValue $null -Force
         }
-        if (-not $loaded.PSObject.Properties.Name -contains 'projects') {
+        if (-not ($loaded.PSObject.Properties.Name -contains 'projects')) {
             $loaded | Add-Member -NotePropertyName projects -NotePropertyValue ([PSCustomObject]@{}) -Force
         }
         return $loaded

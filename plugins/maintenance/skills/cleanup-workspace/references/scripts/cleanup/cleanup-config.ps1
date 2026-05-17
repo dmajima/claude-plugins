@@ -74,8 +74,10 @@ function Get-Config {
     try {
         $loaded = Get-Content -LiteralPath $CONFIG_FILE -Raw -Encoding UTF8 | ConvertFrom-Json
         # 既定値で不足フィールドを補完
+        # 演算子優先順位: '-not' は '-contains' より高束縛のため、明示的に括弧でグループ化する。
+        # （括弧なしだと '-not <配列>' が先評価され $false になり、補完が実質機能しない）
         foreach ($p in $DEFAULT_CONFIG.PSObject.Properties) {
-            if (-not $loaded.PSObject.Properties.Name -contains $p.Name) {
+            if (-not ($loaded.PSObject.Properties.Name -contains $p.Name)) {
                 $loaded | Add-Member -NotePropertyName $p.Name -NotePropertyValue $p.Value -Force
             }
         }
