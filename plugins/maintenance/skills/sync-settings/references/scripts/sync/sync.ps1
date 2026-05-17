@@ -1,11 +1,12 @@
 <#
 .SYNOPSIS
-    特定の Git リポジトリから Claude Code 設定を pull 方向のみで同期する。
+    特定の Git リポジトリから Claude Code 設定を pull 方向で同期する（push は sync-push.ps1 が担当）。
 
 .DESCRIPTION
-    sync-settings スキルの実装スクリプト。
+    sync-settings スキルの pull 系実装スクリプト。
     Git clone → 差分検出 → バックアップ → 戦略別適用 の順で処理する。
     実適用には -Yes フラグが必須。フラグ未指定時は差分プレビューのみ。
+    push 方向は sync-push.ps1 が新ブランチ + PR ベースで提供する（safety.md 節 8 参照）。
 
 .PARAMETER Repo
     同期元 Git リポジトリ URL。空指定時は sync-config.json から取得。

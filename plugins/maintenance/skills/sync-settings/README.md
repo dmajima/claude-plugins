@@ -1,6 +1,6 @@
 # sync-settings (skill)
 
-特定の Git リポジトリから Claude Code のユーザ設定（`~/.claude/settings.json` / `~/.claude/skills/` / `~/.claude/rules/` / `~/.claude/agents/` 等）を **pull 方向のみ** で同期するスキル。
+特定の Git リポジトリと Claude Code のユーザ設定（`~/.claude/settings.json` / `~/.claude/skills/` / `~/.claude/rules/` / `~/.claude/agents/` 等）を **pull / push 双方向** で同期するスキル。pull は `/sync-pull`、push は `/sync-push`（新ブランチ + PR 作成）で操作する。
 
 ## このドキュメントについて
 
@@ -76,7 +76,7 @@ Claude（要約）:
 | AskUserQuestion による最終確認 | 対話モードでは同期前に必ず確認 |
 | 認証情報の除外 | `credentials.json` / `.env` 等は同期対象から自動除外 |
 | Git メタデータの除外 | `.git/` 等は同期対象外 |
-| pull 方向のみ | リモートへの push は行わない |
+| push 時は新ブランチ + PR 強制 | 規定ブランチへの直接 push は禁止、PR レビュー前提 |
 
 ## ロールバック手順
 

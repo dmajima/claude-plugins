@@ -12,7 +12,7 @@
 | 4 | 同期対象のホワイトリスト | 任意ファイルの無差別同期防止 |
 | 5 | ドライラン推奨 | 想定外の同期（事前確認なし） |
 | 6 | AskUserQuestion 確認 | 同期直前の最終承認 |
-| 7 | pull 方向のみ | リモートへの誤 push 防止 |
+| 7 | push 時は新ブランチ + PR 強制 | 規定ブランチへの直接 push 防止・レビュー前提のワークフロー |
 
 ## 2. バックアップ取得（既定必須）
 
@@ -135,33 +135,69 @@
 "削除対象が {N} 件あります。本当に削除しますか？"
 ```
 
-## 8. pull 方向のみ
+## 8. push 方向の安全装置（Phase 3-D 以降）
 
-### 8.1 push 操作の禁止
+`/sync-push` コマンド経由の push 同期では、以下の安全装置を **強制** する。
 
-本スキルは以下の操作を **行わない**:
+### 8.1 規定ブランチへの直接 push 禁止
 
-- `git push`
-- `git commit` + push 連携
-- リモート repo への HTTP/API 経由の書き込み
+`sync-push.ps1` は常に新ブランチ `{BranchPrefix}-{scope}-{timestamp}` を作成して
+そこに push し、PR ベースのレビュー → マージワークフローに乗せる。マッピングの
+`remote_branch`（既定 `main`）に対して直接 push することは設計上禁止である。
 
-ローカルから Git リポジトリへの逆方向同期が必要な場合は、ユーザが手動で `git add` + `commit` + `push` を実行する。
+### 8.2 push 用 clone 領域の分離
 
-### 8.2 ローカル clone 領域への書き込み
+push 用には専用ディレクトリ `~/.claude/.local/plugins/maintenance/repo-push/` を
+利用する（pull 用は `repo/`）。これにより pull と push の同時実行・連続実行で
+互いの git 状態を壊さない。
 
-`~/.claude/.local/plugins/maintenance/repo/` 配下では `git reset --hard` + `git clean -fdx` を実行するが、これはローカルクローンの初期化のみで、リモートへは影響しない。
+### 8.3 push 前後のブランチ復帰
+
+push 完了後は規定ブランチ（`remote_branch`）に自動復帰し、スキル起動前と
+同様の clone 領域状態に戻す。復帰失敗時は warning を表示し、手動 checkout
+を案内する。
+
+### 8.4 認証情報の二重除外（pull と同等以上の厳格性）
+
+push 経路でも `Test-FileExcluded` は同一の除外リスト（`credentials.json`
+/ `.env` / `.netrc` / `.git-credentials` / `id_rsa*` 等の SSH 秘密鍵 /
+`*.p12` / `*.crt` / `*.gpg` / クラウド認証ファイル / `.ssh` / `.gnupg`
+/ `.aws` 配下など）を適用する。push 完了前にローカル → repo-push/
+コピー段階で漏れなくフィルタする。
+
+### 8.5 マッピング由来値の再検証
+
+`sync-mappings.json` 由来の `remote_repo` / `remote_branch` を毎回
+正規表現で再検証する。外部書き換えや別経路での注入を防御する。
+
+### 8.6 PR 作成の明示
+
+`gh pr create --repo <repo> --base <branch> --head <new-branch>` 形式で
+リポジトリを明示し、誤った別リポジトリへの PR 投稿を防ぐ。gh CLI 不在時は
+手動 PR 作成案内のみで終了する。
+
+### 8.7 ローカル clone 領域への書き込み（pull 共通）
+
+`~/.claude/.local/plugins/maintenance/repo/`（pull 用）および
+`~/.claude/.local/plugins/maintenance/repo-push/`（push 用）配下では
+`git reset --hard` + `git clean -fdx` を実行するが、これらはローカル
+クローンの初期化のみであり、規定ブランチには直接 push されない（8.1）。
 
 ## 9. 検証チェックリスト
 
 スキル実装の検証項目:
 
-- [ ] `--no-backup` 未指定時にバックアップが取得されることをテスト
-- [ ] `credentials.json` が同期対象から除外されることをテスト
-- [ ] `.env` が同期対象から除外されることをテスト
-- [ ] `.git/` が同期対象から除外されることをテスト
+- [ ] `--no-backup` 未指定時にバックアップが取得されることをテスト（pull）
+- [ ] `credentials.json` が同期対象から除外されることをテスト（pull / push）
+- [ ] `.env` が同期対象から除外されることをテスト（pull / push）
+- [ ] `id_rsa` 系 SSH 秘密鍵が同期対象から除外されることをテスト（pull / push）
+- [ ] `.git/` が同期対象から除外されることをテスト（pull / push）
 - [ ] `--dry-run` 指定時に実適用が行われないことをテスト
-- [ ] `--yes` 指定時にバックアップが省略されないことをテスト
-- [ ] バックアップ失敗時に同期が実行されないことをテスト
-- [ ] push 系の git コマンドが実行されないことをテスト
+- [ ] `--yes` 指定時にバックアップが省略されないことをテスト（pull）
+- [ ] バックアップ失敗時に同期が実行されないことをテスト（pull）
+- [ ] push 時に規定ブランチに直接 commit/push されないことをテスト
+- [ ] push 完了後に規定ブランチへ復帰することをテスト
+- [ ] 認証情報の二次マスクが git/gh 出力に適用されることをテスト
+- [ ] マッピング由来 remote_repo / remote_branch の再検証で不正値を弾くこと
 
 これらは `evals/` 配下の各ケースで動作分岐として記述する。
