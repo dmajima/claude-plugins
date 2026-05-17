@@ -1,6 +1,6 @@
 ---
 name: sync-settings
-description: Git リポジトリから Claude Code 設定（`settings.json` / `skills/` / `rules/` 等）を `~/.claude/` に pull 同期するスキル。「Claude 設定を Git から同期」「~/.claude を Git から更新」等で起動。Use when syncing Claude settings from a Git repo. SKIP when target is workspace cleanup (use cleanup-workspace) or plugin updates (use plugins-update).
+description: Git リポジトリから Claude Code 設定（`settings.json` / `skills/` / `rules/` 等）を `~/.claude/` に pull / push 双方向で同期するスキル。「Claude 設定を Git から同期」「~/.claude を Git から更新」「設定を Git に push」等で起動。Use when syncing Claude settings with a Git repo (pull or push). SKIP when target is workspace cleanup (use cleanup-workspace) or plugin updates (use plugin-updater).
 ---
 
 # Sync Settings
@@ -21,8 +21,7 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 | 業務 | 担当スキル |
 |-----|----------|
 | 古いセッションフォルダ・一時ファイル削除 | `cleanup-workspace`（本プラグイン内） |
-| プラグイン本体・マーケットプレイス更新 | `plugins-update` |
-| ローカルから Git リポジトリへの push 同期 | （対象外、利用者が手動で実施） |
+| プラグイン本体・マーケットプレイス更新 | `plugin-updater`（本プラグイン内） |
 | 認証情報の取り扱い | `credentials-manager`（既存プラグイン） |
 
 ## トリガー条件
@@ -35,8 +34,7 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 このスキルを起動しないケース:
 
 - 作業フォルダ整理（→ `cleanup-workspace`）
-- プラグイン本体の更新（→ `plugins-update`）
-- ローカル → リモートへの push（→ 対象外）
+- プラグイン本体の更新（→ `plugin-updater`）
 
 ## 前提
 

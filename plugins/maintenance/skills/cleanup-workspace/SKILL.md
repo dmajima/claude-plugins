@@ -1,6 +1,6 @@
 ---
 name: cleanup-workspace
-description: Claude Code の `.claude/.local/work/` 配下の古いセッションフォルダ・一時ファイルを安全に削除するスキル。「古い作業フォルダを整理して」「セッションフォルダのクリーンアップ」「workspace を掃除」等の依頼で起動する。Use when cleaning up old session folders in `.claude/.local/work/`. SKIP when target is plugin updates (use plugins-update) or settings sync (use sync-settings).
+description: Claude Code の `.claude/.local/work/` 配下の古いセッションフォルダ・一時ファイルを安全に削除するスキル。「古い作業フォルダを整理して」「セッションフォルダのクリーンアップ」「workspace を掃除」等の依頼で起動する。Use when cleaning up old session folders in `.claude/.local/work/`. SKIP when target is plugin updates (use plugin-updater) or settings sync (use sync-settings).
 ---
 
 # Cleanup Workspace
@@ -20,7 +20,7 @@ Claude Code のセッション作業領域 `.claude/.local/work/` に蓄積し�
 
 | 業務 | 担当スキル |
 |-----|----------|
-| プラグイン本体・マーケットプレイス更新 | `plugins-update` |
+| プラグイン本体・マーケットプレイス更新 | `plugin-updater`（本プラグイン内） |
 | Claude Code 設定（`~/.claude/`）の同期 | `sync-settings`（本プラグイン内） |
 | ソースコード・git の clean | （対象外） |
 | Playwright MCP 等のプラグイン専用キャッシュ削除 | （対象外、各プラグイン側で対応） |
@@ -35,7 +35,7 @@ Claude Code のセッション作業領域 `.claude/.local/work/` に蓄積し�
 
 このスキルを起動しないケース:
 
-- プラグイン本体の更新（→ `plugins-update`）
+- プラグイン本体の更新（→ `plugin-updater`）
 - Claude Code 設定の同期（→ `sync-settings`）
 - ソースコード・git 作業ツリーの整理（→ 対象外）
 
