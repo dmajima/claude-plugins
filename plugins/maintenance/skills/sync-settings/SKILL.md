@@ -160,6 +160,8 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 | 詳細実行手順 | [references/procedures.md](references/procedures.md) |
 | 安全装置 | [references/safety.md](references/safety.md) |
 | 同期戦略 | [references/strategies.md](references/strategies.md) |
-| 実装スクリプト | [`references/scripts/sync/sync.ps1`](references/scripts/sync/sync.ps1) |
+| 実装スクリプト（同期本体） | [`references/scripts/sync/sync.ps1`](references/scripts/sync/sync.ps1) |
+| 実装スクリプト（マッピングストア CRUD） | [`references/scripts/sync/sync-mappings.ps1`](references/scripts/sync/sync-mappings.ps1) |
+| マッピング設定ファイル | `~/.claude/.local/plugins/maintenance/sync-mappings.json`（グローバル配下に集約。global + projects[<absolute_path>] のスコープ別マッピング）|
 | 認証情報管理（関連プラグイン） | `credentials-manager`（プライベート repo 同期時に推奨） |
 | 動作例 | [evals/](evals/) |
