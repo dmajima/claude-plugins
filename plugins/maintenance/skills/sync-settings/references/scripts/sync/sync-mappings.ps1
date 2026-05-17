@@ -137,7 +137,12 @@ function Resolve-ProjectPath {
     param([string]$Path)
 
     if ($Path) {
-        return (Resolve-Path -LiteralPath $Path -ErrorAction Stop).Path
+        try {
+            return (Resolve-Path -LiteralPath $Path -ErrorAction Stop).Path
+        } catch {
+            Write-Error "ProjectPath が無効です（解決失敗）: $Path / $($_.Exception.Message)"
+            exit 1
+        }
     }
 
     # カレントディレクトリのリポジトリルートを取得（git rev-parse）
@@ -148,6 +153,35 @@ function Resolve-ProjectPath {
         }
     } catch {}
     return (Get-Location).Path
+}
+
+# 認証ディレクトリ（~/.ssh, ~/.gnupg, ~/.aws, ~/.docker, ~/.kube, ~/.config/gh 等）を
+# localBase / ProjectPath として登録できないようガード。
+function Test-NonAuthDirectoryPath {
+    param([string]$ResolvedPath)
+    if (-not $ResolvedPath) { return $false }
+    $home = $env:USERPROFILE
+    if (-not $home) { return $true }
+    try { $homeResolved = (Resolve-Path -LiteralPath $home -ErrorAction Stop).Path } catch { $homeResolved = $home }
+
+    # 認証ディレクトリ名（USERPROFILE 直下）
+    $blockedNames = @('.ssh', '.gnupg', '.aws', '.docker', '.kube')
+    foreach ($name in $blockedNames) {
+        $blocked = Join-Path $homeResolved $name
+        $blockedPrefix = $blocked.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+        if ($ResolvedPath -eq $blockedPrefix -or
+            $ResolvedPath.StartsWith($blockedPrefix + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+            return $false
+        }
+    }
+    # ~/.config/gh のような階層配下も拒否
+    $configGh = Join-Path $homeResolved '.config\gh'
+    $configGhPrefix = $configGh.TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
+    if ($ResolvedPath -eq $configGhPrefix -or
+        $ResolvedPath.StartsWith($configGhPrefix + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        return $false
+    }
+    return $true
 }
 
 function Format-Mapping {
@@ -253,23 +287,26 @@ switch ($Action) {
             Write-Error "-Repo が必須です（Git リモートリポジトリ URL）。"
             exit 1
         }
-        # URL バリデーション
-        if ($Repo -notmatch '^(https?|git|ssh)://|^git@[A-Za-z0-9._\-]+:') {
-            Write-Error "Repo URL の形式が無効です（https/http/git/ssh/git@host: のみ許可）: $Repo"
+        # URL / Branch バリデーション（sync-common.ps1 の SSOT 関数を利用、NUL バイト・'..' 等も検出）
+        if (-not (Test-RepoUrlSafe -Repo $Repo)) {
+            Write-Error "Repo URL の形式が無効です（https/http/git/ssh/git@host: のみ許可、'-' 始まり / NUL バイト禁止）: $Repo"
             exit 1
         }
-        if ($Repo.StartsWith('-')) {
-            Write-Error "Repo URL は '-' で始められません（git CLI のオプションとして解釈される危険があります）"
-            exit 1
-        }
-        if ($Branch -notmatch '^[A-Za-z0-9._/\-]+$') {
-            Write-Error "Branch 名に無効な文字が含まれています: $Branch"
+        if (-not (Test-BranchNameSafe -Branch $Branch)) {
+            Write-Error "Branch 名に無効な文字が含まれています（'..' / '/' 始まり・終わり / '-' 始まり禁止）: $Branch"
             exit 1
         }
 
         $targetsArray = Convert-TargetsString -Value $Targets
         if ($targetsArray.Count -eq 0) {
             $targetsArray = if ($Scope -eq 'global') { $DEFAULT_GLOBAL_TARGETS } else { $DEFAULT_PROJECT_TARGETS }
+        }
+        # targets の各要素を保存前に Test-TargetExcluded で検証（パストラバーサル / 認証情報を含む要素を排除）
+        foreach ($t in $targetsArray) {
+            if (Test-TargetExcluded -Target $t) {
+                Write-Error "targets に除外対象が含まれています（パストラバーサル / 認証情報 / NUL バイト等）: $t"
+                exit 1
+            }
         }
 
         $mapping = [PSCustomObject]@{
@@ -284,6 +321,11 @@ switch ($Action) {
             Write-Output "[updated] global マッピングを保存しました"
         } else {
             $projPath = Resolve-ProjectPath -Path $ProjectPath
+            # 認証ディレクトリを localBase として登録できないようガード
+            if (-not (Test-NonAuthDirectoryPath -ResolvedPath $projPath)) {
+                Write-Error "ProjectPath には認証ディレクトリ（~/.ssh / ~/.gnupg / ~/.aws / ~/.docker / ~/.kube / ~/.config/gh 等）配下を指定できません: $projPath"
+                exit 1
+            }
             $store.projects | Add-Member -NotePropertyName $projPath -NotePropertyValue $mapping -Force
             Write-Output ("[updated] project マッピングを保存しました: {0}" -f $projPath)
         }

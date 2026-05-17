@@ -92,10 +92,15 @@ function Get-Config {
 function Save-Config {
     param([PSCustomObject]$Config)
 
-    if (-not (Test-Path -LiteralPath $CONFIG_DIR)) {
-        New-Item -ItemType Directory -Force -Path $CONFIG_DIR | Out-Null
+    try {
+        if (-not (Test-Path -LiteralPath $CONFIG_DIR)) {
+            New-Item -ItemType Directory -Force -Path $CONFIG_DIR -ErrorAction Stop | Out-Null
+        }
+        $Config | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $CONFIG_FILE -Encoding UTF8 -ErrorAction Stop
+    } catch {
+        Write-Error "cleanup-config.json の保存に失敗しました: $($_.Exception.Message)"
+        exit 1
     }
-    $Config | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $CONFIG_FILE -Encoding UTF8
 }
 
 function Format-Config {

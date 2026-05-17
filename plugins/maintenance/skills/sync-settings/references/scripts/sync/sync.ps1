@@ -80,7 +80,13 @@ $CLAUDE_HOME = Join-Path $env:USERPROFILE '.claude'
 $DEFAULT_TARGETS = @('settings.json', 'skills', 'rules', 'agents', 'hooks', 'CLAUDE.md')
 
 # settings.json マージ時にローカル優先で温存する危険キー（任意コード実行リスクの抑制）
-$MERGE_LOCAL_PRIORITY_KEYS = @('hooks', 'mcpServers', 'env', 'permissions')
+# extraKnownMarketplaces / apiKeyHelper / enabledPlugins / disabledPlugins 等の認証・実行関連キーも保護
+$MERGE_LOCAL_PRIORITY_KEYS = @(
+    'hooks', 'mcpServers', 'env', 'permissions',
+    'extraKnownMarketplaces', 'apiKeyHelper', 'customApiKeyResponses',
+    'awsAuthRefresh', 'awsCredentialExport',
+    'enabledPlugins', 'disabledPlugins'
+)
 
 # --- Mapping 解決（-Mapping 指定時のみ） ---
 # -Mapping <global|project> が指定された場合、sync-mappings.json から repo / branch / targets を取得し、
@@ -123,8 +129,12 @@ if ($Mapping) {
     }
 
     # 引数未指定のフィールドのみマッピング値で補完
+    # NOTE: $Branch のデフォルト値が 'main' のため、ユーザが明示的に -Branch main を渡したか
+    #       未指定でデフォルト適用されたかを PSBoundParameters で判定する（H-impl-3 対応）
     if (-not $Repo)    { $Repo = $mappingEntry.remote_repo }
-    if ($Branch -eq 'main' -and $mappingEntry.remote_branch) { $Branch = $mappingEntry.remote_branch }
+    if (-not $PSBoundParameters.ContainsKey('Branch') -and $mappingEntry.remote_branch) {
+        $Branch = $mappingEntry.remote_branch
+    }
     if ($Targets.Count -eq 0 -and $mappingEntry.targets) { $Targets = @($mappingEntry.targets) }
 
     Write-Output ("[mapping] '$Mapping' から取得: repo={0}, branch={1}, targets={2} 件" -f $Repo, $Branch, $Targets.Count)
@@ -257,11 +267,14 @@ if (-not (Test-Path -LiteralPath $REPO_DIR)) {
         & git @GIT_SAFE_OPTS fetch --depth 1 origin $Branch 2>&1 | ForEach-Object { Write-Output "  $_" }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Git fetch 失敗"
+            # PowerShell では try 内 exit は finally を実行しないため、明示的に Pop-Location する
+            Pop-Location
             exit 1
         }
         & git @GIT_SAFE_OPTS reset --hard "origin/$Branch" 2>&1 | ForEach-Object { Write-Output "  $_" }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Git reset 失敗"
+            Pop-Location
             exit 1
         }
         & git @GIT_SAFE_OPTS clean -fdx 2>&1 | Out-Null
@@ -438,15 +451,19 @@ if ($diffEntries.Count -eq 0) {
     Write-Output ""
     Write-Output "差分がありません。同期処理をスキップします。"
 
-    # 設定保存（last_sync_at のみ更新）
-    # 注: ADR-PU-011 により sync-config.json は v0.3.0 で廃止予定（互換ストア扱い）。
+    $nowIso = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+
+    # SSOT: sync-mappings.json の該当エントリの last_sync_at を更新（-Mapping 指定時のみ、ADR-PU-011）
+    Update-MappingLastSyncAt -Scope $Mapping -ProjectPath $ProjectPath -MappingsFile $MAPPINGS_FILE -Iso $nowIso
+
+    # 互換ストア sync-config.json は v0.3.0 で廃止予定（ADR-PU-011）
     $newConfig = [PSCustomObject]@{
         version       = 1
         last_repo     = $Repo
         last_branch   = $Branch
         last_targets  = $Targets
         last_strategy = $Strategy
-        last_sync_at  = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        last_sync_at  = $nowIso
         history       = if ($config -and $config.history) { @($config.history | Select-Object -First 9) } else { @() }
     }
     $newConfig | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $CONFIG_FILE -Encoding UTF8
@@ -523,13 +540,19 @@ function Merge-JsonValue {
     param(
         $Local,
         $Remote,
-        # トップレベルマージ時のみ true。危険キー（hooks / mcpServers / env / permissions）を
-        # ローカル優先で温存し、悪意あるリモートからのコード実行リスクを抑制する。
+        # トップレベルマージ時のみ true。危険キー（MERGE_LOCAL_PRIORITY_KEYS）をローカル優先で温存し、
+        # 悪意あるリモートからのコード実行・認証情報差し替えリスクを抑制する。
+        # 再帰呼び出し時は常に $false（サブオブジェクトは保護対象外）。
         [bool]$IsRootSettings = $false
     )
     if ($null -eq $Local) { return $Remote }
     if ($null -eq $Remote) { return $Local }
-    if ($Remote -is [array]) { return $Remote }
+    if ($Remote -is [array]) {
+        if ($IsRootSettings) {
+            Write-Warning "[merge:warning] settings.json のトップレベルが配列型です（標準では想定外）。リモート値で完全置換します。"
+        }
+        return $Remote
+    }
     if ($Remote -is [PSCustomObject]) {
         $result = [ordered]@{}
         if ($Local -is [PSCustomObject]) {
@@ -538,10 +561,25 @@ function Merge-JsonValue {
             }
         }
         foreach ($p in $Remote.PSObject.Properties) {
+            # キー名 ASCII 正規化（Unicode 同形異字攻撃の遮断）: 非 ASCII を含むキーは
+            # ローカルに同名キーが存在しなければそのまま採用、存在する場合のみ保護判定対象
+            $nameAscii = ($p.Name -replace '[^\x20-\x7E]', '')
+            $hasNonAscii = ($p.Name -ne $nameAscii)
+            if ($hasNonAscii -and $IsRootSettings) {
+                Write-Warning ("[merge:safety] settings.json のキー '{0}' に非 ASCII 文字が含まれています。Unicode 同形異字攻撃の可能性があるためローカル値を優先します。" -f $p.Name)
+                if (-not $result.Contains($p.Name)) {
+                    # ローカルに同名キー不在: 採用せず無視（攻撃想定）
+                    continue
+                }
+                # ローカル存在: そのまま温存（リモート無視）
+                continue
+            }
+
             # settings.json トップレベルの危険キーはローカル優先で温存
-            if ($IsRootSettings -and ($MERGE_LOCAL_PRIORITY_KEYS -contains $p.Name)) {
+            # PowerShell の '-contains' はデフォルト case-insensitive。さらに ASCII 正規化済み name で判定する
+            if ($IsRootSettings -and ($MERGE_LOCAL_PRIORITY_KEYS -contains $nameAscii)) {
                 if ($result.Contains($p.Name)) {
-                    Write-Warning ("[merge:safety] settings.json の '{0}' キーはローカルを保持します（リモート上書き禁止: 任意コード実行リスク）" -f $p.Name)
+                    Write-Warning ("[merge:safety] settings.json の '{0}' キーはローカルを保持します（リモート上書き禁止: 任意コード実行・認証情報差し替えリスク）" -f $p.Name)
                 } else {
                     # ローカル不在の場合のみリモート値を採用（新規追加扱い）
                     $result[$p.Name] = $p.Value
@@ -550,7 +588,8 @@ function Merge-JsonValue {
                 continue
             }
             if ($result.Contains($p.Name) -and $result[$p.Name] -is [PSCustomObject] -and $p.Value -is [PSCustomObject]) {
-                $result[$p.Name] = Merge-JsonValue -Local $result[$p.Name] -Remote $p.Value
+                # 再帰呼び出しでは IsRootSettings = $false（サブオブジェクトは保護対象外）
+                $result[$p.Name] = Merge-JsonValue -Local $result[$p.Name] -Remote $p.Value -IsRootSettings $false
             } else {
                 $result[$p.Name] = $p.Value
             }
@@ -620,6 +659,11 @@ $historyEntry = [PSCustomObject]@{
     applied = $applied
     failed = $failed.Count
 }
+
+# SSOT: sync-mappings.json の該当エントリの last_sync_at を更新（-Mapping 指定時のみ、ADR-PU-011）
+Update-MappingLastSyncAt -Scope $Mapping -ProjectPath $ProjectPath -MappingsFile $MAPPINGS_FILE -Iso $historyEntry.sync_at
+
+# 互換ストア sync-config.json は v0.3.0 で廃止予定（ADR-PU-011）
 $prevHistory = if ($config -and $config.history) { @($config.history | Select-Object -First 9) } else { @() }
 $newConfig = [PSCustomObject]@{
     version = 1

@@ -226,13 +226,14 @@ if (-not (Test-Path -LiteralPath $REPO_DIR)) {
 # Get-NonReparseFileItems で再解析ポイントを追従しない自前再帰を行う。
 Write-Output ""
 Write-Output "===== ローカル → repo/ コピー ====="
-$copiedCount = 0
-$skippedExcludedCount = 0
+# $script: で宣言: ForEach-Object スクリプトブロック内（子スコープ）からも一貫してアクセスするため
+$script:copiedCount = 0
+$script:skippedExcludedCount = 0
 
 foreach ($t in $targets) {
     if (Test-TargetExcluded -Target $t) {
         Write-Warning "除外対象のためスキップ（target）: $t"
-        $skippedExcludedCount++
+        $script:skippedExcludedCount++
         continue
     }
     $localTarget = Join-Path $localBase $t
@@ -244,7 +245,7 @@ foreach ($t in $targets) {
     $localItem = Get-Item -LiteralPath $localTarget -Force -ErrorAction SilentlyContinue
     if (Test-ReparseItem -Item $localItem) {
         Write-Warning "再解析ポイントのためスキップ（target）: $t"
-        $skippedExcludedCount++
+        $script:skippedExcludedCount++
         continue
     }
 
@@ -256,7 +257,7 @@ foreach ($t in $targets) {
             New-Item -ItemType Directory -Force -Path $destDir | Out-Null
         }
         Copy-Item -LiteralPath $localTarget -Destination $destFile -Force
-        $copiedCount++
+        $script:copiedCount++
     } else {
         # ディレクトリ: 再帰的に各ファイルを除外フィルタ適用しつつコピー（reparse 安全）
         Get-NonReparseFileItems -Root $localTarget | ForEach-Object {
@@ -276,6 +277,9 @@ foreach ($t in $targets) {
         }
     }
 }
+
+$copiedCount = $script:copiedCount
+$skippedExcludedCount = $script:skippedExcludedCount
 
 Write-Output ("コピー: {0} 件、除外スキップ: {1} 件" -f $copiedCount, $skippedExcludedCount)
 
@@ -444,5 +448,9 @@ maintenance プラグインの sync-settings スキル (/sync-push) による自
 } finally {
     Pop-Location
 }
+
+# SSOT: sync-mappings.json の該当マッピングの last_sync_at を更新（ADR-PU-011）
+$nowIso = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+Update-MappingLastSyncAt -Scope $Mapping -ProjectPath $ProjectPath -MappingsFile $MAPPINGS_FILE -Iso $nowIso
 
 exit 0

@@ -245,3 +245,56 @@ function Test-BranchPrefixSafe {
     if ($Prefix.StartsWith('-')) { return $false }
     return $true
 }
+
+# --- SSOT 永続化: sync-mappings.json の該当マッピングの last_sync_at を更新 ---
+# ADR-PU-011 に基づき、sync.ps1 / sync-push.ps1 の成功パスから呼び出して
+# SSOT 側の sync-mappings.json を実体として保持する。-Scope が空の場合は何もしない。
+function Update-MappingLastSyncAt {
+    [CmdletBinding()]
+    param(
+        [string]$Scope,
+        [string]$ProjectPath,
+        [Parameter(Mandatory = $true)]
+        [string]$MappingsFile,
+        [Parameter(Mandatory = $true)]
+        [string]$Iso
+    )
+    if (-not $Scope) { return }
+    if (-not (Test-Path -LiteralPath $MappingsFile)) {
+        Write-Verbose "[update-mapping] sync-mappings.json が存在しないためスキップ"
+        return
+    }
+    try {
+        $store = Get-Content -LiteralPath $MappingsFile -Raw -Encoding UTF8 | ConvertFrom-Json
+    } catch {
+        Write-Warning "[update-mapping] sync-mappings.json のパース失敗（last_sync_at 更新をスキップ）: $($_.Exception.Message)"
+        return
+    }
+
+    if ($Scope -eq 'global') {
+        if (-not $store.global) { return }
+        $store.global | Add-Member -NotePropertyName last_sync_at -NotePropertyValue $Iso -Force
+    } elseif ($Scope -eq 'project') {
+        $resolved = $ProjectPath
+        if (-not $resolved) {
+            try {
+                $tmp = & git rev-parse --show-toplevel 2>$null
+                if ($LASTEXITCODE -eq 0 -and $tmp) { $resolved = $tmp.Trim() }
+            } catch {}
+            if (-not $resolved) { $resolved = (Get-Location).Path }
+        } else {
+            try { $resolved = (Resolve-Path -LiteralPath $resolved -ErrorAction Stop).Path } catch { return }
+        }
+        if (-not ($store.projects -and ($store.projects.PSObject.Properties.Name -contains $resolved))) { return }
+        $store.projects.$resolved | Add-Member -NotePropertyName last_sync_at -NotePropertyValue $Iso -Force
+    } else {
+        return
+    }
+
+    try {
+        $store | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $MappingsFile -Encoding UTF8 -ErrorAction Stop
+        Write-Verbose "[update-mapping] sync-mappings.json の $Scope last_sync_at を更新しました"
+    } catch {
+        Write-Warning "[update-mapping] sync-mappings.json の保存に失敗しました: $($_.Exception.Message)"
+    }
+}
