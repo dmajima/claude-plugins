@@ -26,7 +26,7 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 ### 前提
 
 - Claude Code がインストール済みで `claude plugin` サブコマンドが利用可能
-- `plugins-update` プラグイン（このスキルを含む）がインストール済み
+- `maintenance` プラグイン（このスキルを含む）がインストール済み
 - Read / Bash / Grep / `AskUserQuestion` ツールが利用可能
 - 依存プラグインなし
 

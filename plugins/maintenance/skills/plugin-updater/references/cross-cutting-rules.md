@@ -1,6 +1,6 @@
-# Cross-cutting Rules (plugins-update)
+# Cross-cutting Rules (maintenance/plugin-updater)
 
-`plugins-update` プラグインの全 Phase に横断的に適用されるルール。
+`maintenance` プラグインの `plugin-updater` スキルの全 Phase に横断的に適用されるルール。
 本ファイルは XR-1〜XR-5 の **SSOT**。コマンド本文 (`commands/update-all.md`) は本ルールへの参照のみを持ち、規則本体を再定義しない。
 
 | ID | ルール | 適用対象 |

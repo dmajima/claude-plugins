@@ -7,7 +7,7 @@
 | 起動フレーズ | "Claude の設定を Git から同期して" |
 | 引数 | なし（または `--dry-run` のみ） |
 | フラグ | なし |
-| 既存状態 | `~/.claude/.local/plugins/workspace-maintenance/sync-config.json` に前回の `last_repo` / `last_branch` / `last_strategy` が保存されている |
+| 既存状態 | `~/.claude/.local/plugins/maintenance/sync-config.json` に前回の `last_repo` / `last_branch` / `last_strategy` が保存されている |
 
 ## 期待動作
 

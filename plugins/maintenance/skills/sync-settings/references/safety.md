@@ -25,7 +25,7 @@
 ### 2.2 取得パス
 
 ```
-~/.claude/.local/plugins/workspace-maintenance/backup/{YYYYMMDD_HHmmss}/
+~/.claude/.local/plugins/maintenance/backup/{YYYYMMDD_HHmmss}/
 ```
 
 タイムスタンプは UTC ベース。同一秒に複数実行された場合は連番（`_2`、`_3`）を付与。
@@ -33,7 +33,7 @@
 ### 2.3 保持ポリシー
 
 - バックアップは自動削除しない（ユーザの明示削除に委ねる）
-- 容量逼迫時は `cleanup-workspace` スキルでは対象外（`.local/plugins/workspace-maintenance/backup/` は別管理）
+- 容量逼迫時は `cleanup-workspace` スキルでは対象外（`.local/plugins/maintenance/backup/` は別管理）
 - 必要に応じてユーザが手動削除
 
 ### 2.4 ロールバック手順
@@ -149,7 +149,7 @@
 
 ### 8.2 ローカル clone 領域への書き込み
 
-`~/.claude/.local/plugins/workspace-maintenance/repo/` 配下では `git reset --hard` + `git clean -fdx` を実行するが、これはローカルクローンの初期化のみで、リモートへは影響しない。
+`~/.claude/.local/plugins/maintenance/repo/` 配下では `git reset --hard` + `git clean -fdx` を実行するが、これはローカルクローンの初期化のみで、リモートへは影響しない。
 
 ## 9. 検証チェックリスト
 

@@ -20,7 +20,7 @@
 - ユーザが「同期する」を選択
 
 ### Phase 6: バックアップ取得
-- `~/.claude/.local/plugins/workspace-maintenance/backup/YYYYMMDD_HHmmss/` に同期対象をコピー
+- `~/.claude/.local/plugins/maintenance/backup/YYYYMMDD_HHmmss/` に同期対象をコピー
 - 認証情報（`credentials.json`）・`.env*` は除外
 
 ### Phase 7: 同期適用（overwrite）

@@ -16,7 +16,7 @@
 - `--branch main`、既定 targets、既定 strategy（overwrite）
 
 ### Phase 2: リポジトリ取得
-- `~/.claude/.local/plugins/workspace-maintenance/repo/` に新規 `git clone --depth 1 --branch main`
+- `~/.claude/.local/plugins/maintenance/repo/` に新規 `git clone --depth 1 --branch main`
 
 ### Phase 3: 同期対象解決
 - 既定 6 ターゲット（settings.json, skills, rules, agents, hooks, CLAUDE.md）について実在確認

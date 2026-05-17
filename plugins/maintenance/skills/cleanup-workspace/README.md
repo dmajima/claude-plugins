@@ -17,7 +17,7 @@ Claude Code のセッション作業領域 `.claude/.local/work/` に蓄積し�
 ### 前提
 
 - Claude Code がインストール済み
-- `workspace-maintenance` プラグインがインストール済み
+- `maintenance` プラグインがインストール済み
 - PowerShell 7+ が利用可能（Windows 主軸）
 
 ### 起動方法

@@ -18,7 +18,7 @@
 ### 前提
 
 - Claude Code がインストール済み
-- `workspace-maintenance` プラグインがインストール済み
+- `maintenance` プラグインがインストール済み
 - Git CLI 2.30+ が利用可能
 - PowerShell 7+ が利用可能（Windows 主軸）
 - 同期元リポジトリへのアクセス権限（プライベートの場合は認証設定済み）
@@ -71,7 +71,7 @@ Claude（要約）:
 
 | 装置 | 内容 |
 |-----|------|
-| バックアップ | 既定で必須。同期前に `~/.claude/.local/plugins/workspace-maintenance/backup/YYYYMMDD_HHmmss/` に取得 |
+| バックアップ | 既定で必須。同期前に `~/.claude/.local/plugins/maintenance/backup/YYYYMMDD_HHmmss/` に取得 |
 | ドライラン推奨 | 既定動作は差分表示のみ。実適用には明示承認が必要 |
 | AskUserQuestion による最終確認 | 対話モードでは同期前に必ず確認 |
 | 認証情報の除外 | `credentials.json` / `.env` 等は同期対象から自動除外 |
@@ -82,7 +82,7 @@ Claude（要約）:
 
 同期後に問題が発生した場合:
 
-1. バックアップディレクトリ（`~/.claude/.local/plugins/workspace-maintenance/backup/YYYYMMDD_HHmmss/`）を確認
+1. バックアップディレクトリ（`~/.claude/.local/plugins/maintenance/backup/YYYYMMDD_HHmmss/`）を確認
 2. 該当ファイル・ディレクトリを `~/.claude/` に戻す（手動コピー）
 3. または OS の復元機能（Windows ファイル履歴、Time Machine 等）を利用
 

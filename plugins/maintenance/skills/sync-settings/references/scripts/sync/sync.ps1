@@ -58,7 +58,7 @@ param(
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 # --- 定数 ---
-$BASE_DIR = Join-Path $env:USERPROFILE '.claude\.local\plugins\workspace-maintenance'
+$BASE_DIR = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance'
 $CONFIG_FILE = Join-Path $BASE_DIR 'sync-config.json'
 $REPO_DIR = Join-Path $BASE_DIR 'repo'
 $BACKUP_ROOT = Join-Path $BASE_DIR 'backup'

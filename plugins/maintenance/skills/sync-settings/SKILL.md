@@ -61,7 +61,7 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 
 | 取得元 | パス |
 |-------|-----|
-| 設定ファイル | `~/.claude/.local/plugins/workspace-maintenance/sync-config.json` |
+| 設定ファイル | `~/.claude/.local/plugins/maintenance/sync-config.json` |
 | 引数オーバーライド | `--repo` / `--branch` / `--targets` / `--strategy` |
 
 設定ファイル不在 + 引数不足の場合は対話で収集。
@@ -70,7 +70,7 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 
 | 状態 | 動作 |
 |-----|------|
-| 初回 | 一時ディレクトリ（`~/.claude/.local/plugins/workspace-maintenance/repo/`）に `clone` |
+| 初回 | 一時ディレクトリ（`~/.claude/.local/plugins/maintenance/repo/`）に `clone` |
 | 2 回目以降 | 既存複製で `fetch` + `reset --hard origin/<branch>` |
 
 クローン先は固定パスで再利用し、毎回 fresh checkout する（ローカル変更の混入を防ぐ）。
@@ -109,7 +109,7 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 
 ### 6. バックアップ取得
 
-`--no-backup` が指定されていなければ、同期対象を `~/.claude/.local/plugins/workspace-maintenance/backup/YYYYMMDD_HHmmss/` にコピーする。詳細は [references/procedures.md](references/procedures.md) 節 3 を参照。
+`--no-backup` が指定されていなければ、同期対象を `~/.claude/.local/plugins/maintenance/backup/YYYYMMDD_HHmmss/` にコピーする。詳細は [references/procedures.md](references/procedures.md) 節 3 を参照。
 
 ### 7. 戦略別の同期適用
 

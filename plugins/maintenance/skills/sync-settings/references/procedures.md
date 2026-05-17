@@ -7,7 +7,7 @@
 ### 1.1 設定ファイルパス
 
 ```
-~/.claude/.local/plugins/workspace-maintenance/sync-config.json
+~/.claude/.local/plugins/maintenance/sync-config.json
 ```
 
 ### 1.2 設定ファイル構造
@@ -47,7 +47,7 @@
 ### 2.1 クローン先
 
 ```
-~/.claude/.local/plugins/workspace-maintenance/repo/
+~/.claude/.local/plugins/maintenance/repo/
 ```
 
 このディレクトリは sync-settings 専用。既存内容は毎回 reset され、ローカル変更の混入を防ぐ。
@@ -55,7 +55,7 @@
 ### 2.2 取得コマンド
 
 ```powershell
-$repoDir = Join-Path $env:USERPROFILE '.claude\.local\plugins\workspace-maintenance\repo'
+$repoDir = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance\repo'
 
 if (-not (Test-Path $repoDir)) {
     git clone --depth 1 --branch $Branch $Repo $repoDir
@@ -100,7 +100,7 @@ if (-not (Test-Path $repoDir)) {
 ### 3.1 バックアップパス
 
 ```
-~/.claude/.local/plugins/workspace-maintenance/backup/{YYYYMMDD_HHmmss}/
+~/.claude/.local/plugins/maintenance/backup/{YYYYMMDD_HHmmss}/
 ```
 
 ### 3.2 取得対象
@@ -110,7 +110,7 @@ if (-not (Test-Path $repoDir)) {
 ### 3.3 取得コマンド
 
 ```powershell
-$backupRoot = Join-Path $env:USERPROFILE '.claude\.local\plugins\workspace-maintenance\backup'
+$backupRoot = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance\backup'
 $ts = Get-Date -Format 'yyyyMMdd_HHmmss'
 $backupDir = Join-Path $backupRoot $ts
 New-Item -ItemType Directory -Force -Path $backupDir | Out-Null

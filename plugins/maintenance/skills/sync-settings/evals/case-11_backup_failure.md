@@ -7,7 +7,7 @@
 | 起動フレーズ | "Claude の設定を Git から同期して" |
 | 引数 | `--repo https://github.com/myaccount/claude-settings --yes` |
 | フラグ | `--yes`（バックアップは既定で実施） |
-| 既存状態 | バックアップ取得先（`~/.claude/.local/plugins/workspace-maintenance/backup/`）が読み取り専用、または容量不足 |
+| 既存状態 | バックアップ取得先（`~/.claude/.local/plugins/maintenance/backup/`）が読み取り専用、または容量不足 |
 
 ## 期待動作
 

@@ -56,24 +56,6 @@
       ]
     },
     {
-      "name": "plugins-update",
-      "source": "./plugins/plugins-update",
-      "description": "インストール済みマーケットプレイス・プラグインを公式 CLI で一括最新化する",
-      "category": "maintenance",
-      "author": {
-        "name": "dmajima"
-      },
-      "keywords": [
-        "plugin",
-        "update",
-        "marketplace",
-        "maintenance",
-        "auto-update",
-        "command",
-        "cli"
-      ]
-    },
-    {
       "name": "convert-doc",
       "source": "./plugins/convert-doc",
       "description": "Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX → Markdown 取り込みも対応）",
@@ -138,24 +120,29 @@
       ]
     },
     {
-      "name": "workspace-maintenance",
-      "source": "./plugins/workspace-maintenance",
-      "description": "Claude Code 環境のメンテナンス（古い作業フォルダのクリーンアップ + Git リポジトリ経由の設定同期）",
+      "name": "maintenance",
+      "source": "./plugins/maintenance",
+      "description": "Claude Code 環境のメンテナンス統合プラグイン（プラグイン一括更新 / 古い作業フォルダ整理 / Git 経由設定同期）",
       "author": {
         "name": "dmajima"
       },
       "category": "maintenance",
       "keywords": [
-        "workspace",
         "maintenance",
+        "plugin-update",
+        "marketplace",
+        "auto-update",
         "cleanup",
+        "workspace",
+        "session",
+        "housekeeping",
         "sync",
         "settings",
         "git",
-        "session",
-        "housekeeping",
         "cleanup-workspace",
-        "sync-settings"
+        "sync-settings",
+        "plugin-updater",
+        "update-all"
       ]
     }
   ]

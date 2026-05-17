@@ -1,6 +1,6 @@
-# Architecture Decision Records (plugins-update)
+# Architecture Decision Records (maintenance/plugin-updater)
 
-`plugins-update` プラグイン固有の設計判断記録。プラグイン横断の規約は親マーケットプレイス側
+`maintenance` プラグインの `plugin-updater` スキル固有の設計判断記録（旧 `plugins-update` プラグインの ADR を継承し、ADR-PU-010 で統合決定）。プラグイン横断の規約は親マーケットプレイス側
 （`extension-toolkit/references/architecture-decisions.md`）を参照。
 
 > **Status 管理規約**: 各 ADR の Status は冒頭表で `Accepted` / `Proposed` / `Superseded` の
@@ -11,7 +11,7 @@
 
 | 番号 | タイトル | 状態 | 最終 CLI 仕様確認日 | 最終 Future Direction 改訂日 |
 |------|---------|------|------------------|----------------------------|
-| ADR-PU-001 | 単一プラグイン化（vs marketplace-toolkit への統合 / vs スキル化） | Accepted | N/A | 2026-05-01 (v1.0.0) |
+| ADR-PU-001 | 単一プラグイン化（vs marketplace-toolkit への統合 / vs スキル化） | **Superseded by ADR-PU-010** | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-002 | 公式 CLI 委譲（vs 低レベル git 操作 / vs 内部実装）— **Trigger ADR** | Accepted | 2026-05-01 (v1.0.0) | 2026-05-01 (v1.0.0) |
 | ADR-PU-003 | Phase A-0〜G 固定順序 | Accepted | 2026-05-01 (v1.0.0) | 2026-05-03 (v1.1.0 / A-3 追加) |
 | ADR-PU-004 | 横断ルール SSOT 配置（cross-cutting-rules.md への分離） | Accepted | N/A | 2026-05-01 (v1.0.0) |
@@ -20,6 +20,7 @@
 | ADR-PU-007 | 失敗対応の対話モデル | Accepted | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-008 | コマンドとスキルの責務分離（トリガー / 実作業） | Accepted | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-009 | installed_plugins.json をスコープ判定の SSOT に採用（Phase A-3） | Accepted | 2026-05-03 (v1.1.0) | 2026-05-03 (v1.1.0) |
+| ADR-PU-010 | `maintenance` プラグインへの統合（ADR-PU-001 の発展形）| Accepted | N/A | 2026-05-18 (maintenance v0.2.0) |
 
 > **追従漏れ検知**: 「最終 CLI 仕様確認日」「最終 Future Direction 改訂日」列は ADR-PU-002（Trigger ADR）
 > の改訂時に追従が必要な ADR を可視化するため。本表が SSOT。CLI 仕様変更時は ADR-PU-002 の
@@ -352,7 +353,7 @@ Strategy 抽象化と統合する形が望ましい。
 - **削除**: 不要になった XR は **削除せず**「Deprecated」状態として残し、別 XR への統合や置換先を
   本文末尾に明記する。番号の再利用は禁止。
 - **統合**: 複数の XR を統合する場合、新規番号を割り当て、旧 XR は Deprecated とする。
-- **他プラグインからの参照**: 本ファイルは plugins-update 専用。他プラグインから直接参照させない。
+- **他プラグインからの参照**: 本ファイルは `maintenance` プラグインの `plugin-updater` スキル専用。他プラグインから直接参照させない。
   共通化が必要なら `extension-toolkit/references/` 側に同等ファイルを用意する。
 
 ---
@@ -874,4 +875,77 @@ SSOT** として管理しており、特に **`scope=project|local` のプラグ
   対応をサポートした後の拡張）。
 - **A-3 由来 Skipped の自動修復提案**: Phase F-4 のアクション提示を受けて、ユーザが対話的に
   `enabledPlugins` から該当エントリを除外できる別コマンド（例: `/prune-enabled-plugins`）を
-  検討する（ADR-PU-001 Future Direction の `maintenance-toolkit` 内で扱う案）。
+  検討する（ADR-PU-001 Future Direction の `maintenance-toolkit` 内で扱う案、ADR-PU-010 で
+  `maintenance` プラグイン統合として実現）。
+
+---
+
+## ADR-PU-010: `maintenance` プラグインへの統合（ADR-PU-001 の発展形）
+
+### Context
+
+ADR-PU-001 では「単一プラグイン化」を採用し、`plugins-update` を独立プラグインとして
+配布してきた（v1.0.0〜v1.1.1）。同 ADR の Future Direction で「他のメンテナンス系コマンドが
+追加された場合、本プラグインを `maintenance-toolkit` 等の包括プラグインに発展させる選択肢を残す」
+と明記していた。
+
+その後、メンテナンス系の機能要件が複数登場した:
+
+- **`cleanup-workspace`**（新規）: `.claude/.local/work/` 配下の古いセッションフォルダ削除
+- **`sync-settings`**（新規）: 特定の Git リポジトリから `~/.claude/` 配下の設定を pull 同期
+- **`/update-all`**（既存・本プラグイン）: マーケットプレイス・プラグインの一括更新
+
+これら 3 機能はすべて「Claude Code 環境の運用・保守」という同一ドメインに属し、Future Direction
+で予見されていた `maintenance-toolkit` の対象となる。
+
+### Decision
+
+`plugins-update` プラグイン（独立配布）を **`maintenance` プラグインに統合** する（`workspace-maintenance`
+プラグイン v0.1.0 を `maintenance` v0.2.0 に改名・拡張する形）。`plugin-updater` スキルおよび
+`/update-all` コマンドは `maintenance/skills/plugin-updater/` および `maintenance/commands/update-all.md`
+に移管され、機能・インターフェースは互換性を維持する。
+
+旧 `plugins-update` プラグインはマーケットプレイスから削除し、README 冒頭に既存ユーザ向けの
+移行手順を明記する。
+
+### Rationale
+
+- **Future Direction の実現**: ADR-PU-001 が想定したシナリオが現実化したため、計画通りの発展を
+  選択する。
+- **発見容易性**: 「Claude Code 環境メンテナンス」を求めるユーザに対し、関連機能（更新・整理・
+  同期）を 1 プラグインで提供することで、機能発見と運用導入のコストを下げる。
+- **設計判断の整合性**: ADR-PU-002（公式 CLI 委譲）/ ADR-PU-003〜009 などの「実作業ロジック」に
+  関する判断はすべて維持される（移管はファイル配置の変更のみで、Phase 構成・横断ルール・
+  対話モデル等は無変更）。
+- **ADR-PU-008 との整合**: 「コマンド = ユーザートリガー / スキル = 実作業の SSOT」の責務分離は
+  `maintenance` プラグイン内でもそのまま機能する。
+
+### Trade-offs
+
+- **既存ユーザへの移行コスト**: `plugins-update` v1.x をインストール済みのユーザは、旧プラグインの
+  アンインストールと新プラグイン（`maintenance`）の再インストールが必要。`/update-all` コマンド自体は
+  名前・引数・出力ともに互換性維持。
+- **配布単位の独立性低下**: `cleanup-workspace` / `sync-settings` を使わないユーザでも、`maintenance`
+  プラグイン全体をインストールすることになる。ただし `dependencies: []` を維持しており、追加の
+  外部依存は発生しない。
+- **バージョン履歴の継続性**: `plugins-update` v1.1.1 のリリース履歴は新プラグイン側に継承されず、
+  `maintenance` v0.2.0 が新たな履歴起点となる。
+
+### Alternatives Considered
+
+- **完全独立維持**（ADR-PU-001 のままを継続）: Future Direction で計画していた統合機会を放棄する
+  ことになり、ユーザ視点でのプラグイン散在を解消できない。却下。
+- **3 プラグイン完全統合**（`plugins-update` + `workspace-maintenance` + `session-usage`）:
+  `session-usage` は `category=diagnostics`（環境状態の可視化）で `maintenance`（保守操作）とは
+  性質が異なる。統合すると category 整合性が崩れる。却下。
+- **依存関係でリンク**: `maintenance` プラグインの `dependencies` に `plugins-update` を追加する案。
+  クロスマーケ依存ではないため不要に複雑化する。却下。
+
+### Future Direction
+
+- **`session-usage` 統合判断の継続検討**: 「メンテナンス」と「診断（diagnostics）」の境界を
+  整理した結果、統合が妥当と判断されれば次の minor バンプで取り込む。
+- **既存ユーザ向け通知の体系化**: 統合・改名・廃止が複数発生する場合、マーケットプレイス側で
+  `deprecated` ステータスを付与する仕組みを `extension-toolkit:marketplace-toolkit` に追加する案。
+- **横断ルール（XR-1〜5）の他スキルへの適用**: `cleanup-workspace` / `sync-settings` も
+  破壊的操作を伴うため、XR-1（入力検証）/ XR-3（出力サニタイズ）の共通化を検討する。
