@@ -189,4 +189,4 @@ AskUserQuestion({
 - マッピング一覧: `/sync-map-list`
 - マッピング削除: `/sync-map-delete`
 - スキル本体: `sync-settings`
-- push 同期（将来）: `/sync-push`（Phase 3-D で実装予定）
+- push 同期: `/sync-push`（新ブランチ + PR 作成。sync-push.ps1）

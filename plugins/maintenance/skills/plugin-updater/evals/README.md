@@ -15,8 +15,12 @@
 | 06 | `case-06_invalid_scope.md` | 不正な `--scope` 値（A-0-1 バリデーション失敗） |
 | 07 | `case-07_cli_missing.md` | `claude plugin` CLI 不在（A-0-2 失敗） |
 | 08 | `case-08_circuit_breaker.md` | Phase B サーキットブレーカー発動（MP 単位累計 3 件 Failed） |
-| 09 | `case-09_phase_g_retry.md` | Phase G 失敗対応 AskUserQuestion + リトライ |
+| 09 | `case-09_phase_g_retry.md` | Phase G 失敗対応 AskUserQuestion + リトライ（5 件以下） |
 | 10 | `case-10_a_sec_secret_isolation.md` | A-Sec シークレット非接触（`enabledPlugins` 以外のキー混入禁止）|
+| 11 | `case-11_a_sec_fail_closed.md` | A-Sec フェイルクローズ（Unicode escape / forbidden_key / 終端未検出 / 4000 行超過） |
+| 12 | `case-12_a3_project_path_mismatch.md` | A-3 projectPath 不一致 → Skipped（現在のプロジェクト外） |
+| 13 | `case-13_phase_g_6plus_failed.md` | Phase G の Failed 6 件以上（個別判断 UI 非提示） |
+| 14 | `case-14_xr5_unknown_threshold.md` | XR-5 Unknown 閾値警告（Unknown 区分が試行済みの 20% 超）|
 
 ## 設計方針
 
