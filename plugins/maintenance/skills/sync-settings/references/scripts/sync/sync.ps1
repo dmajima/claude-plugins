@@ -34,6 +34,11 @@
 
 [CmdletBinding()]
 param(
+    [ValidateSet('', 'global', 'project')]
+    [string]$Mapping = '',
+
+    [string]$ProjectPath = '',
+
     [string]$Repo = '',
 
     [string]$Branch = 'main',
@@ -60,11 +65,60 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 # --- 定数 ---
 $BASE_DIR = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance'
 $CONFIG_FILE = Join-Path $BASE_DIR 'sync-config.json'
+$MAPPINGS_FILE = Join-Path $BASE_DIR 'sync-mappings.json'
 $REPO_DIR = Join-Path $BASE_DIR 'repo'
 $BACKUP_ROOT = Join-Path $BASE_DIR 'backup'
 $CLAUDE_HOME = Join-Path $env:USERPROFILE '.claude'
 
 $DEFAULT_TARGETS = @('settings.json', 'skills', 'rules', 'agents', 'hooks', 'CLAUDE.md')
+
+# --- Mapping 解決（-Mapping 指定時のみ） ---
+# -Mapping <global|project> が指定された場合、sync-mappings.json から repo / branch / targets を取得し、
+# 引数で明示指定されていないフィールドのみ上書きする（引数明示は常に優先）。
+if ($Mapping) {
+    if (-not (Test-Path -LiteralPath $MAPPINGS_FILE)) {
+        Write-Error "Mapping '$Mapping' を解決するには sync-mappings.json が必要です。/sync-map-set で設定してください。"
+        exit 1
+    }
+    try {
+        $mappingsStore = Get-Content -LiteralPath $MAPPINGS_FILE -Raw -Encoding UTF8 | ConvertFrom-Json
+    } catch {
+        Write-Error "sync-mappings.json のパース失敗: $($_.Exception.Message)"
+        exit 1
+    }
+
+    $mappingEntry = $null
+    if ($Mapping -eq 'global') {
+        $mappingEntry = $mappingsStore.global
+    } else {
+        # project: ProjectPath 指定 or カレントディレクトリのリポジトリルート
+        $resolvedProject = $ProjectPath
+        if (-not $resolvedProject) {
+            try {
+                $tmp = & git rev-parse --show-toplevel 2>$null
+                if ($LASTEXITCODE -eq 0 -and $tmp) { $resolvedProject = $tmp.Trim() }
+            } catch {}
+            if (-not $resolvedProject) { $resolvedProject = (Get-Location).Path }
+        } else {
+            $resolvedProject = (Resolve-Path -LiteralPath $resolvedProject -ErrorAction SilentlyContinue).Path
+        }
+        if ($mappingsStore.projects -and ($mappingsStore.projects.PSObject.Properties.Name -contains $resolvedProject)) {
+            $mappingEntry = $mappingsStore.projects.$resolvedProject
+        }
+    }
+
+    if (-not $mappingEntry) {
+        Write-Error "Mapping '$Mapping' に対応するマッピングが sync-mappings.json に存在しません。/sync-map-set で設定してください。"
+        exit 1
+    }
+
+    # 引数未指定のフィールドのみマッピング値で補完
+    if (-not $Repo)    { $Repo = $mappingEntry.remote_repo }
+    if ($Branch -eq 'main' -and $mappingEntry.remote_branch) { $Branch = $mappingEntry.remote_branch }
+    if ($Targets.Count -eq 0 -and $mappingEntry.targets) { $Targets = @($mappingEntry.targets) }
+
+    Write-Output ("[mapping] '$Mapping' から取得: repo={0}, branch={1}, targets={2} 件" -f $Repo, $Branch, $Targets.Count)
+}
 
 # 同期対象から常に除外（安全装置）
 $EXCLUDE_TARGETS = @('credentials.json', '.env', '.local', '.git', 'plugins/cache')
