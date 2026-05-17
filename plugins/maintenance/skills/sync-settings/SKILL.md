@@ -5,7 +5,7 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 
 # Sync Settings
 
-特定の Git リポジトリから Claude Code のユーザ設定（`~/.claude/settings.json` / `~/.claude/skills/` / `~/.claude/rules/` / `~/.claude/agents/` 等）を **pull 方向のみ** で同期するスキル。Git による履歴管理を前提に、ドライラン + バックアップ + `AskUserQuestion` 確認の多層安全装置を備える。
+特定の Git リポジトリと Claude Code のユーザ設定（`~/.claude/settings.json` / `~/.claude/skills/` / `~/.claude/rules/` / `~/.claude/agents/` 等）を **pull / push 双方向** で同期するスキル。pull は `/sync-pull`（既存）/ push は `/sync-push`（Phase 3-D 追加）で操作。Git による履歴管理を前提に、ドライラン + バックアップ + `AskUserQuestion` 確認の多層安全装置を備える。
 
 ## 責務
 
@@ -139,7 +139,7 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 
 ## 重要な制約
 
-- pull 方向のみ。リモートへの push は対象外
+- pull / push 双方向対応（pull は `sync.ps1` / push は `sync-push.ps1`、マッピング設定 `sync-mappings.json` を共有）
 - バックアップは既定で必須。`--no-backup` 指定時はその旨を明示警告
 - `~/.claude/.git` 等の Git メタデータは同期対象外（リモートに含まれる場合も除外）
 - 認証情報（`credentials.json` / `.env` / `*.pem` / `*.key` 等）は同期対象から自動除外（大小文字非感応・正規化済み判定）
@@ -160,8 +160,12 @@ description: Git リポジトリから Claude Code 設定（`settings.json` / `s
 | 詳細実行手順 | [references/procedures.md](references/procedures.md) |
 | 安全装置 | [references/safety.md](references/safety.md) |
 | 同期戦略 | [references/strategies.md](references/strategies.md) |
-| 実装スクリプト（同期本体） | [`references/scripts/sync/sync.ps1`](references/scripts/sync/sync.ps1) |
+| 実装スクリプト（pull 同期本体） | [`references/scripts/sync/sync.ps1`](references/scripts/sync/sync.ps1) |
+| 実装スクリプト（push 同期） | [`references/scripts/sync/sync-push.ps1`](references/scripts/sync/sync-push.ps1) |
 | 実装スクリプト（マッピングストア CRUD） | [`references/scripts/sync/sync-mappings.ps1`](references/scripts/sync/sync-mappings.ps1) |
 | マッピング設定ファイル | `~/.claude/.local/plugins/maintenance/sync-mappings.json`（グローバル配下に集約。global + projects[<absolute_path>] のスコープ別マッピング）|
+| コマンド（pull） | `/sync-pull`（`commands/sync-pull.md`）|
+| コマンド（push） | `/sync-push`（`commands/sync-push.md`）|
+| コマンド（マッピング設定）| `/sync-map-set` / `/sync-map-list` / `/sync-map-delete` |
 | 認証情報管理（関連プラグイン） | `credentials-manager`（プライベート repo 同期時に推奨） |
 | 動作例 | [evals/](evals/) |
