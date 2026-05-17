@@ -29,6 +29,8 @@
 | case-21 | 不正 URL / Branch 名のバリデーション失敗（4 sub-case） | REPO_URL_REGEX / BRANCH_REGEX 違反 / マッピング由来値の再検証 |
 | case-22 | `/sync-push` の `--Yes` なし時の安全停止 | --Yes 未指定 + 差分あり → push 実行せず exit 0 |
 | case-23 | `/sync-push` PR 作成失敗時のロールバック / 手動案内 | gh CLI 存在 + 認証エラー等で `gh pr create` 失敗 → warning + 手動案内（リモートブランチは残置）|
+| case-24 | merge 戦略での危険キー（hooks / mcpServers / env / permissions 等）ローカル温存 | safety.md 節 9 + Unicode 同形異字攻撃の遮断（3 sub-case）|
+| case-25 | pull / push / バックアップ取得で symlink を追従しない | Get-NonReparseFileItems の 3 経路適用（3 sub-case）|
 
 ## 実行確認方法
 

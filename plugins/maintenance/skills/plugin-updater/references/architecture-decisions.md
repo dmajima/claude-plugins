@@ -1022,3 +1022,122 @@ Phase 3-A（マッピング機構導入）以降、`sync-mappings.json` がプ�
 
 - v0.3.0 リリースタイミングで `sync-config.json` の検出 → 自動マイグレーション（mapping 化）を
   オプションで提供する案を検討する。
+
+---
+
+## ADR-PU-012: 設定ファイルの version スキーマ検証ポリシー統一
+
+### Context
+
+`maintenance` プラグインには複数の JSON 設定ファイルが存在し、それぞれが `version` フィールドを
+持つ:
+
+| ファイル | version | 検証ロジック |
+|---------|---------|------------|
+| `cleanup-config.json` | 1 | 旧来は不在（Cycle 5 で追加） |
+| `sync-mappings.json` | 2 | `Get-MappingsStore` で version 不一致を検出して空ストアにフォールバック |
+| `sync-config.json` | 1 | v0.3.0 廃止予定（ADR-PU-011） |
+
+これまで cleanup-config.json は version 検証なしで運用しており、Cycle 5 アーキレビュー H-arch-1 で
+スキーマ進化時のリスクが指摘された。
+
+### Decision
+
+すべての設定ファイル読み込みで以下のポリシーを統一する:
+
+1. `version` フィールドがファイルに存在する場合は、現行スキーマ version と比較する
+2. **不一致**: warning を出力し、**出荷時デフォルトを採用** する（旧設定は無視）
+3. **一致または不在**: 不足フィールドを既定値で補完して使用
+
+### Rationale
+
+- スキーマ進化時の互換性管理ポリシーを明示化
+- `installed_plugins.json` (ADR-PU-009) や sync-mappings.json (ADR-PU-011) と一貫した挙動
+- ユーザは旧 version の設定ファイルを手動マイグレーションするか、出荷時デフォルトで運用するか
+  を意識的に選択できる
+
+### Migration Plan
+
+- v0.2.x: cleanup-config.json への version 検証ロジックを追加（Cycle 6 完了）
+- v0.3.0+: 新規 JSON 設定ファイル追加時は同ポリシーを必須化
+
+### Trade-offs
+
+- 旧 version 設定の自動マイグレーションは行わない（ユーザの明示的な再設定を要求）
+- ファイル増加時にロジックを 1 箇所で更新できるよう、将来的に
+  `Read-MaintenanceConfig -Path <path> -CurrentVersion <int>` のヘルパー化を検討
+
+---
+
+## ADR-PU-013: maintenance プラグイン自身のキャッシュディレクトリ寿命管理
+
+### Context
+
+`maintenance` プラグインは以下のキャッシュ / 中間ディレクトリを `~/.claude/.local/plugins/maintenance/`
+配下に蓄積する:
+
+- `repo/` — sync-settings pull 用 clone 領域（`--depth 1`）
+- `repo-push/` — sync-settings push 用 clone 領域（`--depth 1`）
+- `backup/` — sync-settings バックアップ領域（YYYYMMDD_HHmmss 連番）
+
+`cleanup-workspace` スキルは `.claude/.local/work/` 配下のセッションフォルダのみを対象とし、
+これらのキャッシュには触れない。Cycle 5 アーキレビュー H-arch-2 で「メンテナンスプラグイン自身が
+散らかる」状態が指摘された。
+
+### Decision
+
+`repo/` / `repo-push/` / `backup/` の管理ポリシーを次の通り明示する:
+
+| ディレクトリ | 寿命管理 | 削除タイミング |
+|------------|---------|--------------|
+| `repo/` | 手動 | 利用者が明示的に削除（再 clone で自動再生成） |
+| `repo-push/` | 手動 | 同上 |
+| `backup/` | 手動 | 利用者が古いバックアップを定期削除（自動削除は不可、復旧用） |
+
+`cleanup-workspace` の責務は `.claude/.local/work/` 配下のセッションフォルダ削除に限定し、
+maintenance キャッシュへの干渉は行わない（責務分離の明示化）。
+
+### Rationale
+
+- バックアップは復旧用途のため自動削除のリスクが高い（ユーザの明示判断必須）
+- `repo/` / `repo-push/` は `--depth 1` で容量を抑え、削除しても再 clone で復元可能
+- 将来的に容量逼迫が問題化した場合は別途 `/maintenance-clean-cache` 等のコマンドを検討
+
+### Migration Plan
+
+- v0.2.x: README に寿命管理ポリシーを記載（Cycle 6 完了予定）
+- v0.4.0+: 必要に応じて `cleanup-workspace --include-maintenance-cache` 等のオプション追加を検討
+
+---
+
+## ADR-PU-014: plugin-updater スキル直接起動時のフェイルセーフ動作
+
+### Context
+
+`plugin-updater` スキルは ADR-PU-008 で「`/update-all` コマンド経由のみ起動」と方針化したが、
+SKILL.md の description には `Use only when explicitly invoked via /update-all` と記載しても、
+Claude Code の AI トリガー判定は description のキーワード適合度で起動を判断するため、
+ユーザが「プラグインを最新にして」等と発話した場合、AI が直接スキルを起動する可能性が残る。
+
+Cycle 5 アーキレビュー H-arch-3 で「直接起動時の引数不在による予期しない挙動」が指摘された。
+
+### Decision
+
+`plugin-updater` スキルは以下のフェイルセーフ動作を SKILL.md に明示する:
+
+| 起動経路 | 引数渡し | フェイルセーフ動作 |
+|---------|---------|------------------|
+| `/update-all` コマンド経由 | `mode=<value> scope=<value>` を明示 | コマンド側が validated 済みの値を渡す |
+| AI 直接起動 | `mode` / `scope` 不在または空文字列 | `mode = normal`, `scope = all` を採用 |
+| `mode` / `scope` に不正値 | 任意 | A-0-1 で早期失敗（既存挙動） |
+
+### Rationale
+
+- 直接起動された場合でも安全に動作させる（破壊的副作用は Phase G の AskUserQuestion で抑止）
+- description に強制力を持たせる代わりに、コードレベルで防御層を入れる
+- ADR-PU-008 の「コマンド経由のみ」原則は意図表明として残し、実装は両経路に対応
+
+### Migration Plan
+
+- v0.2.x: SKILL.md「起動コンテキスト」に既定値を明示（Cycle 6 完了）
+- v0.3.0+: phase-flow.md A-0-1 にフェイルセーフ判定の擬似コードを追加する案を検討

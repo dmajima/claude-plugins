@@ -69,10 +69,16 @@ $config = [PSCustomObject]@{
 if (Test-Path -LiteralPath $CONFIG_FILE) {
     try {
         $loaded = Get-Content -LiteralPath $CONFIG_FILE -Raw -Encoding UTF8 | ConvertFrom-Json
-        foreach ($p in @($config.PSObject.Properties)) {
-            $name = $p.Name
-            if ($loaded.PSObject.Properties.Name -contains $name) {
-                $config.$name = $loaded.$name
+        # スキーマバージョン検証（ADR-PU-012）
+        $loadedVersion = if ($loaded.PSObject.Properties.Name -contains 'version') { $loaded.version } else { $null }
+        if ($null -ne $loadedVersion -and $loadedVersion -ne $config.version) {
+            Write-Warning "[schema] cleanup-config.json の version=$loadedVersion は本スキーマ（version=$($config.version)）と一致しません。出荷時デフォルトを採用します。"
+        } else {
+            foreach ($p in @($config.PSObject.Properties)) {
+                $name = $p.Name
+                if ($loaded.PSObject.Properties.Name -contains $name) {
+                    $config.$name = $loaded.$name
+                }
             }
         }
     } catch {
@@ -186,7 +192,9 @@ if ($Scope -eq 'project' -or $Scope -eq 'both') {
     $projectRoot = Join-Path $repoRoot '.claude\.local\work'
     if (Test-Path -LiteralPath $projectRoot -PathType Container) {
         $resolvedProject = (Resolve-Path -LiteralPath $projectRoot).Path
-        if (-not ($roots.Path -contains $resolvedProject)) {
+        # $roots.Path -contains は配列空時に $null になり脆い。Where-Object で堅牢化。
+        $duplicate = @($roots | Where-Object { $_.Path -eq $resolvedProject })
+        if ($duplicate.Count -eq 0) {
             $roots += [PSCustomObject]@{ Scope = 'project'; Path = $resolvedProject }
         }
     }

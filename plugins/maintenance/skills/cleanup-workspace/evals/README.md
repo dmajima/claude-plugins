@@ -24,6 +24,7 @@
 | case-16 | `/cleanup-config` 対話モード（引数なし・4 質問同時発火） | `$ARGUMENTS` が空 → AskUserQuestion 1 回で 4 質問同時 |
 | case-17 | --scope project（プロジェクトのみ・非リポジトリ環境フォールバック含む） | `--scope project` 指定 |
 | case-18 | --scope both で global/project が同一パスを指す重複排除 | procedures.md 1.1 同一パス重複除外 |
+| case-19 | 削除途中の権限エラー / ロック発生時の続行 | safety.md 節 6 失敗時の続行（1 件失敗で残りは続行） |
 
 ## 実行確認方法
 

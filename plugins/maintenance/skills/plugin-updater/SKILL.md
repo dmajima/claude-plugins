@@ -54,10 +54,23 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 
 呼び出し元コマンドから次の情報を受け取る:
 
-| キー | 値の例 | 説明 |
-|------|--------|------|
-| `mode` | `normal` / `dry-run` | 通常実行か実行予定提示のみか |
-| `scope` | `user` / `project` / `local` / `all` | 対象スコープ（`all` は省略時の既定） |
+| キー | 値の例 | 既定値（直接スキル起動時） | 説明 |
+|------|--------|--------------|------|
+| `mode` | `normal` / `dry-run` | `normal` | 通常実行か実行予定提示のみか |
+| `scope` | `user` / `project` / `local` / `all` | `all` | 対象スコープ |
+
+### フェイルセーフ既定値
+
+AI トリガー判定で本スキルが `/update-all` コマンドを経由せず直接起動された場合
+（ユーザ発話による誤起動等）、`mode` / `scope` が空文字列で渡される可能性がある。
+本スキルは以下のフェイルセーフ動作を行う:
+
+- `mode` が空 → `normal` を採用
+- `scope` が空 → `all` を採用
+- `mode` / `scope` が許容値以外（`maybe` / `foo` 等） → A-0-1 早期失敗
+
+これにより、直接起動された場合でも安全に動作する（破壊的副作用は dry-run でないとしても
+Phase G の AskUserQuestion 確認で抑止される）。
 
 ## 設計判断・実行手順の SSOT
 

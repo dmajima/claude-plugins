@@ -191,6 +191,21 @@ maintenance/
         └── evals/                              # 22 ケース（各戦略 / interactive / マッピング / push 等）
 ```
 
+## キャッシュディレクトリの寿命管理（ADR-PU-013）
+
+`maintenance` プラグインは以下のキャッシュを `~/.claude/.local/plugins/maintenance/` 配下に
+蓄積します。**自動削除は行わない** 設計のため、必要に応じて手動削除してください。
+
+| ディレクトリ | 用途 | 削除方針 |
+|------------|------|---------|
+| `repo/` | sync-settings pull 用 clone 領域（`--depth 1`） | 任意に削除可。次回 pull で自動再生成 |
+| `repo-push/` | sync-settings push 用 clone 領域（`--depth 1`） | 任意に削除可。次回 push で自動再生成 |
+| `backup/` | sync-settings バックアップ領域（`YYYYMMDD_HHmmss` 連番） | 復旧用途のため自動削除は不可。利用者が定期削除（古いものから） |
+| `sync-config.json` / `sync-mappings.json` / `cleanup-config.json` | 設定ファイル | 削除すると次回起動時に再生成（マッピングは要再設定） |
+
+`cleanup-workspace` スキルは `.claude/.local/work/` 配下のセッションフォルダを対象とし、
+**maintenance キャッシュには干渉しません**（責務分離）。
+
 ## 関連プラグイン
 
 | プラグイン | 関係 |

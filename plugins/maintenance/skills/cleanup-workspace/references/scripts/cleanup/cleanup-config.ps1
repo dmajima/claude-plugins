@@ -73,6 +73,14 @@ function Get-Config {
     }
     try {
         $loaded = Get-Content -LiteralPath $CONFIG_FILE -Raw -Encoding UTF8 | ConvertFrom-Json
+
+        # スキーマバージョン検証（ADR-PU-012 と整合）
+        $loadedVersion = if ($loaded.PSObject.Properties.Name -contains 'version') { $loaded.version } else { $null }
+        if ($null -ne $loadedVersion -and $loadedVersion -ne $DEFAULT_CONFIG.version) {
+            Write-Warning "[schema] cleanup-config.json の version=$loadedVersion は本スキーマ（version=$($DEFAULT_CONFIG.version)）と一致しません。出荷時デフォルトを採用します。"
+            return $DEFAULT_CONFIG
+        }
+
         # 既定値で不足フィールドを補完
         # 演算子優先順位: '-not' は '-contains' より高束縛のため、明示的に括弧でグループ化する。
         # （括弧なしだと '-not <配列>' が先評価され $false になり、補完が実質機能しない）

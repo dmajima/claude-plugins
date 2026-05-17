@@ -234,53 +234,54 @@ if (-not $gitCmd) {
 }
 
 # --- Git clone / reset ---
+# 線形管理: try/finally による暗黙の Pop ではなく、各分岐の前後で Push/Pop を明示する。
+# PowerShell の exit は finally を実行するため、try/finally と明示 Pop の併用は二重 Pop を
+# 引き起こす（Cycle 5 実装レビュー H-1 への対応）。
 Write-Output ""
 Write-Output "===== リポジトリ取得 ====="
 Write-Output "Repo:   $Repo"
 Write-Output "Branch: $Branch"
 
-if (-not (Test-Path -LiteralPath $REPO_DIR)) {
+function Invoke-FreshClone {
     & git @GIT_SAFE_OPTS clone --depth 1 --branch $Branch -- $Repo $REPO_DIR 2>&1 | ForEach-Object { Write-Output "  $_" }
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Git clone 失敗: exit $LASTEXITCODE"
         exit 1
     }
+}
+
+if (-not (Test-Path -LiteralPath $REPO_DIR)) {
+    Invoke-FreshClone
 } else {
+    # 既存 repo/ の origin が想定の URL と一致するか確認（攻撃者書き換え検出）
     Push-Location $REPO_DIR
-    try {
-        # 既存 repo/ の origin が想定の URL と一致するか確認（攻撃者書き換え検出）
-        $currentOrigin = (& git remote get-url origin 2>$null)
-        if ($LASTEXITCODE -eq 0 -and $currentOrigin) {
-            $currentOrigin = $currentOrigin.Trim()
-            if ($currentOrigin -ne $Repo) {
-                Write-Warning "既存 repo/ の origin が期待値と異なります（期待: $Repo / 実際: $currentOrigin）。再 clone を実施します。"
-                Pop-Location
-                Remove-Item -LiteralPath $REPO_DIR -Recurse -Force -ErrorAction Stop
-                & git @GIT_SAFE_OPTS clone --depth 1 --branch $Branch -- $Repo $REPO_DIR 2>&1 | ForEach-Object { Write-Output "  $_" }
-                if ($LASTEXITCODE -ne 0) {
-                    Write-Error "Git clone 失敗: exit $LASTEXITCODE"
-                    exit 1
-                }
-                Push-Location $REPO_DIR
-            }
+    $currentOrigin = (& git remote get-url origin 2>$null)
+    Pop-Location
+    if ($LASTEXITCODE -eq 0 -and $currentOrigin) {
+        $currentOrigin = $currentOrigin.Trim()
+        if ($currentOrigin -ne $Repo) {
+            Write-Warning "既存 repo/ の origin が期待値と異なります（期待: $Repo / 実際: $currentOrigin）。再 clone を実施します。"
+            Remove-Item -LiteralPath $REPO_DIR -Recurse -Force -ErrorAction Stop
+            Invoke-FreshClone
         }
-        & git @GIT_SAFE_OPTS fetch --depth 1 origin $Branch 2>&1 | ForEach-Object { Write-Output "  $_" }
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Git fetch 失敗"
-            # PowerShell では try 内 exit は finally を実行しないため、明示的に Pop-Location する
-            Pop-Location
-            exit 1
-        }
-        & git @GIT_SAFE_OPTS reset --hard "origin/$Branch" 2>&1 | ForEach-Object { Write-Output "  $_" }
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Git reset 失敗"
-            Pop-Location
-            exit 1
-        }
-        & git @GIT_SAFE_OPTS clean -fdx 2>&1 | Out-Null
-    } finally {
-        Pop-Location
     }
+
+    # fetch / reset / clean は Push-Location 内で実行（各分岐で明示 Pop-Location）
+    Push-Location $REPO_DIR
+    & git @GIT_SAFE_OPTS fetch --depth 1 origin $Branch 2>&1 | ForEach-Object { Write-Output "  $_" }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Git fetch 失敗"
+        Pop-Location
+        exit 1
+    }
+    & git @GIT_SAFE_OPTS reset --hard "origin/$Branch" 2>&1 | ForEach-Object { Write-Output "  $_" }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Git reset 失敗"
+        Pop-Location
+        exit 1
+    }
+    & git @GIT_SAFE_OPTS clean -fdx 2>&1 | Out-Null
+    Pop-Location
 }
 
 # 取得した commit SHA
