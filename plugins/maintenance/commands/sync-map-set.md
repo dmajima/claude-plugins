@@ -1,6 +1,6 @@
 ---
 description: maintenance sync-settings のマッピング設定/更新
-argument-hint: "[--scope <global|project>] [--repo <url>] [--branch <branch>] [--targets <csv>] [--project-path <path>]"
+argument-hint: "[--scope ...] [--repo URL] [--branch B] [--targets CSV]"
 ---
 
 `maintenance` プラグインの `sync-settings` スキルが利用するマッピング設定ファイル `~/.claude/.local/plugins/maintenance/sync-mappings.json`（グローバル配下）に、カレントディレクトリの project マッピング（または `--scope global` 指定で global マッピング）を **設定/更新** する。

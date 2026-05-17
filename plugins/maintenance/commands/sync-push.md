@@ -1,6 +1,6 @@
 ---
 description: maintenance sync-settings のマッピングに従って push 同期（別ブランチ + PR 作成）
-argument-hint: "[--scope <global|project>] [--commit-message <msg>] [--branch-prefix <prefix>] [--pr-title <title>] [--pr-body <body>] [--no-pr] [--project-path <path>] [--dry-run] [--yes]"
+argument-hint: "[--scope ...] [--no-pr] [--dry-run] [--yes]"
 ---
 
 `maintenance` プラグインの `sync-settings` スキルが利用するマッピング設定 `sync-mappings.json` に従って、ローカルの `~/.claude/` または `<project>/.claude/` 配下を **push 方向** でリモート Git リポジトリへ送信するコマンド。

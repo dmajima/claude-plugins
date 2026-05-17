@@ -1,6 +1,6 @@
 ---
 description: maintenance cleanup-workspace の閾値設定を表示・変更
-argument-hint: "[--show] [--set-days N] [--set-keep-recent N] [--set-scope <global|project|both>] [--set-active-minutes N] [--reset --yes]"
+argument-hint: "[--show] [--set-... N|name] [--reset --yes]"
 ---
 
 `maintenance` プラグインの `cleanup-workspace` スキルが参照する閾値設定ファイル `~/.claude/.local/plugins/maintenance/cleanup-config.json`（グローバル配下）を表示・変更・リセットするコマンド。

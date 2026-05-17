@@ -1,6 +1,6 @@
 ---
 description: maintenance sync-settings のマッピングに従って pull 同期
-argument-hint: "[--scope <global|project>] [--strategy <overwrite|merge|skip|interactive>] [--dry-run] [--no-backup] [--prune] [--yes]"
+argument-hint: "[--scope ...] [--strategy ...] [--dry-run] [--yes]"
 ---
 
 `maintenance` プラグインの `sync-settings` スキルが利用するマッピング設定 `sync-mappings.json` に従って、リモート Git リポジトリから `~/.claude/` または `<project>/.claude/` 配下を **pull 同期** するコマンド。
