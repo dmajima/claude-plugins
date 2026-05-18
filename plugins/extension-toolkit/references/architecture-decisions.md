@@ -2,11 +2,11 @@
 
 `extension-toolkit` プラグインの主要な設計判断とその根拠。
 
-## ADR-001: 10 スキル + 1 オーケストレータコマンドの 3 層構成
+## ADR-001: 11 スキル + 1 オーケストレータコマンドの 3 層構成（ADR-029 で mit-license-toolkit 追加）
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | `toolkit` 系 8（skill / plugin / command / agent / hook / readme / environment-setup / marketplace、`marketplace` 追加は ADR-020 参照）+ `reviewer` 1 + `publisher` 1 = 10 スキル + オーケストレータ `/extension` の 3 層パイプラインで構成 |
+| 決定 | `toolkit` 系 9（skill / plugin / command / agent / hook / readme / environment-setup / marketplace / mit-license、`marketplace` 追加は ADR-020、`mit-license` 追加は ADR-029 を参照）+ `reviewer` 1 + `publisher` 1 = **11 スキル** + オーケストレータ `/extension` の 3 層パイプラインで構成 |
 | 理由 | 1 スキル 1 責務（SRP）の徹底。各スキルが他スキルを Skill ツール経由で呼び出す疎結合。ユーザはオーケストレータ（`/extension`）または個別スキル（自然言語起動）の両方で利用可能 |
 | トレードオフ | スキル間連携のオーケストレーションが `/extension` と各 SKILL.md「引き渡し」表に分散する |
 | 代替案 | 単一の mega-skill で全機能提供 → SKILL.md 200 行制約に違反、却下 |
@@ -74,7 +74,7 @@
 | 項目 | 内容 |
 |------|------|
 | 決定 | 各 `*-toolkit` の検証セクション と `extension-reviewer/references/automated-checks.md` で参照する検証ルールを `references/validation-rules.md` に集約。各参照元はチェックリストの該当節を指定して引用する |
-| 理由 | 検証ルールが 10 スキル（toolkit 系 8 + extension-reviewer + marketplace-publisher）に散在すると更新時の整合性維持が困難（SSOT 違反） |
+| 理由 | 検証ルールが 11 スキル（toolkit 系 9 + extension-reviewer + marketplace-publisher）に散在すると更新時の整合性維持が困難（SSOT 違反） |
 | トレードオフ | 参照階層が深くなる |
 | 代替案 | 各スキル内に重複記述 → 更新コスト増、却下 |
 
@@ -82,7 +82,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | toolkit 系 8 スキル（skill / plugin / command / agent / hook / readme / environment-setup / marketplace、`marketplace` 追加は ADR-020 参照）の名称を `*-toolkit` で統一。プラグイン名 `extension-toolkit`、Git ブランチ `feature/extension-toolkit` も同命名 |
+| 決定 | toolkit 系 9 スキル（skill / plugin / command / agent / hook / readme / environment-setup / marketplace / mit-license、`marketplace` 追加は ADR-020、`mit-license` 追加は ADR-029 参照）の名称を `*-toolkit` で統一。プラグイン名 `extension-toolkit`、Git ブランチ `feature/extension-toolkit` も同命名 |
 | 理由 | (1) `creator` は新規作成のみのニュアンスだが、これらスキルは改修・高度化も担当する。(2) `example-skills:skill-creator` という外部スキルとの命名衝突を回避 |
 | トレードオフ | リネームによる参照置換ミスのリスクがあり、規約遵守時はレビューによる検証が必要 |
 | 代替案 | 一部スキルのみリネーム → 命名規則の不統一、却下 |
