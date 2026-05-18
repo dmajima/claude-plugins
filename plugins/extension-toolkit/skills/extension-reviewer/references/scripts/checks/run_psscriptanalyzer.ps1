@@ -80,17 +80,38 @@ if (-not (Test-Path -LiteralPath $setupScript -PathType Leaf)) {
     exit 0
 }
 
-$psmodulePath = & pwsh -NoProfile -NonInteractive -File $setupScript `
-    -ModuleName 'PSScriptAnalyzer' `
-    -RequiredVersion '1.22.0' `
-    -TTLDays 30 2>&1 | Select-Object -Last 1
-$setupExit = $LASTEXITCODE
+# setup_psmodule.ps1 の結果は JSON 経由で受け取る（stdout 経由は Write-Host/stderr 混入リスクあり）
+$setupJsonPath = [System.IO.Path]::GetTempFileName()
+try {
+    & pwsh -NoProfile -NonInteractive -File $setupScript `
+        -ModuleName 'PSScriptAnalyzer' `
+        -RequiredVersion '1.22.0' `
+        -TTLDays 30 `
+        -OutputJson $setupJsonPath | Out-Null
+    $setupExit = $LASTEXITCODE
+
+    $psmodulePath = ''
+    $setupStatus = ''
+    if (Test-Path -LiteralPath $setupJsonPath -PathType Leaf) {
+        try {
+            $setupData = Get-Content -Raw -LiteralPath $setupJsonPath -Encoding utf8 | ConvertFrom-Json
+            $psmodulePath = [string]$setupData.path
+            $setupStatus = [string]$setupData.status
+        } catch {
+            # JSON 読込失敗時は psmodulePath を空のままにして次のガードへ
+        }
+    }
+} finally {
+    if (Test-Path -LiteralPath $setupJsonPath -PathType Leaf) {
+        Remove-Item -LiteralPath $setupJsonPath -Force -ErrorAction SilentlyContinue
+    }
+}
 
 if ($setupExit -ne 0 -or [string]::IsNullOrWhiteSpace($psmodulePath) -or -not (Test-Path -LiteralPath $psmodulePath)) {
-    Write-Output "[SKIP] PSScriptAnalyzer cache unavailable (setup exit=$setupExit, path=$psmodulePath)"
+    Write-Output ("[SKIP] PSScriptAnalyzer cache unavailable (setup exit=$setupExit, status='$setupStatus')")
     Write-Result -Data @{
         status = 'skipped'
-        reason = "setup_psmodule.ps1 failed (exit=$setupExit). PSGallery 到達不能 or 初回 DL 不成立の可能性"
+        reason = "setup_psmodule.ps1 failed (exit=$setupExit, status='$setupStatus'). PSGallery 到達不能 or 初回 DL 不成立の可能性"
         issues = @()
     } -Path $Output
     exit 0

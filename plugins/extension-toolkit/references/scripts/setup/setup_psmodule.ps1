@@ -35,7 +35,12 @@ param(
     [Parameter(Position = 2)]
     [int]$TTLDays = 30,
 
-    [switch]$Force
+    [switch]$Force,
+
+    # 指定時、結果（{ status, path, version, cache_marker }）を JSON でこのパスに書き出す。
+    # 呼出側はこのファイルを読むことで Write-Host 混入なしに結果を確実に受け取れる
+    # （呼出側互換のため、stdout への Write-Output によるパス出力も維持する）
+    [string]$OutputJson = ''
 )
 
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
@@ -159,11 +164,30 @@ function Test-CacheFresh {
     }
 }
 
+function Write-OutputJson {
+    param(
+        [string]$Path,
+        [hashtable]$Data
+    )
+    if ([string]::IsNullOrWhiteSpace($Path)) { return }
+    try {
+        $Data | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $Path -Encoding utf8
+    } catch {
+        [Console]::Error.WriteLine("[setup_psmodule] Warning: failed to write OutputJson: $($_.Exception.Message)")
+    }
+}
+
 $cachedPath = Get-CachedModulePath -ModuleBase $moduleBase -Version $RequiredVersion
 $cacheFresh = (-not $Force) -and (Test-CacheFresh -ModulePath $cachedPath -TTLDays $TTLDays)
 
 if ($cacheFresh) {
     Write-Host "[setup_psmodule] Cache HIT: $cachedPath (TTL=$TTLDays days)"
+    Write-OutputJson -Path $OutputJson -Data @{
+        status        = 'cache_hit'
+        path          = $cachedPath
+        version       = $RequiredVersion
+        module        = $ModuleName
+    }
     Write-Output $cachedPath
     exit 0
 }
@@ -189,7 +213,7 @@ try {
     Save-Module @saveArgs
     $saveOk = $true
 } catch {
-    [Console]::Error.WriteLine("[setup_psmodule] Save-Module failed: $($_.Exception.Message)")
+    [Console]::Error.WriteLine("[setup_psmodule] Save-Module failed: $($_.Exception.GetType().Name)")
     # フェイルオープン: 既存キャッシュがあればそれを使う
 }
 
@@ -197,12 +221,25 @@ if ($saveOk) {
     $resolved = Get-CachedModulePath -ModuleBase $moduleBase -Version $RequiredVersion
     if (-not $resolved) {
         [Console]::Error.WriteLine("[setup_psmodule] Error: Save-Module reported success but module not found at $moduleBase")
+        Write-OutputJson -Path $OutputJson -Data @{
+            status  = 'error'
+            reason  = 'save_succeeded_but_not_found'
+            path    = ''
+            version = $RequiredVersion
+            module  = $ModuleName
+        }
         exit 2
     }
     # cache marker 更新
     $marker = Join-Path $resolved '.cache-marker'
     Set-Content -LiteralPath $marker -Value (Get-Date -Format 'o') -Encoding utf8
     Write-Host "[setup_psmodule] Cache REFRESHED: $resolved"
+    Write-OutputJson -Path $OutputJson -Data @{
+        status  = 'refreshed'
+        path    = $resolved
+        version = $RequiredVersion
+        module  = $ModuleName
+    }
     Write-Output $resolved
     exit 0
 }
@@ -214,10 +251,23 @@ if (-not $fallback) {
 }
 if ($fallback) {
     Write-Host "[setup_psmodule] Save-Module failed but existing cache reused: $fallback"
+    Write-OutputJson -Path $OutputJson -Data @{
+        status  = 'fallback_cache'
+        path    = $fallback
+        version = $RequiredVersion
+        module  = $ModuleName
+    }
     Write-Output $fallback
     exit 0
 }
 
 [Console]::Error.WriteLine("[setup_psmodule] Error: no cache available and Save-Module failed")
+Write-OutputJson -Path $OutputJson -Data @{
+    status  = 'unavailable'
+    reason  = 'no_cache_and_save_failed'
+    path    = ''
+    version = $RequiredVersion
+    module  = $ModuleName
+}
 Write-Output ''
 exit 3
