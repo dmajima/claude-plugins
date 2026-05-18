@@ -238,7 +238,7 @@ Git Bash の場合に引数解釈・PATH 解決でエッジケースが発生し
 
 ### 14. PSScriptAnalyzer 静的解析（B-1）
 
-`improvement-backlog.md` の B-1 由来。2026-05-18 のセッションで `sync-settings/sync.ps1` の
+B-1 由来（改善バックログ、経緯は git 履歴を参照）。2026-05-18 のセッションで `sync-settings/sync.ps1` の
 `String.TrimStart(string)` 引数誤用（実際は `char[]` を要求）が、静的レビュー 6 サイクルを
 素通りしてデモ実行で初めて発覚した事例を契機に導入。AST ベースの PSScriptAnalyzer により、
 同種の API 齟齬・スタイル違反・セキュリティ違反を自動検出する。

@@ -3,7 +3,7 @@
 `AskUserQuestion` の発火タイミング・回数・複数質問束ね方の最適化ルール。
 [`user-interaction.md`](user-interaction.md) の利用原則と組み合わせて読む。
 
-`improvement-backlog.md` の A-6（分岐 = 段階発火 / 非分岐 = 1 回複数質問）を SSOT 化したもの。
+A-6（改善バックログ由来、分岐 = 段階発火 / 非分岐 = 1 回複数質問）を SSOT 化したもの。経緯は git 履歴を参照。
 
 ---
 

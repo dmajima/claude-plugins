@@ -2,7 +2,7 @@
 
 `extension-toolkit` プラグインが生成・改修するすべてのスラッシュコマンドが従う引数仕様のルール。
 
-`improvement-backlog.md` の A-4「コマンド引数の AskUserQuestion 強制化（単純 1 引数を除く）」を SSOT 化したもの。
+A-4「コマンド引数の AskUserQuestion 強制化（単純 1 引数を除く）」（改善バックログ由来、経緯は git 履歴を参照）を SSOT 化したもの。
 
 ---
 

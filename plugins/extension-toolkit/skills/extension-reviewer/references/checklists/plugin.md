@@ -8,7 +8,7 @@
 |-----|-------|---------|-----|
 | P-1-1 | Critical | プラグイン直下に `.claude-plugin/plugin.json`（必須）が存在する | [conventions.md](../../../references/conventions.md) 節 2.1 |
 | P-1-2 | High | プラグイン直下に `README.md`（必須）が存在する | 同上 |
-| P-1-3 | High | プラグイン直下のディレクトリ・ファイルが許可リスト（`.claude-plugin/` / `README.md` / `commands/` / `skills/` / `agents/` / `hooks/` / `mcp/` / `references/`）に含まれる | 同上 |
+| P-1-3 | High | プラグイン直下のディレクトリ・ファイルが許可リスト（`.claude-plugin/` / `README.md` / `LICENSE` (ADR-029) / `commands/` / `skills/` / `agents/` / `hooks/` / `mcp/` / `references/` / `assets/` (ADR-030)）に含まれる | 同上 |
 | P-1-4 | High | プラグイン直下に `scripts/` ディレクトリが存在しない（ADR-025 違反検知。実スクリプトは `references/scripts/` に集約） | [conventions.md](../../../references/conventions.md) 節 2.3 / [scripts-policy.md](../../../references/scripts-policy.md) |
 | P-1-5 | High | プラグイン直下に `teams/` `templates/` `shared/` `common/` `lib/` `docs/` 等の禁止ディレクトリが存在しない（`references/` 配下に集約） | [conventions.md](../../../references/conventions.md) 節 2.3 |
 | P-1-6 | High | 許可リスト外のエントリを追加する場合、新 ADR がある（`architecture-decisions.md` で明示） | [conventions.md](../../../references/conventions.md) 節 2.4 |

@@ -126,7 +126,7 @@ skills/skill-toolkit/evals/
 
 ## 10. 自動実行サポート（B-2、オプトイン）
 
-`improvement-backlog.md` の B-2 由来。`evals/case-*.md` 冒頭にフロントマターを付与することで、`run_evals.py` から自動実行・diff 検証の対象にできる。
+B-2（改善バックログ由来、git 履歴で経緯を参照）。`evals/case-*.md` 冒頭にフロントマターを付与することで、`run_evals.py` から自動実行・diff 検証の対象にできる。
 
 ### 10.1 フロントマター仕様
 

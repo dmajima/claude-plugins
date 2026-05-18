@@ -45,7 +45,7 @@
 PLUGIN_NAME="dev-toolkit"   # ← 実値に置換
 
 # プラグイン直下に許可されないディレクトリ・ファイルがあるか
-ALLOWED_PLUGIN_ROOT=".claude-plugin commands skills agents hooks mcp references README.md LICENSE"
+ALLOWED_PLUGIN_ROOT=".claude-plugin commands skills agents hooks mcp references assets README.md LICENSE"
 for entry in plugins/"$PLUGIN_NAME"/*; do
   name=$(basename "$entry")
   if ! echo "$ALLOWED_PLUGIN_ROOT" | grep -qw "$name"; then
@@ -53,8 +53,8 @@ for entry in plugins/"$PLUGIN_NAME"/*; do
   fi
 done
 
-# スキル直下に許可されないエントリがあるか（scripts/ は ADR-025 で禁止）
-ALLOWED_SKILL_ROOT="SKILL.md README.md references agents evals"
+# スキル直下に許可されないエントリがあるか（scripts/ は ADR-025 で禁止、assets/ は ADR-030 で許可）
+ALLOWED_SKILL_ROOT="SKILL.md README.md references agents evals assets"
 for skill_dir in plugins/"$PLUGIN_NAME"/skills/*/; do
   for entry in "$skill_dir"*; do
     name=$(basename "$entry")
