@@ -341,6 +341,18 @@
 | 例外 | 免責ケース 4 種のみ。それ以外で本フローを省略する場合は `extension-reviewer` の指摘対象（Critical 相当） |
 | 代替案 | (1) 自動テスト（evals 実行）のみで承認とする → AskUserQuestion 等の UI 系・実機固有挙動を検証できない、却下。(2) 承認なしのデモ通知のみ → ユーザが見落とすリスク、却下。(3) すべての変更にデモ必須（免責なし）→ ドキュメント変更でもデモを強いるのは過剰、却下。本案は「実コード変更には必須、純粋ドキュメントは免責」のバランスを採用 |
 
+## ADR-033: PowerShell モジュールの端末グローバル汚染回避とプラグイン専用キャッシュ管理（[`scripts/setup/setup_psmodule.ps1`](scripts/setup/setup_psmodule.ps1)）
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | `extension-toolkit` が依存する PowerShell モジュール（B-1 の `PSScriptAnalyzer` 等）は、ユーザのグローバル `~/Documents/PowerShell/Modules/` ではなく、**プラグイン専用ディレクトリ** `<base>/.claude/.local/plugins/extension-toolkit/psmodules/<ModuleName>/<Version>/` に保存する（`<base>` はリポジトリ配下なら `{repo_root}`、外なら `~`）。`Install-Module` ではなく `Save-Module` を使い、呼び出し側は `Import-Module` の絶対パス指定で利用する。共通セットアップユーティリティ `setup_psmodule.ps1` がライフサイクル（既定 TTL 30 日 / バージョン固定 / フェイルオープン）を管理し、`run_psscriptanalyzer.ps1` 等の利用側スクリプトは本ユーティリティ経由でキャッシュを参照する |
+| 理由 | (1) `Install-Module` は `~/Documents/PowerShell/Modules/` 配下に書き込み、PowerShell セッション全体（他のプロジェクト・他の Claude Code セッション・通常運用シェル）に影響する。プラグイン由来の依存がユーザ端末に永続化されるのは責務逸脱。(2) `python-venv.md` 節 5.1 で `skill-router` プラグインに認められた「プラグイン専用 venv ライフサイクル管理」と同思想で、PowerShell モジュールにも同様のスコープ閉じ込めを適用するのが整合的。(3) PSScriptAnalyzer は約 1.5 MB と軽量で、再ダウンロードコストが許容範囲。TTL 30 日の経年再取得で運用上問題ない。(4) `Save-Module` は管理者権限不要・任意パス指定可・PSGallery 公式 API のため、互換性問題が起きにくい。(5) フェイルオープン設計により、PSGallery 到達不能（オフライン / プロキシ問題 / Gallery 障害）でも既存キャッシュがあれば動作継続できる |
+| トレードオフ | (1) 初回ダウンロード時のネットワーク必須（PSGallery への接続）。これはフェイルオープン経路（既存キャッシュ再利用）で軽減される。(2) `Import-Module` を絶対パス指定する都合、PSModulePath の自動解決が使えない。`setup_psmodule.ps1` が標準出力で返すパスを呼出側が受け取る運用となる。(3) ユーザが手動で同モジュールをグローバルに入れていても、本ユーティリティ経由ではプラグイン専用キャッシュを優先する（端末汚染を回避するため意図的）。(4) キャッシュディレクトリの容量（PSScriptAnalyzer 単独で約 1.5 MB、将来複数モジュール追加でも 10 MB 以内見込み）が `~/.claude/.local/` を消費する |
+| 適用範囲 | `extension-toolkit` が依存する PowerShell モジュール全般。現時点では PSScriptAnalyzer（B-1）のみだが、将来同種の依存が追加された場合も本 ADR の方式に従う |
+| 必須項目 | (a) `setup_psmodule.ps1` をプラグイン共通の `references/scripts/setup/` に配置（既存の `setup_venv.ps1` と同階層）、(b) キャッシュ配置は `<base>/.claude/.local/plugins/extension-toolkit/psmodules/<ModuleName>/<Version>/` で固定、(c) リポジトリ配下では `{repo_root}/.claude/.local/`、外なら `~/.claude/.local/` にフォールバック（`local-data-directory.md` 準拠）、(d) TTL 既定 30 日・`.cache-marker` ファイルで判定、(e) PSGallery 到達不能時のフェイルオープン（既存キャッシュ再利用）、(f) パストラバーサル対策として `ModuleName` / `RequiredVersion` の入力検証、(g) `~/.claude/rules/security/credentials-management.md` のトリガー対象外（PSGallery 公開モジュールのため認証情報不要）|
+| ライフサイクル | (i) キャッシュベース解決: リポジトリ判定 → `.git` 存在チェック → ヒットしなければ `~/`、(ii) キャッシュ HIT 判定: `.cache-marker` の mtime と TTL を比較、(iii) MISS 時: `Save-Module -RequiredVersion -Path` で取得、`.cache-marker` を ISO8601 で更新、(iv) Save-Module 失敗時: 既存キャッシュがあれば再利用、無ければ exit 3 で呼出側に通知（呼出側は status=skipped でフェイルオープン）、(v) 削除: 利用者の手動削除のみ（誤削除防止のため自動 GC しない）|
+| 代替案 | (1) `Install-Module -Scope CurrentUser` を使う → ユーザのグローバル PSModulePath を汚染、却下。(2) `Install-Module -Scope AllUsers` → 管理者権限必要 + 端末全体汚染、却下。(3) PSGallery を経由せず GitHub から zip 直 DL → 公式配布チャネルから外れ、整合性検証が複雑化、却下。(4) スキル単位（`skills/extension-reviewer/`）にキャッシュ配置 → 将来他スキルでも PowerShell 検査が必要になった際に重複ダウンロードが発生、プラグイン共通の方が DRY、却下。(5) TTL なし（永続キャッシュ）→ 古いバージョンが残り続けセキュリティパッチを取り込めない、却下。本案は「Save-Module + プラグイン共通キャッシュ + TTL 30 日 + フェイルオープン」の組合せ |
+
 ## ADR の追加・更新
 
 新たな設計判断が発生した際は、本ファイルに ADR-XXX 形式で追記する。既存 ADR を変更する場合は **最新の決定のみを記載** する（変更前の判断・変更経緯は Git コミット履歴を参照する）。ADR-010（スキル単位 venv）は ADR-024 で更新されたため、ADR-024 の内容が現行決定。ADR-026（フック構成）は ADR-027 で補強されたため、両方を併読する。ADR-018（README 4 要素）は ADR-028（クロスマーケットプレイス依存時の D セクション詳細）で詳細化されたため、両方を併読する。
