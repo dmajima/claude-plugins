@@ -4,15 +4,17 @@
 
 ## 対象別の採用チーム
 
-| 対象 | 採用するチーム / 構成 | 定義 |
-|-----|------------|----------|
-| スキル | `skill-review-team`（3 名、リード含む） | [`../../../references/teams/skill-review-team.md`](../../../references/teams/skill-review-team.md) |
-| プラグイン | `plugin-review-team`（フック含有 6 名 / 非含有 5 名、リード含む） | [`../../../references/teams/plugin-review-team.md`](../../../references/teams/plugin-review-team.md) |
-| マーケットプレイス | 専用チームなし、個別 3 名並列（`marketplace-fit-reviewer` リード / `plugin-structure-reviewer` / `architect`） | [review-perspectives.md](review-perspectives.md) セクション 7（マーケットプレイスレビュー） |
-| フック | `hook-security-team`（3 名、リード含む） | [`../../../references/teams/hook-security-team.md`](../../../references/teams/hook-security-team.md) |
-| コマンド | 専用チームなし、個別 4 名並列（`plugin-structure-reviewer` / `description-trigger-reviewer` / `implementation-engineer` / `security-engineer`、`security-engineer` は外部実行・危険操作を含まない場合省略可で 3 名構成） | [`review-perspectives.md`](review-perspectives.md) セクション 3 |
-| エージェント単体定義（`agents/{name}.md`） | 専用チームなし、個別 3 名並列（`plugin-structure-reviewer` / `description-trigger-reviewer` / `architect`） | [evals/case-08](../evals/case-08_agent_definition_review.md) |
-| チーム定義（`references/teams/{name}.md`） | 専用チームなし、個別 4 名並列（上記 3 名 + `project-leader`） | [evals/case-09](../evals/case-09_team_definition_review.md) |
+| 対象 | 採用するチーム / 構成 | 定義 | UI 含有時の追加 |
+|-----|------------|----------|--------------|
+| スキル | `skill-review-team`（3 名、リード含む） | [`../../../references/teams/skill-review-team.md`](../../../references/teams/skill-review-team.md) | `ux-designer` 追加で 4 名 |
+| プラグイン | `plugin-review-team`（フック含有 6 名 / 非含有 5 名、リード含む） | [`../../../references/teams/plugin-review-team.md`](../../../references/teams/plugin-review-team.md) | `ux-designer` 追加で フック含有 7 名 / 非含有 6 名 |
+| マーケットプレイス | 専用チームなし、個別 3 名並列（`marketplace-fit-reviewer` リード / `plugin-structure-reviewer` / `architect`） | [review-perspectives.md](review-perspectives.md) セクション 7（マーケットプレイスレビュー） | 対象外（マーケットプレイスは UI を持たない） |
+| フック | `hook-security-team`（3 名、リード含む） | [`../../../references/teams/hook-security-team.md`](../../../references/teams/hook-security-team.md) | `additionalContext` でユーザ向け警告を出す場合のみ `ux-designer` 追加 |
+| コマンド | 専用チームなし、個別 4 名並列（`plugin-structure-reviewer` / `description-trigger-reviewer` / `implementation-engineer` / `security-engineer`、`security-engineer` は外部実行・危険操作を含まない場合省略可で 3 名構成） | [`review-perspectives.md`](review-perspectives.md) セクション 3 | **`ux-designer` 追加で 4-5 名（コマンドは原則 UI 含有）**|
+| エージェント単体定義（`agents/{name}.md`） | 専用チームなし、個別 3 名並列（`plugin-structure-reviewer` / `description-trigger-reviewer` / `architect`） | [evals/case-08](../evals/case-08_agent_definition_review.md) | 対象外（エージェント定義は UI を持たない） |
+| チーム定義（`references/teams/{name}.md`） | 専用チームなし、個別 4 名並列（上記 3 名 + `project-leader`） | [evals/case-09](../evals/case-09_team_definition_review.md) | 対象外 |
+
+UI 含有の判定基準は [`review-perspectives.md`](review-perspectives.md) 節「ユーザ向け UI 含有の判定基準」を参照（A-2 ADR 準拠）。
 
 ## 起動方法
 
@@ -49,7 +51,7 @@ Agent({ subagent_type: "{member-2}", prompt: "..." })                           
 | `project-leader` | 整合性・スコープ |
 | `legal-advisor` | 法務・OSS ライセンス（外部公開時） |
 | `dba` | データ層（必要時） |
-| `ux-designer` | UX（UI を含む場合） |
+| `ux-designer` | UX（**UI 含有時は必須** — AskUserQuestion 利用妥当性 / argument-hint 妥当性 / エラーメッセージ UX / 出力可読性 / アクセシビリティ / 一貫性） |
 
 ## チーム未定義の対象への対応
 
