@@ -8,6 +8,7 @@
   "license": "MIT",
   "homepage": "https://github.com/dmajima/claude-plugins",
   "repository": "https://github.com/dmajima/claude-plugins",
+  "category": "productivity",
   "keywords": [
     "skill-router",
     "router",
