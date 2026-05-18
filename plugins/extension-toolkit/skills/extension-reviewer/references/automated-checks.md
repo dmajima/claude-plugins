@@ -294,7 +294,7 @@ JSON ファイル内の各 issue:
 {
   "severity": "High",
   "item": "パスポータビリティ違反: Windows ドライブレター",
-  "file": "plugins/foo/scripts/setup_venv.sh",
+  "file": "plugins/foo/references/scripts/setup/setup_venv.ps1",
   "line": 42,
   "detail": "対象行のスニペット（200 文字まで）"
 }

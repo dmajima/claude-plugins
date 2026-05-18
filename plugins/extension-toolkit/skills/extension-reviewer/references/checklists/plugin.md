@@ -47,11 +47,11 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| P-5-1 | High | プラグインに `.py` ファイルが 1 つ以上あり、標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.sh` が存在する | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.1 / ADR-024 |
-| P-5-2 | High | 同上で `references/scripts/setup/teardown_venv.sh` が存在する | 同上 |
+| P-5-1 | High | プラグインに `.py` ファイルが 1 つ以上あり、標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.ps1` が存在する（PowerShell 統一） | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.1 / ADR-024 |
+| P-5-2 | High | 同上で `references/scripts/setup/teardown_venv.ps1` が存在する | 同上 |
 | P-5-3 | High | 同上で `references/scripts/setup/requirements.txt` が存在し、全スキルの依存をマージしている | 同上 |
 | P-5-4 | High | スキルごとの個別 `requirements.txt` が存在しない | 同 節 5.2 |
-| P-5-5 | High | スキル直下に `references/scripts/setup/setup_venv.sh` 等の重複設置がない | 同上 |
+| P-5-5 | High | スキル直下に `references/scripts/setup/setup_venv.ps1` 等の重複設置がない | 同上 |
 
 ## P-6. 移管シナリオ（既存プラグイン化時）
 
