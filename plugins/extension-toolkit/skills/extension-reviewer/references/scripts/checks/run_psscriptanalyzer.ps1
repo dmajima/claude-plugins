@@ -108,10 +108,15 @@ try {
 }
 
 if ($setupExit -ne 0 -or [string]::IsNullOrWhiteSpace($psmodulePath) -or -not (Test-Path -LiteralPath $psmodulePath)) {
-    Write-Output ("[SKIP] PSScriptAnalyzer cache unavailable (setup exit=$setupExit, status='$setupStatus')")
+    $reasonHint = switch ($setupExit) {
+        4 { 'integrity check failed (sec-H-1): cached PSScriptAnalyzer hash mismatch detected. キャッシュを手動削除して再 DL してください' }
+        3 { 'no cache available and Save-Module failed (PSGallery 到達不能 / オフライン環境)' }
+        default { "setup_psmodule.ps1 failed (status='$setupStatus')" }
+    }
+    Write-Output ("[SKIP] PSScriptAnalyzer cache unavailable (exit=$setupExit): $reasonHint")
     Write-Result -Data @{
         status = 'skipped'
-        reason = "setup_psmodule.ps1 failed (exit=$setupExit, status='$setupStatus'). PSGallery 到達不能 or 初回 DL 不成立の可能性"
+        reason = "setup_psmodule.ps1 exit=$setupExit, status='$setupStatus': $reasonHint"
         issues = @()
     } -Path $Output
     exit 0

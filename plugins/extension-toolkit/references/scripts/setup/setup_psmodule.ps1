@@ -188,16 +188,114 @@ function Write-OutputJson {
     }
 }
 
+function Test-ModuleHashes {
+    <#
+    .SYNOPSIS
+        sec-H-1: ダウンロード or キャッシュ済みモジュールの SHA256 を期待値と照合する
+    .OUTPUTS
+        [pscustomobject] @{ Verified=bool; Status=string; Details=string[] }
+        Verified=$true でも期待ハッシュ未定義のケースあり（Status='unknown_version' or 'no_hash_table'）
+    #>
+    param(
+        [Parameter(Mandatory)] [string]$ModulePath,
+        [Parameter(Mandatory)] [string]$ModuleName,
+        [Parameter(Mandatory)] [string]$Version
+    )
+    $hashesFile = Join-Path $PSScriptRoot 'psmodule-hashes.json'
+    if (-not (Test-Path -LiteralPath $hashesFile -PathType Leaf)) {
+        return [pscustomobject]@{
+            Verified = $true
+            Status   = 'no_hash_table'
+            Details  = @('psmodule-hashes.json not found, skipping integrity verification')
+        }
+    }
+    try {
+        $table = Get-Content -Raw -LiteralPath $hashesFile -Encoding utf8 | ConvertFrom-Json
+    } catch {
+        return [pscustomobject]@{
+            Verified = $false
+            Status   = 'hash_table_invalid'
+            Details  = @("psmodule-hashes.json parse failed: $($_.Exception.GetType().Name)")
+        }
+    }
+    $modSection = $table.modules.$ModuleName
+    if (-not $modSection) {
+        return [pscustomobject]@{
+            Verified = $true
+            Status   = 'unknown_module'
+            Details  = @("no hash table entry for module '$ModuleName' (treated as advisory)")
+        }
+    }
+    $verSection = $modSection.$Version
+    if (-not $verSection -or -not $verSection.files) {
+        return [pscustomobject]@{
+            Verified = $true
+            Status   = 'unknown_version'
+            Details  = @("no hash table entry for '$ModuleName' $Version (treated as advisory)")
+        }
+    }
+    $mismatches = @()
+    $verified   = @()
+    foreach ($prop in $verSection.files.PSObject.Properties) {
+        $fileName     = $prop.Name
+        $expectedHash = $prop.Value.ToLower()
+        $filePath = Join-Path $ModulePath $fileName
+        if (-not (Test-Path -LiteralPath $filePath -PathType Leaf)) {
+            $mismatches += "missing: $fileName"
+            continue
+        }
+        try {
+            $actual = (Get-FileHash -LiteralPath $filePath -Algorithm SHA256).Hash.ToLower()
+        } catch {
+            $mismatches += "hash_compute_failed: $fileName"
+            continue
+        }
+        if ($actual -ne $expectedHash) {
+            $mismatches += "$fileName : expected=$expectedHash actual=$actual"
+        } else {
+            $verified += $fileName
+        }
+    }
+    if ($mismatches.Count -gt 0) {
+        return [pscustomobject]@{
+            Verified = $false
+            Status   = 'hash_mismatch'
+            Details  = $mismatches
+        }
+    }
+    return [pscustomobject]@{
+        Verified = $true
+        Status   = 'verified'
+        Details  = $verified | ForEach-Object { "ok: $_" }
+    }
+}
+
 $cachedPath = Get-CachedModulePath -ModuleBase $moduleBase -Version $RequiredVersion
 $cacheFresh = (-not $Force) -and (Test-CacheFresh -ModulePath $cachedPath -TTLDays $TTLDays)
 
 if ($cacheFresh) {
-    Write-Host "[setup_psmodule] Cache HIT: $cachedPath (TTL=$TTLDays days)"
+    # sec-H-1: キャッシュ再利用前にハッシュ整合を確認（攻撃者がキャッシュを差替えても検出）
+    $hv = Test-ModuleHashes -ModulePath $cachedPath -ModuleName $ModuleName -Version $RequiredVersion
+    if (-not $hv.Verified) {
+        [Console]::Error.WriteLine("[setup_psmodule] Error: cache integrity check failed ($($hv.Status))")
+        foreach ($d in $hv.Details) { [Console]::Error.WriteLine("  $d") }
+        Write-OutputJson -Path $OutputJson -Data @{
+            status  = 'integrity_failed'
+            reason  = "cache_hit hash mismatch: $($hv.Status)"
+            path    = $cachedPath
+            version = $RequiredVersion
+            module  = $ModuleName
+            hash_check_details = @($hv.Details)
+        }
+        exit 4
+    }
+    Write-Host "[setup_psmodule] Cache HIT: $cachedPath (TTL=$TTLDays days, integrity=$($hv.Status))"
     Write-OutputJson -Path $OutputJson -Data @{
         status        = 'cache_hit'
         path          = $cachedPath
         version       = $RequiredVersion
         module        = $ModuleName
+        hash_status   = $hv.Status
     }
     Write-Output $cachedPath
     exit 0
@@ -241,15 +339,32 @@ if ($saveOk) {
         }
         exit 2
     }
+    # sec-H-1: Save-Module 直後にハッシュ照合（PSGallery 改ざんの検出）
+    $hv = Test-ModuleHashes -ModulePath $resolved -ModuleName $ModuleName -Version $RequiredVersion
+    if (-not $hv.Verified) {
+        [Console]::Error.WriteLine("[setup_psmodule] Error: integrity check failed after Save-Module ($($hv.Status))")
+        foreach ($d in $hv.Details) { [Console]::Error.WriteLine("  $d") }
+        # 改ざん疑いキャッシュは利用せずエラー終了（フェイルクローズ）
+        Write-OutputJson -Path $OutputJson -Data @{
+            status  = 'integrity_failed'
+            reason  = "refreshed hash mismatch: $($hv.Status)"
+            path    = $resolved
+            version = $RequiredVersion
+            module  = $ModuleName
+            hash_check_details = @($hv.Details)
+        }
+        exit 4
+    }
     # cache marker 更新
     $marker = Join-Path $resolved '.cache-marker'
     Set-Content -LiteralPath $marker -Value (Get-Date -Format 'o') -Encoding utf8
-    Write-Host "[setup_psmodule] Cache REFRESHED: $resolved"
+    Write-Host "[setup_psmodule] Cache REFRESHED: $resolved (integrity=$($hv.Status))"
     Write-OutputJson -Path $OutputJson -Data @{
-        status  = 'refreshed'
-        path    = $resolved
-        version = $RequiredVersion
-        module  = $ModuleName
+        status      = 'refreshed'
+        path        = $resolved
+        version     = $RequiredVersion
+        module      = $ModuleName
+        hash_status = $hv.Status
     }
     Write-Output $resolved
     exit 0
@@ -261,12 +376,28 @@ if (-not $fallback) {
     $fallback = Get-CachedModulePath -ModuleBase $moduleBase -Version ''
 }
 if ($fallback) {
-    Write-Host "[setup_psmodule] Save-Module failed but existing cache reused: $fallback"
+    # sec-H-1: フェイルオープン経路でも既存キャッシュのハッシュ整合を確認
+    $hv = Test-ModuleHashes -ModulePath $fallback -ModuleName $ModuleName -Version $RequiredVersion
+    if (-not $hv.Verified) {
+        [Console]::Error.WriteLine("[setup_psmodule] Error: fallback cache integrity check failed ($($hv.Status))")
+        foreach ($d in $hv.Details) { [Console]::Error.WriteLine("  $d") }
+        Write-OutputJson -Path $OutputJson -Data @{
+            status  = 'integrity_failed'
+            reason  = "fallback_cache hash mismatch: $($hv.Status)"
+            path    = $fallback
+            version = $RequiredVersion
+            module  = $ModuleName
+            hash_check_details = @($hv.Details)
+        }
+        exit 4
+    }
+    Write-Host "[setup_psmodule] Save-Module failed but existing cache reused: $fallback (integrity=$($hv.Status))"
     Write-OutputJson -Path $OutputJson -Data @{
-        status  = 'fallback_cache'
-        path    = $fallback
-        version = $RequiredVersion
-        module  = $ModuleName
+        status      = 'fallback_cache'
+        path        = $fallback
+        version     = $RequiredVersion
+        module      = $ModuleName
+        hash_status = $hv.Status
     }
     Write-Output $fallback
     exit 0
