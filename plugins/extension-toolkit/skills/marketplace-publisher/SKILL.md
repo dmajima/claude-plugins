@@ -144,34 +144,14 @@ Claude Code プラグインの **公開ワークフロー**（重複検査・実
 
 ### 6. 公開モードの選択
 
-**公開モード選択の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、公開対象プラグインの動作デモ（dry-run or サンプル起動）を実施し、`AskUserQuestion` で「公開してよいか」の承認を取得する（ADR-032）。公開はマーケットプレイス越しに利用者に届くため、デモなき公開は禁止する。
+**前提**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 のデモ + AskUserQuestion 承認取得が完了している（ADR-032）。
 
-```text
-marketplace.json の更新が完了しました。
-公開方法を選択してください:
+`AskUserQuestion` で公開モードを選択する（[`../../references/user-interaction.md`](../../references/user-interaction.md) 節 1）:
 
-1. ハンドオフ（git コマンドを提示、ご自身で実行）
-2. フルオート（git push → PR 作成まで自動実行）
-```
+- **ハンドオフ**（推奨）: `git add` / `commit` / `push` / PR コマンドを提示してユーザが手動実行
+- **フルオート**: feature ブランチ確認 → `git push` → PR 作成まで自動実行（main 直接 push 禁止）
 
-#### モード A: ハンドオフ
-
-[references/publish-workflow.md](references/publish-workflow.md) の「ハンドオフフォーマット」を参照。以下を提示して終了:
-
-- 変更ファイル一覧
-- marketplace.json の差分
-- 推奨コミットメッセージ
-- 次のコマンド（`git add` / `git commit` / `git push` / PR 作成）
-
-#### モード B: フルオート
-
-[references/publish-workflow.md](references/publish-workflow.md) の「フルオートモード」を参照。以下を順に実行:
-
-1. ブランチ確認（main 直接 push 禁止、feature ブランチであること）
-2. `git add` → `git commit`
-3. `git push origin <branch>`
-4. PR 作成（リモート設定に応じて GitHub / TFS 等）
-5. PR URL 提示
+詳細手順は [`references/publish-workflow.md`](references/publish-workflow.md) を参照。
 
 ## 重要な制約
 
