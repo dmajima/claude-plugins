@@ -55,19 +55,59 @@ function Write-Result {
     $Data | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $Path -Encoding utf8
 }
 
-# 1. PSScriptAnalyzer モジュール存在確認
-$psa = Get-Module -ListAvailable -Name PSScriptAnalyzer | Select-Object -First 1
-if (-not $psa) {
-    Write-Output '[SKIP] PSScriptAnalyzer not installed (Install-Module -Name PSScriptAnalyzer -Scope CurrentUser を推奨)'
+# 1. PSScriptAnalyzer モジュールの解決（ADR-033: プラグイン専用キャッシュ経由）
+#
+# 端末グローバル汚染を避けるため、Get-Module -ListAvailable は使わない。
+# プラグイン共通の setup_psmodule.ps1 を起動し、
+# ~/.claude/.local/plugins/extension-toolkit/psmodules/PSScriptAnalyzer/<version>/
+# にキャッシュされたモジュールを Import-Module の絶対パス指定で読み込む。
+#
+# $PSScriptRoot は本ファイルのディレクトリ:
+#   plugins/extension-toolkit/skills/extension-reviewer/references/scripts/checks/
+# setup_psmodule.ps1 への相対 (5 階層上の plugins/extension-toolkit/ まで遡る):
+#   ../../../../../references/scripts/setup/setup_psmodule.ps1
+#   = plugins/extension-toolkit/references/scripts/setup/setup_psmodule.ps1
+$setupScript = Join-Path $PSScriptRoot '..\..\..\..\..\references\scripts\setup\setup_psmodule.ps1'
+$setupScript = [System.IO.Path]::GetFullPath($setupScript)
+
+if (-not (Test-Path -LiteralPath $setupScript -PathType Leaf)) {
+    Write-Output "[SKIP] setup_psmodule.ps1 not found at $setupScript"
     Write-Result -Data @{
         status = 'skipped'
-        reason = 'PSScriptAnalyzer module not installed'
+        reason = "setup_psmodule.ps1 not found: $setupScript"
         issues = @()
     } -Path $Output
     exit 0
 }
 
-Import-Module PSScriptAnalyzer -ErrorAction Stop
+$psmodulePath = & pwsh -NoProfile -NonInteractive -File $setupScript `
+    -ModuleName 'PSScriptAnalyzer' `
+    -RequiredVersion '1.22.0' `
+    -TTLDays 30 2>&1 | Select-Object -Last 1
+$setupExit = $LASTEXITCODE
+
+if ($setupExit -ne 0 -or [string]::IsNullOrWhiteSpace($psmodulePath) -or -not (Test-Path -LiteralPath $psmodulePath)) {
+    Write-Output "[SKIP] PSScriptAnalyzer cache unavailable (setup exit=$setupExit, path=$psmodulePath)"
+    Write-Result -Data @{
+        status = 'skipped'
+        reason = "setup_psmodule.ps1 failed (exit=$setupExit). PSGallery 到達不能 or 初回 DL 不成立の可能性"
+        issues = @()
+    } -Path $Output
+    exit 0
+}
+
+$manifest = Join-Path $psmodulePath 'PSScriptAnalyzer.psd1'
+if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) {
+    Write-Output "[SKIP] PSScriptAnalyzer manifest not found at $manifest"
+    Write-Result -Data @{
+        status = 'skipped'
+        reason = "manifest not found at $manifest"
+        issues = @()
+    } -Path $Output
+    exit 0
+}
+
+Import-Module $manifest -Force -ErrorAction Stop
 
 # 2. ターゲット存在確認
 if (-not (Test-Path -LiteralPath $Target)) {

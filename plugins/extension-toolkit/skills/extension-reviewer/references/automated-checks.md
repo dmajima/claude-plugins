@@ -257,11 +257,28 @@ Git Bash の場合に引数解釈・PATH 解決でエッジケースが発生し
 起動スクリプト: [`scripts/checks/run_psscriptanalyzer.ps1`](scripts/checks/run_psscriptanalyzer.ps1)
 （`pwsh` で起動、結果を一時 JSON に書き出して Python 側で読み戻す）
 
-フェイルオープン挙動:
+#### PowerShell モジュールのライフサイクル管理（ADR-033）
 
-- `pwsh` 未インストール → 指摘ゼロで通過（環境依存検査のため）
-- `PSScriptAnalyzer` モジュール未インストール → 指摘ゼロで通過（`Install-Module -Name PSScriptAnalyzer -Scope CurrentUser` を推奨ログのみ）
-- `.ps1` / `.psm1` / `.psd1` が target 配下に存在しない → 何もしない
+PSScriptAnalyzer は **端末のグローバル PSModulePath を汚染しない** よう、
+プラグイン共通ユーティリティ [`../../../../references/scripts/setup/setup_psmodule.ps1`](../../../../references/scripts/setup/setup_psmodule.ps1)
+を経由してプラグイン専用キャッシュに `Save-Module` で配置する（ADR-033 準拠）。
+
+| 項目 | 動作 |
+|------|------|
+| キャッシュ配置 | `<base>/.claude/.local/plugins/extension-toolkit/psmodules/PSScriptAnalyzer/<version>/`（`<base>` はリポジトリ配下なら `{repo_root}`、外なら `~`）|
+| 初回起動時 | `Save-Module -RequiredVersion 1.22.0 -Path <baseDir>` で取得（PSGallery 経由、管理者権限不要）|
+| 既存キャッシュ HIT | `.cache-marker` の mtime が TTL 30 日以内ならダウンロードスキップ |
+| TTL 超過時 | 再ダウンロード（同バージョン上書き）|
+| バージョン固定 | `1.22.0`（呼出側の `run_psscriptanalyzer.ps1` 内で固定）|
+| Import 方法 | `Import-Module <絶対パス>/PSScriptAnalyzer.psd1`（PSModulePath 解決を使わない）|
+
+フェイルオープン挙動（4 段階）:
+
+- `pwsh` 未インストール → 指摘ゼロで通過（環境依存検査のため、`run_checks.py` 側で skip）
+- `setup_psmodule.ps1` 不在 → 指摘ゼロで通過
+- `setup_psmodule.ps1` exit != 0（PSGallery 到達不能 + 既存キャッシュなし）→ 指摘ゼロで通過
+- 既存キャッシュあり + PSGallery 到達不能 → 既存キャッシュを再利用して継続
+- `.ps1` / `.psm1` / `.psd1` が target 配下に存在しない → 何もしない（呼出前段の判定）
 
 除外条件:
 
