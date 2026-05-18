@@ -99,10 +99,21 @@ if ($repoRoot) {
 $baseDir = [System.IO.Path]::GetFullPath($baseDir)
 $moduleBase = Join-Path $baseDir $ModuleName
 
-# 安全装置: baseDir が必ず .claude/.local/plugins/extension-toolkit/psmodules で終わる
-$normalizedBase = $baseDir -replace '\\', '/'
-if ($normalizedBase -notmatch '/\.claude/\.local/plugins/extension-toolkit/psmodules$') {
-    [Console]::Error.WriteLine("[setup_psmodule] Error: resolved base dir does not match expected pattern: $baseDir")
+# 安全装置: baseDir が
+#   (1) repo .claude/.local/plugins/extension-toolkit/psmodules または
+#   (2) ~/.claude/.local/plugins/extension-toolkit/psmodules
+# のいずれかから派生したパスであり、かつ末尾が想定通りであることを検証
+$normalizedBase = ($baseDir -replace '\\', '/').TrimEnd('/')
+$normalizedHome = ([Environment]::GetFolderPath('UserProfile') -replace '\\', '/').TrimEnd('/')
+$normalizedRepoRoot = if ($repoRoot) { ($repoRoot -replace '\\', '/').TrimEnd('/') } else { '' }
+
+$startsValid = $normalizedBase.StartsWith($normalizedHome + '/', [System.StringComparison]::OrdinalIgnoreCase) -or
+    ([string]::IsNullOrEmpty($normalizedRepoRoot) -eq $false -and
+     $normalizedBase.StartsWith($normalizedRepoRoot + '/', [System.StringComparison]::OrdinalIgnoreCase))
+
+if (-not $startsValid -or $normalizedBase -notmatch '/\.claude/\.local/plugins/extension-toolkit/psmodules$') {
+    [Console]::Error.WriteLine("[setup_psmodule] Error: resolved base dir is outside expected roots: $baseDir")
+    [Console]::Error.WriteLine("  expected to start with: $normalizedHome or $normalizedRepoRoot")
     exit 1
 }
 

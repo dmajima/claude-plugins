@@ -100,7 +100,9 @@ EXCLUDE_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".tox", ".mypy_c
 
 DEFAULT_TIMEOUT_SEC = 120
 DEFAULT_PARALLEL = 4
-PREVIEW_LIMIT = 1500  # 出力プレビュー上限
+MAX_PARALLEL = 32           # ThreadPoolExecutor の上限（DoS 防御、sec M-2）
+MAX_TIMEOUT_SEC = 600       # case ごとの timeout 上限（極端値防御、impl M-03）
+PREVIEW_LIMIT = 1500        # 出力プレビュー上限
 
 
 # --------------------------------------------------------------------------- #
@@ -182,6 +184,7 @@ def execute_case(
     case_file: pathlib.Path,
     cwd_base: pathlib.Path,
     allow_destructive: bool,
+    scope_root: pathlib.Path | None = None,
 ) -> dict[str, Any]:
     """1 ケースを実行し、結果 dict を返す。"""
     started = time.monotonic()
@@ -236,7 +239,12 @@ def execute_case(
     expect_exit = fm.get("expect_exit_code", 0)
     expect_regexes = fm.get("expect_output_regex") or []
     expect_not_regexes = fm.get("expect_output_not_regex") or []
-    timeout_sec = int(fm.get("timeout_sec") or DEFAULT_TIMEOUT_SEC)
+    _raw_timeout = fm.get("timeout_sec")
+    try:
+        timeout_sec = int(_raw_timeout) if _raw_timeout is not None else DEFAULT_TIMEOUT_SEC
+    except (ValueError, TypeError):
+        timeout_sec = DEFAULT_TIMEOUT_SEC
+    timeout_sec = max(1, min(timeout_sec, MAX_TIMEOUT_SEC))
     case_cwd = fm.get("cwd")
     extra_env = fm.get("env") or {}
 
@@ -259,6 +267,23 @@ def execute_case(
         run_cwd = (cwd_base / case_cwd).resolve()
     else:
         run_cwd = cwd_base.resolve()
+
+    # パストラバーサル防御: case フロントマターの cwd が scope_root 配下に
+    # 収まることを検証する（B-2 設計時の前提「副作用ゼロ」を担保する）。
+    # scope_root 未指定なら cwd_base を fallback とする（同程度の保護）。
+    boundary = scope_root if scope_root is not None else cwd_base
+    try:
+        assert_in_scope(boundary, run_cwd)
+    except ValueError as exc:
+        return {
+            "case_file": str(case_file),
+            "status": "failed",
+            "reason": f"cwd '{case_cwd}' is out of scope: {exc}",
+            "exit_code": None,
+            "duration_sec": round(time.monotonic() - started, 3),
+            "stdout_preview": "",
+            "stderr_preview": "",
+        }
 
     # コマンドは pwsh で起動（クロスプラットフォーム配慮、Windows 既定）
     # command 文字列は shell スクリプトとして pwsh -Command に渡す
@@ -376,13 +401,20 @@ def main() -> int:
     print(f"[INFO] found {len(case_files)} case-*.md file(s) under {target}")
 
     cwd_base = scope_root.resolve()
+    scope_root_resolved = scope_root.resolve()
 
     results: list[dict[str, Any]] = []
-    parallel = max(1, args.parallel)
+    parallel = max(1, min(args.parallel, MAX_PARALLEL))
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=parallel) as pool:
         futures = {
-            pool.submit(execute_case, case, cwd_base, args.allow_destructive): case
+            pool.submit(
+                execute_case,
+                case,
+                cwd_base,
+                args.allow_destructive,
+                scope_root_resolved,
+            ): case
             for case in case_files
         }
         for fut in concurrent.futures.as_completed(futures):
