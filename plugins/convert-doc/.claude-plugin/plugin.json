@@ -15,7 +15,9 @@
     "conversion",
     "documentation",
     "mermaid",
-    "wiki"
+    "wiki",
+    "pptx-import",
+    "convert-from-pptx"
   ],
   "license": "MIT"
 }

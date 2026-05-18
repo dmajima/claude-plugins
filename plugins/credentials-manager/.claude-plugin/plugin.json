@@ -5,6 +5,7 @@
   "author": {
     "name": "dmajima"
   },
+  "category": "security",
   "keywords": [
     "credentials",
     "secrets",
