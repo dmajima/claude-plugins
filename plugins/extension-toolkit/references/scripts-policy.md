@@ -248,8 +248,8 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 
 | フック | タイミング | スクリプト | 動作 |
 |-----|---------|---------|-----|
-| `PreToolUse Edit/Write/MultiEdit` | 編集直前 | `references/scripts/hooks/enforce_toolkit_routing.sh` | `plugins/{name}/` 配下なら推奨スキル名を stderr 提示、**exit 0**（ブロックしない） |
-| `Stop` | Claude ターン終了時 | `references/scripts/hooks/check_version_bump.sh` | `plugins/{name}/` の未コミット変更で `plugin.json` の version が main から未更新なら stderr 警告、**exit 0**（fail-open） |
+| `PreToolUse Edit/Write/MultiEdit` | 編集直前 | `references/scripts/hooks/enforce_toolkit_routing.ps1` | `plugins/{name}/` 配下なら推奨スキル名を stderr 提示、**exit 0**（ブロックしない） |
+| `Stop` | Claude ターン終了時 | `references/scripts/hooks/check_version_bump.ps1` | `plugins/{name}/` の未コミット変更で `plugin.json` の version が main から未更新なら stderr 警告、**exit 0**（fail-open） |
 
 | 項目 | 内容 |
 |-----|------|
@@ -267,4 +267,4 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 | [`architecture-decisions.md`](architecture-decisions.md) | ADR-024（プラグイン単位 venv）・ADR-025（インラインスクリプト禁止 + `references/scripts/` 配置義務）・ADR-026（経由強制フック） |
 | [`path-portability.md`](path-portability.md) | スクリプト内のパス記述ルール |
 | 各スキルの `references/scripts/checks/run_checks.py`（extension-reviewer） | 本ポリシーの自動検出 |
-| `hooks/hooks.json` + `references/scripts/hooks/enforce_toolkit_routing.sh` + `check_version_bump.sh`（本プラグイン同梱） | toolkit 経由の推奨提示（PreToolUse 警告型）+ バージョン更新漏れ検証（Stop）、ADR-026 |
+| `hooks/hooks.json` + `references/scripts/hooks/enforce_toolkit_routing.ps1` + `check_version_bump.ps1`（本プラグイン同梱） | toolkit 経由の推奨提示（PreToolUse 警告型）+ バージョン更新漏れ検証（Stop）、ADR-026 |
