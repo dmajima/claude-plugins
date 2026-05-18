@@ -108,6 +108,8 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 
 ### 8. 引き渡し
 
+**作業完了報告の前に**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、生成 README のプレビュー表示・リンク到達性確認を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。README 単体の軽微変更（誤字修正等）は節 2.4.4 の免責ケースに該当する。
+
 - 生成・更新ファイルパス提示
 - 関連する変更（提供機能変更等）が他に必要なら案内
 

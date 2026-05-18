@@ -125,6 +125,8 @@ Claude Code のサブエージェント単体・エージェントチームを�
 
 ### 8. 引き渡し
 
+**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（チーム編成時はチームメンバー実起動 1 回以上、単体エージェントは Agent ツールで実起動 1 回）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+
 - 生成ファイルパスを提示
 - チーム編成時はスポーンプロンプト例も提示
 - プラグイン内配置時は `marketplace-publisher` への接続を提案

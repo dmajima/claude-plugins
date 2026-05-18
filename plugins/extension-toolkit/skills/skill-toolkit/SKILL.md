@@ -93,6 +93,8 @@ Claude Code のスキル一式（`SKILL.md` + `README.md` + `references/` + `eva
 
 ### 7. 引き渡し
 
+**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（実行コマンド・標準出力・生成ファイル・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。承認なしに以下を提示しても引き渡し完了とみなさない。
+
 生成・変更したファイル一覧を提示する。
 
 - `extension-reviewer` への接続を提案（レビュー実施推奨時）

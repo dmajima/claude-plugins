@@ -123,6 +123,8 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 
 ### 8. 引き渡し
 
+**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（コマンド起動・引数分岐・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+
 - 生成ファイルパスを提示
 - プラグイン内配置の場合は `marketplace-publisher` への接続を提案
 - README 更新が必要な場合は `readme-toolkit` への接続を提案

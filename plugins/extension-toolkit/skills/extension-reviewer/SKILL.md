@@ -158,10 +158,12 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 
 ### 8. 引き渡し
 
+**作業完了報告の前に**: 本スキルは「レビュー結果レポート」自体が成果物のため、[`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 の動作デモは原則対象外（節 2.4.4 の ADR 追加等と同様、レポート生成は実行確認済み）。ただし、レビュー結果に基づく **修正フェーズへの委譲時** は該当 `*-toolkit` 側でデモ承認を取得する責務がある（ADR-032）。
+
 | 結果 | 接続先 |
 |-----|-------|
 | Critical/High なし | `marketplace-publisher` への接続を提案 |
-| Critical/High あり | 該当 `*-toolkit` への接続を提案（修正後再レビュー推奨） |
+| Critical/High あり | 該当 `*-toolkit` への接続を提案（修正後再レビュー推奨、修正完了時にはデモ承認も必要）|
 
 報告には [`references/checklists/README.md`](references/checklists/README.md) 節 5 の「チェックリスト通過記録」テーブルを **必ず含める**。
 

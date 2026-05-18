@@ -103,6 +103,8 @@ JSON 整合性は編集後に必ず検証（[`../../references/validation-rules.
 
 ### 6. 引き渡し
 
+**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、`marketplace.json` JSON 妥当性確認 + 同期 README の到達性確認を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+
 | 結果 | 接続先 |
 |-----|-------|
 | 新規構築完了 | `plugin-toolkit` への接続提案（最初のプラグイン作成） |

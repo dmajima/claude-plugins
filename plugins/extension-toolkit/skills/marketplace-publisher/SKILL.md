@@ -144,6 +144,8 @@ Claude Code プラグインの **公開ワークフロー**（重複検査・実
 
 ### 6. 公開モードの選択
 
+**公開モード選択の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、公開対象プラグインの動作デモ（dry-run or サンプル起動）を実施し、`AskUserQuestion` で「公開してよいか」の承認を取得する（ADR-032）。公開はマーケットプレイス越しに利用者に届くため、デモなき公開は禁止する。
+
 ```text
 marketplace.json の更新が完了しました。
 公開方法を選択してください:

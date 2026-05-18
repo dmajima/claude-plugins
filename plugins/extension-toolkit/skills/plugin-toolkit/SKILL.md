@@ -121,6 +121,8 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 
 ### 9. 引き渡し
 
+**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（プラグイン読み込み確認・サンプルスキル起動・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+
 生成・配置したファイル一覧を提示。
 
 | 次のアクション | 接続先 |

@@ -133,6 +133,8 @@ ADR-024 準拠の雛形を作成するよう案内する:
 
 ### 7. 引き渡し
 
+**作業完了報告の前に**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、setup/teardown/refresh/check のいずれも実コマンド実行で動作確認し、`AskUserQuestion` で承認を取得する（ADR-032）。venv 操作は副作用がディスクに残るためデモは特に重要。
+
 | 状況 | 提示内容 |
 |-----|---------|
 | setup 完了 | venv パス / 利用方法（`python` 実行例） |
