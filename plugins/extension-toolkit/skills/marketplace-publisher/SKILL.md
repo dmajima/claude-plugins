@@ -102,20 +102,24 @@ Claude Code プラグインの **公開ワークフロー**（重複検査・実
 | description 類似 | 主要キーワードの重複 |
 | 機能領域類似 | 各プラグインの提供スキル/コマンドを比較 |
 
-類似プラグイン検出時はユーザに以下を提示:
+類似プラグイン検出時は **AskUserQuestion** で対応を確認する（重要操作のためテキスト対話不可、user-interaction.md 節 13 / askquestion-strategy.md 節 2.1 段階発火型に該当）:
 
 ```text
-類似プラグインを検出しました:
-
-- `{existing-plugin}` — {description}
-  類似ポイント: {具体}
-
-選択肢:
-1. 既存プラグインへのマージ（新プラグインの中身を既存に追加、`plugin-toolkit` の追加シナリオへ）
-2. 新規登録を続行（差別化点を明記）
-3. キャンセル
-
-どうしますか？
+AskUserQuestion({
+  questions: [{
+    question: "類似プラグインを検出しました: `{existing-plugin}` — {description}\n類似ポイント: {具体}\nどう進めますか？",
+    header: "重複対応",
+    options: [
+      { label: "既存プラグインへマージ",
+        description: "新プラグインの中身を既存に追加。plugin-toolkit の追加シナリオへ切替" },
+      { label: "新規登録を続行",
+        description: "差別化点を明記して新規エントリとして登録" },
+      { label: "キャンセル",
+        description: "公開を中止" }
+    ],
+    multiSelect: false
+  }]
+})
 ```
 
 ### 4. marketplace.json の更新（marketplace-toolkit に委譲）
