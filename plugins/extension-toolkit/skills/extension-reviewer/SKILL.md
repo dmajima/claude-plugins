@@ -175,7 +175,9 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 - 標準は最低 3 名（観点が 2 つに固定の場合は 2 名でも可）。メンバーは並列起動（独立観点）
 - 自動修正は軽微な指摘のみ。セキュリティ指摘は必ずユーザ確認
 - このスキル自身では構造変更を伴う修正は行わない
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
+- PowerShell スクリプトのレビュー観点は [`../../references/powershell-pitfalls.md`](../../references/powershell-pitfalls.md)
+- レビュー対象のコミット粒度は [`../../references/commit-granularity.md`](../../references/commit-granularity.md) 節 7 に従い、専門家レビューで判定する
 - 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証を実施
 
 ## 参照

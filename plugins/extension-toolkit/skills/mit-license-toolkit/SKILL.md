@@ -153,6 +153,7 @@ Claude Code プラグインに **MIT ライセンス** を付与・更新する�
 | AI 誤認回避 | [`../../references/ai-readability.md`](../../references/ai-readability.md) |
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | ユーザ対話 | [`../../references/user-interaction.md`](../../references/user-interaction.md) |
+| AskUserQuestion 発火戦略 | [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md) |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.2） |
 | バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md) |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
