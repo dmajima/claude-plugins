@@ -92,7 +92,7 @@
 | 項目 | 内容 |
 |------|------|
 | 決定 | **本 ADR は ADR-024 で更新済**。現行決定は ADR-024（プラグイン単位 venv + プラグイン直下 `references/scripts/setup/` 配置）を参照。本 ADR は当初「Python venv 構築・撤去スクリプトを `environment-setup-toolkit` に集約し、各スキルは依存リストのみを保有する」と決定したが、スキル単位 venv の重複構築や `requirements.txt` の分散による依存競合という課題が顕在化したため ADR-024 で再設計した |
-| 理由 | 各スキルが個別に setup_venv.sh を持つと（1）スクリプトの重複、（2）改善時の同期コスト、（3）「責務単一」の規約違反、を招く |
+| 理由 | 各スキルが個別に setup_venv スクリプトを持つと（1）スクリプトの重複、（2）改善時の同期コスト、（3）「責務単一」の規約違反、を招く |
 | トレードオフ | 各スキル内に直接スクリプトを置けば自己完結性が上がるが、責務単一化を優先 |
 | 代替案 | 各スキル個別保有 → 重複・SSOT 違反、却下 |
 
@@ -237,11 +237,11 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | Python venv は **プラグイン単位で 1 つ** とし、関連スクリプト（`setup_venv.sh` / `teardown_venv.sh` / `requirements.txt`）を **プラグイン直下** の `references/scripts/setup/` に配置する。複数スキルが Python を利用する場合も同一 venv を共有する。スキル固有のスクリプトはスキル直下 `references/scripts/{業務単位}/` に配置するが、依存パッケージ（`requirements.txt`）はプラグイン直下に統合する。`environment-setup-toolkit` はプラグイン直下スクリプトの **オーケストレータ** に役割変更する（自前の setup 実装を持たず、プラグイン直下スクリプトの起動を案内する）。Python を一切使用しないプラグインでは venv 関連スクリプトの設置は不要 |
+| 決定 | Python venv は **プラグイン単位で 1 つ** とし、関連スクリプト（`setup_venv.ps1` / `teardown_venv.ps1` / `requirements.txt`、shell-preference.md と整合して PowerShell 実装）を **プラグイン直下** の `references/scripts/setup/` に配置する。複数スキルが Python を利用する場合も同一 venv を共有する。スキル固有のスクリプトはスキル直下 `references/scripts/{業務単位}/` に配置するが、依存パッケージ（`requirements.txt`）はプラグイン直下に統合する。`environment-setup-toolkit` はプラグイン直下スクリプトの **オーケストレータ** に役割変更する（自前の setup 実装を持たず、プラグイン直下スクリプトの起動を案内する）。Python を一切使用しないプラグインでは venv 関連スクリプトの設置は不要 |
 | 理由 | (1) スキル単位 venv は同じプラグイン内で重複構築を引き起こし、複数スキル協業時にどの venv を使うか判断ロジックが必要になる。(2) `requirements.txt` がスキルごとに分散すると依存解決の競合・重複が発生する。(3) プラグインは「インストール単位 = 配布単位 = 環境単位」とすべき設計原則と整合する。(4) `environment-setup-toolkit` がスキル配下に setup スクリプトを保有していると、利用側スキルから「どの setup を呼ぶか」が曖昧になる。プラグイン直下を SSOT にすることで参照経路を一意にできる |
 | トレードオフ | (1) `requirements.txt` を全スキル分マージするため、特定スキルしか使わない依存も常にインストールされる。これは venv 共有の代償として許容する（不要時はプラグインを分割する）。(2) スキル固有のスクリプトと依存リストが別階層に分かれるため、新規スキル作成時に「依存はプラグイン直下、スクリプトはスキル直下」という配置を周知する必要がある |
 | 適用範囲 | 本プラグインおよび本プラグインが生成・レビューするすべてのプラグイン |
-| 必須項目 | (a) プラグインに `.py` ファイルが 1 つでもあり、かつ標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.sh` `teardown_venv.sh` `requirements.txt` をプラグイン直下に置く、(b) スキル直下に `references/scripts/setup/setup_venv.sh` 等を置かない、(c) スキルごとの個別 `requirements.txt` を作らない（全依存をプラグイン直下にマージ）、(d) `environment-setup-toolkit` はプラグイン直下スクリプトの呼び出し方を案内する役割に限定する |
+| 必須項目 | (a) プラグインに `.py` ファイルが 1 つでもあり、かつ標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.ps1` `teardown_venv.ps1` `requirements.txt` をプラグイン直下に置く（PowerShell 統一、shell-preference.md 準拠）、(b) スキル直下に `references/scripts/setup/setup_venv.ps1` 等を置かない、(c) スキルごとの個別 `requirements.txt` を作らない（全依存をプラグイン直下にマージ）、(d) `environment-setup-toolkit` はプラグイン直下スクリプトの呼び出し方を案内する役割に限定する |
 | 詳細実装 | [`scripts-policy.md`](scripts-policy.md) 節 5 を参照 |
 | 代替案 | (1) スキル単位 venv 維持（ADR-010） → 重複構築・依存競合、却下。(2) `environment-setup-toolkit` のスキル配下スクリプトを SSOT として維持 → 「どこを呼ぶか」が曖昧になり、ADR-022 の自己完結性原則と整合しない、却下。(3) ホーム配下に共有 venv → セッション独立性破壊、却下 |
 
@@ -279,7 +279,7 @@
 | 理由 | (1) Stop フックの stderr が **環境/タイミングによっては Claude の会話 context に届かない事例が確認された**（編集を 30 回以上行ったセッションで PreToolUse Edit / Stop どちらの警告も到達しなかった）。(2) PreToolUse の `additionalContext` 経路は仕様上確実に Claude へ届くため、コミット直前の最後の防衛線として有効。(3) Stop と PreToolUse Bash の両方で同じ検査スクリプトを呼ぶことで、片方の経路が機能しない環境でも警告が漏れない。(4) スクリプトロジック自体の重複は避け、PreToolUse 用ラッパーは git commit 検知後に既存 check_version_bump.sh を呼ぶだけの薄い委譲層とする |
 | トレードオフ | (1) 同じ警告が Stop と PreToolUse Bash の両方で発火し得る → 警告内容は同一なので重複しても害は小さい（Claude が一度判断すれば足りる）。(2) Bash 全件で発火するため処理コストが微増 → 早期に tool_name / command を sed で判定して非対象は exit 0 で即離脱、git status / git diff の重い処理は git commit 検出時のみ実行 |
 | 適用範囲 | 本プラグインがインストールされたすべての環境 |
-| 必須項目 | (a) `hooks/hooks.json` の `PreToolUse` に `matcher: "Bash"` エントリを追加、(b) `references/scripts/hooks/check_version_bump_on_commit.sh` を新設し ADR-025 配置義務に準拠、(c) ラッパーは tool_name == "Bash" かつ command に `git commit` を含む場合のみ既存 `check_version_bump.sh` に委譲、(d) Stop フックは削除せず保持、(e) どちらも fail-open（exit 0） |
+| 必須項目 | (a) `hooks/hooks.json` の `PreToolUse` に `matcher: "Bash\|PowerShell"` エントリを追加（PowerShell 統一、shell-preference.md 準拠）、(b) `references/scripts/hooks/check_version_bump_on_commit.ps1` を新設し ADR-025 配置義務に準拠、(c) ラッパーは tool_name == "Bash" or "PowerShell" かつ command に `git commit` を含む場合のみ既存 `check_version_bump.ps1` に委譲、(d) Stop フックは削除せず保持、(e) どちらも fail-open（exit 0） |
 | 代替案 | (1) Stop フックのみ維持 → 環境によって届かない事例があるため不採用。(2) PreToolUse Bash のみに移行 → Stop が機能する環境での冗長性を失う、却下。(3) PreToolUse Bash で check_version_bump.sh を直接呼ぶ → 全 Bash 呼び出しで git status を実行することになりコスト過大、却下。(4) PostToolUse で検査 → コミット完了後の警告となり手戻りが発生、却下 |
 
 ## ADR-028: 外部マーケットプレイス依存時の `extraKnownMarketplaces` 登録テンプレート同梱義務
