@@ -73,6 +73,7 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 | 11 | プラグインに MIT LICENSE 配備（ADR-029） | プラグイン直下 `LICENSE` + `plugin.json.license` + `README.md` | Critical / High | `check_mit_license` |
 | 12 | Bash/sh 利用禁止（PowerShell 移行担保、shell-preference.md）| `hooks.json` / `*.sh` / `*.md` | High / Medium | `check_no_bash_invocation` |
 | 13 | hook の `shell` フィールド明示（PowerShell 統一補強、shell-preference.md）| `hooks/hooks.json` | High | `check_hook_shell_field` |
+| 14 | PSScriptAnalyzer 静的解析（B-1） | `*.ps1` / `*.psm1` / `*.psd1` | High / Medium / Low | `check_psscriptanalyzer` |
 
 `run_checks.py` の出力 JSON 構造:
 
@@ -234,6 +235,39 @@ Git Bash の場合に引数解釈・PATH 解決でエッジケースが発生し
 - `type: "command"` 以外のエントリ（将来拡張に備える）
 
 実装関数: `check_hook_shell_field`
+
+### 14. PSScriptAnalyzer 静的解析（B-1）
+
+`improvement-backlog.md` の B-1 由来。2026-05-18 のセッションで `sync-settings/sync.ps1` の
+`String.TrimStart(string)` 引数誤用（実際は `char[]` を要求）が、静的レビュー 6 サイクルを
+素通りしてデモ実行で初めて発覚した事例を契機に導入。AST ベースの PSScriptAnalyzer により、
+同種の API 齟齬・スタイル違反・セキュリティ違反を自動検出する。
+
+| 検査項目 | 重大度 | 検出方法 |
+|---------|-------|---------|
+| PowerShell スクリプトの構文・API 誤用（PSPossibleIncorrectUsageOfRedirectionOperator など） | High | PSScriptAnalyzer Error |
+| スタイル違反（PSAvoidUsingCmdletAliases / PSAvoidTrailingWhitespace など） | Medium | PSScriptAnalyzer Warning |
+| 推奨事項（PSUseConsistentIndentation など） | Low | PSScriptAnalyzer Information |
+| セキュリティ違反（PSAvoidUsingPlainTextForPassword など） | High | PSScriptAnalyzer Error |
+
+検査対象拡張子: `*.ps1` / `*.psm1` / `*.psd1`
+
+ルールセット定義: [`scripts/checks/PSScriptAnalyzerSettings.psd1`](scripts/checks/PSScriptAnalyzerSettings.psd1)
+
+起動スクリプト: [`scripts/checks/run_psscriptanalyzer.ps1`](scripts/checks/run_psscriptanalyzer.ps1)
+（`pwsh` で起動、結果を一時 JSON に書き出して Python 側で読み戻す）
+
+フェイルオープン挙動:
+
+- `pwsh` 未インストール → 指摘ゼロで通過（環境依存検査のため）
+- `PSScriptAnalyzer` モジュール未インストール → 指摘ゼロで通過（`Install-Module -Name PSScriptAnalyzer -Scope CurrentUser` を推奨ログのみ）
+- `.ps1` / `.psm1` / `.psd1` が target 配下に存在しない → 何もしない
+
+除外条件:
+
+- `EXCLUDE_DIRS`（`.git` / `.venv` / `node_modules` / `__pycache__` / `.tox` / `.mypy_cache` / `.claude`）配下のファイル
+
+実装関数: `check_psscriptanalyzer`
 
 ## 指摘出力フォーマット
 
