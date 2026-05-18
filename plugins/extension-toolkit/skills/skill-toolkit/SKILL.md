@@ -80,6 +80,11 @@ Claude Code のスキル一式（`SKILL.md` + `README.md` + `references/` + `eva
 
 動作分岐があるスキルは `evals/` を作成する。判定基準は [`../../references/eval-guide.md`](../../references/eval-guide.md) を参照。
 
+`evals/` 作成時は以下を併せて配置する（B-3、ADR-032 のデモ承認フローと整合）:
+
+- [`evals/demo.ps1`](../../references/templates/skill/evals/demo.ps1) テンプレートをコピーし、`{...}` プレースホルダをスキル固有のコマンド・期待値で埋める
+- フロントマターの `runnable: true` を付与した case-*.md は B-2 の `run_evals.py` で自動実行可能（オプトイン）
+
 ### 6. 検証
 
 - [ ] SKILL.md が 200 行以内
