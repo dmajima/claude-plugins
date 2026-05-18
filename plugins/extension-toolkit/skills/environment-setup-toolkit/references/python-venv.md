@@ -98,13 +98,13 @@ plugins/{plugin-name}/
 
 ## 7. teardown の安全性
 
-`teardown_venv.sh` の安全装置は 3 段構成。詳細は実装（プラグイン直下 `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh`）を参照。要点のみ記載:
+`teardown_venv.ps1` の安全装置は 3 段構成。詳細は実装（プラグイン直下 `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.ps1`、PowerShell 統一）を参照。要点のみ記載:
 
 | 段 | 内容 |
 |---|------|
-| 1 | パスを `realpath -m`（fallback: `readlink -f`）で正規化し、シンボリックリンク迂回を防ぐ |
-| 2 | 正規化後パスが `.claude/.local/` を含むか `case` 文で確認。含まなければ拒否 |
-| 3 | 既知のシステムパス（`/`、`/root`、`/home`、`/etc`、`/usr`、`/var`、`/bin`、`/sbin`、`/opt`、`/Users`、Windows ドライブルート）に該当する場合は二重チェックで拒否 |
+| 1 | パスを `[System.IO.Path]::GetFullPath` で正規化し、シンボリックリンク迂回を防ぐ |
+| 2 | 正規化後パスが `.claude/.local/` を含むか文字列検査。含まなければ拒否 |
+| 3 | 既知のシステムパス（`C:\`、`C:\Windows`、`C:\Program Files` 等、Windows ドライブルート）に該当する場合は二重チェックで拒否 |
 
 範囲外の `.venv` の誤削除を防ぐと同時に、シンボリックリンク経由の迂回攻撃にも対応する。
 
