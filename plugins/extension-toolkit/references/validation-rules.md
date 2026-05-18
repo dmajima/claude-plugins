@@ -18,8 +18,8 @@
 | レビュー起動はフレッシュインスタンス（ADR-021） | High | スポーンプロンプトに必須引き継ぎ事項が含まれ、引き継ぎ禁止事項が含まれないこと（[`review-freshness.md`](review-freshness.md) 節 2-3） |
 | **md インラインスクリプト不在（ADR-025）** | High | フェンス付きコードブロック（`bash` / `python` / `sh` / `powershell` 等）が 6 行以上、または制御構造を含む 5 行以上を検出すれば違反（[`scripts-policy.md`](scripts-policy.md) 節 3-4） |
 | **トップレベル `scripts/` 不在（ADR-025）** | High | `plugins/{name}/scripts/` および `plugins/{name}/skills/{skill}/scripts/` が存在しないことを確認（実スクリプトは `references/scripts/` に集約） |
-| **プラグイン直下 `references/scripts/setup/` 構成（ADR-024）** | High | プラグインに `.py` ファイルが 1 つ以上ある場合、`plugins/{name}/references/scripts/setup/setup_venv.sh` `teardown_venv.sh` `requirements.txt` の存在を確認 |
-| **スキル直下 venv スクリプト不在（ADR-024）** | High | `plugins/{name}/skills/{skill}/references/scripts/setup/setup_venv.sh` 等が存在しないことを確認（プラグイン直下に集約済） |
+| **プラグイン直下 `references/scripts/setup/` 構成（ADR-024）** | High | プラグインに `.py` ファイルが 1 つ以上ある場合、`plugins/{name}/references/scripts/setup/setup_venv.ps1` `teardown_venv.ps1` `requirements.txt` の存在を確認（PowerShell 統一）|
+| **スキル直下 venv スクリプト不在（ADR-024）** | High | `plugins/{name}/skills/{skill}/references/scripts/setup/setup_venv.ps1` 等が存在しないことを確認（プラグイン直下に集約済） |
 
 ### 1.1 ディレクトリ構造の許可リスト機械チェック（厳格対象のみ）
 
@@ -90,7 +90,7 @@ done
 | 必須セクション存在（責務 / 責務外 / トリガー条件 / 前提 / 実行モード判定 / 実行フロー / 重要な制約 / 参照） | High | パターン検索 |
 | `scripts/` 命名（`knowledge/` 不可） | Medium | パス確認 |
 | Python 利用時の依存はプラグイン直下 `scripts/setup/requirements.txt` に統合（ADR-024） | High | ファイル存在確認 + スキル独自 requirements.txt 不在 |
-| スキル直下 `scripts/setup/setup_venv.sh` 等の venv 関連スクリプト不在（ADR-024） | High | パターン不在確認（プラグイン直下に集約済） |
+| スキル直下 `scripts/setup/setup_venv.ps1` 等の venv 関連スクリプト不在（ADR-024） | High | パターン不在確認（プラグイン直下に集約済） |
 | md インライン実行スクリプト不在（ADR-025） | High | コードブロック行数 + 制御構造検出（[`scripts-policy.md`](scripts-policy.md)） |
 | `agents/` 削除痕跡なし（更新時） | High | git diff |
 | 動作分岐がある場合 `evals/` 存在 | High | ディレクトリ存在確認 |

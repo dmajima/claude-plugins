@@ -20,8 +20,8 @@ plugins/{plugin-name}/
 ├── references/
 │   └── scripts/                      ← プラグイン共通リソース（全スキルから参照可）
 │       └── setup/
-│           ├── setup_venv.sh         # venv 構築 + 依存インストール
-│           ├── teardown_venv.sh      # venv 削除
+│           ├── setup_venv.ps1        # venv 構築 + 依存インストール (PowerShell 統一)
+│           ├── teardown_venv.ps1     # venv 削除
 │           └── requirements.txt      # 全スキルの依存をマージしたリスト
 └── skills/
     └── {skill-name}/
@@ -40,7 +40,7 @@ plugins/{plugin-name}/
 
 | 対象 | 記法 |
 |-----|------|
-| プラグイン共通スクリプト | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh` |
+| プラグイン共通スクリプト | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1` |
 | スキル固有スクリプト | `${CLAUDE_SKILL_DIR}/references/scripts/{業務単位}/{name}` |
 
 ## 3. インラインスクリプトの判定基準
@@ -161,7 +161,7 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_ve
 ### 5.2 必須要件
 
 - venv は **プラグイン単位で 1 つ**。複数スキルが協業する場合も同じ venv を再利用する
-- `setup_venv.sh` / `teardown_venv.sh` / `requirements.txt` は **プラグイン直下** の `references/scripts/setup/` に配置する
+- `setup_venv.ps1` / `teardown_venv.ps1` / `requirements.txt` は **プラグイン直下** の `references/scripts/setup/` に配置する（PowerShell 統一、shell-preference.md 準拠）
 - スキル配下に独自の `references/scripts/setup/` を置いてはならない（重複・乖離防止）
 - 各スキルは setup スクリプトを **呼び出すだけ**（独自に venv を作成・破棄しない）
 - `requirements.txt` は **全スキルの依存をマージ** したものとする（スキルごとの個別 requirements.txt は禁止）。スキル固有のスクリプトが利用するパッケージも含めてプラグイン直下に統合する
@@ -216,8 +216,8 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 |---------|-------|--------|
 | md 内 6 行以上のコードブロック（`bash` / `python` / `sh` / `powershell` 等の言語指定あり） | High | フェンス間の行数カウント |
 | 制御構造を含む md 内コードブロック（`if `/`for `/`while `/`function ` を含む 5 行以上） | High | パターン検出 |
-| プラグイン直下 `references/scripts/setup/setup_venv.sh` 不在（プラグインに `.py` ファイルが 1 つ以上ある場合） | High | ファイル存在確認 + `*.py` 検出 |
-| スキル直下 `references/scripts/setup/setup_venv.sh` 存在（プラグイン直下と重複） | High | ファイル存在確認 |
+| プラグイン直下 `references/scripts/setup/setup_venv.ps1` 不在（プラグインに `.py` ファイルが 1 つ以上ある場合） | High | ファイル存在確認 + `*.py` 検出 |
+| スキル直下 `references/scripts/setup/setup_venv.ps1` 存在（プラグイン直下と重複） | High | ファイル存在確認 |
 | スキルごとの個別 `requirements.txt` 存在 | Medium | ファイル存在確認 |
 | トップレベル `scripts/` 直下配置（旧ルール残存）| High | ディレクトリ存在確認（`plugins/{name}/scripts/` または `plugins/{name}/skills/{skill}/scripts/`） |
 
@@ -234,13 +234,13 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
    - `plugins/{name}/skills/{skill}/scripts/...` → `plugins/{name}/skills/{skill}/references/scripts/...`
 
 3. **venv スクリプトのプラグイン直下昇格**
-   - スキル配下の `references/scripts/setup/setup_venv.sh` 等を削除
+   - スキル配下の `references/scripts/setup/setup_venv.ps1` 等を削除
    - プラグイン直下 `references/scripts/setup/` に統合（既存があれば再利用）
    - `requirements.txt` をプラグイン直下に統合し、全スキルの依存をマージ
 
 4. **スキル側 references の更新**
    - 「環境構築」節を「プラグイン直下スクリプトの呼び出し」に書き換え
-   - スキル独自の Python バージョン要件等は `setup_venv.sh` 第 3 引数で渡す
+   - スキル独自の Python バージョン要件等は `setup_venv.ps1` の `-MinPythonVersion` パラメータで渡す
 
 ## 9. extension-toolkit 同梱フック（ADR-026）
 
