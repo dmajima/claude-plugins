@@ -65,10 +65,26 @@ if (-not $PythonExe -or -not (Test-Path $PythonExe)) {
     exit 2
 }
 
+# SEC-M2: PythonExe は .exe 拡張子であることを検証.
+# Windows 上で `Test-Path` のみだと、攻撃者が環境変数を汚染できる場合に
+# 任意の実行ファイル（.bat / .cmd / シェルスクリプト等）が Python 名義で
+# 起動されうるリスクがあるため、拡張子レベルでの最低限の境界を設ける.
+if (-not ($PythonExe.ToLower().EndsWith('.exe'))) {
+    Write-Error "PythonExe must be a .exe file: $PythonExe"
+    exit 2
+}
+
 # Timeout 解決
 if ($TimeoutSec -le 0) {
     if ($env:CONVERT_FROM_PPTX_TIMEOUT_SEC) {
-        $TimeoutSec = [int]$env:CONVERT_FROM_PPTX_TIMEOUT_SEC
+        # SEC-L1: 整数変換失敗時はデフォルトにフォールバック.
+        try {
+            $TimeoutSec = [int]$env:CONVERT_FROM_PPTX_TIMEOUT_SEC
+        } catch {
+            Write-Warning "Invalid CONVERT_FROM_PPTX_TIMEOUT_SEC value, using default 600"
+            $TimeoutSec = 600
+        }
+        if ($TimeoutSec -le 0) { $TimeoutSec = 600 }
     } else {
         $TimeoutSec = 600
     }
@@ -113,7 +129,11 @@ $job = Start-Job -ScriptBlock {
 $completed = Wait-Job $job -Timeout $TimeoutSec
 if (-not $completed) {
     Write-Error "convert_from_pptx.py timed out after $TimeoutSec sec"
-    Stop-Job $job
+    # IMPL-M1: Stop-Job は非同期のため、Wait-Job で kill 完了を待つ.
+    # これを挟まないと続く Receive-Job が Running 状態の partial データを読み、
+    # 想定外のレースで終了コードを取り違える可能性がある.
+    Stop-Job $job | Out-Null
+    Wait-Job $job -Timeout 10 | Out-Null
     $partial = Receive-Job $job -ErrorAction SilentlyContinue
     if ($partial) { Write-Output $partial }
     Remove-Job $job -Force
@@ -123,20 +143,32 @@ if (-not $completed) {
 # 結果を呼び出し元に転送
 $output = Receive-Job $job -ErrorAction SilentlyContinue
 
-# 終了コードは output の最終要素として返却（return $LASTEXITCODE による）
+# IMPL-M2: 終了コードは output の最終要素として返却（return $LASTEXITCODE による）.
+# PowerShell の Receive-Job はジョブ境界をまたぐデシリアライズで int を long に
+# 昇格する場合があり、`-is [int]` のみで判定すると終了コードが拾えないことが
+# ある (rc=0 で素通り). 数値型 [int]/[long]/[short]/[byte] を許容し、
+# 0-255 の妥当な exit code 範囲に収まるものだけを終了コードとみなす.
 $rc = 0
+$isExitCode = {
+    param($item)
+    if ($null -eq $item) { return $false }
+    if (-not ($item -is [int] -or $item -is [long] -or $item -is [short] -or $item -is [byte])) {
+        return $false
+    }
+    return ($item -ge 0 -and $item -le 255)
+}
 if ($output -is [array] -and $output.Count -gt 0) {
     $lastItem = $output[-1]
-    if ($lastItem -is [int]) {
+    if (& $isExitCode $lastItem) {
         $rc = [int]$lastItem
-        # 最終要素（int の終了コード）は出力から除外して通常出力のみ転送
+        # 最終要素（exit code）は出力から除外して通常出力のみ転送
         if ($output.Count -gt 1) {
             $output[0..($output.Count - 2)] | Write-Output
         }
     } else {
         Write-Output $output
     }
-} elseif ($output -is [int]) {
+} elseif (& $isExitCode $output) {
     $rc = [int]$output
 } elseif ($output) {
     Write-Output $output
