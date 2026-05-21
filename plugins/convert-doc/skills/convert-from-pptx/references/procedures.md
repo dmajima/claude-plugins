@@ -50,6 +50,25 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from
 - `--images-dir` 未指定時は `<出力MD basename>_images/` を出力 MD と同階層に作成
 - `--max-image-size` は 1 画像あたりのバイト上限（既定 5 MiB）。超過時はメタ情報のみ Markdown に残す
 
+### Phase 3 検証 (verify_md.py) のラッパー経由起動
+
+カバレッジ検証 `verify_md.py` も同じく `python-pptx` を内部利用するため、専用
+ラッパー `run_verify_via_job.ps1` 経由で起動する。
+
+```powershell
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_verify_via_job.ps1" `
+  "<入力PPTXファイルパス>" `
+  "<検証対象MDファイルパス>" `
+  -PythonExe "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+  [-TimeoutSec <秒>] `
+  [--report <REPORT.json>] `
+  [--threshold <0.85 等>] `
+  [--max-missing-shown <件数>]
+```
+
+設計と挙動は `run_via_job.ps1` と対称（タイムアウト時 exit 124、PythonExe 検証、
+stderr マージ等の動作仕様すべて共通）。
+
 ## スライド→Markdown 規則
 
 | PPTX | Markdown |
