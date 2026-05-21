@@ -56,7 +56,7 @@ try:
 except ImportError as exc:  # pragma: no cover
     print(f"Error: python-pptx not available ({exc}).", file=sys.stderr, flush=True)
     sys.stderr.flush()
-    raise SystemExit(2)
+    raise SystemExit(2) from exc
 
 
 CTRL_CHAR_RE = re.compile(r"[\x09-\x1f\x7f-\x9f]+")
