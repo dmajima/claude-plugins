@@ -63,3 +63,7 @@ for phrase in md["phrases"]:
 
 - [case-25a_verify_pass.md](case-25a_verify_pass.md): 通常 PASS
 - [case-25b_verify_fail.md](case-25b_verify_fail.md): 閾値未達 FAIL
+## 起動経路についての注記
+
+`verify_md.py` も python-pptx を内部で使うため、`Start-Process -NoNewWindow` 直起動はハングする可能性がある。
+詳細と回避策は [case-25a_verify_pass.md](case-25a_verify_pass.md) の「起動経路についての注記」を参照。

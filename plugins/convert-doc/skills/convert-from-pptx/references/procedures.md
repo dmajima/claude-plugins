@@ -109,3 +109,16 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from
 | **起動して 30 秒以上経っても何も出力されずプロセスが終了しない** | **直接 `python.exe` を `&` / `Start-Process -NoNewWindow` で呼んでいないか確認**。必ず `run_via_job.ps1` ラッパー経由で起動する（procedures.md 冒頭参照） |
 | stdout/stderr が両方とも 0 byte のまま固まる | 同上。Windows + PowerShell + python-pptx の組み合わせ問題で、`Presentation()` 呼び出しでハングする |
 | 「`exited: False`」がログに出る | プロセスがタイムアウトで kill された証拠。`run_via_job.ps1` 経由に切り替える |
+
+## 情報開示・運用上の注意（CI / 共有環境向け）
+
+本スクリプトの **エラーメッセージには内部パス・shape 名・ファイルサイズ等が含まれる**
+（例: `Error: Input file not found: C:\<実環境の絶対パス>`）。
+ラッパー (`run_via_job.ps1`) は `2>&1` で Python の stderr を stdout に統合してから
+呼び出し元に返すため、これらの情報は呼び出し元のログ・CI 出力にそのまま流れる。
+
+| 利用シーン | リスク評価 | 推奨対処 |
+|----|----|----|
+| ローカル開発 (個人マシン) | リスク低 | そのまま使用してよい |
+| CI / 共有環境 | 内部パス漏洩 (CWE-209/532) のリスクあり | エラーメッセージをマスク・要約する後処理を呼び出し側で実装するか、ログ保存期間を短縮 |
+| 顧客提供物 / 外部公開ログ | 同上 + shape 名から仕様内容が推測されうる | 上記に加え、PPTX 仕様自体を秘匿前提として扱う |

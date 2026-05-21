@@ -49,3 +49,7 @@ if text_coverage < coverage_threshold:
 
 - [case-25a_verify_pass.md](case-25a_verify_pass.md): 閾値達成 PASS
 - [case-25c_verify_suspicious.md](case-25c_verify_suspicious.md): 誤転記候補検出
+## 起動経路についての注記
+
+`verify_md.py` も python-pptx を内部で使うため、`Start-Process -NoNewWindow` 直起動はハングする可能性がある。
+詳細と回避策は [case-25a_verify_pass.md](case-25a_verify_pass.md) の「起動経路についての注記」を参照。

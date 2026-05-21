@@ -26,6 +26,13 @@ if magic != PPTX_MAGIC:
     raise ValueError(f"Input file is not a valid PPTX (zip magic): {path}")
 ```
 
+## 起動経路についての注記
+
+`run_via_job.ps1` ラッパー経由起動が必須（[`../references/procedures.md`](../references/procedures.md) 参照）。
+ラッパー経由の場合の挙動は [case-09_input_not_found.md](case-09_input_not_found.md) の「起動経路についての注記」を参照。
+ラッパーは `ValueError` 経路で投げられたエラーメッセージも `2>&1` 経由で呼び出し元に確実に伝える。
+
 ## 関連ケース
 
 - [case-09_input_not_found.md](case-09_input_not_found.md): ファイル不在
+- [case-47_fail_close_stderr_flush.md](case-47_fail_close_stderr_flush.md): fail-close 経路の stderr flush 保証
