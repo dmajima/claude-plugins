@@ -21,7 +21,9 @@ from typing import Iterable, List, Optional
 try:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
-except Exception:
+except AttributeError:
+    # Python 3.6 以下では reconfigure 未実装。文字化けリスクは
+    # PYTHONUTF8=1 / PYTHONIOENCODING=utf-8 で補う前提.
     pass
 
 # XML 攻撃対策（XXE / Billion Laughs / DTD / external entity, CWE-611 / CWE-776）:
@@ -49,6 +51,18 @@ except ImportError as exc:
     print(f"Error: lxml is not installed: {exc}", file=sys.stderr, flush=True)
     sys.stderr.flush()
     sys.exit(2)
+
+# CWE-611 / CWE-776 多層防御の最終層: python-pptx 内部の lxml が parser を明示
+# 指定せず etree.parse / etree.fromstring を呼ぶ箇所に対し、グローバル default を
+# 「entity 解決禁止 / network 禁止 / DTD ロード禁止 / 巨大ツリー禁止」へ上書き
+# する. 本スクリプト独自の解析は `_hardened_xml_parser()` 経由で同条件を明示適用
+# しているため二重保護となるが、害はない.
+etree.set_default_parser(etree.XMLParser(
+    resolve_entities=False,
+    no_network=True,
+    load_dtd=False,
+    huge_tree=False,
+))
 
 
 # ----------------------------------------------------------------------------- #

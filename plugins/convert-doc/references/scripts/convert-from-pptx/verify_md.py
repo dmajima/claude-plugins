@@ -24,14 +24,31 @@ import unicodedata
 from pathlib import Path
 from typing import Optional
 
-sys.stdout.reconfigure(encoding="utf-8")
-sys.stderr.reconfigure(encoding="utf-8")
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except AttributeError:
+    # Python 3.6 以下では reconfigure 未実装。文字化けリスクは
+    # PYTHONUTF8=1 / PYTHONIOENCODING=utf-8 で補う前提.
+    pass
 
 # XML 攻撃対策（CWE-611 / CWE-776）は convert_from_pptx.py と対称化:
-# - 本スクリプトは XML を直接 parse しないため lxml ハードナを定義しない.
-# - python-pptx 内部の lxml 経由のリスクは PPTX サイズ・スライド数等の上限定数で限定する.
+# - 本スクリプトは XML を直接 parse しないが、python-pptx 経由で lxml が動くため、
+#   グローバル default parser を hardened に上書きする (convert_from_pptx.py と同じ).
+# - PPTX サイズ・スライド数等の上限定数も併用する.
 # - 旧 `defusedxml.lxml.monkey_patch_lxml()` 呼び出しは defusedxml 0.7 で API が削除された
 #   ため撤去した（呼び出すと AttributeError → fail-close で起動不能）.
+try:
+    from lxml import etree as _lxml_etree
+    _lxml_etree.set_default_parser(_lxml_etree.XMLParser(
+        resolve_entities=False,
+        no_network=True,
+        load_dtd=False,
+        huge_tree=False,
+    ))
+except ImportError:
+    # lxml が無い環境（python-pptx の動作前提として通常はあるが、保険として）
+    pass
 
 try:
     from pptx import Presentation
