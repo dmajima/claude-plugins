@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """verify_md.py - PPTX -> Markdown coverage verifier (Phase 3 validation).
 
 PPTX とそこから生成された Markdown を機械的に突き合わせて、
@@ -22,7 +21,6 @@ import re
 import sys
 import unicodedata
 from pathlib import Path
-from typing import Optional
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -183,7 +181,7 @@ def _is_connector(shape) -> bool:
         return False
 
 
-def _connector_info(shape) -> Optional[dict]:
+def _connector_info(shape) -> dict | None:
     try:
         begin = None
         end = None
@@ -221,7 +219,7 @@ def _collect_template_texts(presentation) -> set:
     return texts
 
 
-def _is_offscreen(shape, slide_w: Optional[int], slide_h: Optional[int]) -> bool:
+def _is_offscreen(shape, slide_w: int | None, slide_h: int | None) -> bool:
     """shape がスライド領域外 (top<0, left<0, top>height, left>width) なら True."""
     try:
         top = shape.top if shape.top is not None else 0
@@ -336,7 +334,7 @@ def _extract_pptx_inventory(pptx_path: Path) -> dict:
 
 
 def _extract_md_features(md_path: Path) -> dict:
-    with open(md_path, "r", encoding="utf-8") as fh:
+    with open(md_path, encoding="utf-8") as fh:
         body = fh.read()
     # 比較用: Markdown のリンク表記 <https://...> を URL に展開 → <br/> 除去 → 記号空白化
     body_for_compare = _MD_LINK_RE.sub(r" \1 ", body)
