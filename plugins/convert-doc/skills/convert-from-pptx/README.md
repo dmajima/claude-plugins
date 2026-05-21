@@ -14,7 +14,7 @@ PowerPoint (PPTX) を Claude が読み込める Markdown に変換するスキ�
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-依存パッケージ（python-pptx / Pillow / lxml / defusedxml）は初回実行時に `references/scripts/setup/setup_venv.ps1`（Windows 11 推奨）または `setup_venv.sh`（POSIX 互換）が自動で venv を構築してインストールします。本スキルは外部ネットワークアクセスを行いません（オフライン環境でも動作）。
+依存パッケージ（python-pptx / Pillow / lxml）は初回実行時に `references/scripts/setup/setup_venv.ps1`（Windows 11 推奨）または `setup_venv.sh`（POSIX 互換）が自動で venv を構築してインストールします。本スキルは外部ネットワークアクセスを行いません（オフライン環境でも動作）。
 
 ## 仕組み
 

@@ -58,8 +58,8 @@
 | [case-42c_max_group_depth_exceeded.md](case-42c_max_group_depth_exceeded.md) | `MAX_GROUP_DEPTH` 上限超過時の拒否（CWE-674） |
 | [case-42d_max_image_count_exceeded.md](case-42d_max_image_count_exceeded.md) | 画像総量・枚数の上限超過時の拒否（DoS 防御） |
 | [case-43_large_pptx_subagent_flow.md](case-43_large_pptx_subagent_flow.md) | 大規模 PPTX（100 スライド超）でのサブエージェント並列分担フロー |
-| [case-44a_defusedxml_missing_default.md](case-44a_defusedxml_missing_default.md) | `defusedxml` 未インストール時のフェイルクローズ（デフォルト exit 2） |
-| [case-44b_defusedxml_missing_opt_out.md](case-44b_defusedxml_missing_opt_out.md) | `defusedxml` 未インストール + `CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1` で警告継続 |
+| [case-44_xml_hardening_without_defusedxml.md](case-44_xml_hardening_without_defusedxml.md) | `defusedxml` 非依存での XML 攻撃保護（ZIP bomb 検査 + 上限定数）と起動成功 |
+| [case-47_fail_close_stderr_flush.md](case-47_fail_close_stderr_flush.md) | fail-close 経路の stderr が `Start-Process` リダイレクトでも欠落しない（flush 強制） |
 | [case-45_medium_pptx_flow.md](case-45_medium_pptx_flow.md) | 中規模 PPTX（30〜100 スライド）でのメイン逐次 Read フロー |
 | [case-46_section_cover_number_excluded.md](case-46_section_cover_number_excluded.md) | 章扉スライドでの装飾的章番号除外（`_is_decoration_number`） |
 

@@ -27,38 +27,18 @@ from typing import Optional
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-# defusedxml で lxml をハードニング（CWE-611 / CWE-776）. python-pptx 内部の lxml にも
-# 適用するため、pptx import の前に monkey patch する. デフォルトはフェイルクローズ.
-# 環境変数 CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1 で警告継続に切替可能（オプトアウト）.
-import os as _os
-_allow_unhardened_xml = _os.environ.get("CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML", "") == "1"
-try:
-    import defusedxml.lxml as _defused_lxml
-    _defused_lxml.monkey_patch_lxml()
-except ImportError:
-    _xml_msg = (
-        "defusedxml is required for safe XML handling (CWE-611 / CWE-776). "
-        "Install with: pip install defusedxml. "
-        "To bypass at your own risk, set CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1."
-    )
-    if _allow_unhardened_xml:
-        print(f"Warning: {_xml_msg}", file=sys.stderr)
-    else:
-        print(f"Error: {_xml_msg}", file=sys.stderr)
-        sys.exit(2)
-except Exception as _defused_exc:
-    _xml_msg = f"defusedxml monkey patch failed: {_defused_exc}"
-    if _allow_unhardened_xml:
-        print(f"Warning: {_xml_msg}", file=sys.stderr)
-    else:
-        print(f"Error: {_xml_msg}", file=sys.stderr)
-        sys.exit(2)
+# XML 攻撃対策（CWE-611 / CWE-776）は convert_from_pptx.py と対称化:
+# - 本スクリプトは XML を直接 parse しないため lxml ハードナを定義しない.
+# - python-pptx 内部の lxml 経由のリスクは PPTX サイズ・スライド数等の上限定数で限定する.
+# - 旧 `defusedxml.lxml.monkey_patch_lxml()` 呼び出しは defusedxml 0.7 で API が削除された
+#   ため撤去した（呼び出すと AttributeError → fail-close で起動不能）.
 
 try:
     from pptx import Presentation
     from pptx.enum.shapes import MSO_SHAPE_TYPE
 except ImportError as exc:  # pragma: no cover
-    print(f"Error: python-pptx not available ({exc}).", file=sys.stderr)
+    print(f"Error: python-pptx not available ({exc}).", file=sys.stderr, flush=True)
+    sys.stderr.flush()
     raise SystemExit(2)
 
 
@@ -96,13 +76,17 @@ def _check_input_path(path: Path, label: str) -> None:
         print(
             f"Error: {label} contains '..' (path traversal blocked): {path}",
             file=sys.stderr,
+            flush=True,
         )
+        sys.stderr.flush()
         raise SystemExit(2)
     if path.is_symlink():
         print(
             f"Error: {label} is a symbolic link (refused for safety): {path}",
             file=sys.stderr,
+            flush=True,
         )
+        sys.stderr.flush()
         raise SystemExit(2)
 
 
@@ -553,10 +537,12 @@ def main(argv=None) -> int:
     _check_input_path(pptx_path, "pptx")
     _check_input_path(md_path, "md")
     if not pptx_path.exists():
-        print(f"Error: PPTX not found: {pptx_path}", file=sys.stderr)
+        print(f"Error: PPTX not found: {pptx_path}", file=sys.stderr, flush=True)
+        sys.stderr.flush()
         return 2
     if not md_path.exists():
-        print(f"Error: Markdown not found: {md_path}", file=sys.stderr)
+        print(f"Error: Markdown not found: {md_path}", file=sys.stderr, flush=True)
+        sys.stderr.flush()
         return 2
 
     report = verify(pptx_path, md_path, coverage_threshold=args.threshold)
@@ -568,14 +554,18 @@ def main(argv=None) -> int:
             print(
                 f"Error: --report path contains '..' (path traversal blocked): {report_path}",
                 file=sys.stderr,
+                flush=True,
             )
+            sys.stderr.flush()
             return 2
         # HR-ε: 既存ファイルがシンボリックリンクなら拒否（CWE-59 / CWE-367 TOCTOU 対策）
         if report_path.exists() and report_path.is_symlink():
             print(
                 f"Error: --report path is a symbolic link (refused for safety): {report_path}",
                 file=sys.stderr,
+                flush=True,
             )
+            sys.stderr.flush()
             return 2
         report_path = report_path.resolve()
         report_path.parent.mkdir(parents=True, exist_ok=True)

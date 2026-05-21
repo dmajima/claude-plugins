@@ -24,45 +24,30 @@ try:
 except Exception:
     pass
 
-# defusedxml で lxml をハードニング（XXE / Billion Laughs / DTD / external entity 対策、
-# CWE-611 / CWE-776）. python-pptx 内部の lxml にも適用するため、pptx import の前に
-# monkey patch する. デフォルトはフェイルクローズ（HR-C: セキュア既定）.
-# 環境変数 CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1 で警告継続に切替可能（オプトアウト）.
-import os as _os
-_allow_unhardened_xml = _os.environ.get("CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML", "") == "1"
-try:
-    import defusedxml.lxml as _defused_lxml
-    _defused_lxml.monkey_patch_lxml()
-except ImportError:
-    _xml_msg = (
-        "defusedxml is required for safe XML handling (CWE-611 / CWE-776). "
-        "Install with: pip install defusedxml. "
-        "To bypass at your own risk, set CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1."
-    )
-    if _allow_unhardened_xml:
-        print(f"Warning: {_xml_msg}", file=sys.stderr)
-    else:
-        print(f"Error: {_xml_msg}", file=sys.stderr)
-        sys.exit(2)
-except Exception as _defused_exc:
-    _xml_msg = f"defusedxml monkey patch failed: {_defused_exc}"
-    if _allow_unhardened_xml:
-        print(f"Warning: {_xml_msg}", file=sys.stderr)
-    else:
-        print(f"Error: {_xml_msg}", file=sys.stderr)
-        sys.exit(2)
+# XML 攻撃対策（XXE / Billion Laughs / DTD / external entity, CWE-611 / CWE-776）:
+# - 本スクリプト独自の lxml 解析は `_hardened_xml_parser()` で
+#   resolve_entities=False / no_network=True / load_dtd=False / huge_tree=False を適用.
+# - python-pptx 内部の lxml は直接ハードニングしない代わりに、`_validate_pptx` の
+#   ZIP bomb 検査（MAX_TOTAL_UNCOMPRESSED_BYTES / MAX_COMPRESSION_RATIO）と
+#   上限定数（MAX_SLIDES / MAX_SHAPES_PER_SLIDE / MAX_GROUP_DEPTH /
+#   MAX_TEXT_PER_SHAPE / MAX_TOTAL_IMAGE_BYTES / MAX_IMAGE_COUNT_PER_PPTX）で
+#   DoS / 巨大エンティティ展開の影響範囲を限定する.
+# - 旧コード `defusedxml.lxml.monkey_patch_lxml()` は defusedxml 0.7 で API が
+#   削除されたため撤去した（呼び出すと AttributeError → fail-close で起動不能）.
 
 try:
     from pptx import Presentation
     from pptx.enum.shapes import MSO_SHAPE_TYPE
 except ImportError as exc:
-    print(f"Error: python-pptx is not installed: {exc}", file=sys.stderr)
+    print(f"Error: python-pptx is not installed: {exc}", file=sys.stderr, flush=True)
+    sys.stderr.flush()
     sys.exit(2)
 
 try:
     from lxml import etree
 except ImportError as exc:
-    print(f"Error: lxml is not installed: {exc}", file=sys.stderr)
+    print(f"Error: lxml is not installed: {exc}", file=sys.stderr, flush=True)
+    sys.stderr.flush()
     sys.exit(2)
 
 
@@ -572,10 +557,13 @@ class PPTXMarkdownConverter:
         インスタンスを再利用することで、PPTX を毎回開き直す重複初期化を解消する.
 
         注意: python-pptx 内部の lxml パーサは `_hardened_xml_parser` を経由しない.
-        悪意 PPTX の Billion Laughs / 巨大 entity 展開リスクが残るため、
-        `_validate_pptx` の ZIP bomb 検査と上限定数（MAX_SLIDES 等）を併用する.
-        さらなる保護が必要な環境では `defusedxml.lxml.monkey_patch_lxml()` を
-        起動時に呼ぶことを推奨する.
+        悪意 PPTX の Billion Laughs / 巨大 entity 展開リスクへの保護は、
+        `_validate_pptx` の ZIP bomb 検査（MAX_TOTAL_UNCOMPRESSED_BYTES /
+        MAX_COMPRESSION_RATIO）と上限定数（MAX_SLIDES / MAX_SHAPES_PER_SLIDE /
+        MAX_GROUP_DEPTH / MAX_TEXT_PER_SHAPE / MAX_TOTAL_IMAGE_BYTES /
+        MAX_IMAGE_COUNT_PER_PPTX）の併用によって与える.
+        過去には `defusedxml.lxml.monkey_patch_lxml()` の起動時呼び出しを推奨していたが、
+        defusedxml 0.7 で当該 API が削除されたため依存自体を廃止した.
         """
         if self._presentation_cache is None:
             _validate_pptx(self.input_path)
@@ -2335,7 +2323,8 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     args = parse_args(argv if argv is not None else sys.argv[1:])
     input_path = Path(args.input)
     if not input_path.exists():
-        print(f"Error: Input file not found: {input_path}", file=sys.stderr)
+        print(f"Error: Input file not found: {input_path}", file=sys.stderr, flush=True)
+        sys.stderr.flush()
         return 1
     try:
         converter = PPTXMarkdownConverter(args)
@@ -2365,15 +2354,35 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         print(f"Images dir: {converter.images_dir}")
         return 0
     except FileNotFoundError as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        print(f"Error: {exc}", file=sys.stderr, flush=True)
+        sys.stderr.flush()
         return 1
     except ValueError as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        print(f"Error: {exc}", file=sys.stderr, flush=True)
+        sys.stderr.flush()
         return 1
     except Exception as exc:  # noqa: BLE001
-        print(f"Error: unexpected failure: {exc}", file=sys.stderr)
+        print(f"Error: unexpected failure: {exc}", file=sys.stderr, flush=True)
+        sys.stderr.flush()
         return 2
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # PowerShell `Start-Process -RedirectStandardOutput/Error` 経由で起動された場合、
+    # 通常の `sys.exit()` 経由（atexit / 通常 GC）では Python の stdio バッファ解放が
+    # 親プロセスの `WaitForExit` で検知されず「ハング」として観測される
+    # 既知の Windows + Python の挙動を回避するため、終了前に明示 flush し、
+    # `os._exit()` で atexit を経由せず即時終了する.
+    # 本スクリプトは threading / atexit / 一時ファイルクリーンアップを行わないため、
+    # `os._exit()` での即時終了は安全.
+    import os as _exit_os
+    try:
+        _rc = main()
+    except SystemExit as _se:
+        _rc = int(_se.code) if isinstance(_se.code, int) else (0 if _se.code is None else 1)
+    try:
+        sys.stdout.flush()
+        sys.stderr.flush()
+    except Exception:
+        pass
+    _exit_os._exit(_rc)
