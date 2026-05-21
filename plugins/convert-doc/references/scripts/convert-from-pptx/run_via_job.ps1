@@ -93,6 +93,9 @@ if ($ExtraArgs) {
 }
 
 # Start-Job で convert_from_pptx.py を実行
+# `2>&1` で Python の stderr を stdout に統合してから ToString() で
+# 文字列化し、PowerShell の Error ストリームに飛んで Receive-Job で
+# 拾えなくなる事態を防ぐ.
 $job = Start-Job -ScriptBlock {
     param($py, $script, $jobArgs)
     & chcp.com 65001 | Out-Null
@@ -100,8 +103,10 @@ $job = Start-Job -ScriptBlock {
     $OutputEncoding = [System.Text.Encoding]::UTF8
     $env:PYTHONUTF8 = "1"
     $env:PYTHONIOENCODING = "utf-8"
-    & $py -u $script @jobArgs
-    return $LASTEXITCODE
+    $merged = & $py -u $script @jobArgs 2>&1 | ForEach-Object { "$_" }
+    $exitCode = $LASTEXITCODE
+    if ($merged) { $merged | Write-Output }
+    return $exitCode
 } -ArgumentList $PythonExe, $convertScript, (,$pythonArgs)
 
 # 完了待ち
