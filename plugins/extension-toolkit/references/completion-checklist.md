@@ -30,6 +30,7 @@
 | README 規約 | 人間向け明記・導入手順優先 | [`readme-policy.md`](readme-policy.md) |
 | エージェント活用 | Explore 等の既存機能利用 | [`agent-utilization.md`](agent-utilization.md) |
 | エンコーディング | 元ファイルの文字コード・改行コード保持。グローバルルール参照は ADR-022 例外（OS/Claude Code 共通ルール）として許容、不在時は UTF-8 / 元の改行コードを既定維持 | `~/.claude/rules/common/file-encoding.md`（任意参照） |
+| **Python 子プロセス起動のハング対策**（Python スクリプトを呼ぶ場合 **MANDATORY**）| Python スクリプト（特に `python-pptx` を使うもの）を呼ぶ場合、`Start-Process -NoNewWindow` / `&` + redirect での直起動は禁止。**`Start-Job` 経由ラッパースクリプト**を経由する。`procedures.md` の起動例にラッパー経由が記載されているか確認 | `~/.claude/rules/tools/python-subprocess-hang-windows.md` / [`powershell-pitfalls.md`](powershell-pitfalls.md) 節 7.3 |
 
 ### 2.2 要件適合性チェック
 

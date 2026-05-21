@@ -183,9 +183,9 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_ve
   -WorkDir "$SessionDir/workspace" `
   -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 
-# 2. Python 実行（venv 内 python を直接呼ぶ）
-& "$SessionDir/workspace/.venv/Scripts/python" `
-  "$env:CLAUDE_SKILL_DIR/references/scripts/{業務}/main.py" <args>
+# 2. Python 実行（Start-Job ラッパー経由必須・5.5 参照）
+pwsh -NoProfile -File "$env:CLAUDE_SKILL_DIR/references/scripts/{業務}/run_via_job.ps1" `
+  -PythonExe "$SessionDir/workspace/.venv/Scripts/python.exe" <その他引数>
 
 # 3. 撤去（セッション完了時）
 pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" `
@@ -193,6 +193,68 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 ```
 
 呼び出し側（各スキル）は **この 3 ステップのみ** を実施する。venv 内部のロジック（python コマンド検出・pip 操作・OS 別パス分岐等）はすべて setup スクリプト側で完結させる。
+
+### 5.5 Python 子プロセス起動は **Start-Job 経由ラッパー必須**（MANDATORY）
+
+Windows + PowerShell から Python スクリプトを **`Start-Process -NoNewWindow` または `&` + ファイルリダイレクトで直接起動**すると、ライブラリ（`python-pptx.Presentation()` 等）の呼び出しでハングする既知事象がある。グローバルルール [`~/.claude/rules/tools/python-subprocess-hang-windows.md`](file:///C:/Users/wwdmajima/.claude/rules/tools/python-subprocess-hang-windows.md) および [`powershell-pitfalls.md`](powershell-pitfalls.md) 節 7.3 参照。
+
+**Python スクリプトを呼ぶ拡張要素（スキル / コマンド）を作る場合、必ず Start-Job 経由ラッパーを `references/scripts/{業務}/` に同梱**し、procedures.md 等の起動例ではラッパー経由のみを示すこと。
+
+| 項目 | 内容 |
+|------|------|
+| ラッパーファイル名 | `run_via_job.ps1` を推奨（業務単位ごとに別名でも可）|
+| 必須実装要素 | `Start-Job` + `Wait-Job -Timeout` + `Receive-Job` + `Stop-Job`/`Remove-Job` のクリーンアップ |
+| 必須プリフィクス | ジョブ ScriptBlock 内で `chcp.com 65001` + `[Console]::OutputEncoding = UTF8` + `$OutputEncoding = UTF8` + `$env:PYTHONUTF8=1` + `$env:PYTHONIOENCODING=utf-8` |
+| Python 実行 | `& $py -u $script @jobArgs` の形（`-u` で unbuffered）|
+| 終了コード返却 | `return $LASTEXITCODE` を ScriptBlock 末尾に置き、呼び出し側で `Receive-Job` から取り出して `exit $rc` |
+| 実装サンプル | `plugins/convert-doc/references/scripts/convert-from-pptx/run_via_job.ps1` |
+
+```powershell
+# ラッパー実装の最小骨格（コピペ可能テンプレート）
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory=$true, Position=0)] [string]$InputPath,
+    [Parameter(Mandatory=$true, Position=1)] [string]$OutputPath,
+    [string]$PythonExe,
+    [int]$TimeoutSec = 600,
+    [Parameter(ValueFromRemainingArguments=$true)] [string[]]$ExtraArgs
+)
+& chcp.com 65001 | Out-Null
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$pyScript = Join-Path $scriptDir "your_script.py"
+$pythonArgs = @($InputPath, $OutputPath)
+if ($ExtraArgs) { $pythonArgs += $ExtraArgs }
+
+$job = Start-Job -ScriptBlock {
+    param($py, $script, $jobArgs)
+    & chcp.com 65001 | Out-Null
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+    $env:PYTHONUTF8 = "1"
+    $env:PYTHONIOENCODING = "utf-8"
+    & $py -u $script @jobArgs
+    return $LASTEXITCODE
+} -ArgumentList $PythonExe, $pyScript, (,$pythonArgs)
+
+$completed = Wait-Job $job -Timeout $TimeoutSec
+if (-not $completed) {
+    Write-Error "timed out after $TimeoutSec sec"
+    Stop-Job $job
+    Remove-Job $job -Force
+    exit 124
+}
+$output = Receive-Job $job
+$rc = 0
+if ($output -is [array] -and $output.Count -gt 0 -and $output[-1] -is [int]) {
+    $rc = [int]$output[-1]
+    if ($output.Count -gt 1) { $output[0..($output.Count - 2)] | Write-Output }
+}
+Remove-Job $job -Force
+exit $rc
+```
 
 ## 6. インラインで残してよいコードブロック
 

@@ -54,7 +54,26 @@ if table_coverage < coverage_threshold:
 report["passed"] = not failures
 ```
 
+## 起動経路についての注記（verify_md.py のラッパー）
+
+`verify_md.py` 自体は `python-pptx` を内部で使うため、`convert_from_pptx.py` と
+同じ「Windows + PowerShell + `Start-Process -NoNewWindow` でハング」事象が
+発生しうる。専用ラッパー `run_verify_via_job.ps1` を経由して起動する:
+
+```powershell
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_verify_via_job.ps1" `
+  "<入力PPTXパス>" `
+  "<検証対象MDパス>" `
+  -PythonExe "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+  --report "<セッション>/coverage_report.json" `
+  --threshold 0.85
+```
+
+直接 `& "$py.exe" verify_md.py ...` で起動するとハングする可能性があるため必ず
+ラッパー経由とする。設計と挙動は `run_via_job.ps1` と対称。
+
 ## 関連ケース
 
 - [case-25b_verify_fail.md](case-25b_verify_fail.md): 閾値未達 FAIL
 - [case-25c_verify_suspicious.md](case-25c_verify_suspicious.md): 誤転記候補検出
+- [case-47_fail_close_stderr_flush.md](case-47_fail_close_stderr_flush.md): convert_from_pptx.py 側の同等保護

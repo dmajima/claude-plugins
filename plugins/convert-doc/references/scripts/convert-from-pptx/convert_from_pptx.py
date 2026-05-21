@@ -16,54 +16,53 @@ import sys
 import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, List, Optional
+from collections.abc import Iterable
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
-except Exception:
+except AttributeError:
+    # Python 3.6 以下では reconfigure 未実装。文字化けリスクは
+    # PYTHONUTF8=1 / PYTHONIOENCODING=utf-8 で補う前提.
     pass
 
-# defusedxml で lxml をハードニング（XXE / Billion Laughs / DTD / external entity 対策、
-# CWE-611 / CWE-776）. python-pptx 内部の lxml にも適用するため、pptx import の前に
-# monkey patch する. デフォルトはフェイルクローズ（HR-C: セキュア既定）.
-# 環境変数 CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1 で警告継続に切替可能（オプトアウト）.
-import os as _os
-_allow_unhardened_xml = _os.environ.get("CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML", "") == "1"
-try:
-    import defusedxml.lxml as _defused_lxml
-    _defused_lxml.monkey_patch_lxml()
-except ImportError:
-    _xml_msg = (
-        "defusedxml is required for safe XML handling (CWE-611 / CWE-776). "
-        "Install with: pip install defusedxml. "
-        "To bypass at your own risk, set CONVERT_FROM_PPTX_ALLOW_UNHARDENED_XML=1."
-    )
-    if _allow_unhardened_xml:
-        print(f"Warning: {_xml_msg}", file=sys.stderr)
-    else:
-        print(f"Error: {_xml_msg}", file=sys.stderr)
-        sys.exit(2)
-except Exception as _defused_exc:
-    _xml_msg = f"defusedxml monkey patch failed: {_defused_exc}"
-    if _allow_unhardened_xml:
-        print(f"Warning: {_xml_msg}", file=sys.stderr)
-    else:
-        print(f"Error: {_xml_msg}", file=sys.stderr)
-        sys.exit(2)
+# XML 攻撃対策（XXE / Billion Laughs / DTD / external entity, CWE-611 / CWE-776）:
+# - 本スクリプト独自の lxml 解析は `_hardened_xml_parser()` で
+#   resolve_entities=False / no_network=True / load_dtd=False / huge_tree=False を適用.
+# - python-pptx 内部の lxml は直接ハードニングしない代わりに、`_validate_pptx` の
+#   ZIP bomb 検査（MAX_TOTAL_UNCOMPRESSED_BYTES / MAX_COMPRESSION_RATIO）と
+#   上限定数（MAX_SLIDES / MAX_SHAPES_PER_SLIDE / MAX_GROUP_DEPTH /
+#   MAX_TEXT_PER_SHAPE / MAX_TOTAL_IMAGE_BYTES / MAX_IMAGE_COUNT_PER_PPTX）で
+#   DoS / 巨大エンティティ展開の影響範囲を限定する.
+# - 旧コード `defusedxml.lxml.monkey_patch_lxml()` は defusedxml 0.7 で API が
+#   削除されたため撤去した（呼び出すと AttributeError → fail-close で起動不能）.
 
 try:
     from pptx import Presentation
     from pptx.enum.shapes import MSO_SHAPE_TYPE
 except ImportError as exc:
-    print(f"Error: python-pptx is not installed: {exc}", file=sys.stderr)
+    print(f"Error: python-pptx is not installed: {exc}", file=sys.stderr, flush=True)
+    sys.stderr.flush()
     sys.exit(2)
 
 try:
     from lxml import etree
 except ImportError as exc:
-    print(f"Error: lxml is not installed: {exc}", file=sys.stderr)
+    print(f"Error: lxml is not installed: {exc}", file=sys.stderr, flush=True)
+    sys.stderr.flush()
     sys.exit(2)
+
+# CWE-611 / CWE-776 多層防御の最終層: python-pptx 内部の lxml が parser を明示
+# 指定せず etree.parse / etree.fromstring を呼ぶ箇所に対し、グローバル default を
+# 「entity 解決禁止 / network 禁止 / DTD ロード禁止 / 巨大ツリー禁止」へ上書き
+# する. 本スクリプト独自の解析は `_hardened_xml_parser()` 経由で同条件を明示適用
+# しているため二重保護となるが、害はない.
+etree.set_default_parser(etree.XMLParser(
+    resolve_entities=False,
+    no_network=True,
+    load_dtd=False,
+    huge_tree=False,
+))
 
 
 # ----------------------------------------------------------------------------- #
@@ -113,7 +112,7 @@ NS_R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 NS_P = "http://schemas.openxmlformats.org/presentationml/2006/main"
 
 
-def _hardened_xml_parser() -> "etree.XMLParser":
+def _hardened_xml_parser() -> etree.XMLParser:
     """XXE / DTD / 巨大ツリー攻撃を遮断した lxml パーサを返す."""
     return etree.XMLParser(
         resolve_entities=False,
@@ -128,7 +127,7 @@ def _hardened_xml_parser() -> "etree.XMLParser":
 # ----------------------------------------------------------------------------- #
 
 
-def _safe_text(value: Optional[str]) -> str:
+def _safe_text(value: str | None) -> str:
     """テキストを安全な形に正規化する.
 
     - `\\r` 除去 + 前後空白 strip
@@ -151,7 +150,7 @@ def _escape_md_pipe(value: str) -> str:
     return value.replace("|", "\\|").replace("\n", "<br>")
 
 
-def _is_monospace_font(font_name: Optional[str]) -> bool:
+def _is_monospace_font(font_name: str | None) -> bool:
     if not font_name:
         return False
     return font_name in MONOSPACE_FONTS
@@ -289,7 +288,7 @@ def _safe_write_bytes(path: Path, data: bytes, force: bool = False) -> None:
     _apply_safe_perm(path)
 
 
-def _safe_int_from_str(value: Optional[str], max_len: int = MAX_ID_STRING_LEN) -> Optional[int]:
+def _safe_int_from_str(value: str | None, max_len: int = MAX_ID_STRING_LEN) -> int | None:
     """XML 由来の数値文字列を安全に int に変換する.
 
     長すぎる文字列（DoS 攻撃）は None を返す。CWE-754 / int_max_str_digits 対策。
@@ -304,7 +303,7 @@ def _safe_int_from_str(value: Optional[str], max_len: int = MAX_ID_STRING_LEN) -
         return None
 
 
-def _resolve_images_dir(output_md: Path, images_dir_opt: Optional[str]) -> Path:
+def _resolve_images_dir(output_md: Path, images_dir_opt: str | None) -> Path:
     base = output_md.parent.resolve()
     if images_dir_opt:
         return _enforce_under(
@@ -321,12 +320,12 @@ def _resolve_images_dir(output_md: Path, images_dir_opt: Optional[str]) -> Path:
 class FlowExtractor:
     """同一スライド内の図形群とコネクタからフロー図 Mermaid を生成する."""
 
-    def __init__(self, shapes_meta: List[dict], connectors: List[dict]):
+    def __init__(self, shapes_meta: list[dict], connectors: list[dict]):
         self.shapes_meta = shapes_meta
         self.connectors = connectors
         self.used_node_ids: set = set()
 
-    def build_mermaid(self) -> Optional[str]:
+    def build_mermaid(self) -> str | None:
         self.used_node_ids = set()
         if not self.connectors or len(self.shapes_meta) < 2:
             return None
@@ -372,7 +371,7 @@ class FlowExtractor:
         return "TD"
 
     @staticmethod
-    def _bracket_for_shape(meta: Optional[dict]) -> tuple:
+    def _bracket_for_shape(meta: dict | None) -> tuple:
         if not meta:
             return ("[", "]")
         auto = (meta.get("auto_shape_type") or "").upper()
@@ -401,11 +400,11 @@ class SlideContext:
     参照できる. 将来的に `self._current_*` を撤去して `self._slide_ctx` に完全
     移行することを想定する.
     """
-    title_shape_id: Optional[int] = None
+    title_shape_id: int | None = None
     is_section_cover: bool = False
     repeated_texts: set = field(default_factory=set)
-    max_font_pt: Optional[float] = None
-    median_font_pt: Optional[float] = None
+    max_font_pt: float | None = None
+    median_font_pt: float | None = None
     decoration_shape_ids: set = field(default_factory=set)
 
     def reset(self) -> None:
@@ -463,16 +462,16 @@ class PPTXMarkdownConverter:
         self._current_title_shape_id = None
         self._current_is_section_cover = False
         self._current_repeated_texts = set()
-        self._slide_width_emu: Optional[int] = None
-        self._slide_height_emu: Optional[int] = None
+        self._slide_width_emu: int | None = None
+        self._slide_height_emu: int | None = None
         self._current_max_font_pt = None
         self._current_median_font_pt = None
         self._current_decoration_shape_ids = set()
         # Presentation インスタンスを 1 回だけ読み込んで複数 export メソッドで再利用する
         # ためのキャッシュ。_load_presentation() 経由でアクセスする
-        self._presentation_cache: Optional["Presentation"] = None
+        self._presentation_cache: Presentation | None = None
         # マスタ/レイアウト由来のテンプレ装飾テキスト集合のキャッシュ（複数 export メソッド共有）
-        self._template_texts_cache: Optional[set] = None
+        self._template_texts_cache: set | None = None
         # 既存ファイルの上書き許可フラグ（CWE-377 対策）
         self._force: bool = bool(getattr(args, "force", False))
         # 画像の総書込バイト数と枚数（MAX_TOTAL_IMAGE_BYTES / MAX_IMAGE_COUNT_PER_PPTX）
@@ -515,11 +514,11 @@ class PPTXMarkdownConverter:
     # 既存呼び出しは無傷で、内部的にはスライド状態を 1 つの dataclass に集約.
 
     @property
-    def _current_title_shape_id(self) -> Optional[int]:
+    def _current_title_shape_id(self) -> int | None:
         return self._slide_ctx.title_shape_id
 
     @_current_title_shape_id.setter
-    def _current_title_shape_id(self, value: Optional[int]) -> None:
+    def _current_title_shape_id(self, value: int | None) -> None:
         self._slide_ctx.title_shape_id = value
 
     @property
@@ -539,19 +538,19 @@ class PPTXMarkdownConverter:
         self._slide_ctx.repeated_texts = value
 
     @property
-    def _current_max_font_pt(self) -> Optional[float]:
+    def _current_max_font_pt(self) -> float | None:
         return self._slide_ctx.max_font_pt
 
     @_current_max_font_pt.setter
-    def _current_max_font_pt(self, value: Optional[float]) -> None:
+    def _current_max_font_pt(self, value: float | None) -> None:
         self._slide_ctx.max_font_pt = value
 
     @property
-    def _current_median_font_pt(self) -> Optional[float]:
+    def _current_median_font_pt(self) -> float | None:
         return self._slide_ctx.median_font_pt
 
     @_current_median_font_pt.setter
-    def _current_median_font_pt(self, value: Optional[float]) -> None:
+    def _current_median_font_pt(self, value: float | None) -> None:
         self._slide_ctx.median_font_pt = value
 
     @property
@@ -564,7 +563,7 @@ class PPTXMarkdownConverter:
 
     # ---------- エントリ ----------
 
-    def _load_presentation(self) -> "Presentation":
+    def _load_presentation(self) -> Presentation:
         """PPTX を 1 回だけ検証・読込し、キャッシュを返す.
 
         複数の export メソッド（convert / export_structured_json /
@@ -572,10 +571,13 @@ class PPTXMarkdownConverter:
         インスタンスを再利用することで、PPTX を毎回開き直す重複初期化を解消する.
 
         注意: python-pptx 内部の lxml パーサは `_hardened_xml_parser` を経由しない.
-        悪意 PPTX の Billion Laughs / 巨大 entity 展開リスクが残るため、
-        `_validate_pptx` の ZIP bomb 検査と上限定数（MAX_SLIDES 等）を併用する.
-        さらなる保護が必要な環境では `defusedxml.lxml.monkey_patch_lxml()` を
-        起動時に呼ぶことを推奨する.
+        悪意 PPTX の Billion Laughs / 巨大 entity 展開リスクへの保護は、
+        `_validate_pptx` の ZIP bomb 検査（MAX_TOTAL_UNCOMPRESSED_BYTES /
+        MAX_COMPRESSION_RATIO）と上限定数（MAX_SLIDES / MAX_SHAPES_PER_SLIDE /
+        MAX_GROUP_DEPTH / MAX_TEXT_PER_SHAPE / MAX_TOTAL_IMAGE_BYTES /
+        MAX_IMAGE_COUNT_PER_PPTX）の併用によって与える.
+        過去には `defusedxml.lxml.monkey_patch_lxml()` の起動時呼び出しを推奨していたが、
+        defusedxml 0.7 で当該 API が削除されたため依存自体を廃止した.
         """
         if self._presentation_cache is None:
             _validate_pptx(self.input_path)
@@ -616,7 +618,7 @@ class PPTXMarkdownConverter:
 
         self._template_texts = self._get_template_texts()
 
-        markdown_chunks: List[str] = []
+        markdown_chunks: list[str] = []
         emitted_slide_no = 0
         for slide in presentation.slides:
             if self._is_hidden(slide) and not self.include_hidden:
@@ -704,7 +706,7 @@ class PPTXMarkdownConverter:
             raise ValueError("per_slide_json_dir is required for export_per_slide_json()")
         self.per_slide_json_dir.mkdir(parents=True, exist_ok=True)
 
-        slide_summaries: List[dict] = []
+        slide_summaries: list[dict] = []
         emitted = 0
         for slide in presentation.slides:
             if self._is_hidden(slide) and not self.include_hidden:
@@ -780,11 +782,11 @@ class PPTXMarkdownConverter:
         is_cover = self._is_section_cover_layout(slide)
 
         # shape を再帰展開して位置情報付きで集める
-        shapes_data: List[dict] = []
-        connectors_data: List[dict] = []
+        shapes_data: list[dict] = []
+        connectors_data: list[dict] = []
         self._walk_shape_to_dict(slide.shapes, slide_no, shapes_data, connectors_data, parent_path=[])
 
-        lines: List[str] = []
+        lines: list[str] = []
         lines.append(f"=== Slide {slide_no} ===")
         lines.append(f"layout: {layout_name!r}")
         lines.append(f"is_section_cover: {is_cover}")
@@ -864,8 +866,8 @@ class PPTXMarkdownConverter:
         except Exception:
             layout_name = ""
 
-        shapes_list: List[dict] = []
-        connectors_list: List[dict] = []
+        shapes_list: list[dict] = []
+        connectors_list: list[dict] = []
         self._walk_shape_to_dict(slide.shapes, slide_no, shapes_list, connectors_list, parent_path=[])
 
         notes_text = ""
@@ -884,7 +886,15 @@ class PPTXMarkdownConverter:
             "notes": notes_text,
         }
 
-    def _walk_shape_to_dict(self, shape_iter, slide_no: int, shapes_out: list, connectors_out: list, parent_path: list, depth: int = 0) -> None:
+    def _walk_shape_to_dict(
+        self,
+        shape_iter,
+        slide_no: int,
+        shapes_out: list,
+        connectors_out: list,
+        parent_path: list,
+        depth: int = 0,
+    ) -> None:
         """shape ツリーを再帰的に走査し、JSON 用辞書を構築する.
 
         DoS 防御:
@@ -931,7 +941,7 @@ class PPTXMarkdownConverter:
             if entry is not None:
                 shapes_out.append(entry)
 
-    def _shape_to_dict(self, shape, slide_no: int, parent_path: list) -> Optional[dict]:
+    def _shape_to_dict(self, shape, slide_no: int, parent_path: list) -> dict | None:
         """1 shape を JSON 用辞書化."""
         try:
             shape_id = shape.shape_id
@@ -992,7 +1002,7 @@ class PPTXMarkdownConverter:
             kind = "TEXT_FRAME"
 
         # placeholder 情報
-        ph_info: Optional[dict] = None
+        ph_info: dict | None = None
         try:
             ph = shape.placeholder_format
             if ph is not None:
@@ -1012,7 +1022,7 @@ class PPTXMarkdownConverter:
 
         # テキスト
         text = ""
-        paragraphs_data: List[dict] = []
+        paragraphs_data: list[dict] = []
         try:
             if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
                 text = _safe_text(shape.text_frame.text)
@@ -1050,7 +1060,7 @@ class PPTXMarkdownConverter:
             pass
 
         # テーブル
-        table_data: Optional[dict] = None
+        table_data: dict | None = None
         try:
             if getattr(shape, "has_table", False) and shape.has_table:
                 rows_out = []
@@ -1068,7 +1078,7 @@ class PPTXMarkdownConverter:
             table_data = None
 
         # 画像
-        image_data: Optional[dict] = None
+        image_data: dict | None = None
         if kind == "PICTURE":
             block = self._handle_picture(shape, slide_no)
             if block:
@@ -1104,7 +1114,7 @@ class PPTXMarkdownConverter:
             "image": image_data,
         }
 
-    def _extract_connector_info(self, shape) -> Optional[dict]:
+    def _extract_connector_info(self, shape) -> dict | None:
         """コネクタの接続元/接続先 shape_id を返す."""
         try:
             begin = None
@@ -1142,14 +1152,14 @@ class PPTXMarkdownConverter:
         else:
             heading = f"## {title or f'スライド{slide_no}'}"
 
-        shapes_meta: List[dict] = []
-        connectors: List[dict] = []
-        collected: List[dict] = []  # 各要素 {"kind": str, "shape_id": Optional[int], "text": str}
+        shapes_meta: list[dict] = []
+        connectors: list[dict] = []
+        collected: list[dict] = []  # 各要素 {"kind": str, "shape_id": Optional[int], "text": str}
 
         for shape in slide.shapes:
             self._collect_shape(shape, slide_no, shapes_meta, connectors, collected)
 
-        mermaid_md: Optional[str] = None
+        mermaid_md: str | None = None
         used_ids: set = set()
         if not self.no_mermaid:
             extractor = FlowExtractor(shapes_meta, connectors)
@@ -1162,7 +1172,7 @@ class PPTXMarkdownConverter:
 
         # Mermaid 化されたノードのテキストは本文側で除外（行マージ前に行うこと）
         title_text_norm = (title or "").strip()
-        filtered: List[dict] = []
+        filtered: list[dict] = []
         for item in collected:
             if (
                 item["kind"] == "text"
@@ -1180,7 +1190,7 @@ class PPTXMarkdownConverter:
         # PowerPoint で「番号 + 章名」のように水平に並ぶ shape を 1 行として扱う。
         filtered = self._merge_horizontal_text_rows(filtered)
 
-        body_blocks: List[str] = []
+        body_blocks: list[str] = []
         for item in filtered:
             text_block = item.get("text") or ""
             if not text_block:
@@ -1416,7 +1426,7 @@ class PPTXMarkdownConverter:
         slide_w = self._slide_width_emu or 0
         slide_h = self._slide_height_emu or 0
 
-        shapes_metrics: List[dict] = []
+        shapes_metrics: list[dict] = []
         try:
             self._gather_metrics_recursive(slide.shapes, shapes_metrics)
         except Exception:
@@ -1609,18 +1619,27 @@ class PPTXMarkdownConverter:
         if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
             block = self._handle_picture(shape, slide_no)
             if block:
-                collected.append({"kind": "image", "shape_id": shape.shape_id, "text": block, "top": pos_top, "left": pos_left})
+                collected.append({
+                    "kind": "image", "shape_id": shape.shape_id, "text": block,
+                    "top": pos_top, "left": pos_left,
+                })
             return
 
         if getattr(shape, "has_table", False) and shape.has_table:
             block = self._convert_table(shape.table)
             if block:
-                collected.append({"kind": "table", "shape_id": shape.shape_id, "text": block, "top": pos_top, "left": pos_left})
+                collected.append({
+                    "kind": "table", "shape_id": shape.shape_id, "text": block,
+                    "top": pos_top, "left": pos_left,
+                })
             return
 
         if getattr(shape, "has_chart", False) and shape.has_chart:
             block = self._summarize_chart(shape.chart)
-            collected.append({"kind": "chart", "shape_id": shape.shape_id, "text": block, "top": pos_top, "left": pos_left})
+            collected.append({
+                "kind": "chart", "shape_id": shape.shape_id, "text": block,
+                "top": pos_top, "left": pos_left,
+            })
             return
 
         if shape.shape_type == MSO_SHAPE_TYPE.LINE or self._is_connector(shape):
@@ -1632,13 +1651,17 @@ class PPTXMarkdownConverter:
             if not self.no_mermaid:
                 mermaid = self._smartart_to_mermaid(shape)
             if mermaid:
-                collected.append(
-                    {"kind": "mermaid", "shape_id": shape.shape_id, "text": f"```mermaid\n{mermaid}\n```", "top": pos_top, "left": pos_left}
-                )
+                collected.append({
+                    "kind": "mermaid", "shape_id": shape.shape_id,
+                    "text": f"```mermaid\n{mermaid}\n```",
+                    "top": pos_top, "left": pos_left,
+                })
             else:
-                collected.append(
-                    {"kind": "smartart", "shape_id": shape.shape_id, "text": self._smartart_fallback_text(shape), "top": pos_top, "left": pos_left}
-                )
+                collected.append({
+                    "kind": "smartart", "shape_id": shape.shape_id,
+                    "text": self._smartart_fallback_text(shape),
+                    "top": pos_top, "left": pos_left,
+                })
             return
 
         if getattr(shape, "has_text_frame", False) and shape.has_text_frame:
@@ -1650,7 +1673,10 @@ class PPTXMarkdownConverter:
             default_bullet = self._is_body_placeholder(shape)
             text = self._convert_text_frame(shape.text_frame, default_bullet=default_bullet)
             if text:
-                collected.append({"kind": "text", "shape_id": shape.shape_id, "text": text, "top": pos_top, "left": pos_left})
+                collected.append({
+                    "kind": "text", "shape_id": shape.shape_id, "text": text,
+                    "top": pos_top, "left": pos_left,
+                })
             return
 
     @staticmethod
@@ -1799,14 +1825,14 @@ class PPTXMarkdownConverter:
         }
 
     @staticmethod
-    def _extract_max_font_size_pt(shape) -> Optional[float]:
+    def _extract_max_font_size_pt(shape) -> float | None:
         """shape 内の最大フォントサイズ (pt) を返す。取得できない場合は None."""
         try:
             if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
                 return None
         except Exception:
             return None
-        max_pt: Optional[float] = None
+        max_pt: float | None = None
         try:
             for paragraph in shape.text_frame.paragraphs:
                 # paragraph レベルのフォントサイズも見る
@@ -1833,7 +1859,7 @@ class PPTXMarkdownConverter:
         return max_pt
 
     @staticmethod
-    def _extract_dominant_font_color(shape) -> Optional[str]:
+    def _extract_dominant_font_color(shape) -> str | None:
         """shape 内の最初に取得できた RGB 色を hex 文字列で返す."""
         try:
             if not getattr(shape, "has_text_frame", False) or not shape.has_text_frame:
@@ -1859,7 +1885,7 @@ class PPTXMarkdownConverter:
         return None
 
     @staticmethod
-    def _is_grayish_color(hex_color: Optional[str]) -> bool:
+    def _is_grayish_color(hex_color: str | None) -> bool:
         """フォント色が薄いグレー / 装飾色っぽいかを判定."""
         if not hex_color or len(hex_color) != 6:
             return False
@@ -1894,8 +1920,8 @@ class PPTXMarkdownConverter:
     # ---------- テキストフレーム ----------
 
     def _convert_text_frame(self, text_frame, *, default_bullet: bool = False) -> str:
-        rendered_paragraphs: List[str] = []
-        code_buffer: List[str] = []
+        rendered_paragraphs: list[str] = []
+        code_buffer: list[str] = []
 
         def flush_code():
             if code_buffer:
@@ -1956,7 +1982,7 @@ class PPTXMarkdownConverter:
 
     @staticmethod
     def _render_paragraph_runs(paragraph) -> str:
-        rendered_parts: List[str] = []
+        rendered_parts: list[str] = []
         for run in paragraph.runs:
             text = run.text or ""
             if not text:
@@ -2038,7 +2064,7 @@ class PPTXMarkdownConverter:
 
     # ---------- 画像 ----------
 
-    def _handle_picture(self, shape, slide_no: int) -> Optional[str]:
+    def _handle_picture(self, shape, slide_no: int) -> str | None:
         try:
             blob = shape.image.blob
         except Exception as exc:
@@ -2139,7 +2165,7 @@ class PPTXMarkdownConverter:
             type_name = str(chart.chart_type)
         except Exception:
             type_name = "unknown"
-        series_names: List[str] = []
+        series_names: list[str] = []
         try:
             for series in chart.series:
                 try:
@@ -2152,7 +2178,7 @@ class PPTXMarkdownConverter:
 
     # ---------- SmartArt ----------
 
-    def _smartart_to_mermaid(self, shape) -> Optional[str]:
+    def _smartart_to_mermaid(self, shape) -> str | None:
         try:
             ns = {"dgm": NS_DGM, "r": NS_R, "a": NS_A}
             rel_ids = shape.element.findall(".//dgm:relIds", namespaces=ns)
@@ -2174,7 +2200,7 @@ class PPTXMarkdownConverter:
                 texts = point.findall(".//a:t", namespaces=ns)
                 value = " ".join((t.text or "") for t in texts).strip()
                 points[pid] = value
-            edges: List[tuple] = []
+            edges: list[tuple] = []
             for connection in data_xml.findall(".//dgm:cxn", namespaces=ns):
                 src = connection.get("srcId")
                 dst = connection.get("destId")
@@ -2206,7 +2232,7 @@ class PPTXMarkdownConverter:
     def _smartart_fallback_text(shape) -> str:
         try:
             text_nodes = shape.element.findall(f".//{{{NS_A}}}t")
-            lines: List[str] = []
+            lines: list[str] = []
             for node in text_nodes:
                 if node.text and node.text.strip():
                     lines.append(f"- {node.text.strip()}")
@@ -2219,7 +2245,7 @@ class PPTXMarkdownConverter:
     # ---------- スピーカーノート ----------
 
     @staticmethod
-    def _extract_notes(slide) -> Optional[str]:
+    def _extract_notes(slide) -> str | None:
         try:
             if not slide.has_notes_slide:
                 return None
@@ -2331,11 +2357,12 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     return parser.parse_args(list(argv))
 
 
-def main(argv: Optional[Iterable[str]] = None) -> int:
+def main(argv: Iterable[str] | None = None) -> int:
     args = parse_args(argv if argv is not None else sys.argv[1:])
     input_path = Path(args.input)
     if not input_path.exists():
-        print(f"Error: Input file not found: {input_path}", file=sys.stderr)
+        print(f"Error: Input file not found: {input_path}", file=sys.stderr, flush=True)
+        sys.stderr.flush()
         return 1
     try:
         converter = PPTXMarkdownConverter(args)
@@ -2365,15 +2392,35 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         print(f"Images dir: {converter.images_dir}")
         return 0
     except FileNotFoundError as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        print(f"Error: {exc}", file=sys.stderr, flush=True)
+        sys.stderr.flush()
         return 1
     except ValueError as exc:
-        print(f"Error: {exc}", file=sys.stderr)
+        print(f"Error: {exc}", file=sys.stderr, flush=True)
+        sys.stderr.flush()
         return 1
     except Exception as exc:  # noqa: BLE001
-        print(f"Error: unexpected failure: {exc}", file=sys.stderr)
+        print(f"Error: unexpected failure: {exc}", file=sys.stderr, flush=True)
+        sys.stderr.flush()
         return 2
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # PowerShell `Start-Process -RedirectStandardOutput/Error` 経由で起動された場合、
+    # 通常の `sys.exit()` 経由（atexit / 通常 GC）では Python の stdio バッファ解放が
+    # 親プロセスの `WaitForExit` で検知されず「ハング」として観測される
+    # 既知の Windows + Python の挙動を回避するため、終了前に明示 flush し、
+    # `os._exit()` で atexit を経由せず即時終了する.
+    # 本スクリプトは threading / atexit / 一時ファイルクリーンアップを行わないため、
+    # `os._exit()` での即時終了は安全.
+    import os as _exit_os
+    try:
+        _rc = main()
+    except SystemExit as _se:
+        _rc = int(_se.code) if isinstance(_se.code, int) else (0 if _se.code is None else 1)
+    try:
+        sys.stdout.flush()
+        sys.stderr.flush()
+    except Exception:
+        pass
+    _exit_os._exit(_rc)
