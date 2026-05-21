@@ -2,13 +2,24 @@
 
 環境構築は `setup.md` を参照すること。
 
-## 変換スクリプト実行
+## 変換スクリプト実行（**Start-Job ラッパー経由を必須**）
+
+Windows + PowerShell + python-pptx の組み合わせで、`Start-Process -NoNewWindow`
+または `&` 演算子 + ファイルリダイレクトで Python を子プロセスとして起動すると、
+`python-pptx.Presentation()` 呼び出しで**ハングして終了しない既知事象**がある
+（Claude Code の PowerShell ツール経由実行が該当）。
+
+このため、本スクリプトは **`Start-Job` 経由のラッパー（`run_via_job.ps1`）** から
+起動することを必須とする。
+
+### 必須起動コマンド
 
 ```powershell
-& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_via_job.ps1" `
   "<入力PPTXファイルパス>" `
   "<出力MDファイルパス>" `
+  -PythonExe "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+  [-TimeoutSec <秒>] `
   [--images-dir <DIR>] `
   [--no-mermaid] `
   [--include-notes] `
@@ -16,6 +27,24 @@
   [--no-first-slide-as-title] `
   [--max-image-size <BYTES>]
 ```
+
+- 第 1 引数: 入力 PPTX パス（位置パラメータ）
+- 第 2 引数: 出力 MD パス（位置パラメータ）
+- `-PythonExe`: venv の python.exe（環境変数 `CONVERT_FROM_PPTX_PYTHON` でも指定可）
+- `-TimeoutSec`: ラッパージョブのタイムアウト秒（既定 600 / 環境変数 `CONVERT_FROM_PPTX_TIMEOUT_SEC` でも指定可）
+- 残りの `--no-mermaid` 等は `convert_from_pptx.py` にそのまま転送される
+
+### 旧形式（直接呼び出し）を使ってはならない
+
+```powershell
+# ✗ 禁止: -NoNewWindow / &+redirect で起動するとハングする
+& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
+  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
+  "<入力>" "<出力>"
+```
+
+事象再現と原因切り分けの詳細は本リポジトリ調査セッション参照
+（`.claude/.local/work/20260521_01_convert_from_pptx_hung_repro/root-cause.md`）。
 
 - 出力先が未指定の場合、入力ファイルと同ディレクトリ・同名で `.md` 拡張子
 - `--images-dir` 未指定時は `<出力MD basename>_images/` を出力 MD と同階層に作成
@@ -77,3 +106,6 @@
 | Mermaid に変換されず原図形がテキストで残る | 図形がコネクタで接続されていないか、SmartArt の構造が複雑すぎる可能性。`--no-mermaid` で挙動を切り替えて差分を確認 |
 | 日本語が文字化け | 出力は UTF-8（BOM なし）。読み込みエディタのエンコーディング設定を確認 |
 | 大量の画像で生成が遅い | `--max-image-size` を下げる、または前段で不要画像を削除した PPTX に差し替える |
+| **起動して 30 秒以上経っても何も出力されずプロセスが終了しない** | **直接 `python.exe` を `&` / `Start-Process -NoNewWindow` で呼んでいないか確認**。必ず `run_via_job.ps1` ラッパー経由で起動する（procedures.md 冒頭参照） |
+| stdout/stderr が両方とも 0 byte のまま固まる | 同上。Windows + PowerShell + python-pptx の組み合わせ問題で、`Presentation()` 呼び出しでハングする |
+| 「`exited: False`」がログに出る | プロセスがタイムアウトで kill された証拠。`run_via_job.ps1` 経由に切り替える |
