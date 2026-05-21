@@ -2,11 +2,11 @@
 
 `extension-toolkit` プラグインの主要な設計判断とその根拠。
 
-## ADR-001: 10 スキル + 1 オーケストレータコマンドの 3 層構成
+## ADR-001: 11 スキル + 1 オーケストレータコマンドの 3 層構成（ADR-029 で mit-license-toolkit 追加）
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | `toolkit` 系 8（skill / plugin / command / agent / hook / readme / environment-setup / marketplace、`marketplace` 追加は ADR-020 参照）+ `reviewer` 1 + `publisher` 1 = 10 スキル + オーケストレータ `/extension` の 3 層パイプラインで構成 |
+| 決定 | `toolkit` 系 9（skill / plugin / command / agent / hook / readme / environment-setup / marketplace / mit-license、`marketplace` 追加は ADR-020、`mit-license` 追加は ADR-029 を参照）+ `reviewer` 1 + `publisher` 1 = **11 スキル** + オーケストレータ `/extension` の 3 層パイプラインで構成 |
 | 理由 | 1 スキル 1 責務（SRP）の徹底。各スキルが他スキルを Skill ツール経由で呼び出す疎結合。ユーザはオーケストレータ（`/extension`）または個別スキル（自然言語起動）の両方で利用可能 |
 | トレードオフ | スキル間連携のオーケストレーションが `/extension` と各 SKILL.md「引き渡し」表に分散する |
 | 代替案 | 単一の mega-skill で全機能提供 → SKILL.md 200 行制約に違反、却下 |
@@ -74,7 +74,7 @@
 | 項目 | 内容 |
 |------|------|
 | 決定 | 各 `*-toolkit` の検証セクション と `extension-reviewer/references/automated-checks.md` で参照する検証ルールを `references/validation-rules.md` に集約。各参照元はチェックリストの該当節を指定して引用する |
-| 理由 | 検証ルールが 10 スキル（toolkit 系 8 + extension-reviewer + marketplace-publisher）に散在すると更新時の整合性維持が困難（SSOT 違反） |
+| 理由 | 検証ルールが 11 スキル（toolkit 系 9 + extension-reviewer + marketplace-publisher）に散在すると更新時の整合性維持が困難（SSOT 違反） |
 | トレードオフ | 参照階層が深くなる |
 | 代替案 | 各スキル内に重複記述 → 更新コスト増、却下 |
 
@@ -82,7 +82,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | toolkit 系 8 スキル（skill / plugin / command / agent / hook / readme / environment-setup / marketplace、`marketplace` 追加は ADR-020 参照）の名称を `*-toolkit` で統一。プラグイン名 `extension-toolkit`、Git ブランチ `feature/extension-toolkit` も同命名 |
+| 決定 | toolkit 系 9 スキル（skill / plugin / command / agent / hook / readme / environment-setup / marketplace / mit-license、`marketplace` 追加は ADR-020、`mit-license` 追加は ADR-029 参照）の名称を `*-toolkit` で統一。プラグイン名 `extension-toolkit`、Git ブランチ `feature/extension-toolkit` も同命名 |
 | 理由 | (1) `creator` は新規作成のみのニュアンスだが、これらスキルは改修・高度化も担当する。(2) `example-skills:skill-creator` という外部スキルとの命名衝突を回避 |
 | トレードオフ | リネームによる参照置換ミスのリスクがあり、規約遵守時はレビューによる検証が必要 |
 | 代替案 | 一部スキルのみリネーム → 命名規則の不統一、却下 |
@@ -92,7 +92,7 @@
 | 項目 | 内容 |
 |------|------|
 | 決定 | **本 ADR は ADR-024 で更新済**。現行決定は ADR-024（プラグイン単位 venv + プラグイン直下 `references/scripts/setup/` 配置）を参照。本 ADR は当初「Python venv 構築・撤去スクリプトを `environment-setup-toolkit` に集約し、各スキルは依存リストのみを保有する」と決定したが、スキル単位 venv の重複構築や `requirements.txt` の分散による依存競合という課題が顕在化したため ADR-024 で再設計した |
-| 理由 | 各スキルが個別に setup_venv.sh を持つと（1）スクリプトの重複、（2）改善時の同期コスト、（3）「責務単一」の規約違反、を招く |
+| 理由 | 各スキルが個別に setup_venv スクリプトを持つと（1）スクリプトの重複、（2）改善時の同期コスト、（3）「責務単一」の規約違反、を招く |
 | トレードオフ | 各スキル内に直接スクリプトを置けば自己完結性が上がるが、責務単一化を優先 |
 | 代替案 | 各スキル個別保有 → 重複・SSOT 違反、却下 |
 
@@ -237,11 +237,11 @@
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | Python venv は **プラグイン単位で 1 つ** とし、関連スクリプト（`setup_venv.sh` / `teardown_venv.sh` / `requirements.txt`）を **プラグイン直下** の `references/scripts/setup/` に配置する。複数スキルが Python を利用する場合も同一 venv を共有する。スキル固有のスクリプトはスキル直下 `references/scripts/{業務単位}/` に配置するが、依存パッケージ（`requirements.txt`）はプラグイン直下に統合する。`environment-setup-toolkit` はプラグイン直下スクリプトの **オーケストレータ** に役割変更する（自前の setup 実装を持たず、プラグイン直下スクリプトの起動を案内する）。Python を一切使用しないプラグインでは venv 関連スクリプトの設置は不要 |
+| 決定 | Python venv は **プラグイン単位で 1 つ** とし、関連スクリプト（`setup_venv.ps1` / `teardown_venv.ps1` / `requirements.txt`、shell-preference.md と整合して PowerShell 実装）を **プラグイン直下** の `references/scripts/setup/` に配置する。複数スキルが Python を利用する場合も同一 venv を共有する。スキル固有のスクリプトはスキル直下 `references/scripts/{業務単位}/` に配置するが、依存パッケージ（`requirements.txt`）はプラグイン直下に統合する。`environment-setup-toolkit` はプラグイン直下スクリプトの **オーケストレータ** に役割変更する（自前の setup 実装を持たず、プラグイン直下スクリプトの起動を案内する）。Python を一切使用しないプラグインでは venv 関連スクリプトの設置は不要 |
 | 理由 | (1) スキル単位 venv は同じプラグイン内で重複構築を引き起こし、複数スキル協業時にどの venv を使うか判断ロジックが必要になる。(2) `requirements.txt` がスキルごとに分散すると依存解決の競合・重複が発生する。(3) プラグインは「インストール単位 = 配布単位 = 環境単位」とすべき設計原則と整合する。(4) `environment-setup-toolkit` がスキル配下に setup スクリプトを保有していると、利用側スキルから「どの setup を呼ぶか」が曖昧になる。プラグイン直下を SSOT にすることで参照経路を一意にできる |
 | トレードオフ | (1) `requirements.txt` を全スキル分マージするため、特定スキルしか使わない依存も常にインストールされる。これは venv 共有の代償として許容する（不要時はプラグインを分割する）。(2) スキル固有のスクリプトと依存リストが別階層に分かれるため、新規スキル作成時に「依存はプラグイン直下、スクリプトはスキル直下」という配置を周知する必要がある |
 | 適用範囲 | 本プラグインおよび本プラグインが生成・レビューするすべてのプラグイン |
-| 必須項目 | (a) プラグインに `.py` ファイルが 1 つでもあり、かつ標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.sh` `teardown_venv.sh` `requirements.txt` をプラグイン直下に置く、(b) スキル直下に `references/scripts/setup/setup_venv.sh` 等を置かない、(c) スキルごとの個別 `requirements.txt` を作らない（全依存をプラグイン直下にマージ）、(d) `environment-setup-toolkit` はプラグイン直下スクリプトの呼び出し方を案内する役割に限定する |
+| 必須項目 | (a) プラグインに `.py` ファイルが 1 つでもあり、かつ標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.ps1` `teardown_venv.ps1` `requirements.txt` をプラグイン直下に置く（PowerShell 統一、shell-preference.md 準拠）、(b) スキル直下に `references/scripts/setup/setup_venv.ps1` 等を置かない、(c) スキルごとの個別 `requirements.txt` を作らない（全依存をプラグイン直下にマージ）、(d) `environment-setup-toolkit` はプラグイン直下スクリプトの呼び出し方を案内する役割に限定する |
 | 詳細実装 | [`scripts-policy.md`](scripts-policy.md) 節 5 を参照 |
 | 代替案 | (1) スキル単位 venv 維持（ADR-010） → 重複構築・依存競合、却下。(2) `environment-setup-toolkit` のスキル配下スクリプトを SSOT として維持 → 「どこを呼ぶか」が曖昧になり、ADR-022 の自己完結性原則と整合しない、却下。(3) ホーム配下に共有 venv → セッション独立性破壊、却下 |
 
@@ -279,7 +279,7 @@
 | 理由 | (1) Stop フックの stderr が **環境/タイミングによっては Claude の会話 context に届かない事例が確認された**（編集を 30 回以上行ったセッションで PreToolUse Edit / Stop どちらの警告も到達しなかった）。(2) PreToolUse の `additionalContext` 経路は仕様上確実に Claude へ届くため、コミット直前の最後の防衛線として有効。(3) Stop と PreToolUse Bash の両方で同じ検査スクリプトを呼ぶことで、片方の経路が機能しない環境でも警告が漏れない。(4) スクリプトロジック自体の重複は避け、PreToolUse 用ラッパーは git commit 検知後に既存 check_version_bump.sh を呼ぶだけの薄い委譲層とする |
 | トレードオフ | (1) 同じ警告が Stop と PreToolUse Bash の両方で発火し得る → 警告内容は同一なので重複しても害は小さい（Claude が一度判断すれば足りる）。(2) Bash 全件で発火するため処理コストが微増 → 早期に tool_name / command を sed で判定して非対象は exit 0 で即離脱、git status / git diff の重い処理は git commit 検出時のみ実行 |
 | 適用範囲 | 本プラグインがインストールされたすべての環境 |
-| 必須項目 | (a) `hooks/hooks.json` の `PreToolUse` に `matcher: "Bash"` エントリを追加、(b) `references/scripts/hooks/check_version_bump_on_commit.sh` を新設し ADR-025 配置義務に準拠、(c) ラッパーは tool_name == "Bash" かつ command に `git commit` を含む場合のみ既存 `check_version_bump.sh` に委譲、(d) Stop フックは削除せず保持、(e) どちらも fail-open（exit 0） |
+| 必須項目 | (a) `hooks/hooks.json` の `PreToolUse` に `matcher: "Bash\|PowerShell"` エントリを追加（PowerShell 統一、shell-preference.md 準拠）、(b) `references/scripts/hooks/check_version_bump_on_commit.ps1` を新設し ADR-025 配置義務に準拠、(c) ラッパーは tool_name == "Bash" or "PowerShell" かつ command に `git commit` を含む場合のみ既存 `check_version_bump.ps1` に委譲、(d) Stop フックは削除せず保持、(e) どちらも fail-open（exit 0） |
 | 代替案 | (1) Stop フックのみ維持 → 環境によって届かない事例があるため不採用。(2) PreToolUse Bash のみに移行 → Stop が機能する環境での冗長性を失う、却下。(3) PreToolUse Bash で check_version_bump.sh を直接呼ぶ → 全 Bash 呼び出しで git status を実行することになりコスト過大、却下。(4) PostToolUse で検査 → コミット完了後の警告となり手戻りが発生、却下 |
 
 ## ADR-028: 外部マーケットプレイス依存時の `extraKnownMarketplaces` 登録テンプレート同梱義務
@@ -316,6 +316,42 @@
 | 制約 | (1) `assets/` 配下は **静的ファイルのみ**（実行可能スクリプト・コード本体は置かない、それは `references/scripts/` の責務）。(2) サブフォルダは種別ごとに切る（`css/` `html/` `js/` `img/` `fonts/` 等）|
 | 必須項目 | (a) `conventions.md` 節 2.1（プラグイン直下）の許可リストに `assets/` を追加、(b) `conventions.md` 節 3.1（スキル直下）の許可リストに `assets/` を追加、(c) `conventions.md` 節 2.2 / 3.2 の許可リスト根拠に `assets/` の項目を追加 |
 | 代替案 | (1) `references/template/css/` 等への配置 → `template/` の語義（コピー元のひな形）から外れる、却下。(2) `references/scripts/assets/` への配置 → `scripts/` は実行可能スクリプト用、却下。(3) スキル直下のみ許可してプラグイン直下は禁止 → 共有リソースの DRY 違反、却下。(4) プラグイン直下のみ許可してスキル直下は禁止 → スキル固有の上書きが不可能、却下 |
+
+## ADR-031: コミット粒度・分割ルールの明文化（[`commit-granularity.md`](commit-granularity.md)）
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | `extension-toolkit` が生成・改修・公開するすべてのプラグイン・スキル・コマンド・ドキュメント変更について、**「1 作業単位 = 1 コミット」** を既定とするコミット分割ルールを [`commit-granularity.md`](commit-granularity.md) として SSOT 化する。ディレクトリリネーム・ファイル移管・内容更新・ADR 追加・README/marketplace 同期・移行手順記載・evals 追加・lint 修正・依存更新・バージョン昇格を必須分割対象として列挙し、Conventional Commits（`feat:` `fix:` `refactor:` `docs:` `test:` `chore:` `perf:` `style:`）形式の prefix を統一適用する。各コミットは `git bisect` が機能する単位で完結すること（コミット間で意図的に壊しておかない）|
+| 理由 | (1) 2026-05-18 の maintenance プラグイン統合コミット（53 ファイル / +327/-625 行）で「改名」「統合」「ADR 追加」「README 更新」「移行手順記載」が単一コミットに混在し、レビュー困難・部分ロールバック困難の課題が顕在化した。(2) 改善バックログ A-3 で「スコープ・作業単位の細かいコミット分割ルール」を High 相当と判断するエントリとして登録された（経緯は git 履歴を参照）。(3) Conventional Commits は Claude Code エコシステム外でも標準として広く採用されており、prefix 統一により履歴のスキャナビリティが上がる。(4) `git bisect` で問題コミットを二分探索する際、混在コミットだと再現範囲を絞れないため、原因コミット特定の所要時間が増大する |
+| トレードオフ | (1) コミット数が増え、レビュー対象 PR でコミットチェーンが長くなる。これは「PR を機能単位に分割する」運用と組み合わせることで緩和される。(2) 大規模リファクタリング時に「ADR 追加 → 実装 → README 同期」を別々にコミットする手間が増えるが、レビュー容易性・部分ロールバック容易性とのトレードオフとして許容する。(3) 改名と相互参照更新を 1 コミットで行いたい場合があるが、コミットメッセージ上は同一コミットとして含めてよい（節 3「同梱可」）|
+| 適用範囲 | `extension-toolkit` が生成・改修・公開するすべてのプラグイン・スキル・コマンド・エージェント・フック・マーケットプレイス・ドキュメント・スクリプト変更。本プラグイン（`extension-toolkit`）自身の改修も対象 |
+| 必須項目 | (a) [`commit-granularity.md`](commit-granularity.md) を `references/` 配下に配置、(b) 必須分割対象 10 項目（節 2 (a)〜(j)）を文書化、(c) Conventional Commits 8 種 prefix を文書化、(d) 同梱許可ケース 3 種（節 3）を限定列挙、(e) ADR 追加と実装の同梱可否（節 5）を 1 対 1 / 1 対 N で判別、(f) **当面は `extension-reviewer` の専門家レビュー（人間 / Agent）による検出に委ね、機械検出は将来実装する**（commit-granularity.md 節 7 参照、git log 解析を伴う検査スクリプト追加が前提のため、ADR-031 初版では実装スコープ外） |
+| 例外 | (a) 緊急セキュリティ修正、(b) 自動生成物の同期（marketplace.json 等）、(c) 利用者の明示的指示（「全部 1 コミットで」）の 3 ケースのみ免責される。これら以外で本ルールを破る場合は `extension-reviewer` のレビュー指摘対象 |
+| 代替案 | (1) 分割なし（現状維持）→ レビュー困難・部分ロールバック困難の課題が継続、却下。(2) 厳格な機械検出 + 違反時のコミット強制リバート → 利用者の git 履歴に対する裁量を侵害、却下。(3) 大規模変更時のみ分割を必須化（小規模は同梱可）→ 「大規模/小規模」の定義が曖昧で運用がぶれる、却下。本案は「常に分割」を既定としつつ、節 3「同梱可」を限定列挙する明示形式を採用 |
+
+## ADR-032: 動作デモ + ユーザ承認フローの必須化（[`completion-checklist.md`](completion-checklist.md) 節 2.4）
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | `extension-toolkit` 配下のすべてのスキル・コマンドは、作業完了報告の前に **ユーザ向け動作デモ実施 + AskUserQuestion による承認取得** を必須とする。デモ最低要件は (a) 代表的な正常系 / (b) 主要分岐 1 件以上 / (c) AskUserQuestion 実発火 / (d) エラーパス 1 件 / (e) 副作用の事前提示 の 5 項目。免責ケースは (i) README/コメントのみ変更 / (ii) ADR/SSOT のみ変更 / (iii) 緊急セキュリティ修正 / (iv) 利用者の明示スキップ指示 の 4 ケースに限定 |
+| 理由 | (1) 2026-05-18 のセッションで maintenance プラグインに対し 6 サイクルの専門家レビュー（Critical/High 全解消）を経て push したが、その後のデモ実行で `sync-settings/sync.ps1` の `TrimStart` char 変換 Critical バグが発見された。静的解析・自己検証では実行時バグを検出できないことが実証された。(2) `extension-reviewer` の機械チェック（行数 / description 文字数 / JSON valid 等）は PowerShell スクリプトの API シグネチャ齟齬を検出できない（B-1 で PSScriptAnalyzer 統合予定だが、それでも実機実行に勝る検証はない）。(3) ユーザ承認を取らないままリリースに到達すると、利用者全員に不具合が配信されるリスクがある |
+| トレードオフ | (1) デモ実施分の所要時間が増える（軽微変更でも数分）。(2) AskUserQuestion での承認ステップが対話往復を 1 回増やす。これらは免責ケース 4 種で緩和（純粋ドキュメント変更は対象外）。(3) デモシナリオ設計の手間が増えるが、B-3 の `evals/demo.ps1` テンプレート化で再現性を担保 |
+| 適用範囲 | `extension-toolkit` 配下の 9 個の `*-toolkit` スキル + `extension-reviewer` + `marketplace-publisher` の計 11 スキル。各スキルの SKILL.md「引き渡し」セクションに本フローを参照する追記を実施 |
+| 必須項目 | (a) [`completion-checklist.md`](completion-checklist.md) 節 2.4 にデモ実施・承認取得を必須項目として追加、(b) 各 SKILL.md の引き渡しセクションに節 2.4 への参照を追加、(c) デモシナリオ最低 5 要件を文書化、(d) 4 種の免責ケースを限定列挙、(e) `progress.md` にデモ実施記録（実行コマンド・結果・承認結果）を残す責務を明示 |
+| 例外 | 免責ケース 4 種のみ。それ以外で本フローを省略する場合は `extension-reviewer` の指摘対象（Critical 相当） |
+| 代替案 | (1) 自動テスト（evals 実行）のみで承認とする → AskUserQuestion 等の UI 系・実機固有挙動を検証できない、却下。(2) 承認なしのデモ通知のみ → ユーザが見落とすリスク、却下。(3) すべての変更にデモ必須（免責なし）→ ドキュメント変更でもデモを強いるのは過剰、却下。本案は「実コード変更には必須、純粋ドキュメントは免責」のバランスを採用 |
+
+## ADR-033: PowerShell モジュールの端末グローバル汚染回避とプラグイン専用キャッシュ管理（[`scripts/setup/setup_psmodule.ps1`](scripts/setup/setup_psmodule.ps1)）
+
+| 項目 | 内容 |
+|------|------|
+| 決定 | `extension-toolkit` が依存する PowerShell モジュール（B-1 の `PSScriptAnalyzer` 等）は、ユーザのグローバル `~/Documents/PowerShell/Modules/` ではなく、**プラグイン専用ディレクトリ** `<base>/.claude/.local/plugins/extension-toolkit/psmodules/<ModuleName>/<Version>/` に保存する（`<base>` はリポジトリ配下なら `{repo_root}`、外なら `~`）。`Install-Module` ではなく `Save-Module` を使い、呼び出し側は `Import-Module` の絶対パス指定で利用する。共通セットアップユーティリティ `setup_psmodule.ps1` がライフサイクル（既定 TTL 30 日 / バージョン固定 / フェイルオープン）を管理し、`run_psscriptanalyzer.ps1` 等の利用側スクリプトは本ユーティリティ経由でキャッシュを参照する |
+| 理由 | (1) `Install-Module` は `~/Documents/PowerShell/Modules/` 配下に書き込み、PowerShell セッション全体（他のプロジェクト・他の Claude Code セッション・通常運用シェル）に影響する。プラグイン由来の依存がユーザ端末に永続化されるのは責務逸脱。(2) `python-venv.md` 節 5.1 で `skill-router` プラグインに認められた「プラグイン専用 venv ライフサイクル管理」と同思想で、PowerShell モジュールにも同様のスコープ閉じ込めを適用するのが整合的。(3) PSScriptAnalyzer は約 1.5 MB と軽量で、再ダウンロードコストが許容範囲。TTL 30 日の経年再取得で運用上問題ない。(4) `Save-Module` は管理者権限不要・任意パス指定可・PSGallery 公式 API のため、互換性問題が起きにくい。(5) フェイルオープン設計により、PSGallery 到達不能（オフライン / プロキシ問題 / Gallery 障害）でも既存キャッシュがあれば動作継続できる |
+| トレードオフ | (1) 初回ダウンロード時のネットワーク必須（PSGallery への接続）。これはフェイルオープン経路（既存キャッシュ再利用）で軽減される。(2) `Import-Module` を絶対パス指定する都合、PSModulePath の自動解決が使えない。`setup_psmodule.ps1` が標準出力で返すパスを呼出側が受け取る運用となる。(3) ユーザが手動で同モジュールをグローバルに入れていても、本ユーティリティ経由ではプラグイン専用キャッシュを優先する（端末汚染を回避するため意図的）。(4) キャッシュディレクトリの容量（PSScriptAnalyzer 単独で約 1.5 MB、将来複数モジュール追加でも 10 MB 以内見込み）が `~/.claude/.local/` を消費する |
+| 適用範囲 | `extension-toolkit` が依存する PowerShell モジュール全般。現時点では PSScriptAnalyzer（B-1）のみだが、将来同種の依存が追加された場合も本 ADR の方式に従う |
+| 必須項目 | (a) `setup_psmodule.ps1` をプラグイン共通の `references/scripts/setup/` に配置（既存の `setup_venv.ps1` と同階層）、(b) キャッシュ配置は `<base>/.claude/.local/plugins/extension-toolkit/psmodules/<ModuleName>/<Version>/` で固定、(c) リポジトリ配下では `{repo_root}/.claude/.local/`、外なら `~/.claude/.local/` にフォールバック（`local-data-directory.md` 準拠）、(d) TTL 既定 30 日・`.cache-marker` ファイルで判定、(e) PSGallery 到達不能時のフェイルオープン（既存キャッシュ再利用）、(f) パストラバーサル対策として `ModuleName` / `RequiredVersion` の入力検証、(g) `~/.claude/rules/security/credentials-management.md` のトリガー対象外（PSGallery 公開モジュールのため認証情報不要）|
+| ライフサイクル | (i) キャッシュベース解決: リポジトリ判定 → `.git` 存在チェック → ヒットしなければ `~/`、(ii) キャッシュ HIT 判定: `.cache-marker` の mtime と TTL を比較、(iii) MISS 時: `Save-Module -RequiredVersion -Path` で取得、`.cache-marker` を ISO8601 で更新、(iv) Save-Module 失敗時: 既存キャッシュがあれば再利用、無ければ exit 3 で呼出側に通知（呼出側は status=skipped でフェイルオープン）、(v) 削除: 利用者の手動削除のみ（誤削除防止のため自動 GC しない）|
+| 代替案 | (1) `Install-Module -Scope CurrentUser` を使う → ユーザのグローバル PSModulePath を汚染、却下。(2) `Install-Module -Scope AllUsers` → 管理者権限必要 + 端末全体汚染、却下。(3) PSGallery を経由せず GitHub から zip 直 DL → 公式配布チャネルから外れ、整合性検証が複雑化、却下。(4) スキル単位（`skills/extension-reviewer/`）にキャッシュ配置 → 将来他スキルでも PowerShell 検査が必要になった際に重複ダウンロードが発生、プラグイン共通の方が DRY、却下。(5) TTL なし（永続キャッシュ）→ 古いバージョンが残り続けセキュリティパッチを取り込めない、却下。本案は「Save-Module + プラグイン共通キャッシュ + TTL 30 日 + フェイルオープン」の組合せ |
 
 ## ADR の追加・更新
 

@@ -42,7 +42,9 @@ import json
 import os
 import pathlib
 import re
+import subprocess
 import sys
+import tempfile
 from typing import Any
 
 # ~/.claude/rules/tools/python-encoding-mandatory.md 必須3点セット (2):
@@ -1195,6 +1197,141 @@ def check_mit_license(target: pathlib.Path, collector: IssueCollector) -> None:
 
 
 # --------------------------------------------------------------------------- #
+# PSScriptAnalyzer 連携（B-1: improvement-backlog 由来）
+# --------------------------------------------------------------------------- #
+
+
+def check_psscriptanalyzer(target: pathlib.Path, collector: IssueCollector) -> None:
+    """PSScriptAnalyzer による PowerShell スクリプト静的解析（B-1）。
+
+    2026-05-18 のセッションで sync-settings/sync.ps1 の TrimStart(string)
+    引数誤用が静的レビュー 6 サイクルを素通りしてデモ実行で初めて発覚した
+    事例を契機に導入。AST ベースの PS 静的解析で同種の API 齟齬・スタイル違反を
+    検出する。
+
+    動作:
+        1. target 配下に .ps1 / .psm1 / .psd1 が存在しなければ何もしない
+        2. run_psscriptanalyzer.ps1 を pwsh で起動
+        3. PSScriptAnalyzer 未インストール時はフェイルオープン（指摘ゼロ）
+        4. 検出結果を IssueCollector に統合
+
+    重大度マッピング（ps1 側で実施）:
+        PSA Error       → High
+        PSA Warning     → Medium
+        PSA Information → Low
+    """
+    # PowerShell 関連ファイルの有無確認（target がディレクトリの場合）
+    if target.is_dir():
+        has_ps_files = False
+        for ext in ("*.ps1", "*.psm1", "*.psd1"):
+            for ps_path in target.rglob(ext):
+                if not any(seg in EXCLUDE_DIRS for seg in ps_path.parts):
+                    has_ps_files = True
+                    break
+            if has_ps_files:
+                break
+        if not has_ps_files:
+            return
+    elif target.suffix.lower() not in (".ps1", ".psm1", ".psd1"):
+        return
+
+    script_path = pathlib.Path(__file__).parent / "run_psscriptanalyzer.ps1"
+    if not script_path.exists():
+        collector.add(
+            "Low",
+            "PSScriptAnalyzer 起動スクリプト不在",
+            str(script_path),
+            "run_psscriptanalyzer.ps1 が見つからない（B-1 セットアップ未完了）",
+        )
+        return
+
+    # pwsh の所在確認
+    pwsh_exe = "pwsh"
+    try:
+        subprocess.run(
+            [pwsh_exe, "-NoProfile", "-Command", "$null"],
+            capture_output=True,
+            timeout=10,
+            check=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        # pwsh 未インストール環境はフェイルオープン
+        return
+
+    # 一時ファイルに出力させて読み戻し（stdout 経由は文字化けリスクあり）
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w", encoding="utf-8") as tmp:
+        output_path = pathlib.Path(tmp.name)
+
+    try:
+        result = subprocess.run(
+            [
+                pwsh_exe,
+                "-NoProfile",
+                "-NonInteractive",
+                "-File",
+                str(script_path),
+                "-Target",
+                str(target),
+                "-Output",
+                str(output_path),
+            ],
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=180,
+        )
+        if result.returncode not in (0, 2, 3):
+            collector.add(
+                "Medium",
+                "PSScriptAnalyzer 実行異常終了",
+                str(target),
+                f"exit={result.returncode}: {(result.stderr or '')[:200]}",
+            )
+            return
+
+        try:
+            data = json.loads(output_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            collector.add(
+                "Medium",
+                "PSScriptAnalyzer 結果 JSON 読込失敗",
+                str(output_path),
+                str(exc)[:200],
+            )
+            return
+
+        status = data.get("status", "")
+        if status == "skipped":
+            # PSScriptAnalyzer 未インストール、フェイルオープン（指摘なし）
+            return
+        if status == "error":
+            collector.add(
+                "Medium",
+                "PSScriptAnalyzer 実行エラー",
+                str(target),
+                str(data.get("reason", ""))[:200],
+            )
+            return
+
+        for issue in data.get("issues", []):
+            severity = issue.get("severity", "Low")
+            if severity not in SEVERITY_ORDER:
+                severity = "Low"
+            collector.add(
+                severity,
+                str(issue.get("item", "PSA-Unknown")),
+                issue.get("file"),
+                str(issue.get("detail", ""))[:300],
+                line=issue.get("line"),
+            )
+    finally:
+        try:
+            output_path.unlink()
+        except OSError:
+            pass
+
+
+# --------------------------------------------------------------------------- #
 # メインフロー
 # --------------------------------------------------------------------------- #
 
@@ -1213,6 +1350,7 @@ CHECKS = [
     ("プラグイン MIT LICENSE 配備（ADR-029）", check_mit_license),
     ("Bash 利用禁止（PowerShell 移行担保、shell-preference.md）", check_no_bash_invocation),
     ("hook の shell フィールド明示（PowerShell 統一補強、shell-preference.md）", check_hook_shell_field),
+    ("PSScriptAnalyzer 静的解析（B-1）", check_psscriptanalyzer),
 ]
 
 

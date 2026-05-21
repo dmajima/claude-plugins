@@ -123,6 +123,8 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 
 ### 8. 引き渡し
 
+**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（コマンド起動・引数分岐・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+
 - 生成ファイルパスを提示
 - プラグイン内配置の場合は `marketplace-publisher` への接続を提案
 - README 更新が必要な場合は `readme-toolkit` への接続を提案
@@ -135,7 +137,8 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 - パスポータビリティチェック必須
 - 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
 - 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
+- コマンド引数仕様は [`../../references/argument-policy.md`](../../references/argument-policy.md) の「単純な 1 引数」原則に従う
 - 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照

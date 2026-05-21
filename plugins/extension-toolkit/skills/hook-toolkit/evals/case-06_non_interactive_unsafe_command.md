@@ -34,8 +34,8 @@
 Detected: ローカル絶対パスのハードコード（C:\Users\me\scripts\log.bat）
 
 Non-interactive mode does not support interactive remediation. Either:
-1. Use ${CLAUDE_PLUGIN_ROOT}/scripts/log.sh (recommended for plugin-bundled scripts)
-2. Use ${HOME}/scripts/log.sh (assumes the path exists in user environment)
+1. Use ${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-tool-use.ps1 (recommended for plugin-bundled scripts, PowerShell unified per shell-preference.md)
+2. Use ${HOME}/.claude/scripts/log-tool-use.ps1 (assumes the path exists in user environment)
 3. Run in interactive mode for AskUserQuestion-based remediation flow
 
 References: ../../references/path-portability.md

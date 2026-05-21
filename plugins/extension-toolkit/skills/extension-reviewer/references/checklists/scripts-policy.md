@@ -24,11 +24,11 @@ ADR-024 / ADR-025 に従ったスクリプト配置・インラインスクリ�
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| SP-3-1 | High | プラグインに `.py` ファイルが 1 つ以上あり、標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.sh` が存在する | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.2 / ADR-024 |
-| SP-3-2 | High | 同上で `references/scripts/setup/teardown_venv.sh` が存在する | 同上 |
+| SP-3-1 | High | プラグインに `.py` ファイルが 1 つ以上あり、標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.ps1` が存在する（PowerShell 統一） | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.2 / ADR-024 |
+| SP-3-2 | High | 同上で `references/scripts/setup/teardown_venv.ps1` が存在する | 同上 |
 | SP-3-3 | High | 同上で `references/scripts/setup/requirements.txt` が存在し、**全スキルの依存をマージ** している | 同上 |
 | SP-3-4 | High | スキルごとの個別 `requirements.txt` が存在しない | 同上 |
-| SP-3-5 | High | スキル直下 `references/scripts/setup/setup_venv.sh` 等の重複設置がない | 同上 |
+| SP-3-5 | High | スキル直下 `references/scripts/setup/setup_venv.ps1` 等の重複設置がない | 同上 |
 
 ## SP-4. venv のライフサイクル
 

@@ -8,7 +8,7 @@
 |-----|-------|---------|-----|
 | P-1-1 | Critical | プラグイン直下に `.claude-plugin/plugin.json`（必須）が存在する | [conventions.md](../../../references/conventions.md) 節 2.1 |
 | P-1-2 | High | プラグイン直下に `README.md`（必須）が存在する | 同上 |
-| P-1-3 | High | プラグイン直下のディレクトリ・ファイルが許可リスト（`.claude-plugin/` / `README.md` / `commands/` / `skills/` / `agents/` / `hooks/` / `mcp/` / `references/`）に含まれる | 同上 |
+| P-1-3 | High | プラグイン直下のディレクトリ・ファイルが許可リスト（`.claude-plugin/` / `README.md` / `LICENSE` (ADR-029) / `commands/` / `skills/` / `agents/` / `hooks/` / `mcp/` / `references/` / `assets/` (ADR-030)）に含まれる | 同上 |
 | P-1-4 | High | プラグイン直下に `scripts/` ディレクトリが存在しない（ADR-025 違反検知。実スクリプトは `references/scripts/` に集約） | [conventions.md](../../../references/conventions.md) 節 2.3 / [scripts-policy.md](../../../references/scripts-policy.md) |
 | P-1-5 | High | プラグイン直下に `teams/` `templates/` `shared/` `common/` `lib/` `docs/` 等の禁止ディレクトリが存在しない（`references/` 配下に集約） | [conventions.md](../../../references/conventions.md) 節 2.3 |
 | P-1-6 | High | 許可リスト外のエントリを追加する場合、新 ADR がある（`architecture-decisions.md` で明示） | [conventions.md](../../../references/conventions.md) 節 2.4 |
@@ -47,11 +47,11 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| P-5-1 | High | プラグインに `.py` ファイルが 1 つ以上あり、標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.sh` が存在する | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.1 / ADR-024 |
-| P-5-2 | High | 同上で `references/scripts/setup/teardown_venv.sh` が存在する | 同上 |
+| P-5-1 | High | プラグインに `.py` ファイルが 1 つ以上あり、標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.ps1` が存在する（PowerShell 統一） | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.1 / ADR-024 |
+| P-5-2 | High | 同上で `references/scripts/setup/teardown_venv.ps1` が存在する | 同上 |
 | P-5-3 | High | 同上で `references/scripts/setup/requirements.txt` が存在し、全スキルの依存をマージしている | 同上 |
 | P-5-4 | High | スキルごとの個別 `requirements.txt` が存在しない | 同 節 5.2 |
-| P-5-5 | High | スキル直下に `references/scripts/setup/setup_venv.sh` 等の重複設置がない | 同上 |
+| P-5-5 | High | スキル直下に `references/scripts/setup/setup_venv.ps1` 等の重複設置がない | 同上 |
 
 ## P-6. 移管シナリオ（既存プラグイン化時）
 

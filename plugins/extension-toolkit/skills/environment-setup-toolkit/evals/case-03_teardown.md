@@ -24,7 +24,7 @@ AskUserQuestion で削除確認:
 
 ### Phase 3: 削除実行
 
-`teardown_venv.sh` を呼び出し、venv ディレクトリを削除。
+`teardown_venv.ps1` を呼び出し、venv ディレクトリを削除（PowerShell 統一）。
 
 ### Phase 4: 検証 + 引き渡し
 

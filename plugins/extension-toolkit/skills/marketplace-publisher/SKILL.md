@@ -102,20 +102,24 @@ Claude Code プラグインの **公開ワークフロー**（重複検査・実
 | description 類似 | 主要キーワードの重複 |
 | 機能領域類似 | 各プラグインの提供スキル/コマンドを比較 |
 
-類似プラグイン検出時はユーザに以下を提示:
+類似プラグイン検出時は **AskUserQuestion** で対応を確認する（重要操作のためテキスト対話不可、user-interaction.md 節 13 / askquestion-strategy.md 節 2.1 段階発火型に該当）:
 
 ```text
-類似プラグインを検出しました:
-
-- `{existing-plugin}` — {description}
-  類似ポイント: {具体}
-
-選択肢:
-1. 既存プラグインへのマージ（新プラグインの中身を既存に追加、`plugin-toolkit` の追加シナリオへ）
-2. 新規登録を続行（差別化点を明記）
-3. キャンセル
-
-どうしますか？
+AskUserQuestion({
+  questions: [{
+    question: "類似プラグインを検出しました: `{existing-plugin}` — {description}\n類似ポイント: {具体}\nどう進めますか？",
+    header: "重複対応",
+    options: [
+      { label: "既存プラグインへマージ",
+        description: "新プラグインの中身を既存に追加。plugin-toolkit の追加シナリオへ切替" },
+      { label: "新規登録を続行",
+        description: "差別化点を明記して新規エントリとして登録" },
+      { label: "キャンセル",
+        description: "公開を中止" }
+    ],
+    multiSelect: false
+  }]
+})
 ```
 
 ### 4. marketplace.json の更新（marketplace-toolkit に委譲）
@@ -144,32 +148,14 @@ Claude Code プラグインの **公開ワークフロー**（重複検査・実
 
 ### 6. 公開モードの選択
 
-```text
-marketplace.json の更新が完了しました。
-公開方法を選択してください:
+**前提**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 のデモ + AskUserQuestion 承認取得が完了している（ADR-032）。
 
-1. ハンドオフ（git コマンドを提示、ご自身で実行）
-2. フルオート（git push → PR 作成まで自動実行）
-```
+`AskUserQuestion` で公開モードを選択する（[`../../references/user-interaction.md`](../../references/user-interaction.md) 節 1）:
 
-#### モード A: ハンドオフ
+- **ハンドオフ**（推奨）: `git add` / `commit` / `push` / PR コマンドを提示してユーザが手動実行
+- **フルオート**: feature ブランチ確認 → `git push` → PR 作成まで自動実行（main 直接 push 禁止）
 
-[references/publish-workflow.md](references/publish-workflow.md) の「ハンドオフフォーマット」を参照。以下を提示して終了:
-
-- 変更ファイル一覧
-- marketplace.json の差分
-- 推奨コミットメッセージ
-- 次のコマンド（`git add` / `git commit` / `git push` / PR 作成）
-
-#### モード B: フルオート
-
-[references/publish-workflow.md](references/publish-workflow.md) の「フルオートモード」を参照。以下を順に実行:
-
-1. ブランチ確認（main 直接 push 禁止、feature ブランチであること）
-2. `git add` → `git commit`
-3. `git push origin <branch>`
-4. PR 作成（リモート設定に応じて GitHub / TFS 等）
-5. PR URL 提示
+詳細手順は [`references/publish-workflow.md`](references/publish-workflow.md) を参照。
 
 ## 重要な制約
 
@@ -181,7 +167,8 @@ marketplace.json の更新が完了しました。
 - 既存 marketplace.json のエンコーディング維持（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
 - 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
 - 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
+- 公開コミットの粒度は [`../../references/commit-granularity.md`](../../references/commit-granularity.md) の作業単位ごと分割原則に従う
 - 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照

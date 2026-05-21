@@ -125,6 +125,8 @@ Claude Code のサブエージェント単体・エージェントチームを�
 
 ### 8. 引き渡し
 
+**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（チーム編成時はチームメンバー実起動 1 回以上、単体エージェントは Agent ツールで実起動 1 回）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+
 - 生成ファイルパスを提示
 - チーム編成時はスポーンプロンプト例も提示
 - プラグイン内配置時は `marketplace-publisher` への接続を提案
@@ -138,7 +140,7 @@ Claude Code のサブエージェント単体・エージェントチームを�
 - パスポータビリティチェック必須
 - 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
 - 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
 - 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照

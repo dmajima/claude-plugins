@@ -120,6 +120,8 @@ Claude Code プラグインに **MIT ライセンス** を付与・更新する�
 
 ### 8. 引き渡し
 
+**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、LICENSE 生成内容のプレビュー + `plugin.json.license` の値確認を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。法的文書のため軽微変更でも省略不可。
+
 生成・変更したファイル一覧を提示する。
 
 | 次のアクション | 接続先 |
@@ -151,6 +153,7 @@ Claude Code プラグインに **MIT ライセンス** を付与・更新する�
 | AI 誤認回避 | [`../../references/ai-readability.md`](../../references/ai-readability.md) |
 | ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
 | ユーザ対話 | [`../../references/user-interaction.md`](../../references/user-interaction.md) |
+| AskUserQuestion 発火戦略 | [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md) |
 | 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.2） |
 | バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md) |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |

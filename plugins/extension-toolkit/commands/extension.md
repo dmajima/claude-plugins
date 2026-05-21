@@ -1,6 +1,6 @@
 ---
 description: Claude Code 拡張要素（スキル/プラグイン/コマンド/エージェント/フック）の作成・レビュー・公開を統括
-argument-hint: <種別> <対象名> [--non-interactive] [--full-auto]
+argument-hint: "[種別]"
 ---
 
 `extension-toolkit` プラグインの各スキルを使ってユーザの拡張要素作成・公開要求を処理してください。

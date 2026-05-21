@@ -116,8 +116,91 @@ skills/skill-toolkit/evals/
 - 1 ケース 1 ファイル原則の違反（複数ケースを 1 ファイルに混在）
 - 期待動作の曖昧記述（「適切に」「うまく」等）
 - 分岐根拠の不記載（なぜこのケースが分岐するか書かない）
-- 自動テストとしての利用（evals は仕様書であり実行可能テストではない）
+- 仕様書としての記述を欠いた「実行スクリプトのみ」の case ファイル化（節 10 で自動実行をオプトイン化しても、仕様記述の本文は省略不可）
 
-## 9. 自動テストとの違い
+## 9. 仕様書としての位置づけ
 
-`evals/` は **仕様書としての期待動作の記述** であり、実行可能なテストフレームワークではない。実行可能テストが必要な場合は `tests/` を別途用意し、`scripts/` 配下に実行スクリプトを置く。
+`evals/` は **仕様書としての期待動作の記述** が第一義。自動テスト化（節 10）はあくまでオプトインの補強であり、機械的に検証可能な範囲（標準出力 / 終了コード / 副作用なし）に限定される。AskUserQuestion 実発火 / UI 出力 / インタラクティブ承認 等は機械検証の射程外のため、人間レビューを引き続き必須とする（A-1 のデモ承認フローと相補的）。
+
+実行可能テストが必要な場合（多言語連携・複雑な前提環境）は `tests/` を別途用意し、`scripts/` 配下に実行スクリプトを置く。
+
+## 10. 自動実行サポート（B-2、オプトイン）
+
+B-2（改善バックログ由来、git 履歴で経緯を参照）。`evals/case-*.md` 冒頭にフロントマターを付与することで、`run_evals.py` から自動実行・diff 検証の対象にできる。
+
+### 10.1 フロントマター仕様
+
+```yaml
+---
+runnable: true                    # 必須。false / 未指定なら自動実行対象外
+command: |                        # 必須。pwsh -Command で起動するシェルコマンド
+  pwsh -NoProfile -File scripts/foo.ps1 -DryRun
+expect_exit_code: 0               # 任意（既定: 0）
+expect_output_regex:              # 任意（複数可）。全マッチで合格
+  - "^\\[OK\\]"
+  - "ケース 1: 成功"
+expect_output_not_regex:          # 任意（複数可）。1 つでもマッチで失敗
+  - "(?i)error"
+timeout_sec: 120                  # 任意（既定: 120）
+cwd: plugins/{plugin-name}        # 任意（既定: --scope-root のパス）
+requires_destructive: false       # 任意（既定: false）。true なら --allow-destructive 必須
+env:                              # 任意。実行時に追加する環境変数
+  DRY_RUN: "1"
+---
+```
+
+### 10.2 副作用ゼロの担保
+
+| 原則 | 内容 |
+|------|------|
+| (a) dry-run のみ自動実行可 | `command` 欄には dry-run / --whatif / --check 系のみ記載すること |
+| (b) 破壊的操作はオプトイン | 実削除・実適用が必要なケースは `requires_destructive: true` を付与し、`run_evals.py --allow-destructive` フラグなしでは自動スキップ |
+| (c) 環境変数で安全装置 | `env: DRY_RUN: "1"` 等の安全フラグを併用 |
+| (d) timeout 厳守 | 既定 120 秒、長時間ケースは `timeout_sec` で個別指定 |
+
+### 10.3 起動方法
+
+```powershell
+# venv 経由（推奨）
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" "<workspace>"
+& "<workspace>/.venv/Scripts/python.exe" `
+  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/evals/run_evals.py" `
+  --target plugins/maintenance/skills/cleanup-workspace/evals `
+  --output .claude/.local/work/{session}/evals-result.json `
+  --scope-root . `
+  --parallel 4
+```
+
+### 10.4 出力 JSON 構造
+
+```json
+{
+  "target": "...",
+  "total": 19,
+  "runnable": 8,
+  "passed": 7,
+  "failed": 1,
+  "skipped": 11,
+  "results": [
+    {
+      "case_file": "...",
+      "status": "passed" | "failed" | "skipped",
+      "reason": "...",
+      "exit_code": 0,
+      "duration_sec": 1.23,
+      "stdout_preview": "...",
+      "stderr_preview": "..."
+    }
+  ]
+}
+```
+
+### 10.5 既存ケースのマイグレーション方針
+
+既存 60 件の case-*.md は **そのままで動作する**（フロントマター未指定なら自動 skip）。
+段階的に dry-run 系から runnable: true を付与していく方針。
+破壊系（実適用 / 実削除）は requires_destructive: true で明示的にオプトインする。
+
+### 10.6 自動実行と人間レビューの併用
+
+機械検証で網羅できない観点（AskUserQuestion 実発火 UX / 視覚的フォーマット / ファイル副作用の妥当性）は **A-1 のデモ承認フロー** で人間レビューを継続する。`run_evals.py` の合格は A-1 の承認を代替しない（相補的な関係）。

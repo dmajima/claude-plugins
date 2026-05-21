@@ -103,6 +103,8 @@ JSON 整合性は編集後に必ず検証（[`../../references/validation-rules.
 
 ### 6. 引き渡し
 
+**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、`marketplace.json` JSON 妥当性確認 + 同期 README の到達性確認を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+
 | 結果 | 接続先 |
 |-----|-------|
 | 新規構築完了 | `plugin-toolkit` への接続提案（最初のプラグイン作成） |
@@ -121,7 +123,7 @@ JSON 整合性は編集後に必ず検証（[`../../references/validation-rules.
 - エンコーディング・改行コード維持必須（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
 - 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
 - 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md)）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
 - 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証を実施
 
 ## 参照

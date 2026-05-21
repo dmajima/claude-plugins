@@ -73,6 +73,7 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 | 11 | プラグインに MIT LICENSE 配備（ADR-029） | プラグイン直下 `LICENSE` + `plugin.json.license` + `README.md` | Critical / High | `check_mit_license` |
 | 12 | Bash/sh 利用禁止（PowerShell 移行担保、shell-preference.md）| `hooks.json` / `*.sh` / `*.md` | High / Medium | `check_no_bash_invocation` |
 | 13 | hook の `shell` フィールド明示（PowerShell 統一補強、shell-preference.md）| `hooks/hooks.json` | High | `check_hook_shell_field` |
+| 14 | PSScriptAnalyzer 静的解析（B-1） | `*.ps1` / `*.psm1` / `*.psd1` | High / Medium / Low | `check_psscriptanalyzer` |
 
 `run_checks.py` の出力 JSON 構造:
 
@@ -235,6 +236,56 @@ Git Bash の場合に引数解釈・PATH 解決でエッジケースが発生し
 
 実装関数: `check_hook_shell_field`
 
+### 14. PSScriptAnalyzer 静的解析（B-1）
+
+B-1 由来（改善バックログ、経緯は git 履歴を参照）。2026-05-18 のセッションで `sync-settings/sync.ps1` の
+`String.TrimStart(string)` 引数誤用（実際は `char[]` を要求）が、静的レビュー 6 サイクルを
+素通りしてデモ実行で初めて発覚した事例を契機に導入。AST ベースの PSScriptAnalyzer により、
+同種の API 齟齬・スタイル違反・セキュリティ違反を自動検出する。
+
+| 検査項目 | 重大度 | 検出方法 |
+|---------|-------|---------|
+| PowerShell スクリプトの構文・API 誤用（PSPossibleIncorrectUsageOfRedirectionOperator など） | High | PSScriptAnalyzer Error |
+| スタイル違反（PSAvoidUsingCmdletAliases / PSAvoidTrailingWhitespace など） | Medium | PSScriptAnalyzer Warning |
+| 推奨事項（PSUseConsistentIndentation など） | Low | PSScriptAnalyzer Information |
+| セキュリティ違反（PSAvoidUsingPlainTextForPassword など） | High | PSScriptAnalyzer Error |
+
+検査対象拡張子: `*.ps1` / `*.psm1` / `*.psd1`
+
+ルールセット定義: [`scripts/checks/PSScriptAnalyzerSettings.psd1`](scripts/checks/PSScriptAnalyzerSettings.psd1)
+
+起動スクリプト: [`scripts/checks/run_psscriptanalyzer.ps1`](scripts/checks/run_psscriptanalyzer.ps1)
+（`pwsh` で起動、結果を一時 JSON に書き出して Python 側で読み戻す）
+
+#### PowerShell モジュールのライフサイクル管理（ADR-033）
+
+PSScriptAnalyzer は **端末のグローバル PSModulePath を汚染しない** よう、
+プラグイン共通ユーティリティ [`../../../../references/scripts/setup/setup_psmodule.ps1`](../../../../references/scripts/setup/setup_psmodule.ps1)
+を経由してプラグイン専用キャッシュに `Save-Module` で配置する（ADR-033 準拠）。
+
+| 項目 | 動作 |
+|------|------|
+| キャッシュ配置 | `<base>/.claude/.local/plugins/extension-toolkit/psmodules/PSScriptAnalyzer/<version>/`（`<base>` はリポジトリ配下なら `{repo_root}`、外なら `~`）|
+| 初回起動時 | `Save-Module -RequiredVersion 1.22.0 -Path <baseDir>` で取得（PSGallery 経由、管理者権限不要）|
+| 既存キャッシュ HIT | `.cache-marker` の mtime が TTL 30 日以内ならダウンロードスキップ |
+| TTL 超過時 | 再ダウンロード（同バージョン上書き）|
+| バージョン固定 | `1.22.0`（呼出側の `run_psscriptanalyzer.ps1` 内で固定）|
+| Import 方法 | `Import-Module <絶対パス>/PSScriptAnalyzer.psd1`（PSModulePath 解決を使わない）|
+
+フェイルオープン挙動（4 段階）:
+
+- `pwsh` 未インストール → 指摘ゼロで通過（環境依存検査のため、`run_checks.py` 側で skip）
+- `setup_psmodule.ps1` 不在 → 指摘ゼロで通過
+- `setup_psmodule.ps1` exit != 0（PSGallery 到達不能 + 既存キャッシュなし）→ 指摘ゼロで通過
+- 既存キャッシュあり + PSGallery 到達不能 → 既存キャッシュを再利用して継続
+- `.ps1` / `.psm1` / `.psd1` が target 配下に存在しない → 何もしない（呼出前段の判定）
+
+除外条件:
+
+- `EXCLUDE_DIRS`（`.git` / `.venv` / `node_modules` / `__pycache__` / `.tox` / `.mypy_cache` / `.claude`）配下のファイル
+
+実装関数: `check_psscriptanalyzer`
+
 ## 指摘出力フォーマット
 
 JSON ファイル内の各 issue:
@@ -243,7 +294,7 @@ JSON ファイル内の各 issue:
 {
   "severity": "High",
   "item": "パスポータビリティ違反: Windows ドライブレター",
-  "file": "plugins/foo/scripts/setup_venv.sh",
+  "file": "plugins/foo/references/scripts/setup/setup_venv.ps1",
   "line": 42,
   "detail": "対象行のスニペット（200 文字まで）"
 }
