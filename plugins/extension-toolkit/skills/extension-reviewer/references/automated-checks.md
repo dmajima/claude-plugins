@@ -286,6 +286,27 @@ PSScriptAnalyzer は **端末のグローバル PSModulePath を汚染しない*
 
 実装関数: `check_psscriptanalyzer`
 
+### 15. Python 直起動禁止 / Start-Job ラッパー必須チェック
+
+Windows + PowerShell + python-pptx 等で Python 子プロセスがハングする既知事象
+（[`powershell-pitfalls.md`](../../../references/powershell-pitfalls.md) 節 7.3 / グローバルルール
+[`~/.claude/rules/tools/python-subprocess-hang-windows.md`](file:///C:/Users/wwdmajima/.claude/rules/tools/python-subprocess-hang-windows.md)）を踏まえ、
+プラグイン配下に `.py` ファイルが存在する場合、その実行手順が **Start-Job 経由ラッパー** を介しているかをレビューする。
+
+| 検査項目 | 重大度 | 検出方法 |
+|---------|-------|---------|
+| `.py` を含むプラグインで、`.md`（procedures / SKILL / README）の起動例が直接 `& "...python.exe" "...script.py"` 形式になっている | High | 正規表現 `\&\s+[^\n]*python(\.exe)?[^\n]*\.py` を `.md` で検索し、同じファイル内に `Start-Job` / `run_via_job` / `Wait-Job` のいずれも出現しない場合に High 指摘 |
+| `.py` を含むプラグインで、`Start-Process -NoNewWindow` + `RedirectStandardOutput/Error` の組み合わせが `.md` / `.ps1` に出現 | High | 正規表現 `Start-Process[\s\S]{0,200}-NoNewWindow[\s\S]{0,200}-RedirectStandardOutput` または `-NoNewWindow[\s\S]{0,80}python` |
+| `.py` を含むプラグインで `run_via_job.ps1` または同等の Start-Job ラッパースクリプトが `references/scripts/` 配下に存在しない | Medium | ファイル存在確認（`Start-Job` を含む `.ps1` の存在を `rglob` で確認） |
+
+除外条件:
+
+- `templates/` / `template/` / `evals/` / `checklists/` 配下（テンプレート・ケース記述の例示）
+- `automated-checks.md` / `powershell-pitfalls.md` / `scripts-policy.md` / `python-subprocess-hang-windows.md`（自己参照）
+- プラグイン全体で Python を一切使用しない場合（`.py` ファイルが存在しない）
+
+実装関数: `check_python_start_job_wrapper`（実装は `B-?` バックログ。当面は手動レビューで担保）
+
 ## 指摘出力フォーマット
 
 JSON ファイル内の各 issue:

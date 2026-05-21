@@ -163,6 +163,40 @@ if ($s.StartsWith("./")) { $s = $s.Substring(2) }
 | **誤** | `Start-Process -FilePath foo.exe -Wait; if ($LASTEXITCODE -ne 0) { ... }` |
 | **正** | `$p = Start-Process -FilePath foo.exe -Wait -PassThru; if ($p.ExitCode -ne 0) { ... }` または直接呼び出し `& foo.exe` |
 
+### 7.3 Windows + PowerShell 直叩きで Python 子プロセス（特に python-pptx）がハングする
+
+| 項目 | 内容 |
+|------|------|
+| 症状 | `Start-Process -NoNewWindow` または `&` + ファイルリダイレクトで Python を起動すると、`python-pptx.Presentation()` 呼び出しでプロセスが終了せずハング |
+| 発見契機 | セッション `20260521_01_convert_from_pptx_hung_repro`（fix/convert-from-pptx-hung ブランチ）|
+| 観測 | stdout/stderr 共に 0 byte のまま 30 秒以上経過、Python プロセスは生きているが CPU=0% |
+| 根本原因 | PowerShell ツールから直接子プロセスとして起動した Python は親の特定のコンソール/ハンドル環境を継承し、python-pptx の `Presentation()` 内部処理で詰まる（`sys.stdin.close()` / `os._exit()` でも改善しない） |
+| **誤** | `& $py.exe script.py input.pptx output.md 1> stdout.log 2> stderr.log` ← ハング |
+| **誤** | `Start-Process -FilePath $py -ArgumentList @(...) -NoNewWindow -RedirectStandardOutput ...` ← ハング |
+| **正** | `Start-Job` 経由ラッパースクリプトを介して起動（実装例: `plugins/convert-doc/references/scripts/convert-from-pptx/run_via_job.ps1`）|
+| 検出方法 | `procedures.md` の起動例が「ラッパー経由」になっているか、生 `&` / `Start-Process` 直叩きになっていないかをレビュー時に確認 |
+| グローバルルール | `~/.claude/rules/tools/python-subprocess-hang-windows.md` を参照（全プロジェクト共通）|
+
+```powershell
+# 誤: 直接呼び出し（ハングする）
+& $py.exe script.py "$input" "$output"
+
+# 正: Start-Job 経由ラッパー
+$job = Start-Job -ScriptBlock {
+    param($py, $script, $jobArgs)
+    & chcp.com 65001 | Out-Null
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+    $env:PYTHONUTF8 = "1"
+    $env:PYTHONIOENCODING = "utf-8"
+    & $py -u $script @jobArgs
+    return $LASTEXITCODE
+} -ArgumentList $py, $script, (,@($input, $output))
+Wait-Job $job -Timeout 600 | Out-Null
+Receive-Job $job
+Remove-Job $job -Force
+```
+
 ---
 
 ## 8. 蓄積方針
