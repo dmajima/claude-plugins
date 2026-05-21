@@ -1332,6 +1332,142 @@ def check_psscriptanalyzer(target: pathlib.Path, collector: IssueCollector) -> N
 
 
 # --------------------------------------------------------------------------- #
+# Python 子プロセス起動の Start-Job ラッパー必須化チェック（automated-checks.md §15）
+# --------------------------------------------------------------------------- #
+
+_PY_DIRECT_INVOCATION_PATTERN = re.compile(
+    r"""(?<!\w)              # 単語の先頭
+    &\s+                     # PowerShell の `&` 呼び出し演算子
+    [^\n]*?                  # 中間（venv パス等）
+    python(?:\.exe)?         # python 本体
+    [^\n]*?                  # 引数
+    \.py\b                   # スクリプト末尾
+    """,
+    re.VERBOSE,
+)
+_START_PROCESS_NONEWWINDOW_PATTERN = re.compile(
+    r"Start-Process\b[\s\S]{0,400}?-NoNewWindow",
+    re.IGNORECASE,
+)
+_RUNNER_HINT_PATTERN = re.compile(
+    r"\b(?:Start-Job|run_via_job|run_verify_via_job|Wait-Job)\b",
+    re.IGNORECASE,
+)
+_PY_HANG_EXCLUDED_DIRS = {
+    "templates", "template", "evals", "checklists",
+}
+_PY_HANG_EXCLUDED_FILES = {
+    "automated-checks.md",
+    "powershell-pitfalls.md",
+    "scripts-policy.md",
+    "python-subprocess-hang-windows.md",
+    "run_checks.py",
+}
+
+
+def _path_excluded_for_py_hang(path: pathlib.Path, target: pathlib.Path) -> bool:
+    """Python 直起動チェックの除外判定."""
+    if is_excluded_dir(path, target):
+        return True
+    try:
+        rel_parts = path.relative_to(target).parts
+    except ValueError:
+        rel_parts = ()
+    if any(part in _PY_HANG_EXCLUDED_DIRS for part in rel_parts):
+        return True
+    if path.name in _PY_HANG_EXCLUDED_FILES:
+        return True
+    return False
+
+
+def check_python_start_job_wrapper(target: pathlib.Path, collector: IssueCollector) -> None:
+    """15. Python 直起動禁止 / Start-Job ラッパー必須チェック.
+
+    Windows + PowerShell + python-pptx 等で Python 子プロセスがハングする
+    既知事象（`powershell-pitfalls.md` 節 7.3 / グローバルルール
+    `python-subprocess-hang-windows.md`）を踏まえ、プラグイン配下に `.py` ファイルが
+    存在する場合、その実行手順が Start-Job 経由ラッパーを介しているかをレビューする。
+
+    検出項目:
+        - 起動例が `& "...python(.exe)?" "...\\.py"` 形式で、同じファイルに
+          `Start-Job` / `run_via_job` / `Wait-Job` への参照が無い  -> High
+        - `Start-Process -NoNewWindow` の組み合わせが .md / .ps1 に出現    -> High
+        - .py を含むプラグインに Start-Job を含む .ps1 が一切無い          -> Medium
+
+    除外:
+        - templates / template / evals / checklists 配下
+        - automated-checks.md / powershell-pitfalls.md / scripts-policy.md /
+          python-subprocess-hang-windows.md / run_checks.py (自己参照)
+        - プラグイン全体で .py が存在しない場合
+    """
+    if not target.is_dir():
+        return
+
+    # 1. .py ファイルの有無
+    py_files = []
+    for py_path in target.rglob("*.py"):
+        if not any(seg in EXCLUDE_DIRS for seg in py_path.parts):
+            py_files.append(py_path)
+    if not py_files:
+        return
+
+    # 2. .md / .ps1 を走査
+    has_start_job_wrapper = False
+    for ps1_path in target.rglob("*.ps1"):
+        if _path_excluded_for_py_hang(ps1_path, target):
+            continue
+        text = read_text_safe(ps1_path)
+        if text is None:
+            continue
+        if "Start-Job" in text:
+            has_start_job_wrapper = True
+
+        # Start-Process -NoNewWindow 組み合わせ検出
+        if _START_PROCESS_NONEWWINDOW_PATTERN.search(text):
+            # 自分自身が Start-Job ラッパー（中の説明文ならスキップ）
+            if "Start-Job" in text and "ScriptBlock" in text:
+                continue
+            # Markdown 内のコード例ではないため検出対象
+            collector.add(
+                "High",
+                "Start-Process -NoNewWindow + Python 子プロセスでハングする可能性。Start-Job 経由ラッパーへ移行",
+                ps1_path,
+                "Start-Process -NoNewWindow を含む PowerShell ファイル",
+            )
+
+    for md_path in target.rglob("*.md"):
+        if _path_excluded_for_py_hang(md_path, target):
+            continue
+        text = read_text_safe(md_path)
+        if text is None:
+            continue
+        has_runner_hint = bool(_RUNNER_HINT_PATTERN.search(text))
+
+        for line_num, line, check_target in iter_inspectable_lines(md_path, text):
+            if _PY_DIRECT_INVOCATION_PATTERN.search(check_target):
+                # 同じファイルに Start-Job / run_via_job 等の参照があれば文脈的に
+                # 「禁止例の提示」「正例」として許容する
+                if has_runner_hint:
+                    continue
+                collector.add(
+                    "High",
+                    "Python スクリプトを `&` で直起動。Start-Job 経由ラッパーが必須",
+                    md_path,
+                    mask_preview(line),
+                    line=line_num,
+                )
+
+    # 3. .py がある場合に Start-Job ラッパーが一切無いプラグイン -> Medium
+    if not has_start_job_wrapper:
+        collector.add(
+            "Medium",
+            "Python スクリプトがあるが Start-Job ラッパー (.ps1) が見つからない。run_via_job.ps1 相当のラッパー作成を推奨",
+            target,
+            f"{len(py_files)} .py files but no Start-Job .ps1 found",
+        )
+
+
+# --------------------------------------------------------------------------- #
 # メインフロー
 # --------------------------------------------------------------------------- #
 
@@ -1351,6 +1487,7 @@ CHECKS = [
     ("Bash 利用禁止（PowerShell 移行担保、shell-preference.md）", check_no_bash_invocation),
     ("hook の shell フィールド明示（PowerShell 統一補強、shell-preference.md）", check_hook_shell_field),
     ("PSScriptAnalyzer 静的解析（B-1）", check_psscriptanalyzer),
+    ("Python 直起動禁止 / Start-Job ラッパー必須（automated-checks.md §15）", check_python_start_job_wrapper),
 ]
 
 
