@@ -37,9 +37,9 @@ def detect_format(text: str, ext: str) -> str:
             return 'srt'
     if re.search(r'\[\d{2}:\d{2}:\d{2}\s*-\s*\d{2}:\d{2}:\d{2}\]', text[:500]):
         return 'ailead'
-    for line in lines[:20]:
-        if re.match(r'^.{2,30}\s+\d{1,2}:\d{2}$', line.strip()):
-            return 'teams-paste'
+    teams_hits = sum(1 for line in lines[:20] if re.match(r'^.{2,30}\s+\d{1,2}:\d{2}$', line.strip()))
+    if teams_hits >= 2:
+        return 'teams-paste'
     return 'plain'
 
 

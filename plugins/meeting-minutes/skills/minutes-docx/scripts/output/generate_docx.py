@@ -13,6 +13,13 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 
+def set_cell(cell, text, bold=False, font_size=Pt(9)):
+    cell.paragraphs[0].clear()
+    run = cell.paragraphs[0].add_run(str(text))
+    run.bold = bold
+    run.font.size = font_size
+
+
 def add_metadata_table(doc, metadata):
     rows = [
         ("日時", f"{metadata.get('date', '')} {metadata.get('startTime', '')} - {metadata.get('endTime', '')}（{metadata.get('durationMinutes', '')}分）"),
@@ -23,17 +30,8 @@ def add_metadata_table(doc, metadata):
     table = doc.add_table(rows=len(rows), cols=2, style="Table Grid")
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     for i, (label, value) in enumerate(rows):
-        cell_label = table.cell(i, 0)
-        cell_value = table.cell(i, 1)
-        cell_label.text = label
-        cell_value.text = value
-        for paragraph in cell_label.paragraphs:
-            for run in paragraph.runs:
-                run.bold = True
-                run.font.size = Pt(9)
-        for paragraph in cell_value.paragraphs:
-            for run in paragraph.runs:
-                run.font.size = Pt(9)
+        set_cell(table.cell(i, 0), label, bold=True)
+        set_cell(table.cell(i, 1), value)
     for row in table.rows:
         row.cells[0].width = Cm(3)
         row.cells[1].width = Cm(13)
@@ -94,22 +92,13 @@ def add_decisions_table(doc, decisions):
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     headers = ["#", "決定内容", "関連議題", "備考"]
     for i, h in enumerate(headers):
-        cell = table.cell(0, i)
-        cell.text = h
-        for paragraph in cell.paragraphs:
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            for run in paragraph.runs:
-                run.bold = True
-                run.font.size = Pt(9)
+        set_cell(table.cell(0, i), h, bold=True)
+        table.cell(0, i).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
     for row_idx, dec in enumerate(decisions, 1):
-        table.cell(row_idx, 0).text = str(dec.get("id", row_idx))
-        table.cell(row_idx, 1).text = dec.get("content", "")
-        table.cell(row_idx, 2).text = str(dec.get("relatedAgendaId", ""))
-        table.cell(row_idx, 3).text = dec.get("conditions", "")
-        for col in range(4):
-            for paragraph in table.cell(row_idx, col).paragraphs:
-                for run in paragraph.runs:
-                    run.font.size = Pt(9)
+        set_cell(table.cell(row_idx, 0), dec.get("id", row_idx))
+        set_cell(table.cell(row_idx, 1), dec.get("content", ""))
+        set_cell(table.cell(row_idx, 2), dec.get("relatedAgendaId", ""))
+        set_cell(table.cell(row_idx, 3), dec.get("conditions", ""))
     table.columns[0].width = Cm(1)
     table.columns[1].width = Cm(9)
     table.columns[2].width = Cm(2)
@@ -126,25 +115,16 @@ def add_action_items_table(doc, items):
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     headers = ["#", "タスク", "担当者", "期限", "関連議題"]
     for i, h in enumerate(headers):
-        cell = table.cell(0, i)
-        cell.text = h
-        for paragraph in cell.paragraphs:
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            for run in paragraph.runs:
-                run.bold = True
-                run.font.size = Pt(9)
+        set_cell(table.cell(0, i), h, bold=True)
+        table.cell(0, i).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
     for row_idx, item in enumerate(items, 1):
-        table.cell(row_idx, 0).text = str(item.get("id", row_idx))
-        table.cell(row_idx, 1).text = item.get("task", "")
+        set_cell(table.cell(row_idx, 0), item.get("id", row_idx))
+        set_cell(table.cell(row_idx, 1), item.get("task", ""))
         assignee = item.get("assignee", "")
         org = item.get("organization", "")
-        table.cell(row_idx, 2).text = f"{assignee}（{org}）" if org else assignee
-        table.cell(row_idx, 3).text = item.get("deadline", "")
-        table.cell(row_idx, 4).text = str(item.get("relatedAgendaId", ""))
-        for col in range(5):
-            for paragraph in table.cell(row_idx, col).paragraphs:
-                for run in paragraph.runs:
-                    run.font.size = Pt(9)
+        set_cell(table.cell(row_idx, 2), f"{assignee}（{org}）" if org else assignee)
+        set_cell(table.cell(row_idx, 3), item.get("deadline", ""))
+        set_cell(table.cell(row_idx, 4), item.get("relatedAgendaId", ""))
     table.columns[0].width = Cm(1)
     table.columns[1].width = Cm(6)
     table.columns[2].width = Cm(3)
@@ -171,15 +151,8 @@ def add_next_meeting(doc, next_meeting):
     if rows:
         table = doc.add_table(rows=len(rows), cols=2, style="Table Grid")
         for i, (label, value) in enumerate(rows):
-            table.cell(i, 0).text = label
-            table.cell(i, 1).text = value
-            for paragraph in table.cell(i, 0).paragraphs:
-                for run in paragraph.runs:
-                    run.bold = True
-                    run.font.size = Pt(9)
-            for paragraph in table.cell(i, 1).paragraphs:
-                for run in paragraph.runs:
-                    run.font.size = Pt(9)
+            set_cell(table.cell(i, 0), label, bold=True)
+            set_cell(table.cell(i, 1), value)
         table.columns[0].width = Cm(3)
         table.columns[1].width = Cm(13)
 
