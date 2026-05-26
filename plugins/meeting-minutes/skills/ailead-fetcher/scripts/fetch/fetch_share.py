@@ -26,13 +26,14 @@ def extract_key(url: str) -> str:
     return m.group(1)
 
 
-def fetch_build_id(key: str) -> str:
+def fetch_share_page(key: str) -> tuple[str, str]:
     resp = requests.get(f"{BASE_URL}/share/{key}", timeout=30)
     resp.raise_for_status()
-    m = re.search(r'"buildId":"([^"]+)"', resp.text)
+    html = resp.text
+    m = re.search(r'"buildId":"([^"]+)"', html)
     if not m:
         raise RuntimeError("buildId not found in HTML")
-    return m.group(1)
+    return m.group(1), html
 
 
 def extract_operation_hash_from_js(html: str) -> str | None:
@@ -74,7 +75,11 @@ def query_graphql(key: str, operation_hash: str, build_id: str) -> dict:
 
 def try_known_hashes(key: str, build_id: str) -> tuple[dict | None, str | None]:
     for h in KNOWN_HASHES:
-        result = query_graphql(key, h, build_id)
+        try:
+            result = query_graphql(key, h, build_id)
+        except requests.exceptions.RequestException as e:
+            print(f"       Network error with hash {h[:16]}...: {e}", file=sys.stderr)
+            continue
         if "errors" not in result:
             return result, h
         err_code = result.get("errors", [{}])[0].get("extensions", {}).get("code", "")
@@ -168,7 +173,7 @@ def main():
     workspace.mkdir(parents=True, exist_ok=True)
 
     print(f"[1/4] Fetching buildId for key: {key[:8]}...")
-    build_id = fetch_build_id(key)
+    build_id, html = fetch_share_page(key)
     print(f"       buildId: {build_id}")
 
     print("[2/4] Querying GraphQL API...")
@@ -176,8 +181,7 @@ def main():
 
     if result is None:
         print("       Known hashes failed. Extracting from JS chunk...")
-        html_resp = requests.get(f"{BASE_URL}/share/{key}", timeout=30)
-        new_hash = extract_operation_hash_from_js(html_resp.text)
+        new_hash = extract_operation_hash_from_js(html)
         if not new_hash:
             print("ERROR: Could not extract operationHash from JS chunk.", file=sys.stderr)
             sys.exit(1)
@@ -212,7 +216,8 @@ def main():
     print(f"  Summary:    {output_dir / 'summary.md'} ({metadata['topicCount']} topics)")
     print(f"  Metadata:   {output_dir / 'metadata.json'}")
     print(f"  Raw JSON:   {workspace / 'response.json'}")
-    print(f"  HLS URL:    {metadata['hlsUrl']}")
+    if metadata.get('hlsUrl'):
+        print(f"  HLS URL:    (available in metadata.json)")
 
 
 if __name__ == "__main__":

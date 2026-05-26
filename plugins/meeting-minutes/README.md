@@ -61,4 +61,4 @@ https://dashboard.ailead.app/share/...
 
 ## ライセンス
 
-MIT License - 詳細は [LICENSE](LICENSE) を参照。
+[MIT License](LICENSE) の下で配布されています。

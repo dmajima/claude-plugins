@@ -1,28 +1,42 @@
 ---
 name: ailead-fetcher
 description: |
-  ailead の外部共有リンク（dashboard.ailead.app/share/...）から動画(HLS)・文字起こし・AI会議要約・参加者情報を取得するスキル。
-  What: ailead 共有リンクのデータ（動画URL・transcript・summary・参加者）を GraphQL API 経由で抽出する。
-  Where: dashboard.ailead.app の外部共有ページ（認証不要な公開共有リンク）。
-  When: ユーザーが ailead の共有リンクを提示し、議事録作成やデータ取得を依頼した場合。
-  Why: ailead の共有ページは SPA のため WebFetch では取得不可。GraphQL Persisted Query の解析による API 直接呼び出しが必要。
-  How: HTML から buildId を抽出し、事前解析済みの operationHash + buildId で /api/v2/graphql を呼び出す。
-  責務外: ailead へのログイン認証が必要な非公開データの取得。HLS 動画のダウンロード・変換。議事録の構造化（minutes-composer が担当）。
+  ailead の外部共有リンク（dashboard.ailead.app/share/...）から動画(HLS)・文字起こし・AI会議要約・参加者情報を GraphQL API 経由で取得するスキル。
 trigger:
-  - "ailead" と "共有" または "share" が含まれる依頼
-  - "dashboard.ailead.app/share/" を含む URL が提示された場合
-  - ailead の録画・文字起こし・議事録の取得を依頼された場合
+  - 'ailead と 共有 または share が含まれる依頼'
+  - 'dashboard.ailead.app/share/ を含む URL が提示された場合'
+  - 'ailead の録画・文字起こし・議事録の取得を依頼された場合'
 ---
 
 # ailead Fetcher
 
 ailead の外部共有リンクから動画・音声・文字起こし・AI会議要約を取得するスキル。
 
-## 概要
+## 責務
 
-ailead（dashboard.ailead.app）の外部共有ページは Next.js SPA で構成されており、
-WebFetch 等の静的 HTML 取得では実データにアクセスできない。
-本スキルは GraphQL API の Persisted Query 形式を解析し、API 直接呼び出しでデータを取得する。
+- ailead 共有リンクのデータ（動画URL・transcript・summary・参加者）を GraphQL API 経由で抽出する
+- HTML から buildId を抽出し、事前解析済みの operationHash + buildId で /api/v2/graphql を呼び出す
+
+## 責務外
+
+- ailead へのログイン認証が必要な非公開データの取得
+- HLS 動画のダウンロード・変換
+- 議事録の構造化（minutes-composer が担当）
+
+## トリガー条件
+
+- ユーザーが ailead の共有リンクを提示し、議事録作成やデータ取得を依頼した場合
+- `dashboard.ailead.app/share/` を含む URL が提示された場合
+
+## 前提
+
+- dashboard.ailead.app の外部共有ページ（認証不要な公開共有リンク）が対象
+- ailead の共有ページは SPA のため WebFetch では取得不可。GraphQL Persisted Query の解析による API 直接呼び出しが必要
+
+## 重要な制約
+
+- 認証が必要な非公開リンクには対応しない
+- operationHash は事前解析済みの固定値を使用する。ailead 側の API 変更時は `references/api-spec.md` の更新が必要
 
 ## 取得可能なデータ
 

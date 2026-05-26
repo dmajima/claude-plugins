@@ -13,7 +13,7 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
-pwsh -NoProfile -File "${env:CLAUDE_SKILL_DIR}\scripts\setup\setup_venv.ps1" `
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\setup\setup_venv.ps1" `
   "$SESSION_DIR\workspace"
 ```
 
@@ -22,7 +22,7 @@ pwsh -NoProfile -File "${env:CLAUDE_SKILL_DIR}\scripts\setup\setup_venv.ps1" `
 ## venv 削除
 
 ```powershell
-pwsh -NoProfile -File "${env:CLAUDE_SKILL_DIR}\scripts\setup\teardown_venv.ps1" `
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\setup\teardown_venv.ps1" `
   "$SESSION_DIR\workspace"
 ```
 

@@ -2,21 +2,42 @@
 name: minutes-composer
 description: |
   会議の文字起こしとトピック要約から構造化議事録データ（JSON）を作成するスキル。
-  What: 文字起こしテキストを分析し、議題・議論内容・決定事項・アクションアイテムを構造化 JSON として出力する。
-  Where: セッション作業領域に minutes.json を出力する。
-  When: ailead-fetcher / teams-fetcher でデータ取得後、または文字起こしテキストが直接提供された場合。
-  Why: 議事録の中間表現を出力形式（docx/md/html）から分離し、下流スキル（minutes-docx 等）と組み合わせ可能にする。
-  How: ailead の場合はトピック要約を骨格として文字起こしと突合検証し構造化する。汎用テキストの場合はゼロから構造化する。
-  責務外: データソースからの取得（ailead-fetcher / teams-fetcher が担当）。最終出力形式への変換（minutes-docx が担当）。突合レビュー（minutes-reviewer が担当）。
 trigger:
-  - 「議事録」「minutes」を含む作成依頼（データ取得済みの場合）
-  - ailead-fetcher / teams-fetcher の出力を受けての議事録構成依頼
-  - 文字起こしテキストを直接提示しての議事録構成依頼
+  - '議事録 または minutes を含む作成依頼（データ取得済みの場合）'
+  - 'ailead-fetcher / teams-fetcher の出力を受けての議事録構成依頼'
+  - '文字起こしテキストを直接提示しての議事録構成依頼'
 ---
 
 # Minutes Composer
 
 文字起こし・トピック要約から構造化議事録データ（JSON）を作成するスキル。
+
+## 責務
+
+- 文字起こしテキストを分析し、議題・議論内容・決定事項・アクションアイテムを構造化 JSON として出力する
+- ailead の場合はトピック要約を骨格として文字起こしと突合検証し構造化する
+- 汎用テキストの場合はゼロから構造化する
+
+## 責務外
+
+- データソースからの取得（ailead-fetcher / teams-fetcher が担当）
+- 最終出力形式への変換（minutes-docx が担当）
+- 突合レビュー（minutes-reviewer が担当）
+
+## トリガー条件
+
+- ailead-fetcher / teams-fetcher でデータ取得後、議事録構成が必要な場合
+- 文字起こしテキストが直接提供された場合
+
+## 前提
+
+- ailead-fetcher または transcript-converter が出力した標準形式（transcript.txt + metadata.json）が入力として存在すること
+- セッション作業領域に minutes.json を出力する
+
+## 重要な制約
+
+- 議事録の中間表現を出力形式（docx/md/html）から分離する設計。最終出力は下流スキル（minutes-docx 等）が担当する
+- ailead フローと汎用フローで処理パスが異なる
 
 ## 概要
 
