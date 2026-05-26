@@ -1,4 +1,4 @@
-"""構造化議事録データ（JSON）から docx ファイルを生成する"""
+"""構造化議事録データ（JSON v2.0）から docx ファイルを生成する"""
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 sys.stderr.reconfigure(encoding='utf-8')
@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from docx import Document
-from docx.shared import Pt, Cm, RGBColor
+from docx.shared import Pt, Cm
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
@@ -20,117 +20,86 @@ def set_cell(cell, text, bold=False, font_size=Pt(9)):
     run.font.size = font_size
 
 
-def add_metadata_table(doc, metadata):
-    rows = [
-        ("日時", f"{metadata.get('date', '')} {metadata.get('startTime', '')} - {metadata.get('endTime', '')}（{metadata.get('durationMinutes', '')}分）"),
-        ("場所/方式", metadata.get("location", "")),
-        ("参加者", ", ".join(p["name"] + (f"（{p.get('organization', '')}）" if p.get("organization") else "") for p in metadata.get("participants", []))),
-        ("議事録作成者", metadata.get("createdBy", "AI")),
-    ]
-    table = doc.add_table(rows=len(rows), cols=2, style="Table Grid")
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    for i, (label, value) in enumerate(rows):
-        set_cell(table.cell(i, 0), label, bold=True)
-        set_cell(table.cell(i, 1), value)
-    for row in table.rows:
-        row.cells[0].width = Cm(3)
-        row.cells[1].width = Cm(13)
+def add_title_block(doc, metadata):
+    doc.add_heading(f"【会議議事録】{metadata.get('title', '')}", level=0)
+
+    p_date = doc.add_paragraph()
+    p_date.add_run(f"日時: {metadata.get('date', '')}").font.size = Pt(11)
+
+    p_loc = doc.add_paragraph()
+    p_loc.add_run(f"場所: {metadata.get('location', 'オンライン会議')}").font.size = Pt(11)
+
+    p_att = doc.add_paragraph()
+    run_att = p_att.add_run("出席者:")
+    run_att.font.size = Pt(11)
+    for p in metadata.get("participants", []):
+        name = p.get("name", "")
+        org = p.get("organization", "")
+        label = f"{org} / {name}" if org else name
+        doc.add_paragraph(label, style="List Bullet")
+
     doc.add_paragraph()
 
 
-def add_agenda_list(doc, agendas):
-    doc.add_heading("議題一覧", level=1)
-    for agenda in agendas:
-        doc.add_paragraph(
-            f"{agenda['id']}. {agenda['title']}", style="List Number"
-        )
-    doc.add_paragraph()
+def add_agenda_section(doc, agenda):
+    doc.add_heading(f"{agenda['id']}. {agenda['title']}", level=1)
+
+    bg = agenda.get("background", "")
+    if bg:
+        doc.add_heading("背景・目的:", level=2)
+        doc.add_paragraph(bg)
+
+    specs = agenda.get("specifications", [])
+    if specs:
+        doc.add_heading("仕様・機能詳細:", level=2)
+        for s in specs:
+            doc.add_paragraph(s, style="List Bullet")
+
+    discussions = agenda.get("discussions", [])
+    if discussions:
+        doc.add_heading("議論の内容:", level=2)
+        for d in discussions:
+            doc.add_paragraph(d, style="List Bullet")
+
+    concerns = agenda.get("concerns", [])
+    if concerns:
+        doc.add_heading("懸念点:", level=2)
+        for c in concerns:
+            doc.add_paragraph(c, style="List Bullet")
+
+    conclusions = agenda.get("conclusions", [])
+    if conclusions:
+        doc.add_heading("結論・合意事項:", level=2)
+        for c in conclusions:
+            doc.add_paragraph(c, style="List Bullet")
 
 
-def add_agenda_details(doc, agendas):
-    doc.add_heading("議事内容", level=1)
-    for agenda in agendas:
-        doc.add_heading(
-            f"{agenda['id']}. {agenda['title']}", level=2
-        )
-        if agenda.get("summary"):
-            p = doc.add_paragraph()
-            run = p.add_run("概要: ")
-            run.bold = True
-            run.font.size = Pt(10)
-            run2 = p.add_run(agenda["summary"])
-            run2.font.size = Pt(10)
-
-        discussions = agenda.get("discussions", [])
-        if discussions:
-            p_label = doc.add_paragraph()
-            run_label = p_label.add_run("議論内容:")
-            run_label.bold = True
-            run_label.font.size = Pt(10)
-            for disc in discussions:
-                doc.add_paragraph(disc.get("point", ""), style="List Bullet")
-                for detail in disc.get("details", []):
-                    p_detail = doc.add_paragraph(style="List Bullet 2")
-                    p_detail.text = detail
-
-        confirmations = agenda.get("confirmations", [])
-        if confirmations:
-            p_conf = doc.add_paragraph()
-            run_conf = p_conf.add_run("確認事項:")
-            run_conf.bold = True
-            run_conf.font.size = Pt(10)
-            for conf in confirmations:
-                doc.add_paragraph(conf, style="List Bullet")
-
-
-def add_decisions_table(doc, decisions):
-    doc.add_heading("決定事項", level=1)
-    if not decisions:
-        doc.add_paragraph("なし")
-        return
-    table = doc.add_table(rows=1 + len(decisions), cols=4, style="Table Grid")
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    headers = ["#", "決定内容", "関連議題", "備考"]
-    for i, h in enumerate(headers):
-        set_cell(table.cell(0, i), h, bold=True)
-        table.cell(0, i).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for row_idx, dec in enumerate(decisions, 1):
-        set_cell(table.cell(row_idx, 0), dec.get("id", row_idx))
-        set_cell(table.cell(row_idx, 1), dec.get("content", ""))
-        set_cell(table.cell(row_idx, 2), dec.get("relatedAgendaId", ""))
-        set_cell(table.cell(row_idx, 3), dec.get("conditions", ""))
-    table.columns[0].width = Cm(1)
-    table.columns[1].width = Cm(9)
-    table.columns[2].width = Cm(2)
-    table.columns[3].width = Cm(4)
-    doc.add_paragraph()
-
-
-def add_action_items_table(doc, items):
-    doc.add_heading("アクションアイテム", level=1)
+def add_action_items(doc, items):
+    doc.add_heading("アクションまとめ", level=1)
     if not items:
         doc.add_paragraph("なし")
         return
-    table = doc.add_table(rows=1 + len(items), cols=5, style="Table Grid")
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    headers = ["#", "タスク", "担当者", "期限", "関連議題"]
-    for i, h in enumerate(headers):
-        set_cell(table.cell(0, i), h, bold=True)
-        table.cell(0, i).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for row_idx, item in enumerate(items, 1):
-        set_cell(table.cell(row_idx, 0), item.get("id", row_idx))
-        set_cell(table.cell(row_idx, 1), item.get("task", ""))
-        assignee = item.get("assignee", "")
-        org = item.get("organization", "")
-        set_cell(table.cell(row_idx, 2), f"{assignee}（{org}）" if org else assignee)
-        set_cell(table.cell(row_idx, 3), item.get("deadline", ""))
-        set_cell(table.cell(row_idx, 4), item.get("relatedAgendaId", ""))
-    table.columns[0].width = Cm(1)
-    table.columns[1].width = Cm(6)
-    table.columns[2].width = Cm(3)
-    table.columns[3].width = Cm(3)
-    table.columns[4].width = Cm(2)
-    doc.add_paragraph()
+    for item in items:
+        idx = item.get("id", "")
+        label = item.get("label", "")
+        p_title = doc.add_paragraph()
+        run_title = p_title.add_run(f"{idx}. {label}")
+        run_title.bold = True
+        run_title.font.size = Pt(10.5)
+
+        p_assignee = doc.add_paragraph()
+        p_assignee.paragraph_format.left_indent = Cm(1)
+        p_assignee.add_run(f"担当: {item.get('assignee', '')}").font.size = Pt(10)
+
+        p_deadline = doc.add_paragraph()
+        p_deadline.paragraph_format.left_indent = Cm(1)
+        p_deadline.add_run(f"期限: {item.get('deadline', '')}").font.size = Pt(10)
+
+        p_content = doc.add_paragraph()
+        p_content.paragraph_format.left_indent = Cm(1)
+        p_content.add_run(f"内容: {item.get('content', '')}").font.size = Pt(10)
+
+        doc.add_paragraph()
 
 
 def add_next_meeting(doc, next_meeting):
@@ -138,23 +107,19 @@ def add_next_meeting(doc, next_meeting):
     if not next_meeting:
         doc.add_paragraph("未定")
         return
-    rows = []
     if next_meeting.get("date"):
-        rows.append(("日時", next_meeting["date"]))
+        doc.add_paragraph(f"日時: {next_meeting['date']}")
     agendas = next_meeting.get("plannedAgendas", [])
     if agendas:
-        rows.append(("議題（予定）", ", ".join(agendas)))
+        doc.add_paragraph(f"議題（予定）: {', '.join(agendas)}")
     preps = next_meeting.get("preparations", [])
     if preps:
-        prep_text = "\n".join(f"- {p.get('task', '')}（{p.get('assignee', '')}）" for p in preps)
-        rows.append(("準備事項", prep_text))
-    if rows:
-        table = doc.add_table(rows=len(rows), cols=2, style="Table Grid")
-        for i, (label, value) in enumerate(rows):
-            set_cell(table.cell(i, 0), label, bold=True)
-            set_cell(table.cell(i, 1), value)
-        table.columns[0].width = Cm(3)
-        table.columns[1].width = Cm(13)
+        doc.add_paragraph("準備事項:")
+        for p in preps:
+            doc.add_paragraph(
+                f"{p.get('task', '')}（{p.get('assignee', '')}）",
+                style="List Bullet",
+            )
 
 
 def generate(input_path: str, template_path: str | None, output_path: str):
@@ -167,21 +132,14 @@ def generate(input_path: str, template_path: str | None, output_path: str):
         doc = Document()
 
     metadata = data.get("metadata", {})
-    doc.add_heading(metadata.get("title", "議事録"), level=0)
-    doc.add_heading("会議情報", level=1)
-    add_metadata_table(doc, metadata)
+    add_title_block(doc, metadata)
 
     agendas = data.get("agendas", [])
-    add_agenda_list(doc, agendas)
-    add_agenda_details(doc, agendas)
-    add_decisions_table(doc, data.get("decisions", []))
-    add_action_items_table(doc, data.get("actionItems", []))
-    add_next_meeting(doc, data.get("nextMeeting"))
+    for agenda in agendas:
+        add_agenda_section(doc, agenda)
 
-    notes = data.get("notes")
-    if notes:
-        doc.add_heading("補足", level=1)
-        doc.add_paragraph(notes)
+    add_action_items(doc, data.get("actionItems", []))
+    add_next_meeting(doc, data.get("nextMeeting"))
 
     doc.save(output_path)
     print(f"Generated: {output_path}")
