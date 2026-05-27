@@ -153,6 +153,7 @@ def build_metadata(data: dict) -> dict:
         "startDatetime": share.get("startDatetime", ""),
         "duration": share.get("duration", 0),
         "system": share.get("system", ""),
+        "source": "ailead",
         "expirationDatetime": share.get("expirationDatetime", ""),
         "hostUser": f"{host.get('lastName', '')} {host.get('firstName', '')}".strip(),
         "hlsUrl": share.get("hlsUrl", ""),

@@ -22,19 +22,23 @@ COLOR_WHITE = 'FFFFFF'
 FONT_NAME = 'Meiryo'
 
 
+def _set_run_font(run):
+    run.font.name = FONT_NAME
+    r = run._element
+    rPr = r.get_or_add_rPr()
+    rFonts = rPr.find(qn('w:rFonts'))
+    if rFonts is None:
+        rFonts = parse_xml(f'<w:rFonts {nsdecls("w")}/>')
+        rPr.insert(0, rFonts)
+    rFonts.set(qn('w:ascii'), FONT_NAME)
+    rFonts.set(qn('w:hAnsi'), FONT_NAME)
+    rFonts.set(qn('w:eastAsia'), FONT_NAME)
+
+
 def add_heading(doc, text, level=1):
     p = doc.add_heading(text, level=level)
     for run in p.runs:
-        run.font.name = FONT_NAME
-        r = run._element
-        rPr = r.get_or_add_rPr()
-        rFonts = rPr.find(qn('w:rFonts'))
-        if rFonts is None:
-            rFonts = parse_xml(f'<w:rFonts {nsdecls("w")}/>')
-            rPr.insert(0, rFonts)
-        rFonts.set(qn('w:ascii'), FONT_NAME)
-        rFonts.set(qn('w:hAnsi'), FONT_NAME)
-        rFonts.set(qn('w:eastAsia'), FONT_NAME)
+        _set_run_font(run)
     return p
 
 
@@ -73,7 +77,7 @@ def set_cell(cell, text, bold=False, font_size=Pt(10), color=None, align=None):
     run = cell.paragraphs[0].add_run(str(text))
     run.bold = bold
     run.font.size = font_size
-    run.font.name = FONT_NAME
+    _set_run_font(run)
     if color:
         run.font.color.rgb = color
     if align:
@@ -166,7 +170,7 @@ def add_section_heading(doc, text):
     run = p.add_run(text)
     run.bold = True
     run.font.size = Pt(10.5)
-    run.font.name = FONT_NAME
+    _set_run_font(run)
     run.font.color.rgb = RGBColor(0x2C, 0x5F, 0x8A)
 
 

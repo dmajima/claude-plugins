@@ -11,6 +11,7 @@
 | case-03_teams_paste | Teams パターン検出 | Teams コピペテキスト入力時に Teams パーサーで変換する |
 | case-04_plain_fallback | プレーンテキスト | パターン不一致時にプレーンテキストとしてフォールバック処理する |
 | case-05_missing_metadata | ユーザー確認 | メタデータ（タイトル・日時等）が推定不能な場合にユーザーに確認する |
+| case-06_ailead_format | ailead パーサー | ailead 形式の `[HH:MM:SS - HH:MM:SS] 発話者: テキスト` 入力時に ailead パーサーで変換する |
 
 ## 実行確認方法
 

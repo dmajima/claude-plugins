@@ -34,6 +34,13 @@ trigger:
 
 - minutes-docx と同様、minutes.json を入力とした変換に特化する。議事録の構造化は行わない
 
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|-----|-------|------|
+| workspace/minutes.json が存在 | 非対話 | 自動で Markdown 生成 |
+| minutes.json 不在 | 対話 | minutes-composer の実行を提案 |
+
 ## 概要
 
 `minutes-composer` が生成した `minutes.json` を入力として、

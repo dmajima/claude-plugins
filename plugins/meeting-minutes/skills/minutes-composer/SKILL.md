@@ -4,7 +4,7 @@ description: |
   会議の文字起こしとトピック要約から構造化議事録データ（JSON）を作成するスキル。
 trigger:
   - '議事録 または minutes を含む作成依頼（データ取得済みの場合）'
-  - 'ailead-fetcher / teams-fetcher の出力を受けての議事録構成依頼'
+  - 'ailead-fetcher / transcript-converter の出力を受けての議事録構成依頼'
   - '文字起こしテキストを直接提示しての議事録構成依頼'
 ---
 
@@ -38,6 +38,13 @@ trigger:
 
 - 議事録の中間表現を出力形式（docx/md/html）から分離する設計。最終出力は下流スキル（minutes-docx / minutes-md 等）が担当する
 - ailead フローと汎用フローで処理パスが異なる
+
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|-----|-------|------|
+| workspace/ に transcript.txt + metadata.json が存在 | 非対話 | 入力種別を自動判定して構造化 |
+| 入力ファイル不在 | 対話 | データ取得スキル（ailead-fetcher / transcript-converter）の起動を提案 |
 
 ## 概要
 

@@ -41,6 +41,13 @@ trigger:
 - 音声・動画ファイルからの直接文字起こし（STT）は対象外
 - 形式自動判定が失敗した場合はプレーンテキストとしてフォールバックする
 
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|-----|-------|------|
+| ファイルパスが指定されている | 非対話 | 形式自動判定して変換 |
+| テキストが直接貼り付けられた | 対話 | メタデータ（タイトル・日時等）が推定不能な場合ユーザーに確認 |
+
 ## 概要
 
 多様な形式の文字起こしデータ（VTT / SRT / プレーンテキスト / Teams コピペ等）を読み取り、
@@ -117,6 +124,10 @@ ailead-fetcher と同一の形式で出力する:
 ## Python スクリプト
 
 ```powershell
+& chcp.com 65001 | Out-Null
+[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 $venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
 & $venvPy "${env:CLAUDE_SKILL_DIR}\scripts\convert\convert_transcript.py" `
   --input "<入力ファイルパスまたは stdin>" `

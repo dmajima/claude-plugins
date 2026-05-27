@@ -36,6 +36,13 @@ trigger:
 - 議事録を Word 形式で配布・保管する業務要件に対応する。テンプレートベースでスタイルを統一する
 - python-pptx と同様、Windows + PowerShell 環境では Start-Job 経由ラッパーでの起動が必要な場合がある
 
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|-----|-------|------|
+| workspace/minutes.json が存在 | 非対話 | 自動で docx 生成 |
+| minutes.json 不在 | 対話 | minutes-composer の実行を提案 |
+
 ## 概要
 
 `minutes-composer` が生成した `minutes.json` を入力として、

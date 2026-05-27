@@ -1,24 +1,15 @@
 # docx 出力手順
 
+> **環境構築**: 本手順の実行前に [`setup.md`](setup.md) で venv を構築すること。
+
 ## 前提
 
 - `minutes-composer` が `workspace/minutes.json` を出力済みであること
-- プラグイン共有の `references/scripts/setup/requirements.txt` で venv が構築済みであること
+- [`setup.md`](setup.md) の手順で venv が構築済みであること
 
 ## 手順
 
-### 1. venv 構築（未構築の場合）
-
-```powershell
-& chcp.com 65001 | Out-Null
-[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\setup\setup_venv.ps1" `
-  "$SESSION_DIR\workspace"
-```
-
-### 2. docx 生成（Start-Job ラッパー経由）
+### 1. docx 生成（Start-Job ラッパー経由）
 
 Windows + PowerShell 環境では python-docx がハングする既知事象があるため、
 `run_docx_via_job.ps1` 経由で起動する。
