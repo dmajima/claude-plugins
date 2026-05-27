@@ -1,7 +1,7 @@
 {
   "name": "meeting-minutes",
   "version": "1.0.0",
-  "description": "会議の文字起こし・録画データから構造化議事録を作成し、docx 出力するプラグイン（ailead 連携 / VTT・SRT・テキスト入力対応）",
+  "description": "会議の文字起こし・録画データから構造化議事録を作成し Markdown / docx 出力",
   "author": {
     "name": "dmajima"
   },
@@ -14,6 +14,7 @@
     "srt",
     "docx",
     "word",
+    "markdown",
     "gijiroku",
     "graphql",
     "transcript-converter"

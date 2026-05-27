@@ -3,6 +3,9 @@ param(
     [string]$WorkDir
 )
 
+& chcp.com 65001 | Out-Null
+[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 $VENV_DIR = Join-Path $WorkDir ".venv"
 
 if (Test-Path $VENV_DIR) {

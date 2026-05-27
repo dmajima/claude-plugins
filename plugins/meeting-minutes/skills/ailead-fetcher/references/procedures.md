@@ -39,13 +39,13 @@ $hash = [regex]::Match($jsResp.Content, 'externalShare/dataflow/query.*?hash:"([
 
 ```powershell
 & chcp.com 65001 | Out-Null
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 $venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
 & $venvPy "${env:CLAUDE_SKILL_DIR}\scripts\fetch\fetch_share.py" `
   --url "https://dashboard.ailead.app/share/<key>" `
-  --output "$SESSION_DIR"
+  --output "$SESSION_DIR\workspace"
 ```
 
 スクリプトは以下を自動実行する:
@@ -80,9 +80,9 @@ $resp = Invoke-WebRequest -Uri 'https://dashboard.ailead.app/api/v2/graphql' `
 | ファイル | 配置先 | 内容 |
 |---------|-------|------|
 | `response.json` | `workspace/` | GraphQL レスポンス全文 |
-| `transcript.txt` | セッション直下 | 文字起こし全文（発話者・タイムスタンプ付き） |
-| `summary.md` | セッション直下 | AI 会議要約（Markdown 形式） |
-| `metadata.json` | セッション直下 | 会議メタデータ（タイトル・参加者・HLS URL 等） |
+| `transcript.txt` | `workspace/` | 文字起こし全文（発話者・タイムスタンプ付き） |
+| `summary.md` | `workspace/` | AI 会議要約（Markdown 形式） |
+| `metadata.json` | `workspace/` | 会議メタデータ（タイトル・参加者・HLS URL 等） |
 
 ### 5.2 タイムスタンプの算出
 

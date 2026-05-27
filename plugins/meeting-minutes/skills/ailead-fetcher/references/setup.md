@@ -10,7 +10,7 @@
 
 ```powershell
 & chcp.com 65001 | Out-Null
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\setup\setup_venv.ps1" `

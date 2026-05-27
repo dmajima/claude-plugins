@@ -18,6 +18,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 | `skill-router` | プロンプト送信時に available-skills を自動スコアリングしてフック注入で適合スキルを推奨。ロジック編集は対象外 | 0.5.1 | `/plugin install skill-router@dmajima-claude-plugins` |
 | `session-usage` | カレントセッションのトークン消費量を JSONL から直接集計し、AskUserQuestion 対話メニュー（プレビュー表示・クリップボードコピー・再集計）で操作できる完全内製プラグイン | 1.0.0 | `/plugin install session-usage@dmajima-claude-plugins` |
 | `maintenance` | Claude Code 環境のメンテナンス統合プラグイン（プラグイン一括更新 / 古い作業フォルダ整理 / Git 経由設定同期） | 0.2.0 | `/plugin install maintenance@dmajima-claude-plugins` |
+| `meeting-minutes` | 会議の文字起こし・録画データから構造化議事録を作成し Markdown / docx 出力 | 1.0.0 | `/plugin install meeting-minutes@dmajima-claude-plugins` |
 
 ## マーケットプレイスの追加方法
 
@@ -127,6 +128,7 @@ dmajima-claude-plugins/
     ├── credentials-manager/
     ├── extension-toolkit/
     ├── maintenance/
+    ├── meeting-minutes/
     ├── session-usage/
     └── skill-router/
 ```

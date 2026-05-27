@@ -38,6 +38,13 @@ ailead の外部共有リンクから動画・音声・文字起こし・AI会�
 - 認証が必要な非公開リンクには対応しない
 - operationHash は事前解析済みの固定値を使用する。ailead 側の API 変更時は `references/api-spec.md` の更新が必要
 
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|-----|-------|------|
+| ailead 共有 URL が引数で指定 | 非対話 | 自動でデータ取得を実行 |
+| URL なし or 不正形式 | 対話 | ユーザーに URL を確認 |
+
 ## 取得可能なデータ
 
 | データ種別 | 説明 |
@@ -54,8 +61,8 @@ ailead の外部共有リンクから動画・音声・文字起こし・AI会�
 1. 共有 URL から share key を抽出する
 2. HTML ページを取得し、`__NEXT_DATA__` から `buildId` を抽出する
 3. [`references/api-spec.md`](references/api-spec.md) に記載の operationHash + buildId で GraphQL API を呼び出す
-4. レスポンスをパースし、セッション作業領域に保存する
-5. minutes-composer へ引き渡すデータ（transcript.txt, metadata.json, response.json）を出力する
+4. レスポンスをパースし、セッション作業領域の `workspace/` に保存する
+5. minutes-composer へ引き渡すデータ（transcript.txt, metadata.json, summary.md, response.json）を `workspace/` に出力する
 
 Python スクリプト: [`scripts/fetch/fetch_share.py`](scripts/fetch/fetch_share.py)
 

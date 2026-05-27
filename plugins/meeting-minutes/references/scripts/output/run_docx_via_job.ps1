@@ -11,12 +11,16 @@ param(
     [int]$TimeoutSec = 120
 )
 
+& chcp.com 65001 | Out-Null
+[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 $jobArgs = @($InputJson, $OutputDocx, $TemplatePath)
 
 $job = Start-Job -ScriptBlock {
     param($py, $script, $args_)
     & chcp.com 65001 | Out-Null
-    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    [Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
     $OutputEncoding = [System.Text.Encoding]::UTF8
     $env:PYTHONUTF8 = "1"
     $env:PYTHONIOENCODING = "utf-8"

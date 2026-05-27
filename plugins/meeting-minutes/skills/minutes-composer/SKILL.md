@@ -4,7 +4,7 @@ description: |
   会議の文字起こしとトピック要約から構造化議事録データ（JSON）を作成するスキル。
 trigger:
   - '議事録 または minutes を含む作成依頼（データ取得済みの場合）'
-  - 'ailead-fetcher / teams-fetcher の出力を受けての議事録構成依頼'
+  - 'ailead-fetcher / transcript-converter の出力を受けての議事録構成依頼'
   - '文字起こしテキストを直接提示しての議事録構成依頼'
 ---
 
@@ -20,24 +20,31 @@ trigger:
 
 ## 責務外
 
-- データソースからの取得（ailead-fetcher / teams-fetcher が担当）
-- 最終出力形式への変換（minutes-docx が担当）
+- データソースからの取得（ailead-fetcher / transcript-converter が担当）
+- 最終出力形式への変換（minutes-docx / minutes-md が担当）
 - 突合レビュー（minutes-reviewer が担当）
 
 ## トリガー条件
 
-- ailead-fetcher / teams-fetcher でデータ取得後、議事録構成が必要な場合
+- ailead-fetcher / transcript-converter でデータ取得後、議事録構成が必要な場合
 - 文字起こしテキストが直接提供された場合
 
 ## 前提
 
-- ailead-fetcher または transcript-converter が出力した標準形式（transcript.txt + metadata.json）が入力として存在すること
-- セッション作業領域に minutes.json を出力する
+- ailead-fetcher または transcript-converter が出力した標準形式（workspace/transcript.txt + workspace/metadata.json）が入力として存在すること
+- セッション作業領域の `workspace/` に minutes.json を出力する
 
 ## 重要な制約
 
-- 議事録の中間表現を出力形式（docx/md/html）から分離する設計。最終出力は下流スキル（minutes-docx 等）が担当する
+- 議事録の中間表現を出力形式（docx/md/html）から分離する設計。最終出力は下流スキル（minutes-docx / minutes-md 等）が担当する
 - ailead フローと汎用フローで処理パスが異なる
+
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|-----|-------|------|
+| workspace/ に transcript.txt + metadata.json が存在 | 非対話 | 入力種別を自動判定して構造化 |
+| 入力ファイル不在 | 対話 | データ取得スキル（ailead-fetcher / transcript-converter）の起動を提案 |
 
 ## 概要
 
@@ -49,8 +56,8 @@ trigger:
 
 | 入力 | 処理フロー |
 |------|-----------|
-| ailead-fetcher の出力（transcript.txt + response.json） | トピック要約ベースの構造化 |
-| teams-fetcher の出力（将来） | 同上 |
+| ailead-fetcher の出力（workspace/transcript.txt + workspace/response.json） | トピック要約ベースの構造化 |
+| transcript-converter の出力 | 同上 |
 | 汎用文字起こしテキスト | ゼロからの構造化 |
 
 ## 出力: minutes.json

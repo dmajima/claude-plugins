@@ -20,7 +20,7 @@ trigger:
 ## 責務外
 
 - 議事録の構造化・修正（minutes-composer が担当）
-- データ取得（ailead-fetcher / teams-fetcher が担当）
+- データ取得（ailead-fetcher / transcript-converter が担当）
 
 ## トリガー条件
 
@@ -29,13 +29,20 @@ trigger:
 
 ## 前提
 
-- セッション作業領域に minutes.json と transcript.txt が存在すること
+- セッション作業領域の `workspace/` に minutes.json と transcript.txt が存在すること
 - AI 生成の議事録には事実の歪曲・重要発言の漏れ・発言者の誤帰属等のリスクがあるため、独立した検証が必要
 
 ## 重要な制約
 
 - 必ずフレッシュなサブエージェントとして起動すること（作成時のバイアス排除のため）
 - メインコンテキストで議事録を作成した Claude が自身でレビューしてはならない
+
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|-----|-------|------|
+| workspace/ に minutes.json + transcript.txt が存在 | 非対話 | 自動で突合検証を実行 |
+| 入力ファイル不在 | 対話 | minutes-composer の実行を提案 |
 
 **このスキルは必ずフレッシュなサブエージェントとして起動されること。**
 メインコンテキストで議事録を作成した Claude が自身でレビューすると、
@@ -45,7 +52,7 @@ trigger:
 ## 実行フロー
 
 1. メインコンテキストが Agent ツールでフレッシュインスタンスを起動する
-2. minutes.json と transcript.txt をセッション作業領域から読み込む
+2. workspace/minutes.json と workspace/transcript.txt をセッション作業領域から読み込む
 3. 各議題について文字起こしと突合し、正確性・網羅性を検証する
 4. 決定事項・アクションアイテムの漏れを検出する
 5. 検証結果を verification-log.md と review-result.json に出力する
@@ -76,8 +83,8 @@ Agent({
 
 | ファイル | 説明 |
 |---------|------|
-| `minutes.json` | minutes-composer が生成した構造化議事録データ |
-| `transcript.txt` | 文字起こし全文（タイムスタンプ・発話者付き） |
+| `workspace/minutes.json` | minutes-composer が生成した構造化議事録データ |
+| `workspace/transcript.txt` | 文字起こし全文（タイムスタンプ・発話者付き） |
 | `workspace/response.json` | ailead 生データ（ailead ソースの場合のみ） |
 
 ## 出力
@@ -112,27 +119,7 @@ Agent({
 
 ## 検証ログのフォーマット
 
-```markdown
-# 突合検証ログ
-
-## 検証サマリー
-
-| 項目 | 件数 |
-|------|------|
-| 議題数 | {{N}} |
-| 正確と判定 | {{N}} |
-| 修正提案 | {{N}} |
-| 追加提案（決定事項） | {{N}} |
-| 追加提案（アクションアイテム） | {{N}} |
-
-## 修正・追加の詳細
-
-### [修正] 議題: {{議題名}}
-- **現在の記述**: {{minutes.json の内容}}
-- **問題点**: {{何が不正確か}}
-- **修正提案**: {{修正内容}}
-- **根拠**: 文字起こし [HH:MM:SS] 「{{引用}}」
-```
+詳細は [`references/verification-rules.md`](references/verification-rules.md) セクション 3 を参照。
 
 ## 参照
 
