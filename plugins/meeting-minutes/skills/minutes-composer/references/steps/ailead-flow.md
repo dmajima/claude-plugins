@@ -5,23 +5,23 @@ ailead の外部共有リンクが提示された場合の議事録作成手順�
 ## 前提
 
 - ailead 共有リンクが有効（期限内）であること
-- `ailead-share-fetcher` スキルが利用可能であること
+- `ailead-fetcher` スキルが利用可能であること
 
 ## 手順
 
 ### Step 1: ailead データ取得
 
-`ailead-share-fetcher` スキルを起動してデータを取得する。
+`ailead-fetcher` スキルを起動してデータを取得する。
 
 ```
-Skill(skill: "ailead-share-fetcher", args: "<ailead 共有リンク URL>")
+Skill(skill: "ailead-fetcher", args: "<ailead 共有リンク URL>")
 ```
 
 取得されるデータ:
 - `transcript.txt` — 文字起こし全文
 - `summary.md` — AI 会議要約（トピック別）
 - `metadata.json` — 会議メタデータ
-- `workspace/response.json` — GraphQL レスポンス全文
+- `response.json` — GraphQL レスポンス全文
 
 ### Step 2: メタデータの整理
 

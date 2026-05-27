@@ -170,8 +170,7 @@ def main():
 
     key = extract_key(args.url)
     output_dir = Path(args.output)
-    workspace = output_dir / "workspace"
-    workspace.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"[1/4] Fetching buildId for key: {key[:8]}...")
     build_id, html = fetch_share_page(key)
@@ -197,7 +196,7 @@ def main():
     print(f"       Success (hash: {used_hash[:16]}...)")
 
     print("[3/4] Saving results...")
-    with open(workspace / "response.json", "w", encoding="utf-8") as f:
+    with open(output_dir / "response.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
     transcript_text = build_transcript_text(result)
@@ -216,7 +215,7 @@ def main():
     print(f"  Transcript: {output_dir / 'transcript.txt'} ({metadata['transcriptCount']} segments)")
     print(f"  Summary:    {output_dir / 'summary.md'} ({metadata['topicCount']} topics)")
     print(f"  Metadata:   {output_dir / 'metadata.json'}")
-    print(f"  Raw JSON:   {workspace / 'response.json'}")
+    print(f"  Raw JSON:   {output_dir / 'response.json'}")
     if metadata.get('hlsUrl'):
         print(f"  HLS URL:    (available in metadata.json)")
 

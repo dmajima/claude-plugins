@@ -2,7 +2,7 @@
 
 ## 前提
 
-- プラグイン共有の `references/scripts/setup/requirements.txt` で venv が構築済みであること
+- [`setup.md`](setup.md) の手順で venv が構築済みであること
 - 入力ファイルがセッション作業領域の `inputs/` に配置されていること
 
 ## 手順
@@ -25,7 +25,7 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 $venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
 & $venvPy "${env:CLAUDE_SKILL_DIR}\scripts\convert\convert_transcript.py" `
   --input "$SESSION_DIR\inputs\transcript_raw.txt" `
-  --output "$SESSION_DIR" `
+  --output "$SESSION_DIR\workspace" `
   --title "会議タイトル"
 ```
 
@@ -35,8 +35,8 @@ $venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
 
 | ファイル | 配置先 | 内容 |
 |---------|-------|------|
-| `transcript.txt` | セッション直下 | 標準形式の文字起こし |
-| `metadata.json` | セッション直下 | 会議メタデータ |
+| `transcript.txt` | `workspace/` | 標準形式の文字起こし |
+| `metadata.json` | `workspace/` | 会議メタデータ |
 
 ### 4. メタデータの補完
 
@@ -50,5 +50,5 @@ Claude が `AskUserQuestion` でユーザーに確認する:
 ### 5. 下流スキルへの引き渡し
 
 変換完了後、`minutes-composer` に引き渡す。
-`transcript.txt` と `metadata.json` が ailead-fetcher と同一形式であるため、
+`workspace/transcript.txt` と `workspace/metadata.json` が ailead-fetcher と同一形式であるため、
 `minutes-composer` はデータソースを意識せずに処理できる。

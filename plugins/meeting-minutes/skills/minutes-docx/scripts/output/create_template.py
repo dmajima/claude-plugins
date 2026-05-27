@@ -11,7 +11,7 @@ from docx.oxml.ns import qn, nsdecls
 from docx.oxml import parse_xml
 
 
-FONT_NAME = 'Meiryo UI'
+FONT_NAME = 'Meiryo'
 COLOR_PRIMARY = RGBColor(0x1B, 0x3A, 0x5C)
 COLOR_HEADING1 = RGBColor(0x1B, 0x3A, 0x5C)
 COLOR_HEADING2 = RGBColor(0x2C, 0x5F, 0x8A)
@@ -20,16 +20,31 @@ COLOR_BODY = RGBColor(0x33, 0x33, 0x33)
 COLOR_LIGHT_BG = 'E8EEF4'
 
 
+def set_style_font(style):
+    style.font.name = FONT_NAME
+    rPr = style.element.find(qn('w:rPr'))
+    if rPr is None:
+        rPr = parse_xml(f'<w:rPr {nsdecls("w")}/>')
+        style.element.append(rPr)
+    rFonts = rPr.find(qn('w:rFonts'))
+    if rFonts is None:
+        rFonts = parse_xml(f'<w:rFonts {nsdecls("w")}/>')
+        rPr.insert(0, rFonts)
+    rFonts.set(qn('w:ascii'), FONT_NAME)
+    rFonts.set(qn('w:hAnsi'), FONT_NAME)
+    rFonts.set(qn('w:eastAsia'), FONT_NAME)
+
+
 def configure_styles(doc):
     style = doc.styles['Normal']
-    style.font.name = FONT_NAME
+    set_style_font(style)
     style.font.size = Pt(10.5)
     style.font.color.rgb = COLOR_BODY
     style.paragraph_format.space_after = Pt(4)
     style.paragraph_format.line_spacing = 1.15
 
     title_style = doc.styles['Title']
-    title_style.font.name = FONT_NAME
+    set_style_font(title_style)
     title_style.font.size = Pt(20)
     title_style.font.bold = True
     title_style.font.color.rgb = COLOR_PRIMARY
@@ -42,7 +57,7 @@ def configure_styles(doc):
         3: (10.5, COLOR_HEADING3, True),
     }.items():
         hs = doc.styles[f'Heading {level}']
-        hs.font.name = FONT_NAME
+        set_style_font(hs)
         hs.font.size = Pt(size)
         hs.font.color.rgb = color
         hs.font.bold = bold
@@ -50,7 +65,6 @@ def configure_styles(doc):
         hs.paragraph_format.space_after = Pt(4)
 
         if level == 1:
-            pf = hs.paragraph_format
             pBdr = parse_xml(
                 f'<w:pBdr {nsdecls("w")}>'
                 f'  <w:bottom w:val="single" w:sz="8" w:space="2" w:color="1B3A5C"/>'
@@ -61,7 +75,7 @@ def configure_styles(doc):
     for style_name in ['List Bullet', 'List Number']:
         try:
             ls = doc.styles[style_name]
-            ls.font.name = FONT_NAME
+            set_style_font(ls)
             ls.font.size = Pt(10.5)
             ls.font.color.rgb = COLOR_BODY
             ls.paragraph_format.space_after = Pt(2)

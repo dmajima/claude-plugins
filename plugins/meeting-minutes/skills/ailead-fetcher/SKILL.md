@@ -54,8 +54,8 @@ ailead の外部共有リンクから動画・音声・文字起こし・AI会�
 1. 共有 URL から share key を抽出する
 2. HTML ページを取得し、`__NEXT_DATA__` から `buildId` を抽出する
 3. [`references/api-spec.md`](references/api-spec.md) に記載の operationHash + buildId で GraphQL API を呼び出す
-4. レスポンスをパースし、セッション作業領域に保存する
-5. minutes-composer へ引き渡すデータ（transcript.txt, metadata.json, response.json）を出力する
+4. レスポンスをパースし、セッション作業領域の `workspace/` に保存する
+5. minutes-composer へ引き渡すデータ（transcript.txt, metadata.json, summary.md, response.json）を `workspace/` に出力する
 
 Python スクリプト: [`scripts/fetch/fetch_share.py`](scripts/fetch/fetch_share.py)
 

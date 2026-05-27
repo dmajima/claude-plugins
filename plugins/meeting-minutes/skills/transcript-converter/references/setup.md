@@ -2,9 +2,8 @@
 
 ## 依存パッケージ
 
-| パッケージ | 用途 |
-|-----------|------|
-| `requests` | HTTP リクエスト |
+プラグイン共有の `references/scripts/setup/requirements.txt` を使用する。
+transcript-converter 固有の追加依存はない。
 
 ## venv 構築
 
@@ -25,9 +24,3 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\setup\setup_
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\setup\teardown_venv.ps1" `
   "$SESSION_DIR\workspace"
 ```
-
-## 外部ツール（オプション）
-
-| ツール | 用途 | 必須 |
-|-------|------|------|
-| `ffmpeg` | HLS 動画のダウンロード・変換 | いいえ |

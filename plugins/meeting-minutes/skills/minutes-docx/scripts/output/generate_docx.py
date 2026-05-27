@@ -19,7 +19,46 @@ COLOR_PRIMARY = RGBColor(0x1B, 0x3A, 0x5C)
 COLOR_HEADER_BG = 'E8EEF4'
 COLOR_ACCENT_BG = 'F0F4F8'
 COLOR_WHITE = 'FFFFFF'
-FONT_NAME = 'Meiryo UI'
+FONT_NAME = 'Meiryo'
+
+
+def add_heading(doc, text, level=1):
+    p = doc.add_heading(text, level=level)
+    for run in p.runs:
+        run.font.name = FONT_NAME
+        r = run._element
+        rPr = r.get_or_add_rPr()
+        rFonts = rPr.find(qn('w:rFonts'))
+        if rFonts is None:
+            rFonts = parse_xml(f'<w:rFonts {nsdecls("w")}/>')
+            rPr.insert(0, rFonts)
+        rFonts.set(qn('w:ascii'), FONT_NAME)
+        rFonts.set(qn('w:hAnsi'), FONT_NAME)
+        rFonts.set(qn('w:eastAsia'), FONT_NAME)
+    return p
+
+
+def set_table_col_widths(table, widths):
+    tbl = table._tbl
+    tbl_pr = tbl.tblPr if tbl.tblPr is not None else parse_xml(f'<w:tblPr {nsdecls("w")}/>')
+    layout = tbl_pr.find(qn('w:tblLayout'))
+    if layout is None:
+        layout = parse_xml(f'<w:tblLayout {nsdecls("w")} w:type="fixed"/>')
+        tbl_pr.append(layout)
+    else:
+        layout.set(qn('w:type'), 'fixed')
+
+    for row in table.rows:
+        for idx, width in enumerate(widths):
+            if idx < len(row.cells):
+                tc = row.cells[idx]._tc
+                tcPr = tc.get_or_add_tcPr()
+                tcW = tcPr.find(qn('w:tcW'))
+                if tcW is None:
+                    tcW = parse_xml(f'<w:tcW {nsdecls("w")}/>')
+                    tcPr.insert(0, tcW)
+                tcW.set(qn('w:w'), str(int(width.emu / 635)))
+                tcW.set(qn('w:type'), 'dxa')
 
 
 def set_cell_shading(cell, color_hex):
@@ -73,6 +112,7 @@ def add_meta_table(doc, metadata):
     created_by = metadata.get('createdBy', 'AI（文字起こし + Claude 構造化）')
 
     participants = metadata.get('participants', [])
+    host_orgs = {p.get('organization', '') for p in participants if p.get('role') == 'host'}
     by_org = {}
     for p in participants:
         org = p.get('organization', '')
@@ -85,7 +125,8 @@ def add_meta_table(doc, metadata):
     for org, names in by_org.items():
         prefix = f"{org} / " if org else ""
         for n in names:
-            att_lines.append(f"{prefix}{n}")
+            suffix = "様" if org and org not in host_orgs else ""
+            att_lines.append(f"{prefix}{n}{suffix}")
     att_text = '\n'.join(att_lines) if att_lines else ''
 
     rows_data = [
@@ -97,8 +138,7 @@ def add_meta_table(doc, metadata):
 
     table = doc.add_table(rows=len(rows_data), cols=2, style='Table Grid')
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.columns[0].width = Cm(3)
-    table.columns[1].width = Cm(13)
+    set_table_col_widths(table, [Cm(2.2), Cm(13.8)])
 
     for i, (label, value) in enumerate(rows_data):
         cell_label = table.cell(i, 0)
@@ -113,9 +153,9 @@ def add_meta_table(doc, metadata):
 
 
 def add_agenda_toc(doc, agendas):
-    doc.add_heading('議題一覧', level=1)
+    add_heading(doc, '議題一覧', level=1)
     for a in agendas:
-        doc.add_paragraph(f"{a['id']}. {a['title']}", style='List Number')
+        doc.add_paragraph(a['title'], style='List Number')
     doc.add_paragraph()
 
 
@@ -136,7 +176,7 @@ def add_bullet_list(doc, items):
 
 
 def add_agenda_section(doc, agenda):
-    doc.add_heading(f"{agenda['id']}. {agenda['title']}", level=1)
+    add_heading(doc, f"{agenda['id']}. {agenda['title']}", level=1)
 
     bg = agenda.get('background', '')
     if bg:
@@ -165,17 +205,14 @@ def add_agenda_section(doc, agenda):
 
 
 def add_action_items(doc, items):
-    doc.add_heading('アクションまとめ', level=1)
+    add_heading(doc, 'アクションまとめ', level=1)
     if not items:
         doc.add_paragraph('なし')
         return
 
     table = doc.add_table(rows=1 + len(items), cols=4, style='Table Grid')
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.columns[0].width = Cm(1)
-    table.columns[1].width = Cm(3)
-    table.columns[2].width = Cm(2.5)
-    table.columns[3].width = Cm(9.5)
+    set_table_col_widths(table, [Cm(0.8), Cm(2.5), Cm(1.8), Cm(10.9)])
 
     headers = ['#', '担当', '期限', '内容']
     for i, h in enumerate(headers):
@@ -199,7 +236,7 @@ def add_action_items(doc, items):
 
 
 def add_next_meeting(doc, next_meeting):
-    doc.add_heading('次回予定', level=1)
+    add_heading(doc, '次回予定', level=1)
     if not next_meeting:
         doc.add_paragraph('未定')
         return
@@ -219,8 +256,7 @@ def add_next_meeting(doc, next_meeting):
 
     if rows_data:
         table = doc.add_table(rows=len(rows_data), cols=2, style='Table Grid')
-        table.columns[0].width = Cm(3)
-        table.columns[1].width = Cm(13)
+        set_table_col_widths(table, [Cm(2.8), Cm(13.2)])
         for i, (label, value) in enumerate(rows_data):
             set_cell_shading(table.cell(i, 0), COLOR_HEADER_BG)
             set_cell(table.cell(i, 0), label, bold=True, font_size=Pt(9), color=COLOR_PRIMARY)
@@ -228,8 +264,15 @@ def add_next_meeting(doc, next_meeting):
 
 
 def generate(input_path: str, template_path: Optional[str], output_path: str):
-    with open(input_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    try:
+        with open(input_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        print(f"ERROR: Input file not found: {input_path}", file=sys.stderr)
+        sys.exit(1)
+    except json.JSONDecodeError as e:
+        print(f"ERROR: Invalid JSON in {input_path}: {e}", file=sys.stderr)
+        sys.exit(1)
 
     if template_path and Path(template_path).exists():
         doc = Document(template_path)

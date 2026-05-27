@@ -17,7 +17,7 @@ trigger:
 
 - 多様な形式の文字起こしデータを読み取り、ailead-fetcher と同一の出力形式に正規化する
 - 入力形式を自動判定し、発話者・タイムスタンプ・テキストを抽出して標準形式に変換する
-- セッション作業領域に transcript.txt と metadata.json を出力する
+- セッション作業領域の `workspace/` に transcript.txt と metadata.json を出力する
 
 ## 責務外
 
@@ -91,7 +91,7 @@ ailead-fetcher と同一の形式で出力する:
 2. ファイルの場合は読み込む。テキストの場合は `inputs/` に保存する
 3. 形式を自動判定する（VTT / SRT / Teams コピペ / プレーンテキスト）
 4. 形式に応じたパーサーで発話者・タイムスタンプ・テキストを抽出する
-5. 標準形式（`transcript.txt` + `metadata.json`）に変換して出力する
+5. 標準形式（`transcript.txt` + `metadata.json`）に変換して `workspace/` に出力する
 6. メタデータが不足する場合（会議タイトル・日時等）はユーザーに確認する
 
 詳細: [`references/procedures.md`](references/procedures.md)
@@ -120,7 +120,7 @@ ailead-fetcher と同一の形式で出力する:
 $venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
 & $venvPy "${env:CLAUDE_SKILL_DIR}\scripts\convert\convert_transcript.py" `
   --input "<入力ファイルパスまたは stdin>" `
-  --output "$SESSION_DIR"
+  --output "$SESSION_DIR\workspace"
 ```
 
 ## 参照
