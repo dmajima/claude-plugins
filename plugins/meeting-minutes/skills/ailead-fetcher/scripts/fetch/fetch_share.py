@@ -9,6 +9,7 @@ import os
 import re
 from pathlib import Path
 
+from typing import Optional, Tuple
 import requests
 
 KNOWN_HASHES = [
@@ -36,7 +37,7 @@ def fetch_share_page(key: str) -> tuple[str, str]:
     return m.group(1), html
 
 
-def extract_operation_hash_from_js(html: str) -> str | None:
+def extract_operation_hash_from_js(html: str) -> Optional[str]:
     js_match = re.search(
         r'/_next/static/chunks/pages/share/%5Bkey%5D-[^"]+\.js', html
     )
@@ -73,7 +74,7 @@ def query_graphql(key: str, operation_hash: str, build_id: str) -> dict:
     return resp.json()
 
 
-def try_known_hashes(key: str, build_id: str) -> tuple[dict | None, str | None]:
+def try_known_hashes(key: str, build_id: str) -> Tuple[Optional[dict], Optional[str]]:
     for h in KNOWN_HASHES:
         try:
             result = query_graphql(key, h, build_id)
