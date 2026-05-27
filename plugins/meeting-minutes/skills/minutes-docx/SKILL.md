@@ -108,6 +108,7 @@ $venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
 
 | 用途 | ファイル |
 |-----|---------|
+| 環境構築 | [`references/setup.md`](references/setup.md) |
 | 生成手順 | [`references/procedures.md`](references/procedures.md) |
 | docx テンプレート | [`assets/template/minutes-template.docx`](assets/template/minutes-template.docx) |
 | JSON スキーマ | `${CLAUDE_PLUGIN_ROOT}/skills/minutes-composer/references/schema/minutes-schema.md` |

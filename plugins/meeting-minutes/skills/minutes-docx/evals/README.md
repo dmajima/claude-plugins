@@ -4,10 +4,10 @@
 
 ## ケース一覧
 
-| ケース | 分岐 | 概要 |
-|--------|------|------|
-| case-01_normal | 正常変換 | 正常な minutes.json から docx ファイルを生成する |
-| case-02_missing_input | 入力不在エラー | minutes.json が存在しない場合にエラーを報告する |
+| ケース | 内容 | 主な分岐根拠 |
+|--------|------|-------------|
+| case-01_normal | 正常な minutes.json から docx ファイルを生成する | 正常変換 |
+| case-02_missing_input | minutes.json が存在しない場合にエラーを報告する | 入力不在エラー |
 
 ## 実行確認方法
 

@@ -4,11 +4,12 @@
 
 ## ケース一覧
 
-| ケース | 分岐 | 概要 |
-|--------|------|------|
-| case-01_with_corrections | 修正あり | 誤帰属・漏れを検出し修正提案を返却する |
-| case-02_no_corrections | 修正なし | 正確な議事録に対して修正なし通過する |
-| case-03_ailead_source_review | ailead ソース突合 | response.json の callSummary.topics の dateTime を起点に時刻ベースで突合検証を実施する |
+| ケース | 内容 | 主な分岐根拠 |
+|--------|------|-------------|
+| case-01_with_corrections | 誤帰属・漏れを検出し修正提案を返却する | 修正あり |
+| case-02_no_corrections | 正確な議事録に対して修正なし通過する | 修正なし |
+| case-03_ailead_source_review | response.json の callSummary.topics の dateTime を起点に時刻ベースで突合検証を実施する | ailead ソース突合 |
+| case-04_missing_input | `workspace/minutes.json` 不在時に minutes-composer の起動を提案して中断する | 入力ファイル不在 → 対話 |
 
 ## 実行確認方法
 

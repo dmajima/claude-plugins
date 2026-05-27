@@ -9,7 +9,7 @@ import os
 import re
 from pathlib import Path
 
-from typing import Optional, Tuple
+from typing import Optional
 import requests
 
 KNOWN_HASHES = [
@@ -27,7 +27,7 @@ def extract_key(url: str) -> str:
     return m.group(1)
 
 
-def fetch_share_page(key: str) -> tuple[str, str]:
+def fetch_share_page(key: str) -> tuple:
     resp = requests.get(f"{BASE_URL}/share/{key}", timeout=30)
     resp.raise_for_status()
     html = resp.text
@@ -74,7 +74,7 @@ def query_graphql(key: str, operation_hash: str, build_id: str) -> dict:
     return resp.json()
 
 
-def try_known_hashes(key: str, build_id: str) -> Tuple[Optional[dict], Optional[str]]:
+def try_known_hashes(key: str, build_id: str) -> tuple:
     for h in KNOWN_HASHES:
         try:
             result = query_graphql(key, h, build_id)
@@ -169,12 +169,21 @@ def main():
     parser.add_argument("--output", required=True, help="Output session directory")
     args = parser.parse_args()
 
-    key = extract_key(args.url)
+    try:
+        key = extract_key(args.url)
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"[1/4] Fetching buildId for key: {key[:8]}...")
-    build_id, html = fetch_share_page(key)
+    try:
+        build_id, html = fetch_share_page(key)
+    except (requests.exceptions.RequestException, RuntimeError) as e:
+        print(f"ERROR: Failed to fetch share page: {e}", file=sys.stderr)
+        sys.exit(1)
     print(f"       buildId: {build_id}")
 
     print("[2/4] Querying GraphQL API...")

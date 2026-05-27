@@ -4,14 +4,15 @@
 
 ## ケース一覧
 
-| ケース | 分岐 | 概要 |
-|--------|------|------|
-| case-01_success | 正常取得 | 有効な共有 URL から GraphQL 成功し 4 ファイル出力する |
-| case-02_hash_outdated | ハッシュ再抽出 | `CLIENT_CODE_OUT_OF_DATE` エラー時に JS チャンクから operationHash を再抽出する |
-| case-03_expired_link | 期限切れ | HTTP 404 発生時にリンク期限切れエラーをユーザーに提示する |
-| case-04_persisted_query_not_found | ハッシュ形式不一致 | `PERSISTED_QUERY_NOT_FOUND` エラー時に JS チャンク再抽出も失敗しユーザーにハッシュ更新を報告する |
-| case-05_empty_transcripts | 文字起こし未完了 | GraphQL 成功だが transcripts が空の場合に空ファイル出力と再試行を提案する |
-| case-06_password_protected | パスワード保護 | パスワード保護リンクに対して未対応の旨をユーザーに報告する |
+| ケース | 内容 | 主な分岐根拠 |
+|--------|------|-------------|
+| case-01_success | 有効な共有 URL から GraphQL 成功し 4 ファイル出力する | 正常取得 |
+| case-02_hash_outdated | `CLIENT_CODE_OUT_OF_DATE` エラー時に JS チャンクから operationHash を再抽出する | ハッシュ再抽出 |
+| case-03_expired_link | HTTP 404 発生時にリンク期限切れエラーをユーザーに提示する | 期限切れ |
+| case-04_persisted_query_not_found | `PERSISTED_QUERY_NOT_FOUND` エラー時に JS チャンク再抽出も失敗しユーザーにハッシュ更新を報告する | ハッシュ形式不一致 |
+| case-05_empty_transcripts | GraphQL 成功だが transcripts が空の場合に空ファイル出力と再試行を提案する | 文字起こし未完了 |
+| case-06_password_protected | パスワード保護リンクに対して未対応の旨をユーザーに報告する | パスワード保護 |
+| case-07_no_url_interactive | URL 未指定時にユーザーに ailead 共有 URL を AskUserQuestion で確認する | URL なし → 対話 |
 
 ## 実行確認方法
 

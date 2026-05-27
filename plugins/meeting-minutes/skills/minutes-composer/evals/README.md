@@ -4,10 +4,11 @@
 
 ## ケース一覧
 
-| ケース | 分岐 | 概要 |
-|--------|------|------|
-| case-01_ailead_flow | ailead フロー | `workspace/response.json` あり時にトピック要約ベースで構造化する |
-| case-02_generic_flow | 汎用フロー | `response.json` なし時にゼロから構造化する |
+| ケース | 内容 | 主な分岐根拠 |
+|--------|------|-------------|
+| case-01_ailead_flow | `workspace/response.json` あり時にトピック要約ベースで構造化する | ailead フロー |
+| case-02_generic_flow | `response.json` なし時にゼロから構造化する | 汎用フロー |
+| case-03_missing_input | `workspace/transcript.txt` 不在時にデータ取得スキルの起動を提案して中断する | 入力ファイル不在 → 対話 |
 
 ## 実行確認方法
 

@@ -44,7 +44,11 @@ def add_heading(doc, text, level=1):
 
 def set_table_col_widths(table, widths):
     tbl = table._tbl
-    tbl_pr = tbl.tblPr if tbl.tblPr is not None else parse_xml(f'<w:tblPr {nsdecls("w")}/>')
+    if tbl.tblPr is None:
+        tbl_pr = parse_xml(f'<w:tblPr {nsdecls("w")}/>')
+        tbl.insert(0, tbl_pr)
+    else:
+        tbl_pr = tbl.tblPr
     layout = tbl_pr.find(qn('w:tblLayout'))
     if layout is None:
         layout = parse_xml(f'<w:tblLayout {nsdecls("w")} w:type="fixed"/>')
@@ -91,14 +95,15 @@ def add_title_section(doc, metadata):
     run = p_title.add_run(f'【会議議事録】')
     run.font.size = Pt(14)
     run.font.color.rgb = COLOR_PRIMARY
+    _set_run_font(run)
 
     p_sub = doc.add_paragraph()
     p_sub.alignment = WD_ALIGN_PARAGRAPH.LEFT
     run_sub = p_sub.add_run(title_text)
     run_sub.font.size = Pt(18)
     run_sub.font.bold = True
-    run_sub.font.name = FONT_NAME
     run_sub.font.color.rgb = COLOR_PRIMARY
+    _set_run_font(run_sub)
 
     doc.add_paragraph()
 
@@ -156,10 +161,17 @@ def add_meta_table(doc, metadata):
     doc.add_paragraph()
 
 
+def add_paragraph_with_font(doc, text, style=None):
+    p = doc.add_paragraph(style=style)
+    run = p.add_run(str(text))
+    _set_run_font(run)
+    return p
+
+
 def add_agenda_toc(doc, agendas):
     add_heading(doc, '議題一覧', level=1)
     for a in agendas:
-        doc.add_paragraph(a['title'], style='List Number')
+        add_paragraph_with_font(doc, a['title'], style='List Number')
     doc.add_paragraph()
 
 
@@ -176,7 +188,7 @@ def add_section_heading(doc, text):
 
 def add_bullet_list(doc, items):
     for item in items:
-        doc.add_paragraph(str(item), style='List Bullet')
+        add_paragraph_with_font(doc, item, style='List Bullet')
 
 
 def add_agenda_section(doc, agenda):
@@ -185,7 +197,7 @@ def add_agenda_section(doc, agenda):
     bg = agenda.get('background', '')
     if bg:
         add_section_heading(doc, '背景・目的:')
-        doc.add_paragraph(bg)
+        add_paragraph_with_font(doc, bg)
 
     specs = agenda.get('specifications', [])
     if specs:

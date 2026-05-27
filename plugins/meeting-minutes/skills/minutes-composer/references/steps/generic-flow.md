@@ -77,4 +77,5 @@
 
 ### Step 6: 出力
 
-完成した議事録を `minutes.md` としてセッション直下に配置する。
+構造化データを `workspace/minutes.json` として出力する。
+最終出力形式（Markdown / docx）への変換は下流スキル（`minutes-md` / `minutes-docx`）が担当する。

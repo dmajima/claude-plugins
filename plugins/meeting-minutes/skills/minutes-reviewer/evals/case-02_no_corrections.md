@@ -39,3 +39,4 @@ SKILL.md「実行フロー」ステップ6: 「修正提案がある場合はメ
 ## 関連ケース
 
 - `case-01_with_corrections.md`（修正が必要な場合の検出・提案パス）
+- `case-03_ailead_source_review.md`（ailead ソースの時刻ベース突合検証パス）

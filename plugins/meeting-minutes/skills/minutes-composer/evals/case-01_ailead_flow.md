@@ -27,8 +27,8 @@
 
 | 項目 | 期待値 |
 |-----|-------|
-| `workspace/minutes.json` | `references/schema/minutes-schema.md` に準拠した JSON。`agendas` 配列にトピックベースの議題、`decisions` に決定事項、`actionItems` にアクションアイテムを含む |
-| JSON 構造 | `meetingInfo`（メタデータから構成）、`agendas`（トピック数と同数以上）、`decisions`、`actionItems`、`nextSchedule` の各セクションを含む |
+| `workspace/minutes.json` | `references/schema/minutes-schema.md` v2.0 に準拠した JSON。`agendas` 配列にトピックベースの議題（各議題の `conclusions` に決定事項を統合）、`actionItems` にアクションアイテムを含む |
+| JSON 構造 | `version: "2.0"`、`metadata`（メタデータから構成）、`agendas`（トピック数と同数以上）、`actionItems`、`nextMeeting` の各セクションを含む |
 | 終了状態 | 成功（minutes-reviewer への引き渡し可能な状態） |
 
 ## 分岐の根拠

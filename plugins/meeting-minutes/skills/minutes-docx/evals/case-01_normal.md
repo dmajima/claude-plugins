@@ -22,7 +22,7 @@
 6. 生成された `minutes.docx` をセッション直下（成果物領域）に配置する
 7. ユーザーに生成完了を報告し、ファイルパスを提示する
 
-**python-docx ハング対策**: Windows + PowerShell 環境では `python-docx` の `Presentation()` 相当の処理でハングする既知事象があるため、必要に応じて `Start-Job` 経由ラッパー（`references/scripts/output/run_docx_via_job.ps1`）で起動する。
+**python-docx ハング対策**: Windows + PowerShell 環境では `python-docx` の `Document()` 相当の処理でハングする既知事象があるため、必要に応じて `Start-Job` 経由ラッパー（`references/scripts/output/run_docx_via_job.ps1`）で起動する。
 
 ## 期待出力
 

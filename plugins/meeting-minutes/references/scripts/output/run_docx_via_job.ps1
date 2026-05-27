@@ -11,6 +11,10 @@ param(
     [int]$TimeoutSec = 120
 )
 
+& chcp.com 65001 | Out-Null
+[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 $jobArgs = @($InputJson, $OutputDocx, $TemplatePath)
 
 $job = Start-Job -ScriptBlock {

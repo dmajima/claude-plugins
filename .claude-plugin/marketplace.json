@@ -149,10 +149,10 @@
       "name": "meeting-minutes",
       "source": "./plugins/meeting-minutes",
       "description": "会議の文字起こし・録画データから構造化議事録を作成し Markdown / docx 出力",
+      "category": "productivity",
       "author": {
         "name": "dmajima"
       },
-      "category": "productivity",
       "keywords": [
         "meeting-minutes",
         "transcript",

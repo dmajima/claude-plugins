@@ -4,14 +4,14 @@
 
 ## ケース一覧
 
-| ケース | 分岐 | 概要 |
-|--------|------|------|
-| case-01_vtt_format | VTT パーサー | `.vtt` ファイル入力時に WebVTT パーサーで変換する |
-| case-02_srt_format | SRT パーサー | `.srt` ファイル入力時に SRT パーサーで変換する |
-| case-03_teams_paste | Teams パターン検出 | Teams コピペテキスト入力時に Teams パーサーで変換する |
-| case-04_plain_fallback | プレーンテキスト | パターン不一致時にプレーンテキストとしてフォールバック処理する |
-| case-05_missing_metadata | ユーザー確認 | メタデータ（タイトル・日時等）が推定不能な場合にユーザーに確認する |
-| case-06_ailead_format | ailead パーサー | ailead 形式の `[HH:MM:SS - HH:MM:SS] 発話者: テキスト` 入力時に ailead パーサーで変換する |
+| ケース | 内容 | 主な分岐根拠 |
+|--------|------|-------------|
+| case-01_vtt_format | `.vtt` ファイル入力時に WebVTT パーサーで変換する | VTT パーサー |
+| case-02_srt_format | `.srt` ファイル入力時に SRT パーサーで変換する | SRT パーサー |
+| case-03_teams_paste | Teams コピペテキスト入力時に Teams パーサーで変換する | Teams パターン検出 |
+| case-04_plain_fallback | パターン不一致時にプレーンテキストとしてフォールバック処理する | プレーンテキスト |
+| case-05_missing_metadata | メタデータ（タイトル・日時等）が推定不能な場合にユーザーに確認する | ユーザー確認 |
+| case-06_ailead_format | ailead 形式の `[HH:MM:SS - HH:MM:SS] 発話者: テキスト` 入力時に ailead パーサーで変換する | ailead パーサー |
 
 ## 実行確認方法
 
