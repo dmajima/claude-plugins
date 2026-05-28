@@ -84,8 +84,8 @@ Claude Code のフック設定（`hooks.json`）を作成・改修するスキ�
 | パスポータビリティ | プラグイン同梱なら `${CLAUDE_PLUGIN_ROOT}` を使う、ローカル絶対パス禁止 |
 | timeout | 秒単位、デフォルト 60、軽い処理は短く（5〜10） |
 | 終了コード | `0` = 成功、`2` = ブロック、その他 = 失敗 |
-| 実行環境 | 本マーケットプレイスは PowerShell 統一（`pwsh -NoProfile -File "...ps1"` 形式） |
-| `shell` 指定 | **必須**: `"shell": "powershell"` を `type: "command"` と同階層に明示する |
+| 実行環境 | 本マーケットプレイスは Bash 標準（`bash "...sh"` 形式）、PowerShell はフォールバック |
+| `shell` 指定 | **必須**: `"shell": "bash"` を `type: "command"` と同階層に明示する（フォールバック時は `"powershell"`） |
 
 詳細は [references/hook-events.md](references/hook-events.md) の「command 設計」「shell 指定（MANDATORY）」を参照。
 
@@ -105,8 +105,8 @@ settings.json への追加の場合は既存 `hooks` を Read してマージ書
 - [ ] イベント名が正規（`PreToolUse` 等の正確な綴り）
 - [ ] matcher の正規表現が valid
 - [ ] command にローカル絶対パスのハードコードなし
-- [ ] command が `pwsh -NoProfile -File "${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/*.ps1"` 形式
-- [ ] **`"shell": "powershell"` が `type: "command"` と同階層に明示されている**（MANDATORY）
+- [ ] command が `bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/*.sh"` 形式 (PowerShell フォールバックは `pwsh -NoProfile -File "...ps1"`)
+- [ ] **`"shell": "bash"` が `type: "command"` と同階層に明示されている**（MANDATORY、フォールバック時は `"powershell"`）
 - [ ] timeout が指定されている（デフォルト 60 秒）
 
 ### 8. 動作確認手順の提示

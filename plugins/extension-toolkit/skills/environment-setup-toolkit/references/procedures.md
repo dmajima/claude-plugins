@@ -57,10 +57,19 @@ Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>"
 | `--requirements` | setup | 任意 | requirements.txt のパス（省略時は依存インストールをスキップ） |
 | `--min-python-version` | setup | 任意 | 最小 Python バージョン要件（例: `3.10`） |
 
-### シェル直叩き（プラグイン同梱配布時のみ動作、PowerShell 名前付きパラメータ）
+### シェル直叩き（プラグイン同梱配布時のみ動作、Bash 主軸 + PowerShell フォールバック）
 
 ADR-024 に基づき、setup スクリプトは **対象プラグインの `references/scripts/setup/`** に配置されている。`environment-setup-toolkit` 自身は実スクリプトを保有しない。
-shell-preference.md (Bash 利用廃止) に従い PowerShell 版 `.ps1` を優先する。
+shell-preference.md に従い Bash 版 `.sh` を通常運用とし、PowerShell 版 `.ps1` はフォールバック扱い。
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
+  -WorkDir <work_dir> [-RequirementsPath <path>] [-MinPythonVersion <ver>]
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
+  -WorkDir <work_dir>
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
@@ -69,11 +78,21 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
   -WorkDir <work_dir>
 ```
 
-PowerShell の名前付きパラメータを使用するため、`-RequirementsPath` を省略して `-MinPythonVersion` だけ指定することができる:
+</details>
+
+名前付きパラメータを使用するため、`-RequirementsPath` を省略して `-MinPythonVersion` だけ指定することができる:
+
+```bash
+bash setup_venv.sh -WorkDir "$WorkDir" -MinPythonVersion "3.10"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 pwsh -NoProfile -File setup_venv.ps1 -WorkDir "$WorkDir" -MinPythonVersion "3.10"
 ```
+
+</details>
 
 ## 各 *-toolkit スキルからの利用
 
@@ -88,7 +107,15 @@ Python 利用時は `environment-setup-toolkit` スキルに委譲する。**`Sk
 Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --requirements <requirements>")
 \`\`\`
 
-直接スクリプト呼び出しが必要な場合（プラグイン同梱配布時のみ動作、PowerShell 経由）:
+直接スクリプト呼び出しが必要な場合（プラグイン同梱配布時のみ動作、Bash 経由 / PowerShell はフォールバック）:
+
+\`\`\`bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \\
+  -WorkDir "$WorkDir" \\
+  -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
+\`\`\`
+
+PowerShell フォールバック:
 
 \`\`\`powershell
 pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
@@ -108,8 +135,8 @@ plugins/{plugin-name}/
 ├── references/
 │   └── scripts/
 │       └── setup/
-│           ├── setup_venv.ps1
-│           ├── teardown_venv.ps1
+│           ├── setup_venv.sh
+│           ├── teardown_venv.sh
 │           └── requirements.txt    # 全スキルの依存をマージ
 └── skills/
     └── {skill-name}/
@@ -126,12 +153,12 @@ setup 実行前のチェック項目:
 | 項目 | チェック内容 | 失敗時 |
 |-----|------------|--------|
 | Python | `python3` または `python` が PATH に存在 | エラー終了、インストール案内 |
-| Python バージョン | `>=3.10` 等の指定があれば `setup_venv.ps1` 内で検証 | スクリプトは fail-closed（exit 1）。続行が必要な場合、スキルが事前に Claude コンテキストでバージョンを取得し `AskUserQuestion` でユーザ確認のうえ、`-MinPythonVersion` を渡さずに呼ぶ判断を行う |
+| Python バージョン | `>=3.10` 等の指定があれば `setup_venv.sh` 内で検証 | スクリプトは fail-closed（exit 1）。続行が必要な場合、スキルが事前に Claude コンテキストでバージョンを取得し `AskUserQuestion` でユーザ確認のうえ、`-MinPythonVersion` を渡さずに呼ぶ判断を行う |
 | 作業ディレクトリ | 書き込み可能 | エラー終了 |
 | ディスク空き容量 | 200MB 以上推奨 | 警告 |
 | 既存 venv | 既存があれば再利用 or refresh | ユーザ確認 |
 
-**Python コマンドの解決順序（setup_venv.ps1 内）**: `python` → `python3` → `py` の順で `-m venv --help` の実行可否を検証して候補を採用する。pyenv-win 環境では `python3` shim が `-m venv` 実行時に WinError 2 を返す既知の問題があるため、`python` を優先候補としている。すべて利用不可の場合はエラー終了。
+**Python コマンドの解決順序（setup_venv.sh 内）**: `python` → `python3` → `py` の順で `-m venv --help` の実行可否を検証して候補を採用する。pyenv-win 環境では `python3` shim が `-m venv` 実行時に WinError 2 を返す既知の問題があるため、`python` を優先候補としている。すべて利用不可の場合はエラー終了。
 
 **バージョン引数の安全性**: `-MinPythonVersion` は `^[0-9]+(\.[0-9]+){0,2}$` の正規表現でバリデーションされ、Python 側へは環境変数経由で渡される（PowerShell 文字列補間によるコード注入を排除）。
 

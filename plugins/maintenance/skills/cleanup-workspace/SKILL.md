@@ -153,8 +153,8 @@ Claude Code のセッション作業領域 `.claude/.local/work/` に蓄積し�
 |-----|---------|
 | 詳細実行手順 | [references/procedures.md](references/procedures.md) |
 | 安全装置の詳細 | [references/safety.md](references/safety.md) |
-| 実装スクリプト（cleanup 本体） | [`references/scripts/cleanup/cleanup.ps1`](references/scripts/cleanup/cleanup.ps1) |
-| 実装スクリプト（設定操作） | [`references/scripts/cleanup/cleanup-config.ps1`](references/scripts/cleanup/cleanup-config.ps1) |
+| 実装スクリプト（cleanup 本体） | [`references/scripts/cleanup/cleanup.sh`](references/scripts/cleanup/cleanup.sh) |
+| 実装スクリプト（設定操作） | [`references/scripts/cleanup/cleanup-config.sh`](references/scripts/cleanup/cleanup-config.sh) |
 | 設定ファイル本体 | `~/.claude/.local/plugins/maintenance/cleanup-config.json`（グローバル配下に集約）|
 | 設定変更コマンド | `/cleanup-config`（`commands/cleanup-config.md`）|
 | セッションフォルダ規約（global rule） | `~/.claude/rules/claude/work-directory.md` |

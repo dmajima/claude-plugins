@@ -5,12 +5,12 @@ description: Claude Code プラグインの Python venv・依存パッケージ�
 
 # Environment Setup Toolkit
 
-プラグイン単位 Python venv の **オーケストレータ** スキル（ADR-024）。本スキルは自前で setup ロジックを保持せず、対象プラグインの `references/scripts/setup/setup_venv.ps1` / `teardown_venv.ps1` を起動する。
+プラグイン単位 Python venv の **オーケストレータ** スキル（ADR-024）。本スキルは自前で setup ロジックを保持せず、対象プラグインの `references/scripts/setup/setup_venv.sh` / `teardown_venv.sh` を起動する。
 
 ## 責務
 
-- 対象プラグインの `references/scripts/setup/setup_venv.ps1` の起動（venv 構築 + 依存インストール）
-- 対象プラグインの `references/scripts/setup/teardown_venv.ps1` の起動（venv 削除）
+- 対象プラグインの `references/scripts/setup/setup_venv.sh` の起動（venv 構築 + 依存インストール）
+- 対象プラグインの `references/scripts/setup/teardown_venv.sh` の起動（venv 削除）
 - プラグインに setup スクリプトが未配置の場合の **作成案内**（ADR-024 準拠の雛形提示）
 - 環境構築可否の事前チェック（Python バージョン確認等）
 - 環境変数の設定支援（必要時）
@@ -81,7 +81,16 @@ description: Claude Code プラグインの Python venv・依存パッケージ�
 
 ### 4. setup 実行
 
-対象プラグインの `references/scripts/setup/setup_venv.ps1` を起動する（プラグイン単位 venv、ADR-024）:
+対象プラグインの `references/scripts/setup/setup_venv.sh` を起動する（プラグイン単位 venv、ADR-024）:
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
+  -WorkDir <work_dir> \
+  -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt" \
+  [-MinPythonVersion <ver>]
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
@@ -89,6 +98,8 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_ve
   -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt" `
   [-MinPythonVersion <ver>]
 ```
+
+</details>
 
 | 引数 | 必須 | 内容 |
 |-----|------|------|
@@ -105,9 +116,17 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_ve
 
 ### 5. teardown 実行
 
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" -WorkDir <work_dir>
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir <work_dir>
 ```
+
+</details>
 
 `<work_dir>/.venv` を削除。
 
@@ -117,8 +136,8 @@ ADR-024 準拠の雛形を作成するよう案内する:
 
 | ファイル | 配置先 |
 |--------|--------|
-| `setup_venv.ps1` | `plugins/{name}/references/scripts/setup/setup_venv.ps1` |
-| `teardown_venv.ps1` | `plugins/{name}/references/scripts/setup/teardown_venv.ps1` |
+| `setup_venv.sh` | `plugins/{name}/references/scripts/setup/setup_venv.sh` |
+| `teardown_venv.sh` | `plugins/{name}/references/scripts/setup/teardown_venv.sh` |
 | `requirements.txt` | `plugins/{name}/references/scripts/setup/requirements.txt` |
 
 雛形は `extension-toolkit` プラグイン自身の `references/scripts/setup/` を参考にする。
