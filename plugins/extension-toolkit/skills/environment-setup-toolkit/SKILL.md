@@ -5,12 +5,12 @@ description: Claude Code プラグインの Python venv・依存パッケージ�
 
 # Environment Setup Toolkit
 
-プラグイン単位 Python venv の **オーケストレータ** スキル（ADR-024）。本スキルは自前で setup ロジックを保持せず、対象プラグインの `references/scripts/setup/setup_venv.ps1` / `teardown_venv.ps1` を起動する。
+プラグイン単位 Python venv の **オーケストレータ** スキル（ADR-024）。本スキルは自前で setup ロジックを保持せず、対象プラグインの `references/scripts/setup/setup_venv.sh` / `teardown_venv.sh` を起動する。
 
 ## 責務
 
-- 対象プラグインの `references/scripts/setup/setup_venv.ps1` の起動（venv 構築 + 依存インストール）
-- 対象プラグインの `references/scripts/setup/teardown_venv.ps1` の起動（venv 削除）
+- 対象プラグインの `references/scripts/setup/setup_venv.sh` の起動（venv 構築 + 依存インストール）
+- 対象プラグインの `references/scripts/setup/teardown_venv.sh` の起動（venv 削除）
 - プラグインに setup スクリプトが未配置の場合の **作成案内**（ADR-024 準拠の雛形提示）
 - 環境構築可否の事前チェック（Python バージョン確認等）
 - 環境変数の設定支援（必要時）
@@ -81,7 +81,16 @@ description: Claude Code プラグインの Python venv・依存パッケージ�
 
 ### 4. setup 実行
 
-対象プラグインの `references/scripts/setup/setup_venv.ps1` を起動する（プラグイン単位 venv、ADR-024）:
+対象プラグインの `references/scripts/setup/setup_venv.sh` を起動する（プラグイン単位 venv、ADR-024）:
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
+  -WorkDir <work_dir> \
+  -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt" \
+  [-MinPythonVersion <ver>]
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
@@ -89,6 +98,8 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_ve
   -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt" `
   [-MinPythonVersion <ver>]
 ```
+
+</details>
 
 | 引数 | 必須 | 内容 |
 |-----|------|------|
@@ -105,9 +116,17 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_ve
 
 ### 5. teardown 実行
 
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" -WorkDir <work_dir>
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir <work_dir>
 ```
+
+</details>
 
 `<work_dir>/.venv` を削除。
 
@@ -117,8 +136,8 @@ ADR-024 準拠の雛形を作成するよう案内する:
 
 | ファイル | 配置先 |
 |--------|--------|
-| `setup_venv.ps1` | `plugins/{name}/references/scripts/setup/setup_venv.ps1` |
-| `teardown_venv.ps1` | `plugins/{name}/references/scripts/setup/teardown_venv.ps1` |
+| `setup_venv.sh` | `plugins/{name}/references/scripts/setup/setup_venv.sh` |
+| `teardown_venv.sh` | `plugins/{name}/references/scripts/setup/teardown_venv.sh` |
 | `requirements.txt` | `plugins/{name}/references/scripts/setup/requirements.txt` |
 
 雛形は `extension-toolkit` プラグイン自身の `references/scripts/setup/` を参考にする。
@@ -152,7 +171,7 @@ ADR-024 準拠の雛形を作成するよう案内する:
 - 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
 - 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
 - ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
-- 生成・改修する PowerShell スクリプトは [`../../references/powershell-pitfalls.md`](../../references/powershell-pitfalls.md) の落とし穴を回避する
+- 生成・改修するスクリプトは Bash 標準方針 (`~/.claude/rules/tools/shell-preference.md`) に従う。PowerShell フォールバック実装も併せて生成する場合は [`../../references/powershell-pitfalls.md`](../../references/powershell-pitfalls.md) の落とし穴を回避する
 - 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照

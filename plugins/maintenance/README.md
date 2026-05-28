@@ -173,8 +173,8 @@ maintenance/
     │   │   ├── procedures.md
     │   │   ├── safety.md
     │   │   └── scripts/cleanup/
-    │   │       ├── cleanup.ps1                 # メイン削除スクリプト
-    │   │       └── cleanup-config.ps1          # 設定 CRUD スクリプト
+    │   │       ├── cleanup.sh                 # メイン削除スクリプト
+    │   │       └── cleanup-config.sh          # 設定 CRUD スクリプト
     │   └── evals/                              # 17 ケース（dry-run / 各スコープ / progress.md atime / config 操作 等）
     └── sync-settings/                          # Git リポジトリと設定を同期（pull / push 双方向）
         ├── SKILL.md
@@ -184,10 +184,10 @@ maintenance/
         │   ├── safety.md
         │   ├── strategies.md
         │   └── scripts/sync/
-        │       ├── sync-common.ps1             # 共通ライブラリ（除外リスト / バリデーション / SSOT 永続化）
-        │       ├── sync.ps1                    # pull 同期スクリプト
-        │       ├── sync-push.ps1               # push 同期スクリプト（新ブランチ + PR）
-        │       └── sync-mappings.ps1           # マッピング CRUD スクリプト
+        │       ├── sync-common.sh             # 共通ライブラリ（除外リスト / バリデーション / SSOT 永続化）
+        │       ├── sync.sh                    # pull 同期スクリプト
+        │       ├── sync-push.sh               # push 同期スクリプト（新ブランチ + PR）
+        │       └── sync-mappings.sh           # マッピング CRUD スクリプト
         └── evals/                              # 22 ケース（各戦略 / interactive / マッピング / push 等）
 ```
 
@@ -219,6 +219,33 @@ maintenance/
 - セッション作業領域: `~/.claude/rules/claude/work-directory.md`（`.claude/.local/work/` の運用）
 - ローカルデータ領域: `~/.claude/rules/claude/local-data-directory.md`（`.claude/.local/` 全般）
 - 自動更新ポリシー: `~/.claude/rules/claude/plugin-auto-update.md`（`autoUpdate: true` 必須・週 1 回更新チェック）
+
+## PowerShell フォールバック
+
+通常運用は Bash 経路 (`.sh` 純粋実装) を使用します。`cleanup.sh` / `cleanup-config.sh` /
+`sync.sh` / `sync-common.sh` / `sync-mappings.sh` / `sync-push.sh` はすべて
+**Bash + jq + git + Python (settings.json 安全マージのみ) による純粋実装** で、
+PowerShell を起動しません (Phase 9c 完成)。
+
+PowerShell 版 (`.ps1`) は **フォールバック手順用** として同階層に保持されます。
+動作差異ゼロは parity test (`plugins/maintenance/tests/parity/`) で機械的に検証済み。
+
+### フォールバック適用条件
+
+以下のいずれかが該当する場合は PowerShell 経路へ切り替えてください:
+
+- Git Bash の `add_item failed` 等の Cygwin 初期化エラーが再発した
+- `jq` / `sha256sum` などが PATH に無い環境で利用したい
+- 動作差異の疑いがあり、PowerShell 元実装の出力を直接確認したい
+
+切替手順:
+
+```bash
+# 任意の maintenance スクリプトを呼ぶ際、.sh の代わりに以下を実行
+pwsh -NoProfile -File "<plugin-root>/skills/.../scripts/.../<name>.ps1" [args...]
+```
+
+`pwsh` (PowerShell 7+) のインストール手順は `~/.claude/rules/tools/powershell-fallback-mode.md` を参照。
 
 ## ライセンス
 

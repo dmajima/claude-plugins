@@ -1,6 +1,6 @@
 ---
 name: session-usage
-description: カレントセッション（または指定セッション）のトークン消費量を JSONL から直接集計し、Claude UI の対話ループ（AskUserQuestion）でクリップボードコピー・再集計・終了を選択できるスキル。「セッションのトークン使用量を見せて」「session-usage」「今回の消費量教えて」等で起動する。Use when reporting Claude Code session token consumption interactively in the Claude UI. SKIP when only a one-shot dump suffices (call aggregate.ps1 directly).
+description: カレントセッション（または指定セッション）のトークン消費量を JSONL から直接集計し、Claude UI の対話ループ（AskUserQuestion）でクリップボードコピー・再集計・終了を選択できるスキル。「セッションのトークン使用量を見せて」「session-usage」「今回の消費量教えて」等で起動する。Use when reporting Claude Code session token consumption interactively in the Claude UI. SKIP when only a one-shot dump suffices (call aggregate.sh directly).
 ---
 
 # session-usage
@@ -43,7 +43,8 @@ description: カレントセッション（または指定セッション）の�
 
 ## 前提
 
-- Windows + PowerShell 7+ 環境（`pwsh` が PATH 上にある）
+- Python 3.8+ が PATH 上にある（通常運用、`aggregate.sh` から呼び出し）
+- 代替: Windows + PowerShell 7+（`pwsh` が PATH 上にある、PowerShell フォールバック時）
 - Claude Code の JSONL ログ形式（`message.usage` フィールド構造）
 
 ## 実行フロー
@@ -58,10 +59,19 @@ description: カレントセッション（または指定セッション）の�
 Bash 経由で以下を実行する:
 
 ```bash
-pwsh -NoProfile -ExecutionPolicy Bypass \
-  -File "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" \
+bash "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.sh" \
+  --stdout [--session-id <UUID>]
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass `
+  -File "${env:CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" `
   -Stdout [-SessionId <UUID>]
 ```
+
+</details>
 
 `-Stdout` のみ（`-Copy` は付けない）。**この時点ではクリップボードへのコピーは行わない**。
 
@@ -85,17 +95,17 @@ AskUserQuestion({
       {
         label: "クリップボードへコピー",
         description: "整形済み結果を Set-Clipboard でコピーします",
-        preview: "<aggregate.ps1 -Stdout の標準出力全文>"
+        preview: "<aggregate.sh -Stdout の標準出力全文>"
       },
       {
         label: "再集計",
         description: "進行中の値を最新化して再表示します",
-        preview: "<aggregate.ps1 -Stdout の標準出力全文>"
+        preview: "<aggregate.sh -Stdout の標準出力全文>"
       },
       {
         label: "終了",
         description: "対話を終えます",
-        preview: "<aggregate.ps1 -Stdout の標準出力全文>"
+        preview: "<aggregate.sh -Stdout の標準出力全文>"
       }
     ],
     multiSelect: false
@@ -111,7 +121,7 @@ AskUserQuestion({
 
 | 選択 | アクション | 直後の挙動 |
 |-----|-----------|-----------|
-| クリップボードへコピー | `aggregate.ps1 -Copy [-SessionId ...]` を実行 | コピー成功通知後、再度 AskUserQuestion を提示 |
+| クリップボードへコピー | `aggregate.sh -Copy [-SessionId ...]` を実行 | コピー成功通知後、再度 AskUserQuestion を提示 |
 | 再集計 | 手順 2（`-Stdout` のみ）へ戻る | 再表示後、再度 AskUserQuestion を提示 |
 | 終了 | 対話終了 | — |
 
@@ -132,5 +142,5 @@ AskUserQuestion({
 
 | 用途 | ファイル |
 |-----|---------|
-| 集計ロジック実装 | `scripts/aggregate/aggregate.ps1` |
+| 集計ロジック実装 | `scripts/aggregate/aggregate.sh` |
 | 実行手順詳細 | [`references/procedures.md`](references/procedures.md) |

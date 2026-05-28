@@ -4,7 +4,7 @@
 
 - 入力 PPTX: 任意の有効な PPTX
 - 出力 MD: `<セッション>/output.md`
-- 起動: `pwsh -NoProfile -File run_via_job.ps1 -InputPath ... -OutputPath ... -PythonExe ... -TimeoutSec 1`
+- 起動: `bash run_via_job.sh -InputPath ... -OutputPath ... -PythonExe ... -TimeoutSec 1`
   - `TimeoutSec=1` で**意図的に**変換完了より短いタイムアウトを指定
 
 ## 期待動作
@@ -26,7 +26,17 @@
 
 ## 分岐の根拠
 
-`run_via_job.ps1` のタイムアウト経路:
+`run_via_job.sh` のタイムアウト経路:
+
+```bash
+# IMPL-M1: Stop-Job は非同期のため Wait-Job で待つ
+    Stop-Job $job | Out-Null
+    Wait-Job $job -Timeout 10 | Out-Null
+    Remove-Job $job -Force
+    exit 124
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 $completed = Wait-Job $job -Timeout $TimeoutSec
@@ -41,6 +51,8 @@ if (-not $completed) {
     exit 124
 }
 ```
+
+</details>
 
 ## 実機検証ログ
 

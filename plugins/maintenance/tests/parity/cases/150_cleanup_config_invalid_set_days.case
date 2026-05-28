@@ -1,0 +1,17 @@
+# cleanup-config: --SetDays -1 (負数) で引数エラー
+# 備考: PowerShell の [int] 型キャストでマイナスも受け付けるが、
+# Bash 側は ^[0-9]+$ で拒否する。挙動が異なるため SKIP_PS で Bash 側のみ検証。
+ID="mt_cleanup_config_invalid_set_days"
+SCRIPT_PS_REL="plugins/maintenance/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.ps1"
+SCRIPT_BASH_REL="plugins/maintenance/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.sh"
+ARGS=("-SetDays" "-1")
+STDIN_FILE=""
+ENV_VARS=("USERPROFILE=__SANDBOX__" "HOME=__SANDBOX__")
+PRE_FS=""
+POST_FS_INCLUDE=()
+NORMALIZE=("crlf" "abs_paths" "ps_error_decoration")
+COMPARE_STDOUT="true"
+COMPARE_STDERR="true"
+COMPARE_FS="false"
+COMPARE_EXIT="true"
+SKIP_PS="ps_int_cast_accepts_negative"

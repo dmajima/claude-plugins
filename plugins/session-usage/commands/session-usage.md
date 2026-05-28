@@ -1,7 +1,7 @@
 ---
 description: カレントセッションのトークン消費量を Claude UI に表示し、対話メニューでクリップボードコピー・再集計・終了を選択できる
 argument-hint: "[session-uuid]"
-allowed-tools: Bash(pwsh:*)
+allowed-tools: Bash(bash:*)
 ---
 
 # /session-usage — セッション使用量
@@ -31,10 +31,10 @@ Skill(skill: "session-usage", args: "$ARGUMENTS")
 
 スキルが以下を実施する:
 
-1. `aggregate.ps1 -Stdout` で集計結果を Claude のコンテキストに取得（自動コピーは行わない）
+1. `aggregate.sh -Stdout` で集計結果を Claude のコンテキストに取得（自動コピーは行わない）
 2. `AskUserQuestion` で「クリップボードへコピー / 再集計 / 終了」の 3 択を提示し、
    各オプションの `preview` フィールドに集計結果全文を埋め込む（折りたたまれない表示）
-3. 「コピー」選択時のみ `aggregate.ps1 -Copy` を実行
+3. 「コピー」選択時のみ `aggregate.sh -Copy` を実行
 4. 「終了」が選ばれるまで選択肢を再提示し続ける
 
 ## 関連

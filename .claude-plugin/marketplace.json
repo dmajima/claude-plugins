@@ -114,7 +114,8 @@
         "diagnostics",
         "tui",
         "clipboard",
-        "powershell",
+        "python",
+        "bash",
         "interactive",
         "doctor-like"
       ]

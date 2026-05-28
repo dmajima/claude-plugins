@@ -84,6 +84,18 @@ trigger:
 
 ## Python スクリプト
 
+```bash
+& chcp.com 65001 | Out-Null
+[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+& $venvPy "$CLAUDE_SKILL_DIR\scripts\output\generate_docx.py" \
+  --input "$SESSION_DIR\workspace\minutes.json" \
+  --template "$CLAUDE_SKILL_DIR\assets\template\minutes-template.docx" \
+  --output "$SESSION_DIR\minutes.docx"
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 & chcp.com 65001 | Out-Null
 [Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -95,6 +107,8 @@ $venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
   --template "${env:CLAUDE_SKILL_DIR}\assets\template\minutes-template.docx" `
   --output "$SESSION_DIR\minutes.docx"
 ```
+
+</details>
 
 ## 依存
 

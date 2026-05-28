@@ -58,7 +58,18 @@ report["passed"] = not failures
 
 `verify_md.py` 自体は `python-pptx` を内部で使うため、`convert_from_pptx.py` と
 同じ「Windows + PowerShell + `Start-Process -NoNewWindow` でハング」事象が
-発生しうる。専用ラッパー `run_verify_via_job.ps1` を経由して起動する:
+発生しうる。専用ラッパー `run_verify_via_job.sh` を経由して起動する:
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/run_verify_via_job.sh" \
+  "<入力PPTXパス>" \
+  "<検証対象MDパス>" \
+  -PythonExe "$SESSION_DIR/workspace/.venv/Scripts/python.exe" \
+  --report "<セッション>/coverage_report.json" \
+  --threshold 0.85
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_verify_via_job.ps1" `
@@ -69,8 +80,10 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from
   --threshold 0.85
 ```
 
+</details>
+
 直接 `& "$py.exe" verify_md.py ...` で起動するとハングする可能性があるため必ず
-ラッパー経由とする。設計と挙動は `run_via_job.ps1` と対称。
+ラッパー経由とする。設計と挙動は `run_via_job.sh` と対称。
 
 ## 関連ケース
 

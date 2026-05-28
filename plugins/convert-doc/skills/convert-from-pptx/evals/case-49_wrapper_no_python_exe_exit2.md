@@ -4,7 +4,7 @@
 
 - 入力 PPTX: 任意の有効な PPTX
 - 出力 MD: `<セッション>/output.md`
-- 起動: `pwsh -NoProfile -File run_via_job.ps1 -InputPath ... -OutputPath ...`
+- 起動: `bash run_via_job.sh -InputPath ... -OutputPath ...`
   - **`-PythonExe` 引数なし** かつ **環境変数 `CONVERT_FROM_PPTX_PYTHON` も未設定**
 
 ## 期待動作
@@ -23,7 +23,13 @@
 
 ## 分岐の根拠
 
-`run_via_job.ps1` の冒頭ガード:
+`run_via_job.sh` の冒頭ガード:
+
+```bash
+exit 2
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 if (-not $PythonExe) {
@@ -35,9 +41,17 @@ if (-not $PythonExe -or -not (Test-Path $PythonExe)) {
 }
 ```
 
+</details>
+
 ## 追加バリアント: SEC-M2 PythonExe が `.exe` でない
 
 `.bat` / `.cmd` / その他のスクリプトファイルを `-PythonExe` に指定した場合も exit 2:
+
+```bash
+exit 2
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 if (-not ($PythonExe.ToLower().EndsWith('.exe'))) {
@@ -45,6 +59,8 @@ if (-not ($PythonExe.ToLower().EndsWith('.exe'))) {
     exit 2
 }
 ```
+
+</details>
 
 | 入力 | 終了コード | エラーメッセージ |
 |---|---|---|

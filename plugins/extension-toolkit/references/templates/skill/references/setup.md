@@ -24,7 +24,7 @@ Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --r
 
 | 配置先 | 呼び出し例 | 備考 |
 |-------|----------|------|
-| プラグイン同梱（同一プラグイン由来） | `pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" -WorkDir "<work_dir>" -RequirementsPath "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"` | `${env:CLAUDE_PLUGIN_ROOT}` は同プラグイン由来のスキル/コマンド/フック実行時に Claude Code が解決（PowerShell 統一、shell-preference.md 準拠） |
+| プラグイン同梱（同一プラグイン由来） | `bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "<work_dir>" -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"` (PowerShell フォールバック: `pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" ...`) | `$CLAUDE_PLUGIN_ROOT` は同プラグイン由来のスキル/コマンド/フック実行時に Claude Code が解決（Bash 標準、shell-preference.md 準拠） |
 | スタンドアロン（`<repo>/.claude/skills/{name}/`、または `~/.claude/skills/{name}/`） | 直接呼び出し不可。`Skill` ツール経由のみ | `${CLAUDE_PLUGIN_ROOT}` が未定義のため。プラグイン非依存の単体スキルは Skill ツール経由を必須とする |
 
 `<work_dir>` は `.claude/.local/work/{yyyyMMdd_nn_summary}/workspace/` を推奨する。グローバルルール `~/.claude/rules/claude/work-directory.md` は **存在すれば追加参照** として有用だが必須ではない（ADR-022、不在時は上記推奨のみで動作）。

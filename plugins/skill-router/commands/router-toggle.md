@@ -5,7 +5,7 @@ argument-hint: "<on|off>"
 
 ユーザの引数: $ARGUMENTS
 
-`skill-router` のルーティング動作を即時に切り替えます。`<base>/disabled` フラグファイルの作成・削除で実現するため、Claude Code の再起動なしで反映されます（`references/scripts/hooks/route_prompt.ps1` のトグル参照順位と整合）。
+`skill-router` のルーティング動作を即時に切り替えます。`<base>/disabled` フラグファイルの作成・削除で実現するため、Claude Code の再起動なしで反映されます（`references/scripts/hooks/route_prompt.sh` のトグル参照順位と整合）。
 
 ## 動作モード
 
@@ -23,16 +23,16 @@ argument-hint: "<on|off>"
 3. <user-home>/.claude/.local/plugins/skill-router/
 ```
 
-`<user-home>` は `$env:USERPROFILE`（または `$env:HOME`）として解決します（Windows / Unix 互換のため、credentials-manager と統一）。書き込み先は **解決順位の 1 番目** を使用します（`route_prompt.ps1` のトグル参照順位と一致）。
+`<user-home>` は `$USERPROFILE`（または `$HOME`）として解決します（Windows / Unix 互換のため、credentials-manager と統一）。書き込み先は **解決順位の 1 番目** を使用します（`route_prompt.sh` のトグル参照順位と一致）。
 
 ## 実行手順
 
-トグル本体ロジックは `references/scripts/commands/toggle.ps1` に集約しています（ADR-025 / scripts-policy 準拠）。
+トグル本体ロジックは `references/scripts/commands/toggle.sh` に集約しています（ADR-025 / scripts-policy 準拠）。PowerShell フォールバック (`toggle.sh`) も同階層に併存します。
 
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/toggle.ps1" status
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/toggle.ps1" off
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/toggle.ps1" on
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/toggle.sh" status
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/toggle.sh" off
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/toggle.sh" on
 ```
 
 | 引数 | 動作 |
@@ -47,7 +47,7 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/toggl
 
 - 切替前後の状態（ON / OFF）
 - 操作したフラグファイルパス
-- 補足: 「`route_prompt.ps1` は次回プロンプト送信時から新状態で動作」
+- 補足: 「`route_prompt.sh` は次回プロンプト送信時から新状態で動作」
 
 ## 失敗時
 

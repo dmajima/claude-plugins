@@ -67,6 +67,17 @@ Python スクリプトで議事録 Markdown ファイルを生成する。
 
 ## Python スクリプト
 
+```bash
+& chcp.com 65001 | Out-Null
+[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+& $venvPy "$CLAUDE_SKILL_DIR\scripts\output\generate_md.py" \
+  --input "$SESSION_DIR\workspace\minutes.json" \
+  --output "$SESSION_DIR\minutes.md"
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 & chcp.com 65001 | Out-Null
 [Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -77,6 +88,8 @@ $venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
   --input "$SESSION_DIR\workspace\minutes.json" `
   --output "$SESSION_DIR\minutes.md"
 ```
+
+</details>
 
 ## 参照
 

@@ -41,6 +41,12 @@
 
 ### 2.3 バリデーション実装例
 
+```bash
+function Test-ValidSessionPath {
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 function Test-ValidSessionPath {
     param([string]$Path)
@@ -66,6 +72,8 @@ function Test-ValidSessionPath {
 }
 ```
 
+</details>
+
 ## 3. シンボリックリンク保護
 
 ### 3.1 対象判定
@@ -89,6 +97,13 @@ Windows ではディレクトリのハードリンクは作成不可。ファイ
 
 セッションフォルダ直下の `progress.md` の `LastWriteTimeUtc` が現在時刻から `active_session_minutes` 分以内（**初期値 5 分**、設定ファイルで変更可）であれば、当該セッションは進行中と判定する。
 
+```bash
+# 進行中: 削除対象から除外
+        return
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 $activeThreshold = $nowUtc.AddMinutes(-[int]$config.active_session_minutes)
 $progressPath = Join-Path $session.FullName 'progress.md'
@@ -100,6 +115,8 @@ if (Test-Path $progressPath) {
     }
 }
 ```
+
+</details>
 
 ### 4.2 閾値の設計根拠
 

@@ -31,6 +31,13 @@
 
 `progress.md` が存在しないセッションは **フォールバック**（セッションフォルダ自身の mtime + 配下最大 mtime）を採用する。
 
+```bash
+# 推奨経路: progress.md mtime を atime とする
+    # フォールバック: 配下最大 mtime
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 $progressPath = Join-Path $session.FullName 'progress.md'
 if (Test-Path -LiteralPath $progressPath) {
@@ -45,6 +52,8 @@ if (Test-Path -LiteralPath $progressPath) {
 }
 ```
 
+</details>
+
 ## 2. 古さ判定 + keep-recent 適用
 
 ### 2.1 古さ判定
@@ -58,7 +67,9 @@ if (Test-Path -LiteralPath $progressPath) {
 
 ### 2.2 進行中セッション保護
 
-`progress.md` の mtime が UtcNow から `active_session_minutes` 分以内（初期値 5 分）なら、古さ判定を満たしても候補から除外する。閾値は `cleanup-config.json` の `active_session_minutes` で変更可能（`/cleanup-config --set-active-minutes N` または `cleanup-config.ps1 -SetActiveSessionMinutes N`）。
+`progress.md` の mtime が UtcNow から `active_session_minutes` 分以内（初期値 5 分）なら、古さ判定を満たしても候補から除外する。閾値は `cleanup-config.json` の `active_session_minutes` で変更可能（`/cleanup-config --set-active-minutes N` または `cleanup-config.sh -SetActiveSessionMinutes N`）。
+
+<details><summary>PowerShell フォールバック (Bash 等価は未整備)</summary>
 
 ```powershell
 $activeThreshold = $nowUtc.AddMinutes(-[int]$config.active_session_minutes)
@@ -69,9 +80,13 @@ if (Test-Path $progressPath) {
 }
 ```
 
+</details>
+
 ### 2.3 keep-recent 適用
 
 `--keep-recent N` が指定された場合、スコープごとに新しい順で N 件を候補から除外する。
+
+<details><summary>PowerShell フォールバック (Bash 等価は未整備)</summary>
 
 ```powershell
 $filtered = @()
@@ -81,6 +96,8 @@ foreach ($scope in ($candidates | Group-Object Scope)) {
 }
 $candidates = $filtered
 ```
+
+</details>
 
 ## 3. AskUserQuestion 構造（対話モード）
 
@@ -120,6 +137,13 @@ AskUserQuestion({
 
 ### 4.1 削除コマンド
 
+```bash
+try {
+        Remove-Item -Path $c.Path -Recurse -Force -ErrorAction Stop
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 foreach ($c in $candidates) {
     try {
@@ -132,6 +156,8 @@ foreach ($c in $candidates) {
 }
 ```
 
+</details>
+
 ### 4.2 失敗時の挙動
 
 | 失敗種別 | 対応 |
@@ -143,6 +169,14 @@ foreach ($c in $candidates) {
 ## 5. `--include-tmp` の追加クリーンアップ
 
 `--include-tmp` 指定時のみ、削除されなかったセッション（=古さ条件を満たさない）の `workspace/tmp/` 配下を別途掃除する。
+
+```bash
+Where-Object { $_.Name -match $SESSION_REGEX -and $_.LinkType -ne 'SymbolicLink' } |
+        ForEach-Object {
+                    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 foreach ($root in $roots) {
@@ -157,6 +191,8 @@ foreach ($root in $roots) {
         }
 }
 ```
+
+</details>
 
 `workspace/tmp/` 自体は残し、配下のファイルのみ削除する。
 

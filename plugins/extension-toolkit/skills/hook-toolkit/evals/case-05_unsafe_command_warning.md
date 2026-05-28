@@ -36,8 +36,8 @@
 - 利用者環境では存在しないパスのため、フックが動作しない
 
 修正案:
-1. ${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-tool-use.ps1 に変更（プラグイン同梱スクリプトとして配備、PowerShell 統一）
-2. ${HOME}/.claude/scripts/log-tool-use.ps1 に変更（利用者ホーム配下、ただし存在は前提）
+1. ${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-tool-use.sh に変更（プラグイン同梱スクリプトとして配備、Bash 標準・PowerShell フォールバック）
+2. ${HOME}/.claude/scripts/log-tool-use.sh に変更（利用者ホーム配下、ただし存在は前提）
 3. このまま続行（ユーザ責任、推奨しない）
 4. キャンセル
 ```
@@ -48,8 +48,8 @@
 
 | 選択 | 動作 |
 |-----|------|
-| 1 | `${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-tool-use.ps1` に書き換え、同パスのスケルトン作成も提案（ADR-025 配置義務準拠） |
-| 2 | `${HOME}/.claude/scripts/log-tool-use.ps1` に書き換え、利用者環境への配置案内 |
+| 1 | `${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-tool-use.sh` に書き換え、同パスのスケルトン作成も提案（ADR-025 配置義務準拠） |
+| 2 | `${HOME}/.claude/scripts/log-tool-use.sh` に書き換え、利用者環境への配置案内 |
 | 3 | 二重確認 + ハードコード継続を記録 |
 | 4 | 何もせず終了 |
 
@@ -62,7 +62,7 @@
 
 | 項目 | 期待値 |
 |-----|-------|
-| 生成ファイル | 選択により異なる（選択 1 の場合: `hooks.json` + `references/scripts/hooks/log-tool-use.ps1` スケルトン、ADR-025 配置義務準拠） |
+| 生成ファイル | 選択により異なる（選択 1 の場合: `hooks.json` + `references/scripts/hooks/log-tool-use.sh` スケルトン、ADR-025 配置義務準拠） |
 | 標準出力 | パスポータビリティ警告 + 修正提案 + 選択結果 |
 | 終了状態 | 成功（選択 1/2） / 警告継続（選択 3） / キャンセル（選択 4） |
 

@@ -1,0 +1,11 @@
+# clear_embedding_cache: <base> 未指定 → エラーメッセージ + exit 0
+ID="sr_clear_cache_no_base"
+SCRIPT_PS_REL="plugins/skill-router/references/scripts/commands/clear_embedding_cache.ps1"
+SCRIPT_BASH_REL="plugins/skill-router/references/scripts/commands/clear_embedding_cache.sh"
+ARGS=()
+STDIN_FILE=""
+NORMALIZE=("crlf")
+COMPARE_STDOUT="true"
+COMPARE_STDERR="true"
+COMPARE_FS="false"
+COMPARE_EXIT="true"

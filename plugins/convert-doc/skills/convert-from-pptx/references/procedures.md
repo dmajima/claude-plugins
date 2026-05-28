@@ -7,12 +7,28 @@
 Windows + PowerShell + python-pptx の組み合わせで、`Start-Process -NoNewWindow`
 または `&` 演算子 + ファイルリダイレクトで Python を子プロセスとして起動すると、
 `python-pptx.Presentation()` 呼び出しで**ハングして終了しない既知事象**がある
-（Claude Code の PowerShell ツール経由実行が該当）。
+（Claude Code の Bash ツール経由実行が該当）。
 
-このため、本スクリプトは **`Start-Job` 経由のラッパー（`run_via_job.ps1`）** から
+このため、本スクリプトは **`Start-Job` 経由のラッパー（`run_via_job.sh`）** から
 起動することを必須とする。
 
 ### 必須起動コマンド
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/run_via_job.sh" \
+  "<入力PPTXファイルパス>" \
+  "<出力MDファイルパス>" \
+  -PythonExe "$SESSION_DIR/workspace/.venv/Scripts/python.exe" \
+  [-TimeoutSec <秒>] \
+  [--images-dir <DIR>] \
+  [--no-mermaid] \
+  [--include-notes] \
+  [--include-hidden] \
+  [--no-first-slide-as-title] \
+  [--max-image-size <BYTES>]
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_via_job.ps1" `
@@ -28,6 +44,8 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from
   [--max-image-size <BYTES>]
 ```
 
+</details>
+
 - 第 1 引数: 入力 PPTX パス（位置パラメータ）
 - 第 2 引数: 出力 MD パス（位置パラメータ）
 - `-PythonExe`: venv の python.exe（環境変数 `CONVERT_FROM_PPTX_PYTHON` でも指定可）
@@ -36,12 +54,23 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from
 
 ### 旧形式（直接呼び出し）を使ってはならない
 
+```bash
+# ✗ 禁止: -NoNewWindow / &+redirect で起動するとハングする
+& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" \
+  "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/convert_from_pptx.py" \
+  "<入力>" "<出力>"
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 # ✗ 禁止: -NoNewWindow / &+redirect で起動するとハングする
 & "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
   "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
   "<入力>" "<出力>"
 ```
+
+</details>
 
 事象再現と原因切り分けの詳細は本リポジトリ調査セッション参照
 （`.claude/.local/work/20260521_01_convert_from_pptx_hung_repro/root-cause.md`）。
@@ -53,7 +82,20 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from
 ### Phase 3 検証 (verify_md.py) のラッパー経由起動
 
 カバレッジ検証 `verify_md.py` も同じく `python-pptx` を内部利用するため、専用
-ラッパー `run_verify_via_job.ps1` 経由で起動する。
+ラッパー `run_verify_via_job.sh` 経由で起動する。
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/run_verify_via_job.sh" \
+  "<入力PPTXファイルパス>" \
+  "<検証対象MDファイルパス>" \
+  -PythonExe "$SESSION_DIR/workspace/.venv/Scripts/python.exe" \
+  [-TimeoutSec <秒>] \
+  [--report <REPORT.json>] \
+  [--threshold <0.85 等>] \
+  [--max-missing-shown <件数>]
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_verify_via_job.ps1" `
@@ -66,7 +108,9 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from
   [--max-missing-shown <件数>]
 ```
 
-設計と挙動は `run_via_job.ps1` と対称（タイムアウト時 exit 124、PythonExe 検証、
+</details>
+
+設計と挙動は `run_via_job.sh` と対称（タイムアウト時 exit 124、PythonExe 検証、
 stderr マージ等の動作仕様すべて共通）。
 
 ## スライド→Markdown 規則
@@ -125,15 +169,15 @@ stderr マージ等の動作仕様すべて共通）。
 | Mermaid に変換されず原図形がテキストで残る | 図形がコネクタで接続されていないか、SmartArt の構造が複雑すぎる可能性。`--no-mermaid` で挙動を切り替えて差分を確認 |
 | 日本語が文字化け | 出力は UTF-8（BOM なし）。読み込みエディタのエンコーディング設定を確認 |
 | 大量の画像で生成が遅い | `--max-image-size` を下げる、または前段で不要画像を削除した PPTX に差し替える |
-| **起動して 30 秒以上経っても何も出力されずプロセスが終了しない** | **直接 `python.exe` を `&` / `Start-Process -NoNewWindow` で呼んでいないか確認**。必ず `run_via_job.ps1` ラッパー経由で起動する（procedures.md 冒頭参照） |
+| **起動して 30 秒以上経っても何も出力されずプロセスが終了しない** | **直接 `python.exe` を `&` / `Start-Process -NoNewWindow` で呼んでいないか確認**。必ず `run_via_job.sh` ラッパー経由で起動する（procedures.md 冒頭参照） |
 | stdout/stderr が両方とも 0 byte のまま固まる | 同上。Windows + PowerShell + python-pptx の組み合わせ問題で、`Presentation()` 呼び出しでハングする |
-| 「`exited: False`」がログに出る | プロセスがタイムアウトで kill された証拠。`run_via_job.ps1` 経由に切り替える |
+| 「`exited: False`」がログに出る | プロセスがタイムアウトで kill された証拠。`run_via_job.sh` 経由に切り替える |
 
 ## 情報開示・運用上の注意（CI / 共有環境向け）
 
 本スクリプトの **エラーメッセージには内部パス・shape 名・ファイルサイズ等が含まれる**
 （例: `Error: Input file not found: C:\<実環境の絶対パス>`）。
-ラッパー (`run_via_job.ps1`) は `2>&1` で Python の stderr を stdout に統合してから
+ラッパー (`run_via_job.sh`) は `2>&1` で Python の stderr を stdout に統合してから
 呼び出し元に返すため、これらの情報は呼び出し元のログ・CI 出力にそのまま流れる。
 
 | 利用シーン | リスク評価 | 推奨対処 |

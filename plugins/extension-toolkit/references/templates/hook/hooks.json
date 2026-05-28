@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/{script-name}.ps1\"",
-            "shell": "powershell",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/{script-name}.sh\"",
+            "shell": "bash",
             "timeout": 30
           }
         ]

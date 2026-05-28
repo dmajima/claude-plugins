@@ -9,7 +9,7 @@ argument-hint: "[--scope ...] [--repo URL] [--branch B] [--targets CSV]"
 
 ## 1. 非対話モード（`$ARGUMENTS` が非空）
 
-引数を解析し、`${CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1 -Action set` を実行する。
+引数を解析し、`${CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.sh -Action set` を実行する。
 
 | 引数 | 動作 |
 |------|------|
@@ -21,8 +21,14 @@ argument-hint: "[--scope ...] [--repo URL] [--branch B] [--targets CSV]"
 
 実行例:
 
-`$ARGUMENTS` の文字列を直接 sync-mappings.ps1 に展開するのは引数インジェクションの
+`$ARGUMENTS` の文字列を直接 sync-mappings.sh に展開するのは引数インジェクションの
 余地が残るため、**個別フラグを明示的にパースして名前付き引数で渡す**こと。
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/skills/sync-settings/references/scripts/sync/sync-mappings.sh" "${args[@]}"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
@@ -39,13 +45,15 @@ if ($argText -match '--project-path\s+"([^"]+)"|--project-path\s+(\S+)')  { $par
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1" @params
 ```
 
+</details>
+
 ## 2. 対話モード（`$ARGUMENTS` が空）
 
 **既定スコープ = project**（カレントディレクトリ）。global を設定する場合は `--scope global` を引数で明示するか、Step 1 完了後の追加質問で切替可能（実装は AskUserQuestion 経由）。
 
 ### Step 1: 設定読み込み
 
-事前に `sync-mappings.ps1 -Action get -Scope project` を実行し、カレントディレクトリの **現在のマッピング** を取得する（存在しない場合は新規作成）。
+事前に `sync-mappings.sh -Action get -Scope project` を実行し、カレントディレクトリの **現在のマッピング** を取得する（存在しない場合は新規作成）。
 
 ### Step 2: AskUserQuestion 3 質問同時発火
 
@@ -130,9 +138,17 @@ Other 自由入力時のバリデーション:
 
 ### Step 4: スクリプト実行
 
+```bash
+bash "...sync-mappings.sh" -Action set -Scope <scope> [-ProjectPath <path>] -Repo "<repo>" -Branch "<branch>" -Targets "<csv>"
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 pwsh -NoProfile -File "...sync-mappings.ps1" -Action set -Scope <scope> [-ProjectPath <path>] -Repo "<repo>" -Branch "<branch>" -Targets "<csv>"
 ```
+
+</details>
 
 実行後、保存された設定を表示してユーザに完了報告（変更前→変更後の差分を提示）。
 

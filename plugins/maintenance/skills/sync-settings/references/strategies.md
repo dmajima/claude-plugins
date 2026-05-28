@@ -33,6 +33,19 @@
 
 ### 1.4 実装
 
+```bash
+function Sync-Overwrite {
+
+    # リモート側を走査して新規・更新
+            New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+        Copy-Item -LiteralPath $_.FullName -Destination $destFile -Force
+
+    # --prune 指定時はローカルのみのファイルを削除
+                Remove-Item -LiteralPath $_.FullName -Force
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 function Sync-Overwrite {
     param([string]$Source, [string]$Destination, [bool]$Prune)
@@ -60,6 +73,8 @@ function Sync-Overwrite {
     }
 }
 ```
+
+</details>
 
 ## 2. merge 戦略
 
@@ -93,6 +108,19 @@ function Sync-Overwrite {
 - 配列の扱いに注意（連結ではなく置換）
 
 ### 2.5 実装（JSON マージ部分）
+
+```bash
+function Merge-Json {
+
+        # 配列はリモートで置換
+
+        # ローカルのキーを先に取り込み
+        # リモートのキーで上書き or 再帰マージ
+
+    # プリミティブはリモート値
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 function Merge-Json {
@@ -130,6 +158,8 @@ function Merge-Json {
 }
 ```
 
+</details>
+
 ## 3. skip 戦略
 
 ### 3.1 動作
@@ -152,6 +182,16 @@ function Merge-Json {
 
 ### 3.4 実装
 
+```bash
+function Sync-Skip {
+
+                New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+            Copy-Item -LiteralPath $_.FullName -Destination $destFile -Force
+        # 既存ファイルはスキップ
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 function Sync-Skip {
     param([string]$Source, [string]$Destination)
@@ -171,6 +211,8 @@ function Sync-Skip {
     }
 }
 ```
+
+</details>
 
 ## 4. 戦略選択のフロー
 

@@ -42,12 +42,12 @@
 
 ### Phase 4: 変更検出 + スクリプト実行
 
-4 つの選択結果と現在値を比較し、**変更があった項目のみ** を `cleanup-config.ps1` の引数として渡す:
+4 つの選択結果と現在値を比較し、**変更があった項目のみ** を `cleanup-config.sh` の引数として渡す:
 
 | 変更検出 | 動作 |
 |---------|------|
-| 1 件以上変更あり | `cleanup-config.ps1 -SetDays N -SetKeepRecent N -SetScope X -SetActiveSessionMinutes N`（変更項目のみ） |
-| 変更なし | `cleanup-config.ps1 -Show`（現在の設定表示のみ）|
+| 1 件以上変更あり | `cleanup-config.sh -SetDays N -SetKeepRecent N -SetScope X -SetActiveSessionMinutes N`（変更項目のみ） |
+| 変更なし | `cleanup-config.sh -Show`（現在の設定表示のみ）|
 
 ### Phase 5: 完了報告
 

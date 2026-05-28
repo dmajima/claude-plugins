@@ -1,0 +1,11 @@
+# enforce_toolkit_routing: 対象外パス (tmp) → 無音 exit 0
+ID="et_enforce_routing_unrelated"
+SCRIPT_PS_REL="plugins/extension-toolkit/references/scripts/hooks/enforce_toolkit_routing.ps1"
+SCRIPT_BASH_REL="plugins/extension-toolkit/references/scripts/hooks/enforce_toolkit_routing.sh"
+ARGS=()
+STDIN_FILE="plugins/extension-toolkit/tests/parity/fixtures/stdin/edit_unrelated.json"
+NORMALIZE=("crlf")
+COMPARE_STDOUT="true"
+COMPARE_STDERR="true"
+COMPARE_FS="false"
+COMPARE_EXIT="true"

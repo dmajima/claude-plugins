@@ -7,7 +7,7 @@ argument-hint: "[--show]"
 
 ## 動作
 
-非対話。`${CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1` を `-Action list` または `-Action show` で実行する。
+非対話。`${CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.sh` を `-Action list` または `-Action show` で実行する。
 
 | 引数 | 動作 |
 |------|------|
@@ -16,11 +16,19 @@ argument-hint: "[--show]"
 
 ## 実行コマンド
 
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/skills/sync-settings/references/scripts/sync/sync-mappings.sh" -Action $action
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
 $action = if ('$ARGUMENTS' -match '--show') { 'show' } else { 'list' }
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1" -Action $action
 ```
+
+</details>
 
 ## 関連
 

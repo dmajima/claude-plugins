@@ -4,24 +4,47 @@
 
 ## 実行方式（MANDATORY）
 
-機械チェックは **必ず PowerShell 経由 + venv 内 Python + JSON ファイル出力** で実施すること
-（`~/.claude/rules/tools/shell-preference.md` に従い `Bash` ツールではなく `PowerShell` ツールを使う）。
+機械チェックは **必ず Bash 経由 + venv 内 Python + JSON ファイル出力** で実施すること
+（`~/.claude/rules/tools/shell-preference.md` に従い `Bash` ツールを標準とし、PowerShell はフォールバック適用時のみ使用）。
 
 ### エンコーディング前提
 
 `~/.claude/settings.json` の `env` で `PYTHONIOENCODING=utf-8` / `PYTHONUTF8=1` がグローバル設定されており、
-PowerShell ツール経由で起動される全 Python プロセスは UTF-8 で動作する
+Bash ツール経由で起動される全 Python プロセスは UTF-8 で動作する
 （`~/.claude/rules/tools/python-encoding-mandatory.md` 参照）。
 
-各 `.ps1` の先頭で `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)` を明示するため、
-日本語混在出力も文字化けしない。Python 側でも先頭で `sys.stdout.reconfigure(encoding='utf-8')` を実施する
+`.sh` / `.ps1` いずれも UTF-8 を強制し、日本語混在出力も文字化けしない。
+Python 側でも先頭で `sys.stdout.reconfigure(encoding='utf-8')` を実施する
 （必須3点セットの2項目）。
 
 ### 正しい起動方法
 
 すべてのチェックは `references/scripts/checks/run_checks.py` に統合済み。
-PowerShell ツール経由で venv 内 Python を直接呼ぶ。
-venv 関連スクリプトはプラグイン直下の `.ps1` を利用する（ADR-024）。
+Bash ツール経由で venv 内 Python を直接呼ぶ。
+venv 関連スクリプトはプラグイン直下の `.sh`（PowerShell フォールバック: `.ps1`）を利用する（ADR-024）。
+
+```bash
+# 1. venv 構築（初回のみ・プラグイン共通）
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" `
+  -WorkDir "$SessionDir/workspace" `
+  -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
+
+# 2. レビュー対象ごとに run_checks.py を実行（出力は JSON ファイル）
+& "$SessionDir/workspace/.venv/Scripts/python" `
+  "$CLAUDE_SKILL_DIR/references/scripts/checks/run_checks.py" `
+  --target "<レビュー対象パス>" `
+  --scope-root "<スコープルート (パストラバーサル防止)>" `
+  --output "$SessionDir/workspace/checks_<対象名>.json"
+
+# 3. 結果は JSON ファイルから Read ツールで読み取って統合する
+#    (標準出力には進捗ログのみ。日本語ログも UTF-8 で出力されるため mojibake は発生しない)
+
+# 4. 作業完了後の venv 削除（プラグイン共通）
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" `
+  -WorkDir "$SessionDir/workspace"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 $SessionDir = ".claude/.local/work/{yyyyMMdd_nn_summary}"
@@ -46,13 +69,16 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
   -WorkDir "$SessionDir/workspace"
 ```
 
+</details>
+
 詳細な引数仕様は `references/scripts/checks/run_checks.py --help` を参照すること。
 
-### `.sh` の取り扱い（完全廃止）
+### Bash 標準・PowerShell フォールバック
 
-`~/.claude/rules/tools/shell-preference.md` に従い、プラグイン配下の `.sh` は **完全に廃止** している。
-`references/scripts/` 配下のすべてのスクリプトは `.ps1` で実装する。
-`run_checks.py` の項目 #12 (Bash 利用禁止) で、`.sh` 残存・`bash` 起動例残存を自動検出する。
+`~/.claude/rules/tools/shell-preference.md` に従い、プラグイン配下のスクリプトは
+**Bash (`.sh`) 標準・PowerShell (`.ps1`) フォールバック** の方針で実装する。
+`references/scripts/` 配下のすべてのスクリプトは `.sh` で実装し、必要に応じて
+動作等価な `.ps1` 版を併存させる（フォールバック手順用）。
 
 ## チェック項目一覧
 
@@ -71,9 +97,9 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 | 9 | シークレット混入 | プラグイン全体 | Critical | `check_secrets`（`marketplace-publisher` の `secret-scan.md` と同等） |
 | 10 | クロスマーケットプレイス依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7） | `plugin.json` + 同階層 `README.md` | High | `check_cross_marketplace_readme` |
 | 11 | プラグインに MIT LICENSE 配備（ADR-029） | プラグイン直下 `LICENSE` + `plugin.json.license` + `README.md` | Critical / High | `check_mit_license` |
-| 12 | Bash/sh 利用禁止（PowerShell 移行担保、shell-preference.md）| `hooks.json` / `*.sh` / `*.md` | High / Medium | `check_no_bash_invocation` |
-| 13 | hook の `shell` フィールド明示（PowerShell 統一補強、shell-preference.md）| `hooks/hooks.json` | High | `check_hook_shell_field` |
-| 14 | PSScriptAnalyzer 静的解析（B-1） | `*.ps1` / `*.psm1` / `*.psd1` | High / Medium / Low | `check_psscriptanalyzer` |
+| 12 | PowerShell ベタ起動の hook 検出（Bash 標準・PowerShell フォールバック方針、shell-preference.md）| `hooks.json` / `*.md` | Medium | `check_no_bash_invocation` （実装は Bash 標準方針に反転済み） |
+| 13 | hook の `shell` フィールド明示（Bash 標準・PowerShell フォールバック補強、shell-preference.md）| `hooks/hooks.json` | High | `check_hook_shell_field` |
+| ~~14~~ | ~~PSScriptAnalyzer 静的解析（B-1）~~ | — | — | Phase 9a で削除済み |
 
 `run_checks.py` の出力 JSON 構造:
 
@@ -195,39 +221,37 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 
 詳細仕様は [`../../../references/license-policy.md`](../../../references/license-policy.md) を参照。
 
-### 12. Bash/sh 利用禁止チェック（PowerShell 移行担保）
+### 12. PowerShell ベタ起動の hook 検出チェック（Bash 標準・PowerShell フォールバック方針）
 
-`~/.claude/rules/tools/shell-preference.md` で `Bash` ツール利用が禁止されたため、
-プラグイン側でも以下を機械チェックで担保する。
+`~/.claude/rules/tools/shell-preference.md` に従い、本リポジトリは **Bash 標準・PowerShell フォールバック** の方針を採用する。
+旧版の「`.sh` 残存を High 指摘 / bash 起動例残存を Medium 指摘」は撤廃し、PowerShell ベタ起動の hook を Medium 指摘に反転させた。
 
 | 検査項目 | 重大度 | 検出方法 |
 |---------|-------|---------|
-| `hooks/hooks.json` の `command` フィールド先頭が `bash` で始まる | High | JSON パース後に再帰的に `command` キーを走査し、正規表現 `^\s*bash\s+` をマッチ |
-| `.sh` ファイルが残存している | High | `target.rglob("*.sh")` を走査し、検出されれば High 指摘（`.sh` は完全廃止のため） |
-| `.md` 内に `bash ...sh` 起動例がコードフェンス・バッククォート外で残存 | Medium | `iter_inspectable_lines` 経由で正規表現 `(?<![A-Za-z0-9_/.\-])bash\s+["']?[^\s"']*\.sh\b` をマッチ |
+| `hooks/hooks.json` の `command` フィールド先頭が `pwsh` / `powershell` で始まる | Medium | JSON パース後に再帰的に `command` キーを走査し、正規表現 `^\s*(pwsh\|powershell)(\.exe)?\s+` をマッチ。通常運用は Bash 起動、PowerShell 起動は `references/hooks-fallback/` 配下のフォールバック専用エントリでのみ許容 |
 
 除外条件:
 
-- `templates/` / `template/` / `evals/` / `checklists/` 配下（テンプレート・チェック項目記述自体は許容）
-- `automated-checks.md` / `shell-preference.md` / `run_checks.py`（自己参照）
+- `templates/` / `template/` / `evals/` / `hooks-fallback/` / `node_modules/` 配下
+- `hooks/` 配下以外の `hooks.json`（誤検出防止）
 
 運用ポリシー:
 
-- `.sh` は **すべて廃止**。プラグイン配下に `.sh` を含めてはならない
-- すべてのシェルスクリプトは `.ps1` で記述する
-- `hooks.json` は **常に** `pwsh -NoProfile -File ...ps1` 形式で記述する
+- 通常運用: シェルスクリプトは `.sh` (Bash) で記述する
+- PowerShell フォールバック: 同階層に `.ps1` 版を併存させる（動作差異ゼロを保証）
+- `hooks.json` の `command` は **通常運用** で `bash "...sh"` 形式、フォールバック時のみ `pwsh -NoProfile -File "...ps1"` 形式 (`references/hooks-fallback/` 配下)
 
-### 13. hook の `shell` フィールド明示チェック（PowerShell 統一補強）
+### 13. hook の `shell` フィールド明示チェック（Bash 標準・PowerShell フォールバック補強）
 
-`command` を `pwsh -NoProfile -File ...` で書いていても、Claude Code の起動側シェルが
-Git Bash の場合に引数解釈・PATH 解決でエッジケースが発生しうる。これを抑制するため、
-各 hook エントリで `"shell": "powershell"` を **明示** することを必須化する。
+`command` を `bash "..."` で書いていても、Claude Code の起動側シェルが PowerShell の場合に
+引数解釈・PATH 解決でエッジケースが発生しうる。これを抑制するため、各 hook エントリで
+`"shell": "bash"` を **明示** することを必須化する（フォールバック時は `"powershell"`）。
 
 | 検査項目 | 重大度 | 検出方法 |
 |---------|-------|---------|
 | `hooks/hooks.json` 内の各 hook エントリ（`type: "command"` を持つ）に `"shell"` フィールドが存在する | High | JSON パース後に `hooks` → イベント名 → エントリ → `hooks` 配列の各要素を走査し、`type: "command"` であって `"shell"` キーが無いものを検出 |
-| `"shell"` フィールドの値が `"powershell"` または `"bash"` である | High | 値が上記いずれかでない場合は不正値として High 指摘 |
-| 本マーケットプレイスのプラグインで `"shell": "bash"` が設定されている | Medium | PowerShell 統一方針との不整合として Medium 指摘（許可ではあるが警告） |
+| `"shell"` フィールドの値が `"bash"` または `"powershell"` である | High | 値が上記いずれかでない場合は不正値として High 指摘 |
+| 本マーケットプレイスのプラグインで `"shell": "powershell"` が通常運用エントリに設定されている | Medium | Bash 標準・PowerShell フォールバック方針との不整合として Medium 指摘（フォールバック専用は `hooks-fallback/` 配下に置く） |
 
 除外条件:
 
@@ -236,55 +260,14 @@ Git Bash の場合に引数解釈・PATH 解決でエッジケースが発生し
 
 実装関数: `check_hook_shell_field`
 
-### 14. PSScriptAnalyzer 静的解析（B-1）
+### 14. PSScriptAnalyzer 静的解析（B-1）【Phase 9a で削除】
 
-B-1 由来（改善バックログ、経緯は git 履歴を参照）。2026-05-18 のセッションで `sync-settings/sync.ps1` の
-`String.TrimStart(string)` 引数誤用（実際は `char[]` を要求）が、静的レビュー 6 サイクルを
-素通りしてデモ実行で初めて発覚した事例を契機に導入。AST ベースの PSScriptAnalyzer により、
-同種の API 齟齬・スタイル違反・セキュリティ違反を自動検出する。
+旧版では PSScriptAnalyzer を用いた PowerShell スクリプト静的解析を実施していたが、
+リポジトリ全体の Bash 標準化方針（PowerShell はフォールバック扱い）との整合のため、
+**Phase 9a で extension-toolkit から削除した**。Bash 主体の実装に PSScriptAnalyzer を
+適用する利点は薄いため、再導入予定はない。
 
-| 検査項目 | 重大度 | 検出方法 |
-|---------|-------|---------|
-| PowerShell スクリプトの構文・API 誤用（PSPossibleIncorrectUsageOfRedirectionOperator など） | High | PSScriptAnalyzer Error |
-| スタイル違反（PSAvoidUsingCmdletAliases / PSAvoidTrailingWhitespace など） | Medium | PSScriptAnalyzer Warning |
-| 推奨事項（PSUseConsistentIndentation など） | Low | PSScriptAnalyzer Information |
-| セキュリティ違反（PSAvoidUsingPlainTextForPassword など） | High | PSScriptAnalyzer Error |
-
-検査対象拡張子: `*.ps1` / `*.psm1` / `*.psd1`
-
-ルールセット定義: [`scripts/checks/PSScriptAnalyzerSettings.psd1`](scripts/checks/PSScriptAnalyzerSettings.psd1)
-
-起動スクリプト: [`scripts/checks/run_psscriptanalyzer.ps1`](scripts/checks/run_psscriptanalyzer.ps1)
-（`pwsh` で起動、結果を一時 JSON に書き出して Python 側で読み戻す）
-
-#### PowerShell モジュールのライフサイクル管理（ADR-033）
-
-PSScriptAnalyzer は **端末のグローバル PSModulePath を汚染しない** よう、
-プラグイン共通ユーティリティ [`../../../../references/scripts/setup/setup_psmodule.ps1`](../../../../references/scripts/setup/setup_psmodule.ps1)
-を経由してプラグイン専用キャッシュに `Save-Module` で配置する（ADR-033 準拠）。
-
-| 項目 | 動作 |
-|------|------|
-| キャッシュ配置 | `<base>/.claude/.local/plugins/extension-toolkit/psmodules/PSScriptAnalyzer/<version>/`（`<base>` はリポジトリ配下なら `{repo_root}`、外なら `~`）|
-| 初回起動時 | `Save-Module -RequiredVersion 1.22.0 -Path <baseDir>` で取得（PSGallery 経由、管理者権限不要）|
-| 既存キャッシュ HIT | `.cache-marker` の mtime が TTL 30 日以内ならダウンロードスキップ |
-| TTL 超過時 | 再ダウンロード（同バージョン上書き）|
-| バージョン固定 | `1.22.0`（呼出側の `run_psscriptanalyzer.ps1` 内で固定）|
-| Import 方法 | `Import-Module <絶対パス>/PSScriptAnalyzer.psd1`（PSModulePath 解決を使わない）|
-
-フェイルオープン挙動（4 段階）:
-
-- `pwsh` 未インストール → 指摘ゼロで通過（環境依存検査のため、`run_checks.py` 側で skip）
-- `setup_psmodule.ps1` 不在 → 指摘ゼロで通過
-- `setup_psmodule.ps1` exit != 0（PSGallery 到達不能 + 既存キャッシュなし）→ 指摘ゼロで通過
-- 既存キャッシュあり + PSGallery 到達不能 → 既存キャッシュを再利用して継続
-- `.ps1` / `.psm1` / `.psd1` が target 配下に存在しない → 何もしない（呼出前段の判定）
-
-除外条件:
-
-- `EXCLUDE_DIRS`（`.git` / `.venv` / `node_modules` / `__pycache__` / `.tox` / `.mypy_cache` / `.claude`）配下のファイル
-
-実装関数: `check_psscriptanalyzer`
+歴史的経緯は git ログ（Phase 9a コミット）を参照。
 
 ### 15. Python 直起動禁止 / Start-Job ラッパー必須チェック
 
@@ -297,7 +280,7 @@ Windows + PowerShell + python-pptx 等で Python 子プロセスがハングす�
 |---------|-------|---------|
 | `.py` を含むプラグインで、`.md`（procedures / SKILL / README）の起動例が直接 `& "...python.exe" "...script.py"` 形式になっている | High | 正規表現 `\&\s+[^\n]*python(\.exe)?[^\n]*\.py` を `.md` で検索し、同じファイル内に `Start-Job` / `run_via_job` / `Wait-Job` のいずれも出現しない場合に High 指摘 |
 | `.py` を含むプラグインで、`Start-Process -NoNewWindow` + `RedirectStandardOutput/Error` の組み合わせが `.md` / `.ps1` に出現 | High | 正規表現 `Start-Process[\s\S]{0,200}-NoNewWindow[\s\S]{0,200}-RedirectStandardOutput` または `-NoNewWindow[\s\S]{0,80}python` |
-| `.py` を含むプラグインで `run_via_job.ps1` または同等の Start-Job ラッパースクリプトが `references/scripts/` 配下に存在しない | Medium | ファイル存在確認（`Start-Job` を含む `.ps1` の存在を `rglob` で確認） |
+| `.py` を含むプラグインで `run_via_job.sh` または同等の Start-Job ラッパースクリプトが `references/scripts/` 配下に存在しない | Medium | ファイル存在確認（`Start-Job` を含む `.ps1` の存在を `rglob` で確認） |
 
 除外条件:
 
@@ -315,7 +298,7 @@ JSON ファイル内の各 issue:
 {
   "severity": "High",
   "item": "パスポータビリティ違反: Windows ドライブレター",
-  "file": "plugins/foo/references/scripts/setup/setup_venv.ps1",
+  "file": "plugins/foo/references/scripts/setup/setup_venv.sh",
   "line": 42,
   "detail": "対象行のスニペット（200 文字まで）"
 }

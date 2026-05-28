@@ -29,8 +29,8 @@ case-*.md のフロントマターに `runnable: true` が指定されたケー�
 
     ---
     runnable: true                    # 必須。false / 未指定なら自動実行対象外
-    command: |                        # 必須。実行するシェルコマンド（pwsh で起動）
-      pwsh -NoProfile -File scripts/foo.ps1 -DryRun
+    command: |                        # 必須。実行するシェルコマンド（bash -c で起動）
+      bash scripts/foo.sh --dry-run
     expect_exit_code: 0               # 任意（既定: 0）
     expect_output_regex:              # 任意（複数可）。全てマッチしないと失敗
       - "^\\[OK\\]"
@@ -285,11 +285,12 @@ def execute_case(
             "stderr_preview": "",
         }
 
-    # コマンドは pwsh で起動（クロスプラットフォーム配慮、Windows 既定）
-    # command 文字列は shell スクリプトとして pwsh -Command に渡す
+    # コマンドは bash で起動（通常運用、shell-preference.md 準拠）。
+    # pwsh が必要な場合は eval-guide.md / case-template.md のフォールバック節を参照。
+    # command 文字列は shell スクリプトとして bash -c に渡す。
     try:
         proc = subprocess.run(
-            ["pwsh", "-NoProfile", "-NonInteractive", "-Command", command],
+            ["bash", "-c", command],
             cwd=str(run_cwd),
             env=run_env,
             capture_output=True,
@@ -301,7 +302,7 @@ def execute_case(
         return {
             "case_file": str(case_file),
             "status": "skipped",
-            "reason": "pwsh not found (PowerShell 7+ required)",
+            "reason": "bash not found (Git Bash on Windows / bash on macOS/Linux required)",
             "exit_code": None,
             "duration_sec": time.monotonic() - started,
             "stdout_preview": "",

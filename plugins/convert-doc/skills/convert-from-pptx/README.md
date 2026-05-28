@@ -14,7 +14,7 @@ PowerPoint (PPTX) を Claude が読み込める Markdown に変換するスキ�
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-依存パッケージ（python-pptx / Pillow / lxml）は初回実行時に `references/scripts/setup/setup_venv.ps1`（Windows 11 推奨）または `setup_venv.sh`（POSIX 互換）が自動で venv を構築してインストールします。本スキルは外部ネットワークアクセスを行いません（オフライン環境でも動作）。
+依存パッケージ（python-pptx / Pillow / lxml）は初回実行時に `references/scripts/setup/setup_venv.sh`（Windows 11 推奨）または `setup_venv.sh`（POSIX 互換）が自動で venv を構築してインストールします。本スキルは外部ネットワークアクセスを行いません（オフライン環境でも動作）。
 
 ## 仕組み
 
@@ -49,12 +49,23 @@ Claude（要約）:
 
 ### スクリプト直接実行
 
+```bash
+& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" \
+  "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/convert_from_pptx.py" \
+  "<入力PPTX>" "<出力MD>" \
+  [--images-dir DIR] [--no-mermaid] [--include-notes]
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 & "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
   "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
   "<入力PPTX>" "<出力MD>" `
   [--images-dir DIR] [--no-mermaid] [--include-notes]
 ```
+
+</details>
 
 ## 技術スタック / 動作要件
 
@@ -74,8 +85,8 @@ plugins/convert-doc/
 ├── references/scripts/
 │   ├── setup/                       # 統合 venv 構築（プラグイン共通、ADR-024）
 │   │   ├── requirements.txt         # 全スキル分の依存をマージ（バージョン下限固定）
-│   │   ├── setup_venv.ps1           # PowerShell 版（推奨・Windows 11）
-│   │   ├── teardown_venv.ps1
+│   │   ├── setup_venv.sh           # PowerShell 版（推奨・Windows 11）
+│   │   ├── teardown_venv.sh
 │   │   ├── setup_venv.sh            # POSIX 互換版
 │   │   └── teardown_venv.sh
 │   └── convert-from-pptx/           # 本スキル業務スクリプト（ADR-025）

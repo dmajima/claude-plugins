@@ -12,7 +12,7 @@
 ## 期待動作
 
 1. `workspace/minutes.json` の存在を確認する
-2. venv が構築済みであることを確認する（未構築の場合は `setup_venv.ps1` で構築する）
+2. venv が構築済みであることを確認する（未構築の場合は `setup_venv.sh` で構築する）
 3. 同梱テンプレート `assets/template/minutes-template.docx` の存在を確認する
 4. Python スクリプト `${CLAUDE_SKILL_DIR}/scripts/output/generate_docx.py` を venv 経由で実行する:
    ```
@@ -22,7 +22,7 @@
 6. 生成された `minutes.docx` をセッション直下（成果物領域）に配置する
 7. ユーザーに生成完了を報告し、ファイルパスを提示する
 
-**python-docx ハング対策**: Windows + PowerShell 環境では `python-docx` の `Document()` 相当の処理でハングする既知事象があるため、必要に応じて `Start-Job` 経由ラッパー（`references/scripts/output/run_docx_via_job.ps1`）で起動する。
+**python-docx ハング対策**: Windows + PowerShell 環境では `python-docx` の `Document()` 相当の処理でハングする既知事象があるため、必要に応じて `Start-Job` 経由ラッパー（`references/scripts/output/run_docx_via_job.sh`）で起動する。
 
 ## 期待出力
 

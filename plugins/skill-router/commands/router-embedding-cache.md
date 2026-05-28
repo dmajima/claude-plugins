@@ -35,10 +35,11 @@ argument-hint: "[--clear] [--show <qualified_name>]"
 
 ### 統計表示（引数なし）
 
-1. base ディレクトリを共通ヘルパーで解決（ADR-025 準拠、`references/scripts/commands/resolve_base.ps1`）:
-   ```powershell
-   $Base = & pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.ps1"
+1. base ディレクトリを共通ヘルパーで解決（ADR-025 準拠、`references/scripts/commands/resolve_base.sh`）:
+   ```bash
+   BASE="$(bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.sh")"
    ```
+   PowerShell フォールバック: `pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.ps1"`
 
 2. `$BASE/embeddings_cache/manifest.json` を Read。
 3. `$BASE/embeddings_cache/vectors.npz` のサイズを確認。
@@ -59,10 +60,10 @@ argument-hint: "[--clear] [--show <qualified_name>]"
 
 ### --clear
 
-クリア処理は `references/scripts/commands/clear_embedding_cache.ps1` に切り出しています（ADR-025 準拠）。
+クリア処理は `references/scripts/commands/clear_embedding_cache.sh` に切り出しています（ADR-025 準拠）。PowerShell フォールバック (`.ps1`) も同階層に併存します。
 
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/clear_embedding_cache.ps1" $Base
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/clear_embedding_cache.sh" "$BASE"
 ```
 
 注: `models/` 配下の ONNX モデルファイルは削除しません（再ダウンロードコスト回避）。

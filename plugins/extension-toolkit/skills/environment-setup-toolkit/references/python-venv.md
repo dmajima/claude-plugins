@@ -98,7 +98,7 @@ plugins/{plugin-name}/
 
 ## 7. teardown の安全性
 
-`teardown_venv.ps1` の安全装置は 3 段構成。詳細は実装（プラグイン直下 `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.ps1`、PowerShell 統一）を参照。要点のみ記載:
+`teardown_venv.sh` の安全装置は 3 段構成。詳細は実装（プラグイン直下 `$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh`、Bash 標準・PowerShell フォールバック）を参照。要点のみ記載:
 
 | 段 | 内容 |
 |---|------|
@@ -137,19 +137,37 @@ plugins/{plugin-name}/
 
 ## 10.5 Python バージョン要件チェック
 
-`setup_venv.ps1` は `-MinPythonVersion` パラメータで **最小 Python バージョン要件** を受け付ける:
+`setup_venv.sh` は `-MinPythonVersion` パラメータで **最小 Python バージョン要件** を受け付ける:
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" `
+  -WorkDir <work_dir> [-RequirementsPath <path>] [-MinPythonVersion <ver>]
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
   -WorkDir <work_dir> [-RequirementsPath <path>] [-MinPythonVersion <ver>]
 ```
 
+</details>
+
 例: Python 3.10 以上を要求する場合
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" `
+  -WorkDir "$WorkDir" -RequirementsPath "$ReqPath" -MinPythonVersion "3.10"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
   -WorkDir "$WorkDir" -RequirementsPath "$ReqPath" -MinPythonVersion "3.10"
 ```
+
+</details>
 
 要件を満たさない場合はエラー終了し、ユーザに pyenv 等での切替を案内する。要件未指定時はチェックをスキップする。
 

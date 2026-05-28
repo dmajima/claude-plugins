@@ -87,7 +87,7 @@ plugins/{plugin-name}/
 | **プラグイン直下に `scripts/` を置く（実スクリプト・サブフォルダ含む）** | 実スクリプトは `references/scripts/` に集約（ADR-025） |
 | プラグイン直下に `docs/` を置く | `README.md` + `references/` で完結させる |
 | Claude Code 公式 + `references/` 以外のトップレベルディレクトリを追加 | ADR で明示する場合のみ例外 |
-| **スキル直下に `references/scripts/setup/setup_venv.ps1` 等の venv 関連スクリプトを置く** | プラグイン単位 venv（ADR-024）に違反、プラグイン直下 `references/scripts/setup/` に集約する |
+| **スキル直下に `references/scripts/setup/setup_venv.sh` 等の venv 関連スクリプトを置く** | プラグイン単位 venv（ADR-024）に違反、プラグイン直下 `references/scripts/setup/` に集約する |
 | **スキルごとの個別 `requirements.txt` を作る** | プラグイン直下に統合（ADR-024） |
 
 ### 2.4 例外条項
@@ -228,14 +228,14 @@ references/
 ```text
 plugins/{plugin-name}/references/scripts/
 └── setup/
-    ├── setup_venv.ps1       # venv 構築 + 依存インストール (PowerShell 統一、shell-preference.md 準拠)
-    ├── teardown_venv.ps1    # venv 削除
+    ├── setup_venv.sh       # venv 構築 + 依存インストール (Bash 標準・PowerShell フォールバック、shell-preference.md 準拠)
+    ├── teardown_venv.sh    # venv 削除
     └── requirements.txt     # 全スキルの依存統合リスト
 ```
 
 | ルール | 内容 |
 |-------|------|
-| Python 利用時 | `setup_venv.ps1` `teardown_venv.ps1` `requirements.txt` 必須 |
+| Python 利用時 | `setup_venv.sh` `teardown_venv.sh` `requirements.txt` 必須 |
 | Python 未利用時 | `references/scripts/setup/` 自体を省略可能 |
 | venv は **プラグイン単位 1 つ** | 複数スキル協業時も同一 venv を再利用 |
 | `requirements.txt` は **マージ済リスト** | スキルごとの個別 requirements.txt は禁止。スキル固有スクリプトの依存もここに統合する |
@@ -273,7 +273,7 @@ plugins/{plugin-name}/references/scripts/
 |-------|------|
 | venv 実体の作成先 | `<work_dir>/.venv`（セッション作業領域内） |
 | venv ライフサイクルスクリプト | プラグイン直下 `references/scripts/setup/` |
-| 各スキルの呼び出し方 | `pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" -WorkDir "$WorkDir" -RequirementsPath "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"` |
+| 各スキルの呼び出し方 | `bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$WorkDir" -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"` (PowerShell フォールバック: `pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" ...`) |
 | `environment-setup-toolkit` の役割 | プラグイン直下スクリプト呼び出しのオーケストレーション（自前で setup を持たない、ADR-024） |
 
 詳細は [`scripts-policy.md`](scripts-policy.md) 節 5 を参照。

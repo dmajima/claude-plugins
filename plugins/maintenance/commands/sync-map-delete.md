@@ -9,7 +9,7 @@ argument-hint: "[--scope <global|project>] [--project-path <path>] [--force]"
 
 ## 1. 非対話モード（`$ARGUMENTS` が非空）
 
-引数を解析し、`${CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1 -Action delete -Force` を実行する。
+引数を解析し、`${CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.sh -Action delete -Force` を実行する。
 
 | 引数 | 動作 |
 |------|------|
@@ -19,8 +19,14 @@ argument-hint: "[--scope <global|project>] [--project-path <path>] [--force]"
 
 実行例:
 
-`$ARGUMENTS` の文字列を直接 sync-mappings.ps1 に展開するのは引数インジェクションの
+`$ARGUMENTS` の文字列を直接 sync-mappings.sh に展開するのは引数インジェクションの
 余地が残るため、**個別フラグを明示的にパースして名前付き引数で渡す**こと。
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/skills/sync-settings/references/scripts/sync/sync-mappings.sh" "${args[@]}"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
@@ -35,13 +41,15 @@ if ($argText -match '\B--force\b')                                        { $par
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1" @params
 ```
 
+</details>
+
 > **note**: `--force` が引数に含まれていない場合、スクリプト側で「`-Force` を併用してください」エラーで終了する。
 
 ## 2. 対話モード（`$ARGUMENTS` が空）
 
 ### Step 1: 削除対象の確認
 
-事前に `sync-mappings.ps1 -Action list` で現在のマッピング状況を取得・表示してから、AskUserQuestion で削除対象を選択する。
+事前に `sync-mappings.sh -Action list` で現在のマッピング状況を取得・表示してから、AskUserQuestion で削除対象を選択する。
 
 ```text
 AskUserQuestion({
@@ -95,7 +103,7 @@ AskUserQuestion({
 
 ### Step 3: スクリプト実行
 
-「削除する」が選ばれた場合のみ `sync-mappings.ps1 -Action delete -Scope <scope> [-ProjectPath <path>] -Force` を実行する。
+「削除する」が選ばれた場合のみ `sync-mappings.sh -Action delete -Scope <scope> [-ProjectPath <path>] -Force` を実行する。
 
 実行後、`-Action list` で更新後の状態を表示してユーザに完了報告。
 

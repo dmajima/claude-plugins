@@ -4,7 +4,7 @@
 
 - 入力 PPTX: 任意の有効な PPTX
 - 出力 MD: `<セッション>/output.md`
-- 起動: `pwsh -NoProfile -File run_via_job.ps1 <input> <output> -PythonExe <py> --no-mermaid --include-notes`
+- 起動: `bash run_via_job.sh <input> <output> -PythonExe <py> --no-mermaid --include-notes`
 
 ## 期待動作
 
@@ -26,7 +26,18 @@
 
 ## 分岐の根拠
 
-`run_via_job.ps1` の ExtraArgs 転送:
+`run_via_job.sh` の ExtraArgs 転送:
+
+```bash
+[Parameter(ValueFromRemainingArguments=$true)] [string[]]$ExtraArgs
+...
+    # 先頭の "--" セパレータは除去（PowerShell から渡される場合）
+    ...
+    & $py -u $script @jobArgs 2>&1 | ForEach-Object { "$_" }
+    ...
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 [Parameter(ValueFromRemainingArguments=$true)] [string[]]$ExtraArgs
@@ -46,6 +57,8 @@ $job = Start-Job -ScriptBlock {
     ...
 } -ArgumentList $PythonExe, $convertScript, (,$pythonArgs)
 ```
+
+</details>
 
 ## 確認パターン
 

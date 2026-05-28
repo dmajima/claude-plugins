@@ -144,7 +144,7 @@ SSOT は `sync-mappings.json`（`/sync-map-set` で設定）。`sync-config.json
 
 ## 重要な制約
 
-- pull / push 双方向対応（pull は `sync.ps1` / push は `sync-push.ps1`、マッピング設定 `sync-mappings.json` を共有）
+- pull / push 双方向対応（pull は `sync.sh` / push は `sync-push.sh`、マッピング設定 `sync-mappings.json` を共有）
 - バックアップは既定で必須。`--no-backup` 指定時はその旨を明示警告
 - `~/.claude/.git` 等の Git メタデータは同期対象外（リモートに含まれる場合も除外）
 - 認証情報（`credentials.json` / `.env` / `*.pem` / `*.key` 等）は同期対象から自動除外（大小文字非感応・正規化済み判定）
@@ -165,9 +165,9 @@ SSOT は `sync-mappings.json`（`/sync-map-set` で設定）。`sync-config.json
 | 詳細実行手順 | [references/procedures.md](references/procedures.md) |
 | 安全装置 | [references/safety.md](references/safety.md) |
 | 同期戦略 | [references/strategies.md](references/strategies.md) |
-| 実装スクリプト（pull 同期本体） | [`references/scripts/sync/sync.ps1`](references/scripts/sync/sync.ps1) |
-| 実装スクリプト（push 同期） | [`references/scripts/sync/sync-push.ps1`](references/scripts/sync/sync-push.ps1) |
-| 実装スクリプト（マッピングストア CRUD） | [`references/scripts/sync/sync-mappings.ps1`](references/scripts/sync/sync-mappings.ps1) |
+| 実装スクリプト（pull 同期本体） | [`references/scripts/sync/sync.sh`](references/scripts/sync/sync.sh) |
+| 実装スクリプト（push 同期） | [`references/scripts/sync/sync-push.sh`](references/scripts/sync/sync-push.sh) |
+| 実装スクリプト（マッピングストア CRUD） | [`references/scripts/sync/sync-mappings.sh`](references/scripts/sync/sync-mappings.sh) |
 | マッピング設定ファイル | `~/.claude/.local/plugins/maintenance/sync-mappings.json`（グローバル配下に集約。global + projects[<absolute_path>] のスコープ別マッピング）|
 | コマンド（pull） | `/sync-pull`（`commands/sync-pull.md`）|
 | コマンド（push） | `/sync-push`（`commands/sync-push.md`）|

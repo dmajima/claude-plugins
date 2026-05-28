@@ -29,7 +29,7 @@ if not input_path.exists():
 ## 起動経路についての注記
 
 本ケースは `convert_from_pptx.py` 単独実行時の挙動を記述しているが、実運用では
-`run_via_job.ps1` ラッパー経由起動が必須（[`../references/procedures.md`](../references/procedures.md) 参照）。
+`run_via_job.sh` ラッパー経由起動が必須（[`../references/procedures.md`](../references/procedures.md) 参照）。
 ラッパー経由の場合の挙動:
 
 - Python が `sys.exit(1)` で終了 → ラッパー内 Start-Job の `$LASTEXITCODE = 1`

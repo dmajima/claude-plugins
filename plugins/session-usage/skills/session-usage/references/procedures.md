@@ -8,7 +8,7 @@
 
 | パターン | 処理 |
 |---------|------|
-| 空 | `SessionId` 未指定で `aggregate.ps1` を起動 |
+| 空 | `SessionId` 未指定で `aggregate.sh` を起動 |
 | 36 文字の UUID 形式 (`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`) | `SessionId` として渡す |
 | その他 | 警告出力後、空扱いで進行 |
 
@@ -17,15 +17,24 @@
 Bash で以下を実行する:
 
 ```bash
-pwsh -NoProfile -ExecutionPolicy Bypass \
-  -File "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" \
+bash "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.sh" \
+  --stdout [--session-id <UUID>]
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass `
+  -File "${env:CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" `
   -Stdout [-SessionId <UUID>]
 ```
 
+</details>
+
 | フラグ | 役割 |
 |-------|------|
-| `-Stdout` | UTF-8 で stdout に直接書き出し（Bash 経由でも文字化けしない） |
-| `-SessionId <UUID>` | 引数で指定された場合のみ |
+| `--stdout` | UTF-8 で stdout に直接書き出し（Bash 経由でも文字化けしない） |
+| `--session-id <UUID>` | 引数で指定された場合のみ |
 
 スクリプトの標準出力は Claude のコンテキストへ取り込まれる。Claude UI の
 Bash 出力エリアでは折りたたまれて表示されることがあるが、**次のステップで
@@ -74,13 +83,22 @@ AskUserQuestion({
 ### 選択: クリップボードへコピー
 
 ```bash
-pwsh -NoProfile -ExecutionPolicy Bypass \
-  -File "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" \
+bash "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.sh" \
+  --copy [--session-id <UUID>]
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass `
+  -File "${env:CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" `
   -Copy [-SessionId <UUID>]
 ```
 
-- `-Copy` のみ指定（`-Stdout` なし）
-- aggregate.ps1 が再集計し、結果を `Set-Clipboard` でコピー
+</details>
+
+- `--copy` のみ指定（`--stdout` なし）
+- aggregate.sh が再集計し、結果をクリップボードへコピー（OS 別に `clip.exe` / `pbcopy` / `xclip` を自動選択）
 - stdout には `[OK] clipboard へコピーしました` のみ出る（罫線レイアウトは再表示しない）
 - 完了後、ステップ 3 へ戻り再度 AskUserQuestion を提示
 
@@ -100,9 +118,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass \
 
 | 状況 | 動作 |
 |------|------|
-| プロジェクトディレクトリが見つからない | aggregate.ps1 が throw → Claude が原因を簡潔に報告 |
+| プロジェクトディレクトリが見つからない | aggregate.sh が throw → Claude が原因を簡潔に報告 |
 | 指定 UUID の JSONL が見つからない | 同上 |
-| Set-Clipboard 失敗 | aggregate.ps1 が `[NG] Set-Clipboard failed: ...` を stdout に出す |
+| Set-Clipboard 失敗 | aggregate.sh が `[NG] Set-Clipboard failed: ...` を stdout に出す |
 
 ## 関連スキル / コマンド
 
@@ -118,7 +136,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass \
 → 集計結果を表示（コピーなし）
 → AskUserQuestion: [クリップボードへコピー / 再集計 / 終了]
 → ユーザ「クリップボードへコピー」選択
-→ aggregate.ps1 -Copy 実行
+→ aggregate.sh -Copy 実行
 → "[OK] clipboard へコピーしました" 表示
 → AskUserQuestion: [クリップボードへコピー / 再集計 / 終了]（再提示）
 → ユーザ「終了」選択

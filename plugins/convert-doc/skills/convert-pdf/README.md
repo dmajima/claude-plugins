@@ -14,7 +14,7 @@ Markdown を Wiki デザインの PDF に変換するスキル。`convert-doc` �
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-初回実行時に `references/scripts/setup/setup_venv.ps1` が以下を自動で実行します。
+初回実行時に `references/scripts/setup/setup_venv.sh` が以下を自動で実行します。
 
 1. `playwright / markdown / Pygments / rcssmin / rjsmin / Pillow` のインストール
 2. `playwright install chromium` による Chromium バイナリのダウンロード（~120MB）
@@ -58,8 +58,8 @@ skills/convert-pdf/
     │   └── convert_pdf.py
     └── setup/
         ├── requirements.txt
-        ├── setup_venv.ps1
-        └── teardown_venv.ps1
+        ├── setup_venv.sh
+        └── teardown_venv.sh
 ```
 
 ## カスタマイズ

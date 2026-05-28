@@ -11,7 +11,7 @@
 ## 期待動作
 
 ### Phase 1: 現状表示
-- `sync-mappings.ps1 -Action list` で現在のマッピング状況をユーザに提示
+- `sync-mappings.sh -Action list` で現在のマッピング状況をユーザに提示
 
 ### Phase 2: Step 1 AskUserQuestion（削除対象選択）
 
@@ -36,7 +36,7 @@ options:
 
 ### Phase 4: スクリプト実行
 
-「削除する」が選ばれた場合のみ `sync-mappings.ps1 -Action delete -Scope <scope> [-ProjectPath <path>] -Force` を実行。
+「削除する」が選ばれた場合のみ `sync-mappings.sh -Action delete -Scope <scope> [-ProjectPath <path>] -Force` を実行。
 
 ### Phase 5: 完了報告
 

@@ -960,8 +960,8 @@ ADR-PU-001 では「単一プラグイン化」を採用し、`plugins-update` �
 
 | ファイル | 内容 | 利用箇所 |
 |---------|------|---------|
-| `sync-config.json` | `last_repo` / `last_branch` / `last_targets` / `last_strategy` / `last_sync_at` / `history[]` | sync.ps1（pull 側） |
-| `sync-mappings.json` | global / projects[abs_path] それぞれの `remote_repo` / `remote_branch` / `targets` / `last_sync_at` | sync.ps1（マッピング解決時）/ sync-mappings.ps1（CRUD）/ sync-push.ps1 |
+| `sync-config.json` | `last_repo` / `last_branch` / `last_targets` / `last_strategy` / `last_sync_at` / `history[]` | sync.sh（pull 側） |
+| `sync-mappings.json` | global / projects[abs_path] それぞれの `remote_repo` / `remote_branch` / `targets` / `last_sync_at` | sync.sh（マッピング解決時）/ sync-mappings.sh（CRUD）/ sync-push.sh |
 
 Phase 3-A（マッピング機構導入）以降、`sync-mappings.json` がプライマリストアとなったが、
 互換性のため `sync-config.json` も並行的に書き込まれており、SSOT（Single Source of Truth）が
@@ -975,7 +975,7 @@ Phase 3-A（マッピング機構導入）以降、`sync-mappings.json` がプ�
 - **v0.2.x 系（互換期間）**: 既存の `sync-config.json` 書き込みロジックは維持するが、ドキュメント
   上は **deprecated** と明記する。新規ユーザは `sync-mappings.json` 経由（`/sync-map-set` 利用）
   での運用を案内する。
-- **v0.3.0**: `sync-config.json` の読み書きを sync.ps1 から削除する。`last_repo` / `last_branch`
+- **v0.3.0**: `sync-config.json` の読み書きを sync.sh から削除する。`last_repo` / `last_branch`
   / `last_targets` / `last_strategy` 等の暗黙利用はサポートしない（マッピング設定を `/sync-map-set`
   で明示的に行うことを前提とする）。
 - **`history[]` の扱い**: 利用実績が小さく主要動線では参照されないため、v0.3.0 で削除する。再導入が
@@ -997,7 +997,7 @@ Phase 3-A（マッピング機構導入）以降、`sync-mappings.json` がプ�
    - `sync-config.json` の互換性レイヤーとしての位置付けを README で説明
    - 新規ドキュメント・evals では `sync-config.json` を参照しない
 2. **v0.3.0**:
-   - sync.ps1 から `sync-config.json` 読み書きを削除
+   - sync.sh から `sync-config.json` 読み書きを削除
    - `--Repo` 引数省略時の暗黙取得（`config.last_repo` から）を廃止
    - 既存 `sync-config.json` を検出した場合、warning でアナウンスし、変換ガイドを提示
 3. **v0.4.0+**:

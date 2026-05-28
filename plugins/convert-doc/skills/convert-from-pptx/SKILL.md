@@ -86,16 +86,16 @@ Python で全 shape の構造データを完全抽出して JSON に dump し、
 ## 実行フロー（2 フェーズ・推奨）
 
 1. **ワークディレクトリ作成**（`.claude/.local/work/yyyyMMdd_nn_convert_from_pptx/{inputs,workspace}`）
-2. **venv 構築**（`workspace/.venv` 配下、`${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1`）
+2. **venv 構築**（`workspace/.venv` 配下、`${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh`。PowerShell フォールバック: `setup_venv.sh`）
 3. **Phase 1: 構造化 JSON 抽出**
-   ```powershell
-   & "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-     "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
-     "<入力 PPTX パス>" `
-     --structured-json "<セッション>/structured.json" `
-     --json-only `
+   ```bash
+   "$SESSION_DIR/workspace/.venv/Scripts/python.exe" \
+     "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" \
+     "<入力 PPTX パス>" \
+     --structured-json "<セッション>/structured.json" \
+     --json-only \
      [--include-notes] [--include-hidden]
-   ```
+   ``\
 4. **Phase 2: Claude による意味解釈**
    - Claude メインコンテキストが `structured.json` を Read で読み込み
    - スライドごとに以下を判断:
@@ -108,14 +108,14 @@ Python で全 shape の構造データを完全抽出して JSON に dump し、
    - 構造化された Markdown を出力ファイルに Write
 5. **画像ファイル**は Phase 1 で `<basename>_images/` に既に抽出済み（Markdown から相対参照可能）
 6. **Phase 3: カバレッジ検証**
-   ```powershell
-   & "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-     "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py" `
-     "<入力 PPTX パス>" `
-     "<生成 MD パス>" `
-     --report "<セッション>/coverage_report.json" `
+   ```bash
+   "$SESSION_DIR/workspace/.venv/Scripts/python.exe" \
+     "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py" \
+     "<入力 PPTX パス>" \
+     "<生成 MD パス>" \
+     --report "<セッション>/coverage_report.json" \
      --threshold 0.85
-   ```
+   ``\
    - Python が機械的にテキスト/テーブル/画像/コネクタのカバレッジを集計
    - PASSED の場合は完了、FAILED の場合は Claude が `missing_texts` / `suspicious_md_phrases` を文脈分類し MD を修正 → 再検証ループ
    - 詳細: [`references/validation.md`](references/validation.md)
@@ -127,9 +127,9 @@ Python で全 shape の構造データを完全抽出して JSON に dump し、
 
 LLM 呼び出しが行えない自動処理コンテキストでは、従来通り Python 単独で Markdown を直接生成する:
 
-```powershell
-& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
+```bash
+"$SESSION_DIR/workspace/.venv/Scripts/python.exe" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" \
   "<入力 PPTX>" "<出力 MD>" [--include-notes]
 ```
 
@@ -143,8 +143,9 @@ Phase 2 で Claude が JSON を解釈する際の規則は [`references/design.m
 
 - 変換スクリプト: `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py`
 - 検証スクリプト: `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py`
-- venv セットアップ: `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1`（PowerShell 推奨・Windows 11）/ `setup_venv.sh`（POSIX 互換）
-- venv 撤去: `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.ps1` / `teardown_venv.sh`
+- venv セットアップ: `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh`（Bash・通常運用）/ `setup_venv.sh`（PowerShell フォールバック）
+- venv 撤去: `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh` / `teardown_venv.sh`（PowerShell フォールバック）
+- 大規模 PPTX 等で Python ハング事象の懸念がある場合は、`run_via_job.sh`（Bash・通常運用）または `run_via_job.sh`（PowerShell フォールバック）ラッパー経由で起動できる。Bash ツール経由なら Start-Job 二段構成は不要
 
 ## オプション
 

@@ -1,0 +1,15 @@
+# detect_credentials_in_prompt: 認証情報なしの普通のプロンプト
+# 期待: 空 stdout + exit 0 (パターン非マッチで早期 return)
+ID="cm_detect_plain_prompt"
+SCRIPT_PS_REL="plugins/credentials-manager/references/scripts/hooks/detect_credentials_in_prompt.ps1"
+SCRIPT_BASH_REL="plugins/credentials-manager/references/scripts/hooks/detect_credentials_in_prompt.sh"
+ARGS=()
+STDIN_FILE="plugins/credentials-manager/tests/parity/fixtures/stdin/plain.json"
+ENV_VARS=()
+PRE_FS=""
+POST_FS_INCLUDE=()
+NORMALIZE=("crlf")
+COMPARE_STDOUT="true"
+COMPARE_STDERR="true"
+COMPARE_FS="false"
+COMPARE_EXIT="true"

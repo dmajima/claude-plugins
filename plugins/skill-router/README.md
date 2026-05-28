@@ -150,7 +150,7 @@ git checkout main
 /router-embedding-cache --show <qn>   # 指定スキルのキャッシュ詳細を表示
 ```
 
-`disabled` フラグファイルは以下の優先順位で `route_prompt.ps1` から参照されます（最初に見つかった時点でルーティングをスキップします）。
+`disabled` フラグファイルは以下の優先順位で `route_prompt.sh` から参照されます（最初に見つかった時点でルーティングをスキップします）。
 
 | 優先 | パス | スコープ |
 |-----|------|---------|
@@ -293,9 +293,17 @@ Windows では `<base>` が深いパスにあると、HuggingFace のモデル�
 
 `/router-embedding-cache --clear` は内部で POSIX `rm -f` 相当を呼びます。Windows 環境では同等の PowerShell コマンドを案内します。
 
+```bash
+Remove-Item -Force "$BASE\embeddings_cache\vectors.npz", "$BASE\embeddings_cache\manifest.json"
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 Remove-Item -Force "$BASE\embeddings_cache\vectors.npz", "$BASE\embeddings_cache\manifest.json"
 ```
+
+</details>
 
 ### トラブルシュート
 
@@ -390,8 +398,8 @@ plugins/skill-router/
 └── references/
     ├── scripts/
     │   ├── hooks/
-    │   │   ├── build_index_on_start.ps1
-    │   │   └── route_prompt.ps1
+    │   │   ├── build_index_on_start.sh
+    │   │   └── route_prompt.sh
     │   ├── lib/
     │   │   ├── build_index.py        # v0.4 で embedding 統合
     │   │   ├── route.py              # v0.4 で embedding 統合
@@ -421,6 +429,22 @@ plugins/skill-router/
     └── templates/
         └── config.default.json      # v0.4 から embedding セクション含む
 ```
+
+## PowerShell フォールバック
+
+通常運用は Bash 経路 (`.sh` フック / コマンド) を使用します。Git Bash 不調時等で
+Bash 経路が機能しない場合、PowerShell 経路に切り替えられます。
+
+```bash
+cp references/hooks-fallback/hooks.sh.json hooks/hooks.json
+# Claude Code を再起動
+```
+
+Bash 版 (`build_index_on_start.sh` / `route_prompt.sh` / `toggle.sh` /
+`resolve_base.sh` / `clear_embedding_cache.sh` / `setup_venv.sh` /
+`teardown_venv.sh`) と PowerShell 版 (`.ps1`) は同じ Python lifecycle と
+disabled フラグを共有するため、切替後も状態を引き継ぎます。動作等価性は
+`tests/parity/run_all.sh` で自動検証されています。
 
 ## ライセンス
 
