@@ -1,0 +1,14 @@
+# sync-mappings: -Action set with unsafe URL → エラー
+ID="mt_sync_mappings_set_unsafe_url"
+SCRIPT_PS_REL="plugins/maintenance/skills/sync-settings/references/scripts/sync/sync-mappings.ps1"
+SCRIPT_BASH_REL="plugins/maintenance/skills/sync-settings/references/scripts/sync/sync-mappings.sh"
+ARGS=("-Action" "set" "-Scope" "global" "-Repo" "file:///etc/passwd")
+STDIN_FILE=""
+ENV_VARS=("USERPROFILE=__SANDBOX__" "HOME=__SANDBOX__")
+PRE_FS=""
+POST_FS_INCLUDE=()
+NORMALIZE=("crlf" "abs_paths" "ps_error_decoration")
+COMPARE_STDOUT="true"
+COMPARE_STDERR="true"
+COMPARE_FS="false"
+COMPARE_EXIT="true"
