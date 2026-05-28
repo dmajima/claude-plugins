@@ -11,11 +11,11 @@ argument-hint: "[--scope ...] [--strategy ...] [--dry-run] [--yes]"
 
 ## 1. 非対話モード（`$ARGUMENTS` が非空 + `--scope` 明示）
 
-引数を解析し、`${CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync.ps1 -Mapping <scope>` を実行する。
+引数を解析し、`${CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync.sh -Mapping <scope>` を実行する。
 
 | 引数 | 動作 |
 |------|------|
-| `--scope <global\|project>` | 対象スコープ。`sync-mappings.json` から該当マッピングを取得して sync.ps1 に渡す |
+| `--scope <global\|project>` | 対象スコープ。`sync-mappings.json` から該当マッピングを取得して sync.sh に渡す |
 | `--strategy <overwrite\|merge\|skip\|interactive>` | 同期戦略（既定 overwrite）|
 | `--dry-run` | ドライラン（差分プレビューのみ・実適用なし） |
 | `--no-backup` | バックアップなし（既定はバックアップ取得） |
@@ -24,8 +24,18 @@ argument-hint: "[--scope ...] [--strategy ...] [--dry-run] [--yes]"
 
 実行例（overwrite / merge / skip 戦略の場合）:
 
-`$ARGUMENTS` の文字列を直接 sync.ps1 に展開するのは引数インジェクションの
+`$ARGUMENTS` の文字列を直接 sync.sh に展開するのは引数インジェクションの
 余地が残るため、**個別フラグを明示的にパースして名前付き引数で渡す**こと。
+
+```bash
+# --- 引数を個別に抽出（$ARGUMENTS 直展開は禁止） ---
+
+# interactive は別フローへ分岐（下記 Step 2-B 参照）
+    # interactive 戦略は Claude 主導のループ実装（下記参照）
+    bash "$CLAUDE_PLUGIN_ROOT/skills/sync-settings/references/scripts/sync/sync.sh" "${args[@]}"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
@@ -54,6 +64,8 @@ if ($params.Strategy -eq 'interactive') {
     pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync.ps1" @params
 }
 ```
+
+</details>
 
 `--strategy interactive` が指定された場合は、下記の interactive フローへ分岐する。
 
@@ -93,26 +105,42 @@ AskUserQuestion({
 
 ### Step 2: 戦略別フロー
 
-#### 2-A. strategy = overwrite / merge / skip（非対話 sync.ps1 連動）
+#### 2-A. strategy = overwrite / merge / skip（非対話 sync.sh 連動）
 
-選択値を引数として sync.ps1 を起動:
+選択値を引数として sync.sh を起動:
+
+```bash
+bash "...sync.sh" -Mapping <scope> -Strategy <strategy>
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 pwsh -NoProfile -File "...sync.ps1" -Mapping <scope> -Strategy <strategy>
 ```
 
+</details>
+
 #### 2-B. strategy = interactive（差分ごとの対話）
 
 interactive 戦略は **Claude 主導のループ実装**:
 
-##### Step 2-B-1: 差分一覧の取得（sync.ps1 経由）
+##### Step 2-B-1: 差分一覧の取得（sync.sh 経由）
+
+```bash
+bash "...sync.sh" -Mapping <scope> -EmitDiffJson "$tmpJson"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 $tmpJson = ".claude/.local/work/<session>/workspace/sync-diff.json"
 pwsh -NoProfile -File "...sync.ps1" -Mapping <scope> -EmitDiffJson "$tmpJson"
 ```
 
-`-EmitDiffJson` 指定時、sync.ps1 は差分検出後に JSON ファイルへ書き出して exit 0。実適用はしない。
+</details>
+
+`-EmitDiffJson` 指定時、sync.sh は差分検出後に JSON ファイルへ書き出して exit 0。実適用はしない。
 
 ##### Step 2-B-2: JSON 解析 + 件数による分岐
 
@@ -168,7 +196,7 @@ AskUserQuestion({
 | 上書き | `Copy-Item -LiteralPath $Remote -Destination $Local -Force`（親ディレクトリ自動作成）| `Remove-Item -LiteralPath $Local -Force` |
 | 保持 / スキップ | 何もしない | 何もしない |
 
-**バックアップ取得**: 適用前に Claude が `~/.claude/.local/plugins/maintenance/backup/<YYYYMMDD_HHmmss>/` に対象ファイルをコピー（既存 sync.ps1 のバックアップロジックと同等）。`--no-backup` 指定時はスキップ。
+**バックアップ取得**: 適用前に Claude が `~/.claude/.local/plugins/maintenance/backup/<YYYYMMDD_HHmmss>/` に対象ファイルをコピー（既存 sync.sh のバックアップロジックと同等）。`--no-backup` 指定時はスキップ。
 
 ##### Step 2-B-6: 完了報告
 
@@ -178,7 +206,7 @@ AskUserQuestion({
 
 | エラー | 対応 |
 |-------|------|
-| マッピング不在 | sync.ps1 がエラーで終了。「/sync-map-set で設定してください」と案内 |
+| マッピング不在 | sync.sh がエラーで終了。「/sync-map-set で設定してください」と案内 |
 | 差分件数 0 | 「同期不要」と報告して終了 |
 | Copy-Item 失敗（権限・ロック） | 当該ファイルをスキップして次へ。失敗一覧をサマリに含める |
 | AskUserQuestion 途中キャンセル | 残りの差分を保留として終了（既適用分は維持） |
@@ -189,4 +217,4 @@ AskUserQuestion({
 - マッピング一覧: `/sync-map-list`
 - マッピング削除: `/sync-map-delete`
 - スキル本体: `sync-settings`
-- push 同期: `/sync-push`（新ブランチ + PR 作成。sync-push.ps1）
+- push 同期: `/sync-push`（新ブランチ + PR 作成。sync-push.sh）

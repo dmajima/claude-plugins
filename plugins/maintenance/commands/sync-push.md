@@ -35,7 +35,7 @@ argument-hint: "[--scope ...] [--no-pr] [--dry-run] [--yes]"
 
 ## 1. 非対話モード（`$ARGUMENTS` が非空）
 
-引数を解析し、`${CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-push.ps1` を実行する。
+引数を解析し、`${CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-push.sh` を実行する。
 
 | 引数 | 動作 |
 |------|------|
@@ -51,8 +51,16 @@ argument-hint: "[--scope ...] [--no-pr] [--dry-run] [--yes]"
 
 実行例:
 
-`$ARGUMENTS` の文字列を直接 sync-push.ps1 に展開するのは引数インジェクションの
+`$ARGUMENTS` の文字列を直接 sync-push.sh に展開するのは引数インジェクションの
 余地が残るため、**個別フラグを明示的にパースして名前付き引数で渡す**こと。
+
+```bash
+# --- 引数を個別に抽出（$ARGUMENTS 直展開は禁止） ---
+
+bash "$CLAUDE_PLUGIN_ROOT/skills/sync-settings/references/scripts/sync/sync-push.sh" "${args[@]}"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
@@ -78,6 +86,8 @@ if (-not $params.ContainsKey('Mapping')) {
 
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-push.ps1" @params
 ```
+
+</details>
 
 ## 2. 対話モード（`$ARGUMENTS` が空）
 
@@ -111,7 +121,7 @@ AskUserQuestion({
 
 ### Step 2: dry-run プレビュー
 
-選択された scope で `sync-push.ps1 -Mapping <scope> -DryRun` を実行し、git status の差分をユーザに表示。
+選択された scope で `sync-push.sh -Mapping <scope> -DryRun` を実行し、git status の差分をユーザに表示。
 
 ### Step 3: AskUserQuestion 最終確認
 
@@ -135,8 +145,8 @@ AskUserQuestion({
 
 | 選択 | 実行コマンド |
 |------|------------|
-| push + PR 作成 | `sync-push.ps1 -Mapping <scope> -CommitMessage <msg> -Yes` |
-| push のみ（PR スキップ）| `sync-push.ps1 -Mapping <scope> -CommitMessage <msg> -NoPr -Yes` |
+| push + PR 作成 | `sync-push.sh -Mapping <scope> -CommitMessage <msg> -Yes` |
+| push のみ（PR スキップ）| `sync-push.sh -Mapping <scope> -CommitMessage <msg> -NoPr -Yes` |
 | 再確認 | dry-run プレビュー再実行 |
 | キャンセル | exit 0、ユーザに「中止しました」通知 |
 
@@ -154,7 +164,7 @@ AskUserQuestion({
 
 | エラー | 対応 |
 |-------|------|
-| マッピング不在 | sync-push.ps1 がエラー。「/sync-map-set で設定してください」と案内 |
+| マッピング不在 | sync-push.sh がエラー。「/sync-map-set で設定してください」と案内 |
 | 変更なし | 「変更なし。push をスキップ」exit 0 |
 | Git CLI 不在 | exit 1、インストール案内 |
 | 新ブランチ作成失敗 | exit 1、エラーメッセージ |

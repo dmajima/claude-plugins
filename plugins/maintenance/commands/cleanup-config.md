@@ -9,7 +9,7 @@ argument-hint: "[--show] [--set-... N|name] [--reset --yes]"
 
 ## 1. 非対話モード（`$ARGUMENTS` が非空）
 
-引数を解析し、`${CLAUDE_PLUGIN_ROOT}/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.ps1` を PowerShell ツールで実行する。
+引数を解析し、`${CLAUDE_PLUGIN_ROOT}/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.sh` を Bash ツールで実行する。
 
 | 引数 | 動作 |
 |------|------|
@@ -22,8 +22,14 @@ argument-hint: "[--show] [--set-... N|name] [--reset --yes]"
 
 実行例:
 
-`$ARGUMENTS` の文字列を直接 cleanup-config.ps1 に展開するのは引数インジェクションの
+`$ARGUMENTS` の文字列を直接 cleanup-config.sh に展開するのは引数インジェクションの
 余地が残るため、**個別フラグを明示的にパースして名前付き引数で渡す**こと。
+
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.sh" "${args[@]}"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
@@ -42,13 +48,15 @@ if ($argText -match '\B--yes\b')                               { $params.Yes    
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.ps1" @params
 ```
 
+</details>
+
 ## 2. 対話モード（`$ARGUMENTS` が空）
 
 **AskUserQuestion 1 回で 4 質問を同時発火** し、`default_days` → `default_keep_recent` → `default_scope` → `active_session_minutes` の順に一気に設定する。
 
 ### Step 1: 設定読み込み
 
-実行前に `cleanup-config.ps1 -Show`（または直接 `~/.claude/.local/plugins/maintenance/cleanup-config.json` を読み込み）で **現在値** を取得する。設定ファイル不在時は出荷時デフォルト（`default_days=30` / `default_keep_recent=0` / `default_scope=both` / `active_session_minutes=5`）を採用する。
+実行前に `cleanup-config.sh -Show`（または直接 `~/.claude/.local/plugins/maintenance/cleanup-config.json` を読み込み）で **現在値** を取得する。設定ファイル不在時は出荷時デフォルト（`default_days=30` / `default_keep_recent=0` / `default_scope=both` / `active_session_minutes=5`）を採用する。
 
 ### Step 2: AskUserQuestion 4 質問同時発火
 
@@ -155,7 +163,7 @@ options: [
 
 ### Step 3: スクリプト実行（変更があった項目のみ）
 
-4 つの選択結果と現在値を比較し、**変更があった項目のみ** を `cleanup-config.ps1` の引数として渡す。
+4 つの選択結果と現在値を比較し、**変更があった項目のみ** を `cleanup-config.sh` の引数として渡す。
 
 | 変更項目 | 渡す引数 |
 |---------|---------|
@@ -168,10 +176,18 @@ options: [
 
 実行例（複数項目を一度に更新）:
 
+```bash
+bash "$CLAUDE_PLUGIN_ROOT/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.sh" -SetDays 90 -SetKeepRecent 3 -SetScope global -SetActiveSessionMinutes 10
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 & chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.ps1" -SetDays 90 -SetKeepRecent 3 -SetScope global -SetActiveSessionMinutes 10
 ```
+
+</details>
 
 ### Step 4: 完了報告
 
@@ -189,5 +205,5 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/cleanup-workspace/refere
 ## 関連
 
 - 設定ファイル本体: `~/.claude/.local/plugins/maintenance/cleanup-config.json`
-- 利用元スキル: `cleanup-workspace`（`SKILL.md` / `references/scripts/cleanup/cleanup.ps1`）
+- 利用元スキル: `cleanup-workspace`（`SKILL.md` / `references/scripts/cleanup/cleanup.sh`）
 - atime 戦略: `cleanup-config.json` の `atime_strategy` フィールドで指定（既定: `progress_md`、フォールバック: 配下最大 mtime）
