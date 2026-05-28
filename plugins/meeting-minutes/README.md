@@ -130,6 +130,37 @@ https://dashboard.ailead.app/share/...
 | `requests` | ailead API アクセス |
 | `python-docx` | Word ファイル生成 |
 
+## PowerShell フォールバック
+
+通常運用は Bash 経路（`.sh` スクリプト）を使用します。Git Bash の初期化不調等で Bash 経路が機能しない場合、本プラグインの venv 構築/撤去・docx 生成ラッパーを PowerShell 経路に手動で切り替えられます。
+
+### 切り替え手順
+
+1. グローバル設定を切り替える: `~/.claude/rules/tools/powershell-fallback-mode.md` の手順に従う
+2. 起動コマンドを以下のように差し替える:
+
+```bash
+# 通常運用（Bash）
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" "$SessionDir/workspace"
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/output/run_docx_via_job.sh" \
+  -PythonExe "$VENV/Scripts/python.exe" \
+  -ScriptPath "${CLAUDE_PLUGIN_ROOT}/skills/minutes-docx/scripts/output/generate_docx.py" \
+  -InputJson "$SESSION_DIR/workspace/minutes.json" \
+  -OutputDocx "$SESSION_DIR/minutes.docx"
+```
+
+```powershell
+# PowerShell フォールバック
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" -WorkDir "$SessionDir/workspace"
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/output/run_docx_via_job.ps1" `
+  -PythonExe "$VENV\Scripts\python.exe" `
+  -ScriptPath "${env:CLAUDE_PLUGIN_ROOT}/skills/minutes-docx/scripts/output/generate_docx.py" `
+  -InputJson "$SESSION_DIR/workspace/minutes.json" `
+  -OutputDocx "$SESSION_DIR/minutes.docx"
+```
+
+Bash 版と PowerShell 版は `tests/parity/run_all.sh` で同じ入力に対して同じ観測結果を返すことが自動検証されています。
+
 ## ライセンス
 
 [MIT License](LICENSE) の下で配布されています。

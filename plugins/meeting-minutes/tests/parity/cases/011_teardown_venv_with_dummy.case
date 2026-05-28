@@ -1,0 +1,16 @@
+# teardown_venv が既存 venv ディレクトリを削除する挙動。
+# meeting-minutes 版の出力: "[teardown_venv] Removing venv: <path>" + "[teardown_venv] Done." / exit 0
+ID="mm_teardown_venv_with_dummy"
+SCRIPT_PS_REL="plugins/meeting-minutes/references/scripts/setup/teardown_venv.ps1"
+SCRIPT_BASH_REL="plugins/meeting-minutes/references/scripts/setup/teardown_venv.sh"
+ARGS_PS=("-WorkDir" "__SANDBOX__/workspace")
+ARGS_BASH=("__SANDBOX__/workspace")
+STDIN_FILE=""
+ENV_VARS=()
+PRE_FS="plugins/meeting-minutes/tests/parity/fixtures/with_dummy_venv"
+POST_FS_INCLUDE=("workspace")
+NORMALIZE=("crlf" "abs_paths")
+COMPARE_STDOUT="true"
+COMPARE_STDERR="true"
+COMPARE_FS="true"
+COMPARE_EXIT="true"
