@@ -124,6 +124,16 @@ Claude Code のカスタムコマンドは Bash ツール経由で実行され�
 
 集計は **`type=assistant` レコードのみ** を対象とする。
 
+## PowerShell フォールバック / 設計上の例外
+
+通常運用は Bash 経路 (`aggregate.sh`) を使用します。本体の `aggregate.ps1` は
+.NET StreamReader / ConvertFrom-Json / Set-Clipboard / 全角幅計算など
+PowerShell 専用機能を多用しており、Bash 純粋実装または Python 再実装は
+等価性検証コストが大きいため、`aggregate.sh` は pwsh -File 経由で本体を呼ぶ
+**薄ラッパー** として実装されています (動作差異ゼロ保証)。
+
+pwsh (PowerShell 7+) が PATH に必要です。
+
 ## ライセンス
 
 MIT License.
