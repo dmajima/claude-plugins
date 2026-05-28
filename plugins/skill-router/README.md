@@ -422,6 +422,22 @@ plugins/skill-router/
         └── config.default.json      # v0.4 から embedding セクション含む
 ```
 
+## PowerShell フォールバック
+
+通常運用は Bash 経路 (`.sh` フック / コマンド) を使用します。Git Bash 不調時等で
+Bash 経路が機能しない場合、PowerShell 経路に切り替えられます。
+
+```bash
+cp references/hooks-fallback/hooks.ps1.json hooks/hooks.json
+# Claude Code を再起動
+```
+
+Bash 版 (`build_index_on_start.sh` / `route_prompt.sh` / `toggle.sh` /
+`resolve_base.sh` / `clear_embedding_cache.sh` / `setup_venv.sh` /
+`teardown_venv.sh`) と PowerShell 版 (`.ps1`) は同じ Python lifecycle と
+disabled フラグを共有するため、切替後も状態を引き継ぎます。動作等価性は
+`tests/parity/run_all.sh` で自動検証されています。
+
 ## ライセンス
 
 [MIT License](LICENSE) の下で配布されています。
