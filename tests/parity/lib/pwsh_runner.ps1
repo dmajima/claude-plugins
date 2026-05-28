@@ -25,6 +25,12 @@ $OutputEncoding           = [System.Text.Encoding]::UTF8
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
 
+# PowerShell 7+ のデフォルトは ConciseView (色付き多行装飾) で、normalize.sh の
+# ps_error_decoration ルール (PowerShell 5.1 互換の NormalView 想定) では剥がせない。
+# NormalView に切り替え + ANSI カラー出力を無効化することで、parity 比較を成立させる。
+$ErrorView = 'NormalView'
+$PSStyle.OutputRendering = 'PlainText'
+
 if ($args.Count -lt 1) {
     [Console]::Error.WriteLine("[pwsh_runner] usage: pwsh_runner.ps1 <script> [args...]")
     exit 127

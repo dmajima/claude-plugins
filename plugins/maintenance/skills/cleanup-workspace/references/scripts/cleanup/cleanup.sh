@@ -62,11 +62,11 @@ if [[ -f "$CONFIG_FILE" ]]; then
   if command -v jq >/dev/null 2>&1; then
     loaded="$(jq -e . "$CONFIG_FILE" 2>/dev/null)" || loaded=""
     if [[ -z "$loaded" ]]; then
-      printf '警告: cleanup-config.json のパース失敗。デフォルト値を使用します。\n' >&2
+      printf 'cleanup-config.json のパース失敗。デフォルト値を使用します。\n' >&2
     else
       loaded_version="$(printf '%s' "$loaded" | jq -r '.version // empty')"
       if [[ -n "$loaded_version" && "$loaded_version" != "1" ]]; then
-        printf '警告: [schema] cleanup-config.json の version=%s は本スキーマ (version=1) と一致しません。出荷時デフォルトを採用します。\n' "$loaded_version" >&2
+        printf '[schema] cleanup-config.json の version=%s は本スキーマ（version=1）と一致しません。出荷時デフォルトを採用します。\n' "$loaded_version" >&2
       else
         v="$(printf '%s' "$loaded" | jq -r '.default_days // empty')"
         [[ -n "$v" && "$v" != "null" ]] && default_days="$v"
@@ -88,7 +88,7 @@ fi
 
 # --- 引数組み合わせ安全装置 ---
 if [[ "$dry_run" -eq 1 && "$yes" -eq 1 ]]; then
-  printf '警告: --DryRun と --Yes を同時指定: --DryRun を優先 (実削除は行いません)\n' >&2
+  printf -- '--DryRun と --Yes を同時指定: --DryRun を優先（実削除は行いません）\n' >&2
   yes=0
 fi
 
@@ -209,7 +209,7 @@ if [[ "$scope" == "project" || "$scope" == "both" ]]; then
 fi
 
 if [[ ${#root_paths[@]} -eq 0 ]]; then
-  printf '対象ルートが見つかりませんでした (スコープ: %s)。\n' "$scope"
+  printf '対象ルートが見つかりませんでした（スコープ: %s）。\n' "$scope"
   exit 0
 fi
 
@@ -367,14 +367,14 @@ fi
 # --- DryRun ---
 if [[ "$dry_run" -eq 1 ]]; then
   printf '\n'
-  printf '(dry-run) 実削除は行いません。\n'
+  printf '（dry-run）実削除は行いません。\n'
   exit 0
 fi
 
 # --- 確認後フラグ (-Yes) でない場合 ---
 if [[ "$yes" -ne 1 ]]; then
   printf '\n'
-  printf '実削除を行うには -Yes フラグを付けて再実行してください (AskUserQuestion 経由推奨)。\n'
+  printf '実削除を行うには -Yes フラグを付けて再実行してください（AskUserQuestion 経由推奨）。\n'
   exit 0
 fi
 

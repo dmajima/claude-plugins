@@ -246,7 +246,7 @@ update_mapping_last_sync_at() {
 
   local store
   if ! store="$(jq -e . "$mappings_file" 2>/dev/null)"; then
-    printf '[update-mapping] sync-mappings.json のパース失敗 (last_sync_at 更新をスキップ)\n' >&2
+    printf '[update-mapping] sync-mappings.json のパース失敗（last_sync_at 更新をスキップ）\n' >&2
     return 0
   fi
 

@@ -45,17 +45,17 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$action" ]]; then
-  printf 'エラー: -Action が必須です (get|set|delete|list|show)\n' >&2
+  printf -- '-Action が必須です（get|set|delete|list|show）\n' >&2
   exit 1
 fi
 case "$action" in
   get|set|delete|list|show) ;;
-  *) printf 'エラー: -Action が無効です: %s\n' "$action" >&2; exit 1 ;;
+  *) printf '-Action が無効です: %s\n' "$action" >&2; exit 1 ;;
 esac
 if [[ -n "$scope" ]]; then
   case "$scope" in
     global|project) ;;
-    *) printf 'エラー: -Scope が無効です: %s (global|project)\n' "$scope" >&2; exit 1 ;;
+    *) printf '-Scope が無効です: %s (global|project)\n' "$scope" >&2; exit 1 ;;
   esac
 fi
 
@@ -82,8 +82,8 @@ get_mappings_store() {
   fi
   local loaded
   if ! loaded="$(jq -e . "$CONFIG_FILE" 2>/dev/null)"; then
-    printf '警告: sync-mappings.json のパース失敗\n' >&2
-    printf '警告: 空のストアを返します。修正後に再保存してください。\n' >&2
+    printf 'sync-mappings.json のパース失敗\n' >&2
+    printf '空のストアを返します。修正後に再保存してください。\n' >&2
     printf '{"version":2,"global":null,"projects":{}}'
     return
   fi
@@ -100,11 +100,11 @@ get_mappings_store() {
 save_mappings_store() {
   local store="$1"
   if ! mkdir -p -- "$CONFIG_DIR" 2>/dev/null; then
-    printf 'エラー: sync-mappings.json の保存に失敗しました: ディレクトリ作成失敗\n' >&2
+    printf 'sync-mappings.json の保存に失敗しました: ディレクトリ作成失敗\n' >&2
     exit 1
   fi
   if ! printf '%s' "$store" | jq . > "$CONFIG_FILE" 2>/dev/null; then
-    printf 'エラー: sync-mappings.json の保存に失敗しました\n' >&2
+    printf 'sync-mappings.json の保存に失敗しました\n' >&2
     exit 1
   fi
 }
@@ -115,7 +115,7 @@ resolve_project_path() {
   if [[ -n "$path" ]]; then
     local abs
     abs="$(cd "$path" 2>/dev/null && pwd)" || {
-      printf 'エラー: ProjectPath が無効です (解決失敗): %s\n' "$path" >&2
+      printf 'ProjectPath が無効です（解決失敗）: %s\n' "$path" >&2
       exit 1
     }
     # Windows 形式 (バックスラッシュ) に変換 (PowerShell 版と等価)
@@ -268,7 +268,7 @@ case "$action" in
 
   get)
     if [[ -z "$scope" ]]; then
-      printf 'エラー: -Scope が必須です (global または project)。\n' >&2
+      printf -- '-Scope が必須です（global または project）。\n' >&2
       exit 1
     fi
     if [[ "$scope" == "global" ]]; then
@@ -294,20 +294,20 @@ case "$action" in
 
   set)
     if [[ -z "$scope" ]]; then
-      printf 'エラー: -Scope が必須です (global または project)。\n' >&2
+      printf -- '-Scope が必須です（global または project）。\n' >&2
       exit 1
     fi
     if [[ -z "$repo" ]]; then
-      printf 'エラー: -Repo が必須です (Git リモートリポジトリ URL)。\n' >&2
+      printf -- '-Repo が必須です（Git リモートリポジトリ URL）。\n' >&2
       exit 1
     fi
     if ! test_repo_url_safe "$repo"; then
       # repo に認証情報が埋まっている場合に備えてマスク
-      printf 'エラー: Repo URL の形式が無効です (https/http/git/ssh/git@host: のみ許可、'\''-'\'' 始まり / NUL バイト禁止): %s\n' "$(hide_secrets "$repo")" >&2
+      printf 'Repo URL の形式が無効です（https/http/git/ssh/git@host: のみ許可、'\''-'\'' 始まり / NUL バイト禁止）: %s\n' "$(hide_secrets "$repo")" >&2
       exit 1
     fi
     if ! test_branch_name_safe "$branch"; then
-      printf 'エラー: Branch 名に無効な文字が含まれています ('\''..'\'' / '\''/'\'' 始まり・終わり / '\''-'\'' 始まり禁止): %s\n' "$branch" >&2
+      printf 'Branch 名に無効な文字が含まれています（'\''..'\'' / '\''/'\'' 始まり・終わり / '\''-'\'' 始まり禁止）: %s\n' "$branch" >&2
       exit 1
     fi
 
@@ -323,7 +323,7 @@ case "$action" in
     while IFS= read -r t; do
       [[ -z "$t" ]] && continue
       if test_target_excluded "$t"; then
-        printf 'エラー: targets に除外対象が含まれています (パストラバーサル / 認証情報 / NUL バイト等): %s\n' "$t" >&2
+        printf 'targets に除外対象が含まれています（パストラバーサル / 認証情報 / NUL バイト等）: %s\n' "$t" >&2
         exit 1
       fi
     done < <(printf '%s' "$targets_json" | jq -r '.[]')
@@ -337,7 +337,7 @@ case "$action" in
     else
       proj_path="$(resolve_project_path "$project_path")"
       if ! test_non_auth_directory_path "$proj_path"; then
-        printf 'エラー: ProjectPath には認証ディレクトリ (~/.ssh / ~/.gnupg / ~/.aws / ~/.docker / ~/.kube / ~/.config/gh 等) 配下を指定できません: %s\n' "$proj_path" >&2
+        printf 'ProjectPath には認証ディレクトリ（~/.ssh / ~/.gnupg / ~/.aws / ~/.docker / ~/.kube / ~/.config/gh 等）配下を指定できません: %s\n' "$proj_path" >&2
         exit 1
       fi
       updated_store="$(printf '%s' "$store" | jq --arg k "$proj_path" --argjson m "$mapping_json" '.projects[$k] = $m')"
@@ -352,11 +352,11 @@ case "$action" in
 
   delete)
     if [[ -z "$scope" ]]; then
-      printf 'エラー: -Scope が必須です (global または project)。\n' >&2
+      printf -- '-Scope が必須です（global または project）。\n' >&2
       exit 1
     fi
     if [[ "$force" -ne 1 ]]; then
-      printf 'エラー: 削除は破壊的です。-Force フラグを併用してください (呼び出し側で AskUserQuestion 確認後に実行)。\n' >&2
+      printf '削除は破壊的です。-Force フラグを併用してください（呼び出し側で AskUserQuestion 確認後に実行）。\n' >&2
       exit 1
     fi
     if [[ "$scope" == "global" ]]; then

@@ -63,11 +63,11 @@ if [[ -z "$branch" ]]; then
 fi
 case "$strategy" in
   overwrite|merge|skip) ;;
-  *) printf 'エラー: -Strategy が無効です: %s (overwrite|merge|skip)\n' "$strategy" >&2; exit 1 ;;
+  *) printf '-Strategy が無効です: %s (overwrite|merge|skip)\n' "$strategy" >&2; exit 1 ;;
 esac
 case "$mapping_arg" in
   ''|global|project) ;;
-  *) printf 'エラー: -Mapping が無効です: %s (global|project)\n' "$mapping_arg" >&2; exit 1 ;;
+  *) printf '-Mapping が無効です: %s (global|project)\n' "$mapping_arg" >&2; exit 1 ;;
 esac
 
 # --- 定数 ---
@@ -95,11 +95,11 @@ MERGE_LOCAL_PRIORITY_KEYS=(
 # --- Mapping 解決 ---
 if [[ -n "$mapping_arg" ]]; then
   if [[ ! -f "$MAPPINGS_FILE" ]]; then
-    printf 'エラー: Mapping '\''%s'\'' を解決するには sync-mappings.json が必要です。/sync-map-set で設定してください。\n' "$mapping_arg" >&2
+    printf 'Mapping '\''%s'\'' を解決するには sync-mappings.json が必要です。/sync-map-set で設定してください。\n' "$mapping_arg" >&2
     exit 1
   fi
   if ! mappings_store="$(jq -e . "$MAPPINGS_FILE" 2>/dev/null)"; then
-    printf 'エラー: sync-mappings.json のパース失敗\n' >&2
+    printf 'sync-mappings.json のパース失敗\n' >&2
     exit 1
   fi
 
@@ -125,7 +125,7 @@ if [[ -n "$mapping_arg" ]]; then
   fi
 
   if [[ -z "$mapping_entry" ]]; then
-    printf 'エラー: Mapping '\''%s'\'' に対応するマッピングが sync-mappings.json に存在しません。/sync-map-set で設定してください。\n' "$mapping_arg" >&2
+    printf 'Mapping '\''%s'\'' に対応するマッピングが sync-mappings.json に存在しません。/sync-map-set で設定してください。\n' "$mapping_arg" >&2
     exit 1
   fi
 
@@ -149,18 +149,18 @@ if [[ -n "$mapping_arg" ]]; then
 
   # マッピング由来値の再検証
   if ! test_repo_url_safe "$repo"; then
-    printf 'エラー: マッピング由来の remote_repo が無効です (外部書き換え疑い): %s\n' "$(hide_secrets "$repo")" >&2
+    printf 'マッピング由来の remote_repo が無効です（外部書き換え疑い）: %s\n' "$(hide_secrets "$repo")" >&2
     exit 1
   fi
   if ! test_branch_name_safe "$branch"; then
-    printf 'エラー: マッピング由来の remote_branch が無効です (外部書き換え疑い): %s\n' "$branch" >&2
+    printf 'マッピング由来の remote_branch が無効です（外部書き換え疑い）: %s\n' "$branch" >&2
     exit 1
   fi
 fi
 
 # --- 引数組み合わせ安全装置 ---
 if [[ "$dry_run" -eq 1 && "$yes" -eq 1 ]]; then
-  printf '警告: --DryRun と --Yes を同時指定: --DryRun を優先 (実適用は行いません)\n' >&2
+  printf -- '--DryRun と --Yes を同時指定: --DryRun を優先（実適用は行いません）\n' >&2
   yes=0
 fi
 
@@ -173,7 +173,7 @@ done
 config_store=""
 if [[ -f "$CONFIG_FILE" ]]; then
   config_store="$(jq -e . "$CONFIG_FILE" 2>/dev/null)" || {
-    printf '警告: sync-config.json のパース失敗\n' >&2
+    printf 'sync-config.json のパース失敗\n' >&2
     config_store=""
   }
 fi
@@ -184,11 +184,11 @@ if [[ -z "$repo" ]]; then
     if [[ -n "$last_repo" ]]; then
       repo="$last_repo"
       printf 'Repo を設定ファイルから取得: %s\n' "$repo"
-      printf '警告: [deprecated] sync-config.json 由来の last_repo を使用しました。v0.3.0 で sync-config.json は削除されます。/sync-map-set でマッピングを設定し、/sync-pull --scope <global|project> を利用してください。\n' >&2
+      printf '[deprecated] sync-config.json 由来の last_repo を使用しました。v0.3.0 で sync-config.json は削除されます。/sync-map-set でマッピングを設定し、/sync-pull --scope <global|project> を利用してください。\n' >&2
     fi
   fi
   if [[ -z "$repo" ]]; then
-    printf 'エラー: Repo 引数が必要です (--Repo または sync-config.json または --Mapping <scope> + /sync-map-set 経由のマッピング)\n' >&2
+    printf 'Repo 引数が必要です（--Repo または sync-config.json または --Mapping <scope> + /sync-map-set 経由のマッピング）\n' >&2
     exit 1
   fi
 fi
@@ -208,24 +208,24 @@ fi
 # 同期対象の除外検証
 for t in "${targets[@]}"; do
   if test_target_excluded "$t"; then
-    printf 'エラー: 同期対象に除外パスが含まれています: %s\n' "$t" >&2
+    printf '同期対象に除外パスが含まれています: %s\n' "$t" >&2
     exit 1
   fi
 done
 
 # Repo URL バリデーション
 if ! test_repo_url_safe "$repo"; then
-  printf 'エラー: Repo URL の形式が無効です (https / http / git / ssh / git@host: のみ許可、'\''-'\'' 始まり / NUL バイト禁止): %s\n' "$(hide_secrets "$repo")" >&2
+  printf 'Repo URL の形式が無効です（https / http / git / ssh / git@host: のみ許可、'\''-'\'' 始まり / NUL バイト禁止）: %s\n' "$(hide_secrets "$repo")" >&2
   exit 1
 fi
 if ! test_branch_name_safe "$branch"; then
-  printf 'エラー: Branch 名に無効な文字が含まれています ('\''..'\'' 含む / '\''/'\'' 始まり・終わり / '\''-'\'' 始まりは禁止): %s\n' "$branch" >&2
+  printf 'Branch 名に無効な文字が含まれています（'\''..'\'' 含む / '\''/'\'' 始まり・終わり / '\''-'\'' 始まりは禁止）: %s\n' "$branch" >&2
   exit 1
 fi
 
 # Git CLI 確認
 if ! command -v git >/dev/null 2>&1; then
-  printf 'エラー: Git CLI が見つかりません。インストールしてください。\n' >&2
+  printf 'Git CLI が見つかりません。インストールしてください。\n' >&2
   exit 1
 fi
 
@@ -240,7 +240,7 @@ invoke_fresh_clone() {
     write_masked_output "$line"
   done < <(git "${GIT_SAFE_OPTS[@]}" clone --depth 1 --branch "$branch" -- "$repo" "$REPO_DIR" 2>&1)
   if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-    printf 'エラー: Git clone 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+    printf 'Git clone 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
     exit 1
   fi
 }
@@ -251,9 +251,9 @@ else
   # origin URL 確認
   current_origin="$(cd "$REPO_DIR" && git remote get-url origin 2>/dev/null || true)"
   if [[ -n "$current_origin" && "$current_origin" != "$repo" ]]; then
-    printf '警告: 既存 repo/ の origin が期待値と異なります (期待: %s / 実際: %s)。再 clone を実施します。\n' \
+    printf '既存 repo/ の origin が期待値と異なります（期待: %s / 実際: %s）。再 clone を実施します。\n' \
       "$(hide_secrets "$repo")" "$(hide_secrets "$current_origin")" >&2
-    rm -rf -- "$REPO_DIR" || { printf 'エラー: 既存 repo/ の削除失敗\n' >&2; exit 1; }
+    rm -rf -- "$REPO_DIR" || { printf '既存 repo/ の削除失敗\n' >&2; exit 1; }
     invoke_fresh_clone
   else
     pushd "$REPO_DIR" >/dev/null
@@ -261,7 +261,7 @@ else
       write_masked_output "$line"
     done < <(git "${GIT_SAFE_OPTS[@]}" fetch --depth 1 origin "$branch" 2>&1)
     if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-      printf 'エラー: Git fetch 失敗\n' >&2
+      printf 'Git fetch 失敗\n' >&2
       popd >/dev/null
       exit 1
     fi
@@ -269,7 +269,7 @@ else
       write_masked_output "$line"
     done < <(git "${GIT_SAFE_OPTS[@]}" reset --hard "origin/$branch" 2>&1)
     if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-      printf 'エラー: Git reset 失敗\n' >&2
+      printf 'Git reset 失敗\n' >&2
       popd >/dev/null
       exit 1
     fi
@@ -311,7 +311,7 @@ for t in "${targets[@]}"; do
     resolved_target_remotes+=("$remote")
     resolved_target_locals+=("$CLAUDE_HOME/$t")
   else
-    printf '警告: 同期対象 %s がリポジトリに見つかりません。スキップします。\n' "$t" >&2
+    printf '同期対象 %s がリポジトリに見つかりません。スキップします。\n' "$t" >&2
   fi
 done
 
@@ -341,11 +341,11 @@ for i in "${!resolved_target_names[@]}"; do
   if [[ -f "$remote" ]]; then
     # 単一ファイル
     if test_file_excluded "$name"; then
-      printf '警告: 除外対象のためスキップ: %s\n' "$name" >&2
+      printf '除外対象のためスキップ: %s\n' "$name" >&2
       continue
     fi
     if test_reparse_item "$remote"; then
-      printf '警告: 再解析ポイントのためスキップ: %s\n' "$name" >&2
+      printf '再解析ポイントのためスキップ: %s\n' "$name" >&2
       continue
     fi
     remote_h="$(get_file_hash "$remote" || true)"
@@ -408,7 +408,7 @@ printf '件数:     %s 件\n' "$total_count"
 printf '  [ADD] %s 件\n' "$add_count"
 printf '  [MOD] %s 件\n' "$mod_count"
 if [[ "$prune" -eq 1 && "$strategy" == "overwrite" ]]; then
-  printf '  [DEL] %s 件 (--prune)\n' "$del_count"
+  printf '  [DEL] %s 件（--prune）\n' "$del_count"
 fi
 
 if (( total_count > 0 )); then
@@ -432,20 +432,20 @@ if [[ -n "$emit_diff_json" ]]; then
     jq -s . "$diff_jsonl_file" > "$emit_diff_json"
   fi
   printf '\n'
-  printf '[emit-diff-json] 差分一覧を JSON 出力しました: %s (%s 件)\n' "$emit_diff_json" "$total_count"
+  printf '[emit-diff-json] 差分一覧を JSON 出力しました: %s（%s 件）\n' "$emit_diff_json" "$total_count"
   exit 0
 fi
 
 # --- DryRun ---
 if [[ "$dry_run" -eq 1 ]]; then
   printf '\n'
-  printf '(dry-run) 実適用は行いません。\n'
+  printf '（dry-run）実適用は行いません。\n'
   exit 0
 fi
 
 if [[ "$yes" -ne 1 ]]; then
   printf '\n'
-  printf '実適用するには -Yes フラグを付けて再実行してください (AskUserQuestion 経由推奨)。\n'
+  printf '実適用するには -Yes フラグを付けて再実行してください（AskUserQuestion 経由推奨）。\n'
   exit 0
 fi
 
@@ -480,7 +480,7 @@ if [[ "$no_backup" -ne 1 ]]; then
     backup_dir="$BACKUP_ROOT/${ts}_${suffix}"
     suffix=$(( suffix + 1 ))
     if (( suffix > 100 )); then
-      printf 'エラー: バックアップディレクトリの連番が 100 を超えました。古いバックアップを削除してください。\n' >&2
+      printf 'バックアップディレクトリの連番が 100 を超えました。古いバックアップを削除してください。\n' >&2
       exit 1
     fi
   done
@@ -495,11 +495,11 @@ if [[ "$no_backup" -ne 1 ]]; then
     [[ ! -e "$src" ]] && continue
     if [[ -f "$src" ]]; then
       if test_file_excluded "$t"; then
-        printf '警告: バックアップ除外 (target): %s\n' "$t" >&2
+        printf 'バックアップ除外（target）: %s\n' "$t" >&2
         continue
       fi
       if test_reparse_item "$src"; then
-        printf '警告: バックアップ除外 (reparse point): %s\n' "$t" >&2
+        printf 'バックアップ除外（reparse point）: %s\n' "$t" >&2
         continue
       fi
       dst="$backup_dir/$t"
@@ -522,7 +522,7 @@ if [[ "$no_backup" -ne 1 ]]; then
     fi
   done
 else
-  printf '警告: --NoBackup 指定: バックアップを取得しません。\n' >&2
+  printf -- '--NoBackup 指定: バックアップを取得しません。\n' >&2
 fi
 
 # --- settings.json 安全マージ ---
@@ -694,7 +694,7 @@ printf '戦略:        %s\n' "$strategy"
 if [[ -n "$backup_dir" ]]; then
   printf 'バックアップ: %s\n' "$backup_dir"
 else
-  printf 'バックアップ: なし (--NoBackup)\n'
+  printf 'バックアップ: なし（--NoBackup）\n'
 fi
 printf '適用件数:    %s 件\n' "$applied"
 printf '失敗:        %s 件\n' "${#failed[@]}"

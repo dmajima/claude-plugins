@@ -44,12 +44,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$mapping_arg" ]]; then
-  printf 'エラー: -Mapping が必須です (global または project)。\n' >&2
+  printf -- '-Mapping が必須です（global または project）。\n' >&2
   exit 1
 fi
 case "$mapping_arg" in
   global|project) ;;
-  *) printf 'エラー: -Mapping が無効です: %s\n' "$mapping_arg" >&2; exit 1 ;;
+  *) printf '-Mapping が無効です: %s\n' "$mapping_arg" >&2; exit 1 ;;
 esac
 
 # --- 定数 ---
@@ -64,44 +64,44 @@ CLAUDE_HOME="$home_dir/.claude"
 
 # --- BranchPrefix / PrTitle / PrBody / CommitMessage のバリデーション ---
 if ! test_branch_prefix_safe "$branch_prefix"; then
-  printf 'エラー: BranchPrefix に無効な文字が含まれています (許容: 英数字 / . / _ / -、'\''-'\'' 始まり禁止): %s\n' "$branch_prefix" >&2
+  printf 'BranchPrefix に無効な文字が含まれています（許容: 英数字 / . / _ / -、'\''-'\'' 始まり禁止）: %s\n' "$branch_prefix" >&2
   exit 1
 fi
 # 制御文字 (CR / LF / 等) を含む PrTitle を拒否
 if [[ -n "$pr_title" ]] && [[ "$pr_title" =~ [[:cntrl:]] ]]; then
-  printf 'エラー: PrTitle に制御文字が含まれています\n' >&2
+  printf 'PrTitle に制御文字が含まれています\n' >&2
   exit 1
 fi
 # PrBody は改行を許容するが NUL バイトと CR は禁止
 if [[ -n "$pr_body" ]]; then
   if [[ "${pr_body//$'\0'/}" != "$pr_body" ]] || [[ "$pr_body" == *$'\r'* ]]; then
-    printf 'エラー: PrBody に NUL バイトまたは CR が含まれています\n' >&2
+    printf 'PrBody に NUL バイトまたは CR が含まれています\n' >&2
     exit 1
   fi
 fi
 # CommitMessage: NUL バイト禁止
 if [[ -n "$commit_message" ]] && [[ "${commit_message//$'\0'/}" != "$commit_message" ]]; then
-  printf 'エラー: CommitMessage に NUL バイトが含まれています\n' >&2
+  printf 'CommitMessage に NUL バイトが含まれています\n' >&2
   exit 1
 fi
 # 長さ上限
 if [[ -n "$pr_title" && ${#pr_title} -gt 256 ]]; then
-  printf 'エラー: PrTitle が長すぎます (256 文字上限)\n' >&2; exit 1
+  printf 'PrTitle が長すぎます（256 文字上限）\n' >&2; exit 1
 fi
 if [[ -n "$pr_body" && ${#pr_body} -gt 65535 ]]; then
-  printf 'エラー: PrBody が長すぎます (65535 文字上限)\n' >&2; exit 1
+  printf 'PrBody が長すぎます（65535 文字上限）\n' >&2; exit 1
 fi
 if [[ -n "$commit_message" && ${#commit_message} -gt 8192 ]]; then
-  printf 'エラー: CommitMessage が長すぎます (8192 文字上限)\n' >&2; exit 1
+  printf 'CommitMessage が長すぎます（8192 文字上限）\n' >&2; exit 1
 fi
 
 # --- マッピング解決 ---
 if [[ ! -f "$MAPPINGS_FILE" ]]; then
-  printf 'エラー: sync-mappings.json が見つかりません。/sync-map-set でマッピングを設定してください。\n' >&2
+  printf 'sync-mappings.json が見つかりません。/sync-map-set でマッピングを設定してください。\n' >&2
   exit 1
 fi
 if ! mappings_store="$(jq -e . "$MAPPINGS_FILE" 2>/dev/null)"; then
-  printf 'エラー: sync-mappings.json のパース失敗\n' >&2
+  printf 'sync-mappings.json のパース失敗\n' >&2
   exit 1
 fi
 
@@ -133,7 +133,7 @@ else
 fi
 
 if [[ -z "$mapping_entry" ]]; then
-  printf 'エラー: Mapping '\''%s'\'' に対応するマッピングが sync-mappings.json に存在しません。/sync-map-set で設定してください。\n' "$mapping_arg" >&2
+  printf 'Mapping '\''%s'\'' に対応するマッピングが sync-mappings.json に存在しません。/sync-map-set で設定してください。\n' "$mapping_arg" >&2
   exit 1
 fi
 
@@ -147,16 +147,16 @@ done < <(printf '%s' "$mapping_entry" | jq -r '.targets[]?')
 
 # マッピング由来値の再検証
 if ! test_repo_url_safe "$repo"; then
-  printf 'エラー: マッピング由来の remote_repo が無効です (外部書き換え疑い): %s\n' "$(hide_secrets "$repo")" >&2
+  printf 'マッピング由来の remote_repo が無効です（外部書き換え疑い）: %s\n' "$(hide_secrets "$repo")" >&2
   exit 1
 fi
 if ! test_branch_name_safe "$branch"; then
-  printf 'エラー: マッピング由来の remote_branch が無効です (外部書き換え疑い): %s\n' "$branch" >&2
+  printf 'マッピング由来の remote_branch が無効です（外部書き換え疑い）: %s\n' "$branch" >&2
   exit 1
 fi
 for t in "${targets[@]}"; do
   if test_target_excluded "$t"; then
-    printf 'エラー: マッピング由来の target に除外対象が含まれています (外部書き換え疑い): %s\n' "$t" >&2
+    printf 'マッピング由来の target に除外対象が含まれています（外部書き換え疑い）: %s\n' "$t" >&2
     exit 1
   fi
 done
@@ -166,7 +166,7 @@ printf '[local-base] %s\n' "$local_base"
 
 # --- Git CLI 確認 ---
 if ! command -v git >/dev/null 2>&1; then
-  printf 'エラー: Git CLI が見つかりません。インストールしてください。\n' >&2
+  printf 'Git CLI が見つかりません。インストールしてください。\n' >&2
   exit 1
 fi
 
@@ -179,7 +179,7 @@ invoke_fresh_push_clone() {
     write_masked_output "$line"
   done < <(git "${GIT_SAFE_OPTS[@]}" clone --depth 1 --branch "$branch" -- "$repo" "$REPO_DIR" 2>&1)
   if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-    printf 'エラー: Git clone 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+    printf 'Git clone 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
     exit 1
   fi
 }
@@ -189,28 +189,28 @@ if [[ ! -d "$REPO_DIR" ]]; then
 else
   current_origin="$(cd "$REPO_DIR" && git remote get-url origin 2>/dev/null || true)"
   if [[ -n "$current_origin" && "$current_origin" != "$repo" ]]; then
-    printf '警告: 既存 repo-push/ の origin が期待値と異なります (期待: %s / 実際: %s)。再 clone を実施します。\n' \
+    printf '既存 repo-push/ の origin が期待値と異なります（期待: %s / 実際: %s）。再 clone を実施します。\n' \
       "$(hide_secrets "$repo")" "$(hide_secrets "$current_origin")" >&2
-    rm -rf -- "$REPO_DIR" || { printf 'エラー: 既存 repo-push/ の削除失敗\n' >&2; exit 1; }
+    rm -rf -- "$REPO_DIR" || { printf '既存 repo-push/ の削除失敗\n' >&2; exit 1; }
     invoke_fresh_push_clone
   else
     pushd "$REPO_DIR" >/dev/null
     while IFS= read -r line; do write_masked_output "$line"; done \
       < <(git "${GIT_SAFE_OPTS[@]}" fetch --depth 1 origin "$branch" 2>&1)
     if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-      printf 'エラー: Git fetch 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+      printf 'Git fetch 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
       popd >/dev/null; exit 1
     fi
     while IFS= read -r line; do write_masked_output "$line"; done \
       < <(git "${GIT_SAFE_OPTS[@]}" checkout "$branch" 2>&1)
     if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-      printf 'エラー: Git checkout 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+      printf 'Git checkout 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
       popd >/dev/null; exit 1
     fi
     while IFS= read -r line; do write_masked_output "$line"; done \
       < <(git "${GIT_SAFE_OPTS[@]}" reset --hard "origin/$branch" 2>&1)
     if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-      printf 'エラー: Git reset 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+      printf 'Git reset 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
       popd >/dev/null; exit 1
     fi
     git "${GIT_SAFE_OPTS[@]}" clean -fdx >/dev/null 2>&1 || true
@@ -226,17 +226,17 @@ skipped_excluded_count=0
 
 for t in "${targets[@]}"; do
   if test_target_excluded "$t"; then
-    printf '警告: 除外対象のためスキップ (target): %s\n' "$t" >&2
+    printf '除外対象のためスキップ（target）: %s\n' "$t" >&2
     skipped_excluded_count=$(( skipped_excluded_count + 1 ))
     continue
   fi
   local_target="$local_base/$t"
   if [[ ! -e "$local_target" ]]; then
-    printf '警告: ローカル側に存在しないためスキップ: %s\n' "$local_target" >&2
+    printf 'ローカル側に存在しないためスキップ: %s\n' "$local_target" >&2
     continue
   fi
   if test_reparse_item "$local_target"; then
-    printf '警告: 再解析ポイントのためスキップ (target): %s\n' "$t" >&2
+    printf '再解析ポイントのためスキップ（target）: %s\n' "$t" >&2
     skipped_excluded_count=$(( skipped_excluded_count + 1 ))
     continue
   fi
@@ -276,11 +276,11 @@ pushd "$REPO_DIR" >/dev/null
 status_output="$(git status --short 2>&1)"
 status_rc=$?
 if [[ "$status_rc" -ne 0 ]]; then
-  printf 'エラー: git status 失敗: exit %s\n' "$status_rc" >&2
+  printf 'git status 失敗: exit %s\n' "$status_rc" >&2
   popd >/dev/null; exit 1
 fi
 if [[ -z "$status_output" ]]; then
-  printf '(変更なし。push をスキップして終了)\n'
+  printf '（変更なし。push をスキップして終了）\n'
   popd >/dev/null; exit 0
 fi
 printf '%s\n' "$status_output"
@@ -288,14 +288,14 @@ printf '%s\n' "$status_output"
 # --- DryRun ---
 if [[ "$dry_run" -eq 1 ]]; then
   printf '\n'
-  printf '(dry-run) git add / commit / push は行いません。\n'
+  printf '（dry-run）git add / commit / push は行いません。\n'
   popd >/dev/null; exit 0
 fi
 
 # --- Yes フラグなしでは push しない ---
 if [[ "$yes" -ne 1 ]]; then
   printf '\n'
-  printf '実 push するには -Yes フラグを付けて再実行してください (AskUserQuestion 経由推奨)。\n'
+  printf '実 push するには -Yes フラグを付けて再実行してください（AskUserQuestion 経由推奨）。\n'
   popd >/dev/null; exit 0
 fi
 
@@ -310,7 +310,7 @@ printf '新ブランチ: %s\n' "$new_branch"
 while IFS= read -r line; do write_masked_output "$line"; done \
   < <(git "${GIT_SAFE_OPTS[@]}" checkout -b "$new_branch" 2>&1)
 if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-  printf 'エラー: 新ブランチ作成失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+  printf '新ブランチ作成失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
   popd >/dev/null; exit 1
 fi
 
@@ -323,7 +323,7 @@ fi
 while IFS= read -r line; do write_masked_output "$line"; done \
   < <(git "${GIT_SAFE_OPTS[@]}" add -A 2>&1)
 if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-  printf 'エラー: git add 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+  printf 'git add 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
   git "${GIT_SAFE_OPTS[@]}" checkout "$branch" >/dev/null 2>&1 || true
   git "${GIT_SAFE_OPTS[@]}" branch -D "$new_branch" >/dev/null 2>&1 || true
   popd >/dev/null; exit 1
@@ -332,7 +332,7 @@ fi
 while IFS= read -r line; do write_masked_output "$line"; done \
   < <(git "${GIT_SAFE_OPTS[@]}" commit -m "$msg" 2>&1)
 if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-  printf 'エラー: git commit 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+  printf 'git commit 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
   git "${GIT_SAFE_OPTS[@]}" checkout "$branch" >/dev/null 2>&1 || true
   git "${GIT_SAFE_OPTS[@]}" branch -D "$new_branch" >/dev/null 2>&1 || true
   popd >/dev/null; exit 1
@@ -341,7 +341,7 @@ fi
 while IFS= read -r line; do write_masked_output "$line"; done \
   < <(git "${GIT_SAFE_OPTS[@]}" push -u origin "$new_branch" 2>&1)
 if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-  printf 'エラー: git push 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+  printf 'git push 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
   git "${GIT_SAFE_OPTS[@]}" checkout "$branch" >/dev/null 2>&1 || true
   popd >/dev/null; exit 1
 fi
@@ -352,7 +352,7 @@ printf '===== 規定ブランチに復帰 =====\n'
 while IFS= read -r line; do write_masked_output "$line"; done \
   < <(git "${GIT_SAFE_OPTS[@]}" checkout "$branch" 2>&1)
 if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-  printf '警告: 規定ブランチへの復帰失敗。手動で '\''git checkout %s'\'' を実行してください。\n' "$branch" >&2
+  printf '規定ブランチへの復帰失敗。手動で '\''git checkout %s'\'' を実行してください。\n' "$branch" >&2
 fi
 
 # --- PR 作成 (gh CLI 経由) ---
@@ -365,7 +365,7 @@ else
   printf '\n'
   printf '===== PR 作成 =====\n'
   if ! command -v gh >/dev/null 2>&1; then
-    printf '警告: gh CLI が見つかりません。PR は作成されません。\n' >&2
+    printf 'gh CLI が見つかりません。PR は作成されません。\n' >&2
     printf '手動で以下の PR を作成してください:\n'
     printf '  base:  %s\n' "$branch"
     printf '  head:  %s\n' "$new_branch"
@@ -401,7 +401,7 @@ else
       pr_url="$(tail -n 1 "$gh_out_file" | tr -d '\r\n')"
       printf 'PR 作成成功: %s\n' "$pr_url"
     else
-      printf '警告: PR 作成失敗 (gh CLI authentication / repo 権限を確認してください)。\n' >&2
+      printf 'PR 作成失敗（gh CLI authentication / repo 権限を確認してください）。\n' >&2
       printf '手動で以下の PR を作成してください:\n'
       printf '  base:  %s\n' "$branch"
       printf '  head:  %s\n' "$new_branch"
@@ -423,7 +423,7 @@ printf 'Commit:      %s\n' "$msg"
 if [[ "$pr_created" -eq 1 ]]; then
   printf 'PR:          %s\n' "$pr_url"
 elif [[ "$no_pr" -ne 1 ]]; then
-  printf 'PR:          (未作成・手動対応が必要)\n'
+  printf 'PR:（未作成・手動対応が必要）\n'
 fi
 popd >/dev/null
 

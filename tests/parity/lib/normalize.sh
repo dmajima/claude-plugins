@@ -101,6 +101,13 @@ parity_norm_git_sha() {
   sed -E 's/\b[0-9a-f]{40}\b/<SHA>/g; s/\bcommit [0-9a-f]{7,12}\b/commit <SHA>/g'
 }
 
+parity_norm_ansi_escape() {
+  # ANSI エスケープシーケンス (CSI: \e[ ... [a-zA-Z]) を除去。
+  # PowerShell 7 はデフォルトで stderr にカラーコード付き出力を行うため、
+  # ps_error_decoration の前段で剥がして装飾解析を成立させる必要がある。
+  sed -E 's/\x1b\[[0-9;]*[a-zA-Z]//g'
+}
+
 parity_norm_ps_error_decoration() {
   # PowerShell の Write-Error / Write-Warning / Write-Verbose 装飾を除去し、
   # メッセージ本体のみ残す。Bash 側の素の echo "..." >&2 と比較可能にする。

@@ -1,0 +1,19 @@
+# sync-push: 引数なし → -Mapping が必須エラー
+# 備考: PowerShell 側は [Parameter(Mandatory)] により独自の
+# 「Cannot process command because of one or more missing mandatory parameters: Mapping」
+# 形式のエラーを返すため、Bash 側の自前エラーメッセージとは形式が異なる。
+# SKIP_PS により PowerShell 比較を省略し、Bash 側のみ検証する。
+ID="mt_sync_push_no_mapping"
+SCRIPT_PS_REL="plugins/maintenance/skills/sync-settings/references/scripts/sync/sync-push.ps1"
+SCRIPT_BASH_REL="plugins/maintenance/skills/sync-settings/references/scripts/sync/sync-push.sh"
+ARGS=()
+STDIN_FILE=""
+ENV_VARS=("USERPROFILE=__SANDBOX__" "HOME=__SANDBOX__")
+PRE_FS=""
+POST_FS_INCLUDE=()
+NORMALIZE=("crlf" "abs_paths" "ps_error_decoration")
+COMPARE_STDOUT="true"
+COMPARE_STDERR="true"
+COMPARE_FS="false"
+COMPARE_EXIT="true"
+SKIP_PS="ps_mandatory_parameter_error_format"
