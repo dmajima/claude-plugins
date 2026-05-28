@@ -1,0 +1,11 @@
+# check_version_bump_on_commit: git commit を含まない Bash → 無音 exit 0
+ID="et_check_version_bump_non_git"
+SCRIPT_PS_REL="plugins/extension-toolkit/references/scripts/hooks/check_version_bump_on_commit.ps1"
+SCRIPT_BASH_REL="plugins/extension-toolkit/references/scripts/hooks/check_version_bump_on_commit.sh"
+ARGS=()
+STDIN_FILE="plugins/extension-toolkit/tests/parity/fixtures/stdin/commit_check_non_git.json"
+NORMALIZE=("crlf")
+COMPARE_STDOUT="true"
+COMPARE_STDERR="true"
+COMPARE_FS="false"
+COMPARE_EXIT="true"

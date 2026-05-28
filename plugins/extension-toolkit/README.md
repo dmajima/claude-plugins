@@ -352,6 +352,19 @@ plugins/extension-toolkit/
 
 詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) を参照（全 ADR）。
 
+## PowerShell フォールバック
+
+通常運用は Bash 経路 (`.sh` フック / スクリプト) を使用します。Git Bash 不調時等で Bash 経路が機能しない場合、PowerShell 経路に切り替えられます。
+
+```bash
+cp references/hooks-fallback/hooks.ps1.json hooks/hooks.json
+# Claude Code を再起動
+```
+
+PSScriptAnalyzer (`run_psscriptanalyzer.sh`) と PSModule セットアップ (`setup_psmodule.sh`) は本質的に PowerShell 専用機能のため、Bash 側は pwsh を呼ぶ薄ラッパーとして実装されています。`pwsh` (PowerShell 7+) が PATH に必要です。
+
+Bash 版と PowerShell 版の動作等価性は `tests/parity/run_all.sh` で自動検証されています。詳細は `references/hooks-fallback/README.md` を参照。
+
 ## ライセンス
 
 [MIT License](LICENSE) の下で配布されています。
