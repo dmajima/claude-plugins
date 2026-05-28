@@ -220,6 +220,29 @@ maintenance/
 - ローカルデータ領域: `~/.claude/rules/claude/local-data-directory.md`（`.claude/.local/` 全般）
 - 自動更新ポリシー: `~/.claude/rules/claude/plugin-auto-update.md`（`autoUpdate: true` 必須・週 1 回更新チェック）
 
+## PowerShell フォールバック / 設計上の例外
+
+通常運用は Bash 経路 (`.sh` ラッパー) を使用します。`cleanup.sh` / `cleanup-config.sh` /
+`sync.sh` / `sync-common.sh` / `sync-mappings.sh` / `sync-push.sh` はすべて pwsh -File
+で PowerShell 本体 (`.ps1`) を呼ぶ薄ラッパー実装です。
+
+### 設計上の例外規定
+
+本プラグインのスクリプトは合計約 2,400 行の PowerShell 固有処理 (Resolve-Path /
+Get-Acl / Get-Item LinkType / JSON 深マージ / Git 操作 / .NET API) を多用しており、
+Bash 純粋実装は等価性検証コストが極めて大きいため、**Bash ツールから呼べる
+薄ラッパー方式** を採用しています。
+
+これは PSScriptAnalyzer / setup_psmodule と同じ「PowerShell 専用機能扱い」の例外規定で、
+動作差異ゼロを完全保証 (PowerShell スクリプトを変更せず、Bash ラッパーから
+そのまま起動するため)。
+
+### pwsh が利用できない環境
+
+Bash ラッパーは pwsh (PowerShell 7+) が PATH にあることを前提とします。
+存在しない場合は exit 127 でエラー終了します。pwsh のインストール手順は
+`~/.claude/rules/tools/powershell-fallback-mode.md` を参照。
+
 ## ライセンス
 
 [MIT License](LICENSE) の下で配布されています。
