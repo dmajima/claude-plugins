@@ -1,7 +1,7 @@
 ---
 description: カレントセッションのトークン消費量を Claude UI に表示し、対話メニューでクリップボードコピー・再集計・終了を選択できる
 argument-hint: "[session-uuid]"
-allowed-tools: Bash(pwsh:*)
+allowed-tools: Bash(bash:*)
 ---
 
 # /session-usage — セッション使用量

@@ -14,10 +14,14 @@ key = re.search(r'/share/([^/?#]+)', url).group(1)
 
 ## 2. HTML から buildId を取得
 
+<details><summary>PowerShell フォールバック (Bash 等価は未整備)</summary>
+
 ```powershell
 $resp = Invoke-WebRequest -Uri "https://dashboard.ailead.app/share/$key" -UseBasicParsing
 $buildId = [regex]::Match($resp.Content, '"buildId":"([^"]+)"').Groups[1].Value
 ```
+
+</details>
 
 buildId は Next.js のデプロイごとに変わるため、毎回 HTML から動的に取得する。
 
@@ -26,6 +30,12 @@ buildId は Next.js のデプロイごとに変わるため、毎回 HTML から
 通常は `api-spec.md` セクション 7 に記載の既知ハッシュを使用する。
 取得失敗（`CLIENT_CODE_OUT_OF_DATE` エラー）時のみ以下で再抽出する。
 
+```bash
+# HTML から share ページの JS チャンク URL を抽出
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 # HTML から share ページの JS チャンク URL を抽出
 $jsUrl = [regex]::Match($resp.Content, '/_next/static/chunks/pages/share/%5Bkey%5D-[^"]+\.js').Value
@@ -33,9 +43,22 @@ $jsResp = Invoke-WebRequest -Uri "https://dashboard.ailead.app$jsUrl" -UseBasicP
 $hash = [regex]::Match($jsResp.Content, 'externalShare/dataflow/query.*?hash:"([0-9a-f]{64})"').Groups[1].Value
 ```
 
+</details>
+
 ## 4. GraphQL API を呼び出す
 
 ### 4.1 Python スクリプト経由（推奨）
+
+```bash
+& chcp.com 65001 | Out-Null
+[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+& $venvPy "$CLAUDE_SKILL_DIR\scripts\fetch\fetch_share.py" \
+  --url "https://dashboard.ailead.app/share/<key>" \
+  --output "$SESSION_DIR\workspace"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 & chcp.com 65001 | Out-Null
@@ -48,6 +71,8 @@ $venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
   --output "$SESSION_DIR\workspace"
 ```
 
+</details>
+
 スクリプトは以下を自動実行する:
 - share key の抽出
 - buildId の取得
@@ -56,6 +81,19 @@ $venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
 - 結果の JSON 保存 + 文字起こしテキスト出力
 
 ### 4.2 PowerShell 直接実行
+
+```bash
+operationName = 'externalShare'
+    variables = @{ key = $shareKey }
+    extensions = @{
+        operationHash = $hash
+        buildId = $buildId
+
+    -Method Post -Body $jsonBody \
+    -ContentType 'application/json; charset=utf-8' -UseBasicParsing
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 $body = @{
@@ -72,6 +110,8 @@ $resp = Invoke-WebRequest -Uri 'https://dashboard.ailead.app/api/v2/graphql' `
     -Method Post -Body $jsonBody `
     -ContentType 'application/json; charset=utf-8' -UseBasicParsing
 ```
+
+</details>
 
 ## 5. レスポンスの処理
 
@@ -105,6 +145,16 @@ def format_time(seconds):
 
 ffmpeg がインストール済みの場合、HLS URL からダウンロード可能。
 
+```bash
+# MP4 (映像+音声)
+ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=$shareKey" -c copy output.mp4
+
+# 音声のみ
+ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=$shareKey" -vn -acodec copy output.aac
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 # MP4 (映像+音声)
 ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=$shareKey" -c copy output.mp4
@@ -112,6 +162,8 @@ ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=$shareKey" -
 # 音声のみ
 ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=$shareKey" -vn -acodec copy output.aac
 ```
+
+</details>
 
 ## 7. エラーハンドリング
 

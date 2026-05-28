@@ -273,7 +273,7 @@ plugins/{plugin-name}/references/scripts/
 |-------|------|
 | venv 実体の作成先 | `<work_dir>/.venv`（セッション作業領域内） |
 | venv ライフサイクルスクリプト | プラグイン直下 `references/scripts/setup/` |
-| 各スキルの呼び出し方 | `bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$WorkDir" -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"` (PowerShell フォールバック: `pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" ...`) |
+| 各スキルの呼び出し方 | `bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$WorkDir" -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"` (PowerShell フォールバック: `pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" ...`) |
 | `environment-setup-toolkit` の役割 | プラグイン直下スクリプト呼び出しのオーケストレーション（自前で setup を持たない、ADR-024） |
 
 詳細は [`scripts-policy.md`](scripts-policy.md) 節 5 を参照。

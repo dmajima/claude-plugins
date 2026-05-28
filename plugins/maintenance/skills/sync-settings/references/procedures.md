@@ -64,6 +64,17 @@
 
 ### 2.2 取得コマンド
 
+```bash
+git clone --depth 1 --branch $Branch $Repo $repoDir
+    Push-Location $repoDir
+    git fetch --depth 1 origin $Branch
+    git reset --hard "origin/$Branch"
+    git clean -fdx
+    Pop-Location
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 $repoDir = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance\repo'
 
@@ -77,6 +88,8 @@ if (-not (Test-Path $repoDir)) {
     Pop-Location
 }
 ```
+
+</details>
 
 ### 2.3 同期対象の検出
 
@@ -119,6 +132,14 @@ if (-not (Test-Path $repoDir)) {
 
 ### 3.3 取得コマンド
 
+```bash
+New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+
+        Copy-Item -Recurse -Force -LiteralPath $src -Destination $dst
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 $backupRoot = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance\backup'
 $ts = Get-Date -Format 'yyyyMMdd_HHmmss'
@@ -133,6 +154,8 @@ foreach ($target in $targets) {
     }
 }
 ```
+
+</details>
 
 ### 3.4 認証情報の除外
 

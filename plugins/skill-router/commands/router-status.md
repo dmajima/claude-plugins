@@ -65,7 +65,7 @@ argument-hint: "[--clean]"
    ```bash
    BASE="$(bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.sh")"
    ```
-   PowerShell フォールバック: `pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.sh"`
+   PowerShell フォールバック: `pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.ps1"`
 2. 上記 `$BASE` を使って `index.json` / `inverted_index.json` を Read。
 3. `$BASE/sessions/` を Glob で列挙し、最新 10 件の `route_decisions.jsonl` を tail。
 4. レポートを整形して提示。

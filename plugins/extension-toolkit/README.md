@@ -211,7 +211,7 @@ Claude（要約）:
 
 | 配置 | 内容 |
 |-----|-----|
-| `hooks/hooks.json` | フック設定（`PreToolUse Edit\|Write\|MultiEdit` + `PreToolUse Bash`（git commit 検出）+ `Stop`）。各 hook は `"shell": "powershell"` を明示 |
+| `hooks/hooks.json` | フック設定（`PreToolUse Edit\|Write\|MultiEdit` + `PreToolUse Bash`（git commit 検出）+ `Stop`）。各 hook は `"shell": "bash"` を明示（PowerShell フォールバック適用時のみ `"powershell"`） |
 | `references/scripts/hooks/enforce_toolkit_routing.sh` | PreToolUse Edit\|Write\|MultiEdit: 推奨スキル名の提示 |
 | `references/scripts/hooks/check_version_bump_on_commit.sh` | PreToolUse Bash: `git commit` 検出時に check_version_bump.sh に委譲（ADR-027） |
 | `references/scripts/hooks/check_version_bump.sh` | Stop: version 更新検証 |
