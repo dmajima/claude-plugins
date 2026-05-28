@@ -20,7 +20,7 @@ plugins/{plugin-name}/
 ├── references/
 │   └── scripts/                      ← プラグイン共通リソース（全スキルから参照可）
 │       └── setup/
-│           ├── setup_venv.sh        # venv 構築 + 依存インストール (PowerShell 統一)
+│           ├── setup_venv.sh        # venv 構築 + 依存インストール (Bash 標準・PowerShell フォールバック)
 │           ├── teardown_venv.sh     # venv 削除
 │           └── requirements.txt      # 全スキルの依存をマージしたリスト
 └── skills/
@@ -171,7 +171,7 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_ve
 ### 5.2 必須要件
 
 - venv は **プラグイン単位で 1 つ**。複数スキルが協業する場合も同じ venv を再利用する
-- `setup_venv.sh` / `teardown_venv.sh` / `requirements.txt` は **プラグイン直下** の `references/scripts/setup/` に配置する（PowerShell 統一、shell-preference.md 準拠）
+- `setup_venv.sh` / `teardown_venv.sh` / `requirements.txt` は **プラグイン直下** の `references/scripts/setup/` に配置する（Bash 標準・PowerShell フォールバック、shell-preference.md 準拠）
 - スキル配下に独自の `references/scripts/setup/` を置いてはならない（重複・乖離防止）
 - 各スキルは setup スクリプトを **呼び出すだけ**（独自に venv を作成・破棄しない）
 - `requirements.txt` は **全スキルの依存をマージ** したものとする（スキルごとの個別 requirements.txt は禁止）。スキル固有のスクリプトが利用するパッケージも含めてプラグイン直下に統合する

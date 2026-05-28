@@ -51,9 +51,9 @@ ADR-024 / ADR-025 に従ったスクリプト配置・インラインスクリ�
 | SP-6-1 | Medium | `references/scripts/` 直下に `knowledge/` `lib/` `bin/` 等の禁止命名がない | [conventions.md](../../../references/conventions.md) 節 5.3 |
 | SP-6-2 | Medium | 拡張子別サブフォルダ（`py/` `sh/` `ps1/` 等）を使っていない | 同上 |
 
-## SP-7. PowerShell 経由実行とエンコーディング担保（shell-preference.md / python-encoding-mandatory.md）
+## SP-7. Bash 経由実行とエンコーディング担保（shell-preference.md / python-encoding-mandatory.md）
 
-shell-preference.md (Bash 利用廃止) と python-encoding-mandatory.md (Python 実行時の必須3点セット) を併せて担保する。
+shell-preference.md (Bash 標準・PowerShell フォールバック) と python-encoding-mandatory.md (Python 実行時の必須3点セット) を併せて担保する。
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|

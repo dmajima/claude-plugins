@@ -36,7 +36,7 @@
 - 利用者環境では存在しないパスのため、フックが動作しない
 
 修正案:
-1. ${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-tool-use.sh に変更（プラグイン同梱スクリプトとして配備、PowerShell 統一）
+1. ${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-tool-use.sh に変更（プラグイン同梱スクリプトとして配備、Bash 標準・PowerShell フォールバック）
 2. ${HOME}/.claude/scripts/log-tool-use.sh に変更（利用者ホーム配下、ただし存在は前提）
 3. このまま続行（ユーザ責任、推奨しない）
 4. キャンセル

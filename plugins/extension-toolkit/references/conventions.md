@@ -228,7 +228,7 @@ references/
 ```text
 plugins/{plugin-name}/references/scripts/
 └── setup/
-    ├── setup_venv.sh       # venv 構築 + 依存インストール (PowerShell 統一、shell-preference.md 準拠)
+    ├── setup_venv.sh       # venv 構築 + 依存インストール (Bash 標準・PowerShell フォールバック、shell-preference.md 準拠)
     ├── teardown_venv.sh    # venv 削除
     └── requirements.txt     # 全スキルの依存統合リスト
 ```

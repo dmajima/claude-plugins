@@ -40,7 +40,7 @@ case-01 と同じ手順で `dev-toolkit` 外形を作成。`skills/` サブデ�
 | 旧構造（廃止済・移管元検出時のみ） | 変換後（新ルール） |
 |------------------------------|------------------|
 | `code-formatter/scripts/{業務}/*.py` | `code-formatter/references/scripts/{業務}/*.py` |
-| `code-formatter/scripts/setup/setup_venv.sh` または `setup_venv.sh` | 削除（プラグイン直下 `dev-toolkit/references/scripts/setup/setup_venv.sh` に統合 / 既存があれば差分マージ。PowerShell 統一、shell-preference.md 準拠） |
+| `code-formatter/scripts/setup/setup_venv.sh` または `setup_venv.sh` | 削除（プラグイン直下 `dev-toolkit/references/scripts/setup/setup_venv.sh` に統合 / 既存があれば差分マージ。Bash 標準・PowerShell フォールバック、shell-preference.md 準拠） |
 | `code-formatter/scripts/deps/requirements.txt` または `code-formatter/scripts/setup/requirements.txt` | プラグイン直下 `dev-toolkit/references/scripts/setup/requirements.txt` にマージ（バージョン競合あればユーザ確認） |
 | 旧スキル単位 venv 構築前提のドキュメント記述 | プラグイン直下スクリプトを呼ぶ表現に書き換え |
 

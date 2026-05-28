@@ -18,7 +18,7 @@
 | レビュー起動はフレッシュインスタンス（ADR-021） | High | スポーンプロンプトに必須引き継ぎ事項が含まれ、引き継ぎ禁止事項が含まれないこと（[`review-freshness.md`](review-freshness.md) 節 2-3） |
 | **md インラインスクリプト不在（ADR-025）** | High | フェンス付きコードブロック（`bash` / `python` / `sh` / `powershell` 等）が 6 行以上、または制御構造を含む 5 行以上を検出すれば違反（[`scripts-policy.md`](scripts-policy.md) 節 3-4） |
 | **トップレベル `scripts/` 不在（ADR-025）** | High | `plugins/{name}/scripts/` および `plugins/{name}/skills/{skill}/scripts/` が存在しないことを確認（実スクリプトは `references/scripts/` に集約） |
-| **プラグイン直下 `references/scripts/setup/` 構成（ADR-024）** | High | プラグインに `.py` ファイルが 1 つ以上ある場合、`plugins/{name}/references/scripts/setup/setup_venv.sh` `teardown_venv.sh` `requirements.txt` の存在を確認（PowerShell 統一）|
+| **プラグイン直下 `references/scripts/setup/` 構成（ADR-024）** | High | プラグインに `.py` ファイルが 1 つ以上ある場合、`plugins/{name}/references/scripts/setup/setup_venv.sh` `teardown_venv.sh` `requirements.txt` の存在を確認（Bash 標準・PowerShell フォールバック）|
 | **スキル直下 venv スクリプト不在（ADR-024）** | High | `plugins/{name}/skills/{skill}/references/scripts/setup/setup_venv.sh` 等が存在しないことを確認（プラグイン直下に集約済） |
 
 ### 1.1 ディレクトリ構造の許可リスト機械チェック（厳格対象のみ）

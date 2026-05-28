@@ -4,8 +4,8 @@
 
 ## 実行方式（MANDATORY）
 
-機械チェックは **必ず PowerShell 経由 + venv 内 Python + JSON ファイル出力** で実施すること
-（`~/.claude/rules/tools/shell-preference.md` に従い `Bash` ツールではなく `PowerShell` ツールを使う）。
+機械チェックは **必ず Bash 経由 + venv 内 Python + JSON ファイル出力** で実施すること
+（`~/.claude/rules/tools/shell-preference.md` に従い `Bash` ツールを標準とし、PowerShell はフォールバック適用時のみ使用）。
 
 ### エンコーディング前提
 
@@ -97,9 +97,9 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 | 9 | シークレット混入 | プラグイン全体 | Critical | `check_secrets`（`marketplace-publisher` の `secret-scan.md` と同等） |
 | 10 | クロスマーケットプレイス依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7） | `plugin.json` + 同階層 `README.md` | High | `check_cross_marketplace_readme` |
 | 11 | プラグインに MIT LICENSE 配備（ADR-029） | プラグイン直下 `LICENSE` + `plugin.json.license` + `README.md` | Critical / High | `check_mit_license` |
-| 12 | Bash/sh 利用禁止（PowerShell 移行担保、shell-preference.md）| `hooks.json` / `*.sh` / `*.md` | High / Medium | `check_no_bash_invocation` |
+| 12 | PowerShell ベタ起動の hook 検出（Bash 標準・PowerShell フォールバック方針、shell-preference.md）| `hooks.json` / `*.md` | Medium | `check_no_bash_invocation` （実装は Bash 標準方針に反転済み） |
 | 13 | hook の `shell` フィールド明示（Bash 標準・PowerShell フォールバック補強、shell-preference.md）| `hooks/hooks.json` | High | `check_hook_shell_field` |
-| 14 | PSScriptAnalyzer 静的解析（B-1） | `*.sh` / `*.psm1` / `*.psd1` | High / Medium / Low | `check_psscriptanalyzer` |
+| ~~14~~ | ~~PSScriptAnalyzer 静的解析（B-1）~~ | — | — | Phase 9a で削除済み |
 
 `run_checks.py` の出力 JSON 構造:
 
@@ -221,39 +221,37 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 
 詳細仕様は [`../../../references/license-policy.md`](../../../references/license-policy.md) を参照。
 
-### 12. Bash/sh 利用禁止チェック（PowerShell 移行担保）
+### 12. PowerShell ベタ起動の hook 検出チェック（Bash 標準・PowerShell フォールバック方針）
 
-`~/.claude/rules/tools/shell-preference.md` で `Bash` ツール利用が禁止されたため、
-プラグイン側でも以下を機械チェックで担保する。
+`~/.claude/rules/tools/shell-preference.md` に従い、本リポジトリは **Bash 標準・PowerShell フォールバック** の方針を採用する。
+旧版の「`.sh` 残存を High 指摘 / bash 起動例残存を Medium 指摘」は撤廃し、PowerShell ベタ起動の hook を Medium 指摘に反転させた。
 
 | 検査項目 | 重大度 | 検出方法 |
 |---------|-------|---------|
-| `hooks/hooks.json` の `command` フィールド先頭が `bash` で始まる | High | JSON パース後に再帰的に `command` キーを走査し、正規表現 `^\s*bash\s+` をマッチ |
-| `.sh` ファイルが残存している | High | `target.rglob("*.sh")` を走査し、検出されれば High 指摘（`.sh` は完全廃止のため） |
-| `.md` 内に `bash ...sh` 起動例がコードフェンス・バッククォート外で残存 | Medium | `iter_inspectable_lines` 経由で正規表現 `(?<![A-Za-z0-9_/.\-])bash\s+["']?[^\s"']*\.sh\b` をマッチ |
+| `hooks/hooks.json` の `command` フィールド先頭が `pwsh` / `powershell` で始まる | Medium | JSON パース後に再帰的に `command` キーを走査し、正規表現 `^\s*(pwsh\|powershell)(\.exe)?\s+` をマッチ。通常運用は Bash 起動、PowerShell 起動は `references/hooks-fallback/` 配下のフォールバック専用エントリでのみ許容 |
 
 除外条件:
 
-- `templates/` / `template/` / `evals/` / `checklists/` 配下（テンプレート・チェック項目記述自体は許容）
-- `automated-checks.md` / `shell-preference.md` / `run_checks.py`（自己参照）
+- `templates/` / `template/` / `evals/` / `hooks-fallback/` / `node_modules/` 配下
+- `hooks/` 配下以外の `hooks.json`（誤検出防止）
 
 運用ポリシー:
 
 - 通常運用: シェルスクリプトは `.sh` (Bash) で記述する
 - PowerShell フォールバック: 同階層に `.ps1` 版を併存させる（動作差異ゼロを保証）
-- `hooks.json` の `command` は **通常運用** で `bash "...sh"` 形式、フォールバック時のみ `pwsh -NoProfile -File "...ps1"` 形式
+- `hooks.json` の `command` は **通常運用** で `bash "...sh"` 形式、フォールバック時のみ `pwsh -NoProfile -File "...ps1"` 形式 (`references/hooks-fallback/` 配下)
 
 ### 13. hook の `shell` フィールド明示チェック（Bash 標準・PowerShell フォールバック補強）
 
-`command` を `pwsh -NoProfile -File ...` で書いていても、Claude Code の起動側シェルが
-Git Bash の場合に引数解釈・PATH 解決でエッジケースが発生しうる。これを抑制するため、
-各 hook エントリで `"shell": "powershell"` を **明示** することを必須化する。
+`command` を `bash "..."` で書いていても、Claude Code の起動側シェルが PowerShell の場合に
+引数解釈・PATH 解決でエッジケースが発生しうる。これを抑制するため、各 hook エントリで
+`"shell": "bash"` を **明示** することを必須化する（フォールバック時は `"powershell"`）。
 
 | 検査項目 | 重大度 | 検出方法 |
 |---------|-------|---------|
 | `hooks/hooks.json` 内の各 hook エントリ（`type: "command"` を持つ）に `"shell"` フィールドが存在する | High | JSON パース後に `hooks` → イベント名 → エントリ → `hooks` 配列の各要素を走査し、`type: "command"` であって `"shell"` キーが無いものを検出 |
-| `"shell"` フィールドの値が `"powershell"` または `"bash"` である | High | 値が上記いずれかでない場合は不正値として High 指摘 |
-| 本マーケットプレイスのプラグインで `"shell": "bash"` が設定されている | Medium | Bash 標準・PowerShell フォールバック方針との不整合として Medium 指摘（許可ではあるが警告） |
+| `"shell"` フィールドの値が `"bash"` または `"powershell"` である | High | 値が上記いずれかでない場合は不正値として High 指摘 |
+| 本マーケットプレイスのプラグインで `"shell": "powershell"` が通常運用エントリに設定されている | Medium | Bash 標準・PowerShell フォールバック方針との不整合として Medium 指摘（フォールバック専用は `hooks-fallback/` 配下に置く） |
 
 除外条件:
 

@@ -64,7 +64,7 @@ Claude Code のフックイベント別の意味と使い方。
 #### 必須化の根拠
 
 - `command` を `bash "..."` 形式で記述しても、Claude Code が起動する **ホスト側シェル** が PowerShell の場合に、引数解釈や PATH 解決でエッジケースが発生しうる（フォールバック時は `pwsh -NoProfile -File "..."`）
-- `~/.claude/rules/tools/shell-preference.md`（`Bash` ツール禁止、`PowerShell` ツール優先）の方針と整合させるため、フック実行も PowerShell ホストで起動する意図を一義的に伝える必要がある
+- `~/.claude/rules/tools/shell-preference.md`（`Bash` ツール標準・`PowerShell` ツールはフォールバック適用時）の方針と整合させるため、フック実行も PowerShell ホストで起動する意図を一義的に伝える必要がある
 - `"shell": "powershell"` を明示することで、Claude Code が PowerShell ホストでコマンドを起動する意図をプラグイン側で表明できる
 - `shell` フィールド未対応の古い Claude Code では無視されるため、後方互換性は維持される
 
