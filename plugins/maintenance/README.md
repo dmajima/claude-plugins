@@ -173,8 +173,8 @@ maintenance/
     │   │   ├── procedures.md
     │   │   ├── safety.md
     │   │   └── scripts/cleanup/
-    │   │       ├── cleanup.ps1                 # メイン削除スクリプト
-    │   │       └── cleanup-config.ps1          # 設定 CRUD スクリプト
+    │   │       ├── cleanup.sh                 # メイン削除スクリプト
+    │   │       └── cleanup-config.sh          # 設定 CRUD スクリプト
     │   └── evals/                              # 17 ケース（dry-run / 各スコープ / progress.md atime / config 操作 等）
     └── sync-settings/                          # Git リポジトリと設定を同期（pull / push 双方向）
         ├── SKILL.md
@@ -184,10 +184,10 @@ maintenance/
         │   ├── safety.md
         │   ├── strategies.md
         │   └── scripts/sync/
-        │       ├── sync-common.ps1             # 共通ライブラリ（除外リスト / バリデーション / SSOT 永続化）
-        │       ├── sync.ps1                    # pull 同期スクリプト
-        │       ├── sync-push.ps1               # push 同期スクリプト（新ブランチ + PR）
-        │       └── sync-mappings.ps1           # マッピング CRUD スクリプト
+        │       ├── sync-common.sh             # 共通ライブラリ（除外リスト / バリデーション / SSOT 永続化）
+        │       ├── sync.sh                    # pull 同期スクリプト
+        │       ├── sync-push.sh               # push 同期スクリプト（新ブランチ + PR）
+        │       └── sync-mappings.sh           # マッピング CRUD スクリプト
         └── evals/                              # 22 ケース（各戦略 / interactive / マッピング / push 等）
 ```
 
@@ -220,28 +220,32 @@ maintenance/
 - ローカルデータ領域: `~/.claude/rules/claude/local-data-directory.md`（`.claude/.local/` 全般）
 - 自動更新ポリシー: `~/.claude/rules/claude/plugin-auto-update.md`（`autoUpdate: true` 必須・週 1 回更新チェック）
 
-## PowerShell フォールバック / 設計上の例外
+## PowerShell フォールバック
 
-通常運用は Bash 経路 (`.sh` ラッパー) を使用します。`cleanup.sh` / `cleanup-config.sh` /
-`sync.sh` / `sync-common.sh` / `sync-mappings.sh` / `sync-push.sh` はすべて pwsh -File
-で PowerShell 本体 (`.ps1`) を呼ぶ薄ラッパー実装です。
+通常運用は Bash 経路 (`.sh` 純粋実装) を使用します。`cleanup.sh` / `cleanup-config.sh` /
+`sync.sh` / `sync-common.sh` / `sync-mappings.sh` / `sync-push.sh` はすべて
+**Bash + jq + git + Python (settings.json 安全マージのみ) による純粋実装** で、
+PowerShell を起動しません (Phase 9c 完成)。
 
-### 設計上の例外規定
+PowerShell 版 (`.ps1`) は **フォールバック手順用** として同階層に保持されます。
+動作差異ゼロは parity test (`plugins/maintenance/tests/parity/`) で機械的に検証済み。
 
-本プラグインのスクリプトは合計約 2,400 行の PowerShell 固有処理 (Resolve-Path /
-Get-Acl / Get-Item LinkType / JSON 深マージ / Git 操作 / .NET API) を多用しており、
-Bash 純粋実装は等価性検証コストが極めて大きいため、**Bash ツールから呼べる
-薄ラッパー方式** を採用しています。
+### フォールバック適用条件
 
-これは PSScriptAnalyzer / setup_psmodule と同じ「PowerShell 専用機能扱い」の例外規定で、
-動作差異ゼロを完全保証 (PowerShell スクリプトを変更せず、Bash ラッパーから
-そのまま起動するため)。
+以下のいずれかが該当する場合は PowerShell 経路へ切り替えてください:
 
-### pwsh が利用できない環境
+- Git Bash の `add_item failed` 等の Cygwin 初期化エラーが再発した
+- `jq` / `sha256sum` などが PATH に無い環境で利用したい
+- 動作差異の疑いがあり、PowerShell 元実装の出力を直接確認したい
 
-Bash ラッパーは pwsh (PowerShell 7+) が PATH にあることを前提とします。
-存在しない場合は exit 127 でエラー終了します。pwsh のインストール手順は
-`~/.claude/rules/tools/powershell-fallback-mode.md` を参照。
+切替手順:
+
+```bash
+# 任意の maintenance スクリプトを呼ぶ際、.sh の代わりに以下を実行
+pwsh -NoProfile -File "<plugin-root>/skills/.../scripts/.../<name>.ps1" [args...]
+```
+
+`pwsh` (PowerShell 7+) のインストール手順は `~/.claude/rules/tools/powershell-fallback-mode.md` を参照。
 
 ## ライセンス
 

@@ -11,7 +11,7 @@
 ## 期待動作
 
 ### Phase 1: マッピング解決
-- `sync-push.ps1 -Mapping global` で sync-mappings.json から repo/branch/targets を取得
+- `sync-push.sh -Mapping global` で sync-mappings.json から repo/branch/targets を取得
 - マッピング不在時はエラーで終了
 
 ### Phase 2: clone 領域の最新化

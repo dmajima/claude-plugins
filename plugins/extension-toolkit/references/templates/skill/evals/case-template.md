@@ -4,8 +4,8 @@ B-2 (improvement-backlog) 実行ベース evals 用フロントマター。
 
 ---
 runnable: true                    # 必須。false / 未指定なら自動実行対象外
-command: |                        # 必須。実行するシェルコマンド（pwsh -Command で起動）
-  pwsh -NoProfile -File scripts/foo.ps1 -DryRun
+command: |                        # 必須。実行するシェルコマンド（Bash 標準、フォールバック時のみ pwsh -Command）
+  bash scripts/foo.sh --dry-run
 expect_exit_code: 0               # 任意（既定: 0）
 expect_output_regex:              # 任意（複数可）。全マッチで合格
   - "^\\[OK\\]"

@@ -90,5 +90,5 @@ Claude（要約）:
 | `SKILL.md` | スキル定義とトリガー条件 |
 | `references/procedures.md` | 詳細実行手順 |
 | `references/safety.md` | 安全装置の詳細 |
-| `references/scripts/cleanup/cleanup.ps1` | 実装スクリプト（PowerShell） |
+| `references/scripts/cleanup/cleanup.sh` | 実装スクリプト（PowerShell） |
 | `evals/` | 動作分岐の期待挙動 |

@@ -60,16 +60,26 @@
 | [case-43_large_pptx_subagent_flow.md](case-43_large_pptx_subagent_flow.md) | 大規模 PPTX（100 スライド超）でのサブエージェント並列分担フロー |
 | [case-44_xml_hardening_without_defusedxml.md](case-44_xml_hardening_without_defusedxml.md) | `defusedxml` 非依存での XML 攻撃保護（ZIP bomb 検査 + 上限定数）と起動成功 |
 | [case-47_fail_close_stderr_flush.md](case-47_fail_close_stderr_flush.md) | fail-close 経路の stderr が `Start-Process` リダイレクトでも欠落しない（flush 強制） |
-| [case-48_wrapper_timeout_exit124.md](case-48_wrapper_timeout_exit124.md) | `run_via_job.ps1` のタイムアウト発火と exit 124 返却 |
-| [case-49_wrapper_no_python_exe_exit2.md](case-49_wrapper_no_python_exe_exit2.md) | `run_via_job.ps1` の PythonExe 引数エラー（未指定 / 不在 / .exe 拒否） |
-| [case-50_wrapper_extra_args_passthrough.md](case-50_wrapper_extra_args_passthrough.md) | `run_via_job.ps1` の ExtraArgs (`--no-mermaid` 等) 転送確認 |
+| [case-48_wrapper_timeout_exit124.md](case-48_wrapper_timeout_exit124.md) | `run_via_job.sh` のタイムアウト発火と exit 124 返却 |
+| [case-49_wrapper_no_python_exe_exit2.md](case-49_wrapper_no_python_exe_exit2.md) | `run_via_job.sh` の PythonExe 引数エラー（未指定 / 不在 / .exe 拒否） |
+| [case-50_wrapper_extra_args_passthrough.md](case-50_wrapper_extra_args_passthrough.md) | `run_via_job.sh` の ExtraArgs (`--no-mermaid` 等) 転送確認 |
 | [case-45_medium_pptx_flow.md](case-45_medium_pptx_flow.md) | 中規模 PPTX（30〜100 スライド）でのメイン逐次 Read フロー |
 | [case-46_section_cover_number_excluded.md](case-46_section_cover_number_excluded.md) | 章扉スライドでの装飾的章番号除外（`_is_decoration_number`） |
 
 ## 実行確認方法
+
+```bash
+& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" \
+  "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/convert_from_pptx.py" \
+  "<入力PPTX>" "<出力MD>" [オプション]
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 & "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
   "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
   "<入力PPTX>" "<出力MD>" [オプション]
 ```
+
+</details>

@@ -14,7 +14,7 @@
 
 ### Phase 1: モード判定 + 現在値取得
 - `$ARGUMENTS` が空 → 対話モード
-- `sync-mappings.ps1 -Action get -Scope project` でカレントディレクトリの現在のマッピングを取得
+- `sync-mappings.sh -Action get -Scope project` でカレントディレクトリの現在のマッピングを取得
 
 ### Phase 2: AskUserQuestion 1 回で 3 質問同時発火
 
@@ -34,7 +34,7 @@ Other 自由入力時:
 
 ### Phase 4: 変更検出 + スクリプト実行
 
-3 つの選択結果と現在値を比較し、**1 項目以上変更があれば** `sync-mappings.ps1 -Action set` を実行。全項目が現在値と同じなら `-Show` で現状表示のみ。
+3 つの選択結果と現在値を比較し、**1 項目以上変更があれば** `sync-mappings.sh -Action set` を実行。全項目が現在値と同じなら `-Show` で現状表示のみ。
 
 ### Phase 5: 完了報告
 

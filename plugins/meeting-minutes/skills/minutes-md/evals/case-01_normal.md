@@ -11,7 +11,7 @@
 ## 期待動作
 
 1. `workspace/minutes.json` の存在を確認する
-2. venv が構築済みであることを確認する（未構築の場合は `setup_venv.ps1` で構築する）
+2. venv が構築済みであることを確認する（未構築の場合は `setup_venv.sh` で構築する）
 3. Python スクリプト `${CLAUDE_SKILL_DIR}/scripts/output/generate_md.py` を venv 経由で実行する:
    ```
    & $venvPy generate_md.py --input workspace/minutes.json --output $SESSION_DIR/minutes.md

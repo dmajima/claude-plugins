@@ -74,4 +74,4 @@ merge 戦略は任意コード実行リスクに直結する最重要安全装�
 
 - `case-05_merge_strategy.md`（基本的な merge 戦略）
 - safety.md 節 9.1 温存対象キー / 節 9.4 Unicode 同形異字攻撃の遮断
-- sync-common.ps1 MERGE_LOCAL_PRIORITY_KEYS / Merge-JsonValue 実装
+- sync-common.sh MERGE_LOCAL_PRIORITY_KEYS / Merge-JsonValue 実装

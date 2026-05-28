@@ -10,14 +10,22 @@
 
 ## 期待動作
 
-### Phase 1: 差分一覧取得（sync.ps1 -EmitDiffJson）
+### Phase 1: 差分一覧取得（sync.sh -EmitDiffJson）
+
+```bash
+bash "...sync.sh" -Mapping project -EmitDiffJson "$tmpJson"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 $tmpJson = ".claude/.local/work/<session>/workspace/sync-diff.json"
 pwsh -NoProfile -File "...sync.ps1" -Mapping project -EmitDiffJson "$tmpJson"
 ```
 
-- sync.ps1 が差分検出後、JSON ファイルへ書き出して exit 0
+</details>
+
+- sync.sh が差分検出後、JSON ファイルへ書き出して exit 0
 - 実適用はしない
 
 ### Phase 2: JSON 解析 + 件数分岐
@@ -83,8 +91,8 @@ options:
 
 - 競合解決を **ユーザに 1 件ずつ確認** することで、誤った一括上書きを防ぐ
 - 6 件以上は UX 負荷が高いため一括選択を優先（plugin-updater Phase G の閾値設計と同等）
-- sync.ps1 改修を最小限に抑え、Claude 主導のループで個別適用（簡易実装）
-- バックアップは Claude 主導で取得（sync.ps1 の通常フローと同等の安全性）
+- sync.sh 改修を最小限に抑え、Claude 主導のループで個別適用（簡易実装）
+- バックアップは Claude 主導で取得（sync.sh の通常フローと同等の安全性）
 
 ## 関連ケース
 

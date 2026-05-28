@@ -12,7 +12,7 @@
 | S-1-4 | High | スキル直下に `scripts/` ディレクトリが存在しない（ADR-025 違反検知） | [conventions.md](../../../references/conventions.md) 節 3.3 / [scripts-policy.md](../../../references/scripts-policy.md) |
 | S-1-5 | High | スキル直下に `tests/` `spec/` `docs/` `notes/` 等の禁止ディレクトリが存在しない | [conventions.md](../../../references/conventions.md) 節 3.3 |
 | S-1-6 | High | 動作分岐があるのに `evals/` が省略されていない | [eval-guide.md](../../../references/eval-guide.md) 節 1 |
-| S-1-7 | High | スキル直下 `references/scripts/setup/setup_venv.ps1` 等の venv 関連スクリプトが存在しない（プラグイン直下に集約・ADR-024、PowerShell 統一） | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.2 |
+| S-1-7 | High | スキル直下 `references/scripts/setup/setup_venv.sh` 等の venv 関連スクリプトが存在しない（プラグイン直下に集約・ADR-024、PowerShell 統一） | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.2 |
 | S-1-8 | Medium | スキルごとの個別 `requirements.txt` を作っていない（プラグイン直下に統合・ADR-024） | 同上 |
 
 ## S-2. SKILL.md の制約

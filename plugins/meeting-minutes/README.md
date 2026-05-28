@@ -149,6 +149,18 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/output/run_docx_via_job.sh" \
   -OutputDocx "$SESSION_DIR/minutes.docx"
 ```
 
+```bash
+# PowerShell フォールバック
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$SessionDir/workspace"
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/output/run_docx_via_job.sh" \
+  -PythonExe "$VENV\Scripts\python.exe" \
+  -ScriptPath "$CLAUDE_PLUGIN_ROOT/skills/minutes-docx/scripts/output/generate_docx.py" \
+  -InputJson "$SESSION_DIR/workspace/minutes.json" \
+  -OutputDocx "$SESSION_DIR/minutes.docx"
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 # PowerShell フォールバック
 pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" -WorkDir "$SessionDir/workspace"
@@ -158,6 +170,8 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/output/run_d
   -InputJson "$SESSION_DIR/workspace/minutes.json" `
   -OutputDocx "$SESSION_DIR/minutes.docx"
 ```
+
+</details>
 
 Bash 版と PowerShell 版は `tests/parity/run_all.sh` で同じ入力に対して同じ観測結果を返すことが自動検証されています。
 

@@ -8,7 +8,7 @@
 |-----|-------|---------|-----|
 | H-1-1 | High | フック設定ファイルが `hooks/hooks.json` または `settings.json` の `hooks` セクションに配置されている | [conventions.md](../../../references/conventions.md) 節 1 |
 | H-1-2 | High | フック実スクリプトが `references/scripts/hooks/` 配下に配置されている（ADR-025） | [scripts-policy.md](../../../references/scripts-policy.md) 節 9 |
-| H-1-3 | High | フック実スクリプトが `.ps1` で実装されている（`.sh` 残存は禁止、shell-preference.md） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| H-1-3 | High | フック実スクリプトが `.sh` で実装されている（PowerShell フォールバック用に `.ps1` 併存可、shell-preference.md） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
 
 ## H-2. JSON valid
 
@@ -33,7 +33,7 @@
 | H-4-3 | Critical | `eval` / `Invoke-Expression` を使っていない | 同上 |
 | H-4-4 | High | 動的データが必要な場合は外部スクリプトに委譲し、引数として安全に受け渡されている | 同上 |
 | H-4-5 | Critical | `command` にローカル絶対パスのハードコードがない（`${CLAUDE_PLUGIN_ROOT}` を使用） | [validation-rules.md](../../../references/validation-rules.md) 節 2.6 |
-| H-4-6 | High | `command` は `pwsh -NoProfile -File "${CLAUDE_PLUGIN_ROOT}/.../*.ps1"` 形式（`bash ...sh` は使わない） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| H-4-6 | High | `command` は `bash "${CLAUDE_PLUGIN_ROOT}/.../*.sh"` 形式（`bash ...sh` は使わない） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
 
 ## H-5. PreToolUse 警告型フック（ADR-026）
 
@@ -55,8 +55,8 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-7-1 | High | `matcher: "Bash"` で `references/scripts/hooks/check_version_bump_on_commit.ps1` が登録されている | [architecture-decisions.md](../../../references/architecture-decisions.md) ADR-027 / [shell-preference.md](https://github.com/dmajima/claude-plugins) |
-| H-7-2 | High | tool_input.command に `git commit` を含む場合のみ `check_version_bump.ps1` に委譲する | 同上 |
+| H-7-1 | High | `matcher: "Bash"` で `references/scripts/hooks/check_version_bump_on_commit.sh` が登録されている | [architecture-decisions.md](../../../references/architecture-decisions.md) ADR-027 / [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| H-7-2 | High | tool_input.command に `git commit` を含む場合のみ `check_version_bump.sh` に委譲する | 同上 |
 | H-7-3 | Medium | 非対象は exit 0 で即離脱（重い処理は git commit 検出時のみ実行） | 同上 |
 
 ## H-8. settings.json 既存エントリの保全
@@ -80,25 +80,25 @@
 | H-10-1 | Critical | セキュリティ指摘（Critical / High）は必ずユーザ確認を経ている（`--auto-fix` でも対象外） | [SKILL.md](../../SKILL.md) 節 6 |
 | H-10-2 | High | 自動修正の対象外として扱われている | 同上 |
 
-## H-11. PowerShell 起動形態（shell-preference.md / 移行担保）
+## H-11. Bash 起動形態（shell-preference.md / 移行担保）
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-11-1 | High | `hooks.json` の `command` が `pwsh -NoProfile -File "${CLAUDE_PLUGIN_ROOT}/..."` 形式である | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
-| H-11-2 | High | `references/scripts/hooks/` 配下に `.sh` が残存していない（すべて `.ps1` へ移行済み） | 同上 |
-| H-11-3 | High | `.ps1` 内で stdin / stdout / stderr が UTF-8 (no BOM) で扱われている | [console-encoding.md](https://github.com/dmajima/claude-plugins) |
-| H-11-4 | Medium | PowerShell 経由で Python を呼ぶ場合、venv 内 Python の明示パス指定 + `python-encoding-mandatory.md` の必須3点セットを遵守 | [python-encoding-mandatory.md](https://github.com/dmajima/claude-plugins) |
-| H-11-5 | High | `run_checks.py` の `check_no_bash_invocation` （automated-checks.md #12）が High 指摘として報告していない | [automated-checks.md](../automated-checks.md) #12 |
+| H-11-1 | High | `hooks.json` の `command` が `bash "${CLAUDE_PLUGIN_ROOT}/..."` 形式である（PowerShell フォールバック適用時のみ `pwsh -NoProfile -File "...ps1"`） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| H-11-2 | High | `references/scripts/hooks/` 配下に `.sh` が配置されており、必要に応じて `.ps1` フォールバックも併存している | 同上 |
+| H-11-3 | High | `.sh` / `.ps1` 内で stdin / stdout / stderr が UTF-8 (no BOM) で扱われている | [console-encoding.md](https://github.com/dmajima/claude-plugins) |
+| H-11-4 | Medium | Bash 経由で Python を呼ぶ場合、venv 内 Python の明示パス指定 + `python-encoding-mandatory.md` の必須3点セットを遵守 | [python-encoding-mandatory.md](https://github.com/dmajima/claude-plugins) |
 
 ## H-12. shell フィールド明示（MANDATORY / shell-preference.md / 補強）
 
-`pwsh -NoProfile -File ...` で書いていても、Claude Code 側の起動シェルが Git Bash の場合に
+`bash "..."` で書いていても、Claude Code 側の起動シェルが PowerShell の場合に
 引数解釈・PATH 解決でエッジケースが発生しうる。各 hook エントリの `type: "command"` と
-同階層に **`"shell": "powershell"`** を明示することで、PowerShell ホストでの起動を一義的に伝える。
+同階層に **`"shell": "bash"`** を明示することで、Bash ホストでの起動を一義的に伝える。
+PowerShell フォールバック適用時は `"shell": "powershell"` に切替える。
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-12-1 | High | `hooks.json` の各 hook エントリに `"shell": "powershell"` が **明示** されている（`type: "command"` と同階層） | [hook-events.md](../../../../hook-toolkit/references/hook-events.md) 節「shell 指定（MANDATORY）」 |
-| H-12-2 | High | `settings.json` の `hooks` セクションに追加するエントリも同様に `"shell": "powershell"` を明示している | 同上 |
-| H-12-3 | Medium | `"shell"` の値が `"powershell"` または `"bash"` のいずれか（本マーケットプレイスは `"powershell"` のみ採用） | 同上 |
+| H-12-1 | High | `hooks.json` の各 hook エントリに `"shell": "bash"` が **明示** されている（`type: "command"` と同階層、フォールバック時は `"powershell"`） | [hook-events.md](../../../../hook-toolkit/references/hook-events.md) 節「shell 指定（MANDATORY）」 |
+| H-12-2 | High | `settings.json` の `hooks` セクションに追加するエントリも同様に `"shell"` を明示している | 同上 |
+| H-12-3 | Medium | `"shell"` の値が `"bash"`（通常運用）または `"powershell"`（フォールバック）のいずれか | 同上 |
 | H-12-4 | High | `run_checks.py` の `check_hook_shell_field` （automated-checks.md #13）が High 指摘として報告していない | [automated-checks.md](../automated-checks.md) #13 |

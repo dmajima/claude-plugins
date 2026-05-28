@@ -90,11 +90,26 @@ venv 構築・撤去スクリプトと依存パッケージはプラグイン直
 
 | ファイル | 配置 |
 |---------|------|
-| `setup_venv.ps1` | `$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1` |
-| `teardown_venv.ps1` | `$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1` |
+| `setup_venv.sh` | `$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh` |
+| `teardown_venv.sh` | `$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh` |
 | `requirements.txt` | `$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt`（PyYAML 含む全スキルの依存統合） |
 
 ## 機械チェックの実行（手動実行例）
+
+```bash
+New-Item -ItemType Directory -Force -Path "$SessionDir/workspace" | Out-Null
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
+  -WorkDir "$SessionDir/workspace" \
+  -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
+& "$SessionDir/workspace/.venv/Scripts/python" \
+  "$CLAUDE_SKILL_DIR/references/scripts/checks/run_checks.py" \
+  --target plugins/foo --scope-root . \
+  --output "$SessionDir/workspace/checks.json"
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
+  -WorkDir "$SessionDir/workspace"
+```
+
+<details><summary>PowerShell フォールバック</summary>
 
 ```powershell
 $SessionDir = ".claude/.local/work/$(Get-Date -Format yyyyMMdd)_01_extension_review"
@@ -110,7 +125,8 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
   -WorkDir "$SessionDir/workspace"
 ```
 
-> **重要**: 必ず PowerShell 経由 + venv 内 Python の明示パス指定で実行してください
-> （shell-preference.md / python-encoding-mandatory.md 準拠）。
-> `.ps1` 先頭で `[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)` を設定し、
-> Python 側でも `sys.stdout.reconfigure(encoding='utf-8')` を実施します。
+</details>
+
+> **重要**: 必ず Bash 経由 + venv 内 Python の明示パス指定で実行してください
+> （shell-preference.md / python-encoding-mandatory.md 準拠、PowerShell はフォールバック）。
+> `.sh` / `.ps1` いずれも UTF-8 を強制し、Python 側でも `sys.stdout.reconfigure(encoding='utf-8')` を実施します。

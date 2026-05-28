@@ -141,7 +141,7 @@
 
 ### 8.1 規定ブランチへの直接 push 禁止
 
-`sync-push.ps1` は常に新ブランチ `{BranchPrefix}-{scope}-{timestamp}` を作成して
+`sync-push.sh` は常に新ブランチ `{BranchPrefix}-{scope}-{timestamp}` を作成して
 そこに push し、PR ベースのレビュー → マージワークフローに乗せる。マッピングの
 `remote_branch`（既定 `main`）に対して直接 push することは設計上禁止である。
 

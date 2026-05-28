@@ -27,7 +27,7 @@ argument-hint: "<on|off>"
 
 ## 実行手順
 
-トグル本体ロジックは `references/scripts/commands/toggle.sh` に集約しています（ADR-025 / scripts-policy 準拠）。PowerShell フォールバック (`toggle.ps1`) も同階層に併存します。
+トグル本体ロジックは `references/scripts/commands/toggle.sh` に集約しています（ADR-025 / scripts-policy 準拠）。PowerShell フォールバック (`toggle.sh`) も同階層に併存します。
 
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/toggle.sh" status

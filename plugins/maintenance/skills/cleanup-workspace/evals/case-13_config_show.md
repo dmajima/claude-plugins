@@ -12,7 +12,7 @@
 ## 期待動作
 
 ### Phase 1: スクリプト起動
-- `cleanup-config.ps1` が引数なし or `-Show` で起動
+- `cleanup-config.sh` が引数なし or `-Show` で起動
 
 ### Phase 2: 設定読み込み
 - 設定ファイル存在: 既存値を読み込み、不足フィールドは出荷時デフォルトで補完

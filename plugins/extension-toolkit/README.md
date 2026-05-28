@@ -212,9 +212,9 @@ Claude（要約）:
 | 配置 | 内容 |
 |-----|-----|
 | `hooks/hooks.json` | フック設定（`PreToolUse Edit\|Write\|MultiEdit` + `PreToolUse Bash`（git commit 検出）+ `Stop`）。各 hook は `"shell": "powershell"` を明示 |
-| `references/scripts/hooks/enforce_toolkit_routing.ps1` | PreToolUse Edit\|Write\|MultiEdit: 推奨スキル名の提示 |
-| `references/scripts/hooks/check_version_bump_on_commit.ps1` | PreToolUse Bash: `git commit` 検出時に check_version_bump.ps1 に委譲（ADR-027） |
-| `references/scripts/hooks/check_version_bump.ps1` | Stop: version 更新検証 |
+| `references/scripts/hooks/enforce_toolkit_routing.sh` | PreToolUse Edit\|Write\|MultiEdit: 推奨スキル名の提示 |
+| `references/scripts/hooks/check_version_bump_on_commit.sh` | PreToolUse Bash: `git commit` 検出時に check_version_bump.sh に委譲（ADR-027） |
+| `references/scripts/hooks/check_version_bump.sh` | Stop: version 更新検証 |
 | 除外パス | `.claude/.local/` / `.git/` / `/tmp/` 配下、git 利用不可環境、リポジトリ外 |
 
 「軽微な編集（typo・1〜数行修正）は直接編集 OK / 新規・大規模変更時は toolkit 経由」という運用バランスを取り、コミット前に必ずバージョン更新が促される設計です。詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) ADR-026 を参照。
@@ -357,13 +357,13 @@ plugins/extension-toolkit/
 通常運用は Bash 経路 (`.sh` フック / スクリプト) を使用します。Git Bash 不調時等で Bash 経路が機能しない場合、PowerShell 経路に切り替えられます。
 
 ```bash
-cp references/hooks-fallback/hooks.ps1.json hooks/hooks.json
+cp references/hooks-fallback/hooks.sh.json hooks/hooks.json
 # Claude Code を再起動
 ```
 
-PSScriptAnalyzer (`run_psscriptanalyzer.sh`) と PSModule セットアップ (`setup_psmodule.sh`) は本質的に PowerShell 専用機能のため、Bash 側は pwsh を呼ぶ薄ラッパーとして実装されています。`pwsh` (PowerShell 7+) が PATH に必要です。
-
 Bash 版と PowerShell 版の動作等価性は `tests/parity/run_all.sh` で自動検証されています。詳細は `references/hooks-fallback/README.md` を参照。
+
+> 補足: 旧版では PSScriptAnalyzer / PSModule セットアップ機能を同梱していましたが、PowerShell 専用機能で Bash 等価実装が不可のため、Phase 9a で本プラグインから削除しました (リポジトリ全体の Bash 標準化方針との整合)。
 
 ## ライセンス
 

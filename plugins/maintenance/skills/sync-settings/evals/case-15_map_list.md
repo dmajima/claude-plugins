@@ -15,7 +15,7 @@
 - 引数なし → `-Action list`
 
 ### Phase 2: スクリプト実行
-- `sync-mappings.ps1 -Action <list|show>` を実行
+- `sync-mappings.sh -Action <list|show>` を実行
 - 標準出力をユーザに提示
 
 ## 期待出力（list）

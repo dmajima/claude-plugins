@@ -23,8 +23,8 @@
 | case-15 | `--non-interactive` + `--auto-fix` 同時指定（CI 自動修正） | 両フラグ検出 |
 | case-16 | 機械チェック target 不在による中断 | `run_checks.py` exit 2、JSON 未生成 |
 | case-17 | 機械チェック scope 違反による fail-closed 中断 | `assert_in_scope` ValueError、JSON 未生成 |
-| case-18 | PSScriptAnalyzer 検出時の動作 (B-1) | PSA Error → High / Warning → Medium / Info → Low マッピング |
-| case-19 | PSA キャッシュ不在時のフェイルオープン skip (B-1) | pwsh / setup / PSGallery / ハッシュ整合いずれかの失敗で skipped |
+| ~~case-18~~ | ~~PSScriptAnalyzer 検出時の動作 (B-1)~~ | Phase 9a で削除（B-1 機能自体を撤去、リポジトリの Bash 標準化方針との整合） |
+| ~~case-19~~ | ~~PSA キャッシュ不在時のフェイルオープン skip (B-1)~~ | 同上、Phase 9a で削除 |
 
 ## 実行確認方法
 

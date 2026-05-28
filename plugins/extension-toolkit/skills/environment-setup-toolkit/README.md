@@ -58,8 +58,8 @@ Claude（要約）:
 
 | ファイル | 配置 |
 |---------|------|
-| `setup_venv.ps1` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1` |
-| `teardown_venv.ps1` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.ps1` |
+| `setup_venv.sh` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh` |
+| `teardown_venv.sh` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh` |
 | `requirements.txt` | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt` |
 
 ## 技術スタック・アーキテクチャ

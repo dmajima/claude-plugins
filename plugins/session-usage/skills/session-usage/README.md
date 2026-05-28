@@ -21,7 +21,7 @@ skills/session-usage/
 ├── README.md                       # 本ファイル（人間向け）
 ├── scripts/
 │   └── aggregate/
-│       └── aggregate.ps1           # JSONL 集計+整形+クリップボードコピー
+│       └── aggregate.sh           # JSONL 集計+整形+クリップボードコピー
 └── references/
     └── procedures.md               # 実行手順詳細
 ```
@@ -30,7 +30,7 @@ skills/session-usage/
 
 ### 表示項目を増やす
 
-`scripts/aggregate/aggregate.ps1` の整形済み文字列モード（末尾）に行を追加する。
+`scripts/aggregate/aggregate.sh` の整形済み文字列モード（末尾）に行を追加する。
 集計値のフィールド構造は `-AsObject` 出力（`Totals` / `ByModel` / `GrandTotal`）に
 従う。
 
@@ -38,7 +38,7 @@ skills/session-usage/
 
 呼び出し元（Claude）が `AskUserQuestion` のオプションを増やせばよい。
 スキル側で固定する必要はない。例: 「CSV エクスポート」を追加する場合は
-`aggregate.ps1` に `-AsCsv` を追加し、`AskUserQuestion` のオプションに加える。
+`aggregate.sh` に `-AsCsv` を追加し、`AskUserQuestion` のオプションに加える。
 
 ## 動作確認方法
 
@@ -50,6 +50,19 @@ skills/session-usage/
 
 ### スクリプト直接実行（開発時）
 
+```bash
+# 整形済み文字列を表示+コピー
+bash scripts/aggregate/aggregate.sh --stdout --copy
+
+# 整形済み文字列を変数で取得
+rendered=$(bash scripts/aggregate/aggregate.sh --stdout)
+
+# JSON 形式で取得
+bash scripts/aggregate/aggregate.sh --as-object | jq .
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 # 整形済み文字列を表示+コピー（Bash 経由想定）
 pwsh -File scripts/aggregate/aggregate.ps1 -Stdout -Copy
@@ -60,6 +73,8 @@ $rendered = & pwsh -File scripts/aggregate/aggregate.ps1
 # オブジェクト形式で取得
 pwsh -File scripts/aggregate/aggregate.ps1 -AsObject | ConvertTo-Json
 ```
+
+</details>
 
 ## 既知の制限
 

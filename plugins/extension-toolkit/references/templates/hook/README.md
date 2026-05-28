@@ -36,13 +36,13 @@ Claude Code フックの設定テンプレート。`hooks/hooks.json` 1 ファ�
 
 | 値 | 用途 |
 |---|---|
-| `"powershell"` | Windows PowerShell / pwsh（本マーケットプレイス標準。Git Bash 起動失敗回避のため必須） |
-| `"bash"` | POSIX bash（macOS / Linux 専用フックの場合のみ。本マーケットプレイスでは使用しない） |
+| `"bash"` | Git Bash / bash（**本マーケットプレイス標準**、通常運用） |
+| `"powershell"` | Windows PowerShell / pwsh（PowerShell フォールバック適用時、Git Bash 不調時の保険） |
 
 ### 指定する理由
 
-- `command` が `pwsh -NoProfile -File ...` 形式でも、OS デフォルトシェルが Git Bash の場合に `pwsh.exe` の引数解釈や PATH 解決で不整合が起きうる
-- `"shell": "powershell"` を明示することで、Claude Code が PowerShell ホストで command を起動する意図を一義的に伝達できる
+- `command` が `bash ...` 形式でも、OS デフォルトシェルが PowerShell の場合に `bash.exe` の引数解釈や PATH 解決で不整合が起きうる
+- `"shell": "bash"` を明示することで、Claude Code が Bash ホストで command を起動する意図を一義的に伝達できる
 - `shell` フィールド未指定（OS デフォルト依存）は本マーケットプレイス基準では **不可**
 - 既存 Claude Code バージョンが `shell` フィールドを認識しない場合でも無視されるだけで、後方互換性は維持される（[`shell-preference.md`](https://github.com/dmajima/claude-plugins) と整合）
 
@@ -69,8 +69,8 @@ Claude Code フックの設定テンプレート。`hooks/hooks.json` 1 ファ�
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log_command.ps1\"",
-            "shell": "powershell",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log_command.sh\"",
+            "shell": "bash",
             "timeout": 5
           }
         ]
@@ -90,8 +90,8 @@ Claude Code フックの設定テンプレート。`hooks/hooks.json` 1 ファ�
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -Command \"[console]::beep(800,200)\"",
-            "shell": "powershell",
+            "command": "printf '\\a'",
+            "shell": "bash",
             "timeout": 3
           }
         ]

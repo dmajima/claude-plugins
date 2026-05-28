@@ -21,7 +21,7 @@
 
 ### Phase 3: 依存インストールスキップ
 
-`-RequirementsPath` 省略のため、依存インストールをスキップ。`setup_venv.ps1` 内部の処理で `$RequirementsPath` が空のためインストール処理を実行しない。
+`-RequirementsPath` 省略のため、依存インストールをスキップ。`setup_venv.sh` 内部の処理で `$RequirementsPath` が空のためインストール処理を実行しない。
 
 ### Phase 4: 検証 + 引き渡し
 

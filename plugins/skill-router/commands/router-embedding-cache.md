@@ -39,7 +39,7 @@ argument-hint: "[--clear] [--show <qualified_name>]"
    ```bash
    BASE="$(bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.sh")"
    ```
-   PowerShell フォールバック: `pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.ps1"`
+   PowerShell フォールバック: `pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.sh"`
 
 2. `$BASE/embeddings_cache/manifest.json` を Read。
 3. `$BASE/embeddings_cache/vectors.npz` のサイズを確認。

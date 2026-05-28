@@ -40,8 +40,9 @@ claude plugin install session-usage@dmajima-claude-plugins
 
 ## 動作環境
 
-- Windows
-- PowerShell 7+ （`pwsh` が PATH 上にあること）
+- Python 3.8+ (`python` / `python3` / `py` のいずれかが PATH 上にあること、通常運用)
+- 任意プラットフォーム (Windows / macOS / Linux)
+- PowerShell フォールバック時のみ: PowerShell 7+ (`pwsh` が PATH 上にあること)
 
 ## 表示例
 
@@ -82,7 +83,7 @@ plugins/session-usage/
         ├── README.md                    # 人間向けリファレンス
         ├── scripts/
         │   └── aggregate/
-        │       └── aggregate.ps1        # JSONL 集計+整形+コピー（-Stdout / -Copy）
+        │       └── aggregate.sh        # JSONL 集計+整形+コピー（-Stdout / -Copy）
         └── references/
             └── procedures.md            # 実行手順詳細
 ```
@@ -98,7 +99,7 @@ Claude Code のカスタムコマンドは Bash ツール経由で実行され�
 「`c` 押下を待つ」代わりに **`AskUserQuestion` の選択肢** として提示され、
 ユーザが明示的に選んだときだけ実行される（自動コピーは行わない）。
 
-## aggregate.ps1 の引数
+## aggregate.sh の引数
 
 | 引数 | 役割 |
 |------|------|
@@ -124,15 +125,32 @@ Claude Code のカスタムコマンドは Bash ツール経由で実行され�
 
 集計は **`type=assistant` レコードのみ** を対象とする。
 
-## PowerShell フォールバック / 設計上の例外
+## PowerShell フォールバック
 
-通常運用は Bash 経路 (`aggregate.sh`) を使用します。本体の `aggregate.ps1` は
-.NET StreamReader / ConvertFrom-Json / Set-Clipboard / 全角幅計算など
-PowerShell 専用機能を多用しており、Bash 純粋実装または Python 再実装は
-等価性検証コストが大きいため、`aggregate.sh` は pwsh -File 経由で本体を呼ぶ
-**薄ラッパー** として実装されています (動作差異ゼロ保証)。
+通常運用は Bash 経路 (`aggregate.sh`) を使用します。`aggregate.sh` は
+**Bash + Python (aggregate.py) による純粋実装** (Phase 9b 完成)。
+クリップボード操作は OS 別に `clip.exe` / `pbcopy` / `xclip` を自動選択し、
+全角幅計算は Python の `unicodedata.east_asian_width` で実施します。
 
-pwsh (PowerShell 7+) が PATH に必要です。
+PowerShell 版 (`aggregate.sh`) は **フォールバック手順用** として同階層に保持され、
+.NET StreamReader / Set-Clipboard 等を利用したオリジナル実装です。
+動作差異ゼロは parity test での検証対象とはしていませんが、
+両実装は同じ JSONL 集計仕様・整形ルールに従います。
+
+### フォールバック適用条件
+
+- Python が PATH に無い環境で使いたい場合
+- 動作差異の疑いがあり、PowerShell 元実装の出力を直接確認したい場合
+
+切替手順:
+
+```bash
+pwsh -NoProfile -ExecutionPolicy Bypass \
+  -File "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.sh" \
+  -Stdout [-SessionId <UUID>]
+```
+
+`pwsh` (PowerShell 7+) のインストール手順は `~/.claude/rules/tools/powershell-fallback-mode.md` を参照。
 
 ## ライセンス
 

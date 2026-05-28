@@ -118,7 +118,7 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \\
 PowerShell フォールバック:
 
 \`\`\`powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
+pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" `
   -WorkDir "$WorkDir" `
   -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 \`\`\`

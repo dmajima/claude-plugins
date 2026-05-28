@@ -57,12 +57,13 @@ Claude Code のフックイベント別の意味と使い方。
 
 | 値 | 用途 | 推奨度 |
 |---|---|------|
-| `"powershell"` | Windows PowerShell / pwsh で実行 | 本マーケットプレイスのデフォルト |
+| `"bash"` | Git Bash / bash で実行 | **本マーケットプレイスのデフォルト** |
+| `"powershell"` | Windows PowerShell / pwsh で実行 | PowerShell フォールバック適用時 |
 | `"bash"` | POSIX bash で実行 | macOS / Linux 限定（本マーケットプレイスでは未使用） |
 
 #### 必須化の根拠
 
-- `command` を `pwsh -NoProfile -File "..."` 形式で記述しても、Claude Code が起動する **ホスト側シェル** が Git Bash 等の場合に、引数解釈や PATH 解決でエッジケースが発生しうる
+- `command` を `bash "..."` 形式で記述しても、Claude Code が起動する **ホスト側シェル** が PowerShell の場合に、引数解釈や PATH 解決でエッジケースが発生しうる（フォールバック時は `pwsh -NoProfile -File "..."`）
 - `~/.claude/rules/tools/shell-preference.md`（`Bash` ツール禁止、`PowerShell` ツール優先）の方針と整合させるため、フック実行も PowerShell ホストで起動する意図を一義的に伝える必要がある
 - `"shell": "powershell"` を明示することで、Claude Code が PowerShell ホストでコマンドを起動する意図をプラグイン側で表明できる
 - `shell` フィールド未対応の古い Claude Code では無視されるため、後方互換性は維持される
@@ -74,7 +75,7 @@ NG（shell 未指定。OS デフォルトに依存し Git Bash で起動され�
 ```json
 {
   "type": "command",
-  "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/foo.ps1\"",
+  "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/foo.sh\"",
   "timeout": 10
 }
 ```
@@ -84,7 +85,7 @@ OK（shell 明示）:
 ```json
 {
   "type": "command",
-  "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/foo.ps1\"",
+  "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/foo.sh\"",
   "shell": "powershell",
   "timeout": 10
 }
@@ -135,7 +136,7 @@ OK（shell 明示）:
 ```json
 {
   "type": "command",
-  "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-tool-use.ps1\"",
+  "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-tool-use.sh\"",
   "shell": "powershell",
   "timeout": 5
 }
@@ -148,7 +149,7 @@ OK（shell 明示）:
 ```json
 {
   "type": "command",
-  "command": "pwsh -NoProfile -Command \"Invoke-RestMethod https://example.invalid/$($input.user)\"",
+  "command": "curl -s https://example.invalid/$user",
   "shell": "powershell"
 }
 ```
@@ -170,7 +171,7 @@ OK（shell 明示）:
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log_command.ps1\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log_command.sh\"",
             "shell": "powershell",
             "timeout": 5
           }
@@ -191,7 +192,7 @@ OK（shell 明示）:
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -Command \"[console]::beep(800,200)\"",
+            "command": "printf \"\a\"",
             "shell": "powershell",
             "timeout": 3
           }
@@ -214,7 +215,7 @@ OK（shell 明示）:
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-session-start.ps1\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/log-session-start.sh\"",
             "shell": "powershell",
             "timeout": 2
           }
@@ -225,7 +226,7 @@ OK（shell 明示）:
 }
 ```
 
-`log-session-start.ps1` 側で `Set-StrictMode -Version Latest` と `$ErrorActionPreference = 'Stop'` のもと、必要な処理（タイムスタンプ取得・ログ書き込み等）を実装する。`command` 内で直接 `Get-Date` を実行する形は、利用者が動的入力を含むよう書き換える誘惑を招くため非推奨。
+`log-session-start.sh` 側で `Set-StrictMode -Version Latest` と `$ErrorActionPreference = 'Stop'` のもと、必要な処理（タイムスタンプ取得・ログ書き込み等）を実装する。`command` 内で直接 `Get-Date` を実行する形は、利用者が動的入力を含むよう書き換える誘惑を招くため非推奨。
 
 ### PreToolUse: 危険コマンドのブロック
 
@@ -238,7 +239,7 @@ OK（shell 明示）:
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/block_dangerous.ps1\"",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/block_dangerous.sh\"",
             "shell": "powershell",
             "timeout": 5
           }
@@ -249,7 +250,7 @@ OK（shell 明示）:
 }
 ```
 
-`block_dangerous.ps1` で危険コマンドを検出した場合、終了コード 2 を返してブロックする。
+`block_dangerous.sh` で危険コマンドを検出した場合、終了コード 2 を返してブロックする。
 
 ## settings.json への追加時の注意
 
@@ -271,7 +272,7 @@ settings['hooks']['PreToolUse'].append({
     "matcher": "PowerShell",
     "hooks": [{
         "type": "command",
-        "command": "pwsh -NoProfile -File \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/foo.ps1\"",
+        "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/foo.sh\"",
         "shell": "powershell",
         "timeout": 5,
     }],

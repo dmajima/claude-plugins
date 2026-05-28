@@ -24,28 +24,6 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$Ses
 <details><summary>PowerShell フォールバック</summary>
 
 ```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" -WorkDir "$SessionDir/workspace"
-```
-
-</details>
-
-setup_venv.sh は以下を自動実行する:
-
-1. `$WorkDir/.venv` に Python venv を作成
-2. `$ScriptDir/requirements.txt` からパッケージをインストール
-3. `playwright install chromium` で Chromium バイナリをダウンロード（初回のみ、~120MB）
-
-## 削除スクリプト
-
-セッション完了後は venv を削除する。
-
-```bash
-bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" -WorkDir "$SessionDir/workspace"
-```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
 pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir "$SessionDir/workspace"
 ```
 
@@ -54,6 +32,8 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown
 ## Chromium の再ダウンロードを避けたい場合
 
 `PLAYWRIGHT_BROWSERS_PATH` 環境変数で共有キャッシュディレクトリを指定するとダウンロードが 1 回で済む。
+
+<details><summary>PowerShell フォールバック (Bash 等価は未整備)</summary>
 
 <details><summary>PowerShell フォールバック (Bash 等価は未整備)</summary>
 

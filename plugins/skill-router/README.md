@@ -150,7 +150,7 @@ git checkout main
 /router-embedding-cache --show <qn>   # 指定スキルのキャッシュ詳細を表示
 ```
 
-`disabled` フラグファイルは以下の優先順位で `route_prompt.ps1` から参照されます（最初に見つかった時点でルーティングをスキップします）。
+`disabled` フラグファイルは以下の優先順位で `route_prompt.sh` から参照されます（最初に見つかった時点でルーティングをスキップします）。
 
 | 優先 | パス | スコープ |
 |-----|------|---------|
@@ -293,9 +293,17 @@ Windows では `<base>` が深いパスにあると、HuggingFace のモデル�
 
 `/router-embedding-cache --clear` は内部で POSIX `rm -f` 相当を呼びます。Windows 環境では同等の PowerShell コマンドを案内します。
 
+```bash
+Remove-Item -Force "$BASE\embeddings_cache\vectors.npz", "$BASE\embeddings_cache\manifest.json"
+```
+
+<details><summary>PowerShell フォールバック</summary>
+
 ```powershell
 Remove-Item -Force "$BASE\embeddings_cache\vectors.npz", "$BASE\embeddings_cache\manifest.json"
 ```
+
+</details>
 
 ### トラブルシュート
 
@@ -390,8 +398,8 @@ plugins/skill-router/
 └── references/
     ├── scripts/
     │   ├── hooks/
-    │   │   ├── build_index_on_start.ps1
-    │   │   └── route_prompt.ps1
+    │   │   ├── build_index_on_start.sh
+    │   │   └── route_prompt.sh
     │   ├── lib/
     │   │   ├── build_index.py        # v0.4 で embedding 統合
     │   │   ├── route.py              # v0.4 で embedding 統合
@@ -428,7 +436,7 @@ plugins/skill-router/
 Bash 経路が機能しない場合、PowerShell 経路に切り替えられます。
 
 ```bash
-cp references/hooks-fallback/hooks.ps1.json hooks/hooks.json
+cp references/hooks-fallback/hooks.sh.json hooks/hooks.json
 # Claude Code を再起動
 ```
 

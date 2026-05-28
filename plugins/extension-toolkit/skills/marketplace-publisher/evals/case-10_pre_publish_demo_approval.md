@@ -26,7 +26,7 @@
 
 | ステップ | 内容 |
 |---------|------|
-| (a) 公開対象プラグインの主要スキル / コマンドを起動 | `pwsh -NoProfile -File <plugin>/evals/demo.ps1` または該当スキルの代表シナリオ |
+| (a) 公開対象プラグインの主要スキル / コマンドを起動 | `bash <plugin>/evals/demo.sh` または該当スキルの代表シナリオ |
 | (b) AskUserQuestion 含有スキルなら実発火 | 公開後の利用者が遭遇する UI を実機で確認 |
 | (c) marketplace 整合性確認 | marketplace-toolkit が同期した README の表示確認 |
 | (d) 結果を提示 | 標準出力 / 生成成果物 / 同期 README の差分 |

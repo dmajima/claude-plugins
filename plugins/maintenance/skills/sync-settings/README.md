@@ -104,5 +104,5 @@ Claude（要約）:
 | `references/procedures.md` | 詳細実行手順 |
 | `references/safety.md` | 安全装置の詳細 |
 | `references/strategies.md` | 戦略別の動作詳細 |
-| `references/scripts/sync/sync.ps1` | 実装スクリプト（PowerShell） |
+| `references/scripts/sync/sync.sh` | 実装スクリプト（PowerShell） |
 | `evals/` | 動作分岐の期待挙動 |
