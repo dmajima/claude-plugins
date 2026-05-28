@@ -1,27 +1,40 @@
 #!/usr/bin/env bash
-# aggregate.sh - Claude Code セッション JSONL からトークン消費量を集計 (Bash ラッパー版)
+# aggregate.sh - Claude Code セッション JSONL からトークン消費量を集計 (Bash + Python 版)
 #
-# 通常運用は本スクリプトを利用する。
-# 本体は aggregate.ps1 (312 行・.NET StreamReader / ConvertFrom-Json /
-# Set-Clipboard / 全角幅計算など PowerShell 専用機能を多用)。
-# Bash 純粋実装または Python 再実装は等価性検証コストが大きいため、
-# pwsh -File 経由で起動する薄ラッパーとして提供 (動作差異ゼロ保証)。
+# 通常運用は本スクリプトを利用する。本体は aggregate.py (Bash から Python 起動)。
+# PowerShell フォールバック: aggregate.ps1 (歴史的経緯で保持、機能は aggregate.py と等価)
 #
-# 引数は PowerShell 版にそのまま透過する。
+# 引数:
+#   --session-id <id>     : 対象セッション ID
+#   --project-key <key>   : プロジェクトキー
+#   --as-object           : JSON 出力
+#   --stdout              : 整形済み文字列を stdout に出力 (Bash 経由はデフォルト ON)
+#   --copy                : クリップボードコピー
 
 set -euo pipefail
 
-script_dir="$(cd "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-ps1="$script_dir/aggregate.ps1"
+# Python の UTF-8 設定（python-encoding-mandatory.md 準拠）
+export PYTHONUTF8=1
+export PYTHONIOENCODING=utf-8
 
-if [[ ! -f "$ps1" ]]; then
-  echo "[aggregate] PowerShell 本体が見つかりません: $ps1" >&2
+script_dir="$(cd "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+py="$script_dir/aggregate.py"
+
+if [[ ! -f "$py" ]]; then
+  echo "[aggregate] Python 本体が見つかりません: $py" >&2
   exit 2
 fi
-if ! command -v pwsh >/dev/null 2>&1; then
-  echo "[aggregate] pwsh (PowerShell 7+) が PATH に見つかりません。" >&2
-  echo "  本機能は PowerShell 専用 (.NET StreamReader / Set-Clipboard / 全角幅計算) のため、pwsh が必須です。" >&2
+
+python_bin=""
+if command -v python >/dev/null 2>&1; then
+  python_bin="$(command -v python)"
+elif command -v python3 >/dev/null 2>&1; then
+  python_bin="$(command -v python3)"
+elif command -v py >/dev/null 2>&1; then
+  python_bin="$(command -v py)"
+else
+  echo "[aggregate] python / python3 / py のいずれも PATH に見つかりません。" >&2
   exit 127
 fi
 
-exec pwsh -NoProfile -File "$ps1" "$@"
+exec "$python_bin" -u "$py" "$@"
