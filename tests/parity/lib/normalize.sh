@@ -101,6 +101,46 @@ parity_norm_git_sha() {
   sed -E 's/\b[0-9a-f]{40}\b/<SHA>/g; s/\bcommit [0-9a-f]{7,12}\b/commit <SHA>/g'
 }
 
+parity_norm_ps_error_decoration() {
+  # PowerShell の Write-Error / Write-Warning / Write-Verbose 装飾を除去し、
+  # メッセージ本体のみ残す。Bash 側の素の echo "..." >&2 と比較可能にする。
+  #
+  # 除去対象:
+  #   <script.ps1> : <message>             → <message>
+  #   <script.ps1>:<line> <message>        → <message>
+  #   At <file>:<line> char:<col>          → 行削除（および続く + 装飾行）
+  #   + <code snippet>                     → 行削除
+  #   +     ~~~~~~~                         → 行削除
+  #       + CategoryInfo : ...             → 行削除
+  #       + FullyQualifiedErrorId : ...    → 行削除
+  #   WARNING: <message>                   → <message>
+  #   VERBOSE: <message>                   → <message>
+  awk '
+    # "At <file>:<line> char:<col>" を検出したら、続く装飾行を抑制
+    /^At [^[:space:]]+:[0-9]+ char:[0-9]+[[:space:]]*$/ { in_decoration=1; next }
+    in_decoration && /^[+][[:space:]]/  { next }
+    in_decoration && /^[+][[:space:]]*~+$/ { next }
+    in_decoration && /^[[:space:]]+\+[[:space:]]*CategoryInfo[[:space:]]*:/ { next }
+    in_decoration && /^[[:space:]]+\+[[:space:]]*FullyQualifiedErrorId[[:space:]]*:/ { next }
+    in_decoration && /^[[:space:]]*$/ { in_decoration=0; next }
+    in_decoration { in_decoration=0 }
+
+    # "<script.ps1> : <message>" のスクリプト名プリフィクスを剥がす
+    /^[^[:space:]]+\.ps1[[:space:]]*:[[:space:]]/ {
+      sub(/^[^[:space:]]+\.ps1[[:space:]]*:[[:space:]]/, "")
+      print
+      next
+    }
+    # WARNING: / VERBOSE: / DEBUG: プリフィクスを剥がす
+    /^(WARNING|VERBOSE|DEBUG|INFORMATION):[[:space:]]/ {
+      sub(/^(WARNING|VERBOSE|DEBUG|INFORMATION):[[:space:]]/, "")
+      print
+      next
+    }
+    { print }
+  '
+}
+
 # parity_normalize <rules...>
 #   stdin に対し rules を順次適用して stdout に出す。
 parity_normalize() {
@@ -115,15 +155,16 @@ parity_normalize() {
   local rule
   for rule in "${rules[@]}"; do
     case "$rule" in
-      crlf)          cmd+=" | parity_norm_crlf" ;;
-      trailing_ws)   cmd+=" | parity_norm_trailing_ws" ;;
-      timestamps)    cmd+=" | parity_norm_timestamps" ;;
-      abs_paths)     cmd+=" | parity_norm_abs_paths" ;;
-      uuid)          cmd+=" | parity_norm_uuid" ;;
-      pid)           cmd+=" | parity_norm_pid" ;;
-      python_trace)  cmd+=" | parity_norm_python_trace" ;;
-      git_sha)       cmd+=" | parity_norm_git_sha" ;;
-      json)          cmd+=" | parity_norm_json" ;;
+      crlf)                cmd+=" | parity_norm_crlf" ;;
+      trailing_ws)         cmd+=" | parity_norm_trailing_ws" ;;
+      timestamps)          cmd+=" | parity_norm_timestamps" ;;
+      abs_paths)           cmd+=" | parity_norm_abs_paths" ;;
+      uuid)                cmd+=" | parity_norm_uuid" ;;
+      pid)                 cmd+=" | parity_norm_pid" ;;
+      python_trace)        cmd+=" | parity_norm_python_trace" ;;
+      git_sha)             cmd+=" | parity_norm_git_sha" ;;
+      json)                cmd+=" | parity_norm_json" ;;
+      ps_error_decoration) cmd+=" | parity_norm_ps_error_decoration" ;;
       *)
         echo "[normalize] unknown rule: $rule" >&2
         return 2
@@ -136,4 +177,5 @@ parity_normalize() {
 }
 export -f parity_norm_crlf parity_norm_trailing_ws parity_norm_timestamps \
           parity_norm_abs_paths parity_norm_uuid parity_norm_pid \
-          parity_norm_python_trace parity_norm_git_sha parity_norm_json
+          parity_norm_python_trace parity_norm_git_sha parity_norm_json \
+          parity_norm_ps_error_decoration

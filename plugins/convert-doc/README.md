@@ -68,7 +68,7 @@ git clone https://github.com/dmajima/claude-plugins.git
 
 ### D. 依存関係のインストール
 
-4 スキルとも Python 仮想環境を利用します。スキル初回起動時に `references/scripts/setup/setup_venv.ps1` が自動実行され、以下の依存パッケージがインストールされます。
+4 スキルとも Python 仮想環境を利用します。スキル初回起動時に `references/scripts/setup/setup_venv.sh` が自動実行され、以下の依存パッケージがインストールされます（PowerShell フォールバック: `setup_venv.ps1`、本ファイル末尾「PowerShell フォールバック」節参照）。
 
 | スキル | 主要パッケージ | 追加ダウンロード |
 |-------|--------------|----------------|
@@ -187,8 +187,10 @@ plugins/convert-doc/
 │   └── scripts/                      # プラグイン単位 venv + 業務スクリプト（ADR-024 / ADR-025）
 │       ├── setup/                    # 統合 venv 構築（4 スキル分の依存をマージ）
 │       │   ├── requirements.txt
-│       │   ├── setup_venv.ps1
-│       │   └── teardown_venv.ps1
+│       │   ├── setup_venv.sh         # Bash 版（通常運用）
+│       │   ├── setup_venv.ps1        # PowerShell 版（フォールバック）
+│       │   ├── teardown_venv.sh      # Bash 版（通常運用）
+│       │   └── teardown_venv.ps1     # PowerShell 版（フォールバック）
 │       ├── convert-html/
 │       │   └── convert.py
 │       ├── convert-pdf/
@@ -278,6 +280,39 @@ plugins/convert-doc/
 - PPTX の色・フォント・レイアウト変更: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py` 冒頭の定数を編集
 - PPTX → Markdown の取り込みカスタマイズ: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py` 冒頭の `MONOSPACE_FONTS` / `ALLOWED_IMAGE_EXTS` 等の定数を編集
 - Python 依存パッケージの更新: `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt`（プラグイン統合）を編集
+
+## PowerShell フォールバック
+
+通常運用は Bash 経路（`.sh` スクリプト）を使用します。Git Bash の初期化不調等で Bash 経路が機能しない場合、本プラグインの venv 構築/撤去・Python ラッパーを PowerShell 経路に手動で切り替えられます。
+
+### 切り替え条件
+
+以下の **いずれか** に該当する場合:
+
+- Git Bash の `add_item failed` 等の Cygwin 初期化エラーが再現性をもって発生
+- `bash` コマンドが PATH に見つからない
+- ユーザーが明示的に PowerShell 利用を指示
+
+### 切り替え手順
+
+1. グローバル設定を切り替える: `~/.claude/rules/tools/powershell-fallback-mode.md` の手順に従う
+2. 起動コマンドを以下のように差し替える:
+
+```bash
+# 通常運用（Bash）
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" "$SessionDir/workspace"
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_via_job.sh" "$INPUT" "$OUTPUT" --python-exe "$VENV/Scripts/python.exe"
+```
+
+```powershell
+# PowerShell フォールバック
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" -WorkDir "$SessionDir/workspace"
+pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_via_job.ps1" -InputPath "$INPUT" -OutputPath "$OUTPUT" -PythonExe "$VENV\Scripts\python.exe"
+```
+
+### 動作等価性の保証
+
+Bash 版と PowerShell 版は、`tests/parity/run_all.sh` で同じ入力に対して同じ観測結果（stdout / stderr / exit code / ファイルシステム）を返すことが自動検証されています。フォールバックに切り替えても、動作結果は変わりません。
 
 ## ライセンス
 

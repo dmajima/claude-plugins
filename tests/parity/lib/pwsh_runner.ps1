@@ -4,17 +4,18 @@
 # Bash 側 (UTF-8) との出力比較で文字化けが起きないようにする。
 #
 # 使い方:
-#   pwsh -NoProfile -File pwsh_runner.ps1 <script_path> <args...>
+#   pwsh -NoProfile -NonInteractive -File pwsh_runner.ps1 <script_path> <args...>
+#
+# 設計上の注意:
+#   - 本ファイルは `param()` を使わず、全引数を `$args` 自動変数で受け取る。
+#     `param([string]$Script, [string[]]$RemainingArgs)` 形式だと、
+#     呼び出し対象スクリプト用の `-WorkDir` 等の引数が runner 自身の
+#     パラメータと誤解釈されてエラーになるため。
 #
 # 注意:
 #   この runner は parity test 専用。実プラグインの .ps1 スクリプトには
 #   既に必須プリフィクス（global rule console-encoding.md 準拠）が
 #   組み込まれているため、本 runner と二重に設定しても害はない。
-
-param(
-    [Parameter(Mandatory = $true, Position = 0)][string]$Script,
-    [Parameter(ValueFromRemainingArguments = $true)][string[]]$RemainingArgs
-)
 
 # UTF-8 を強制
 & chcp.com 65001 | Out-Null
@@ -24,14 +25,22 @@ $OutputEncoding           = [System.Text.Encoding]::UTF8
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
 
-if (-not (Test-Path -LiteralPath $Script)) {
-    [Console]::Error.WriteLine("[pwsh_runner] script not found: $Script")
+if ($args.Count -lt 1) {
+    [Console]::Error.WriteLine("[pwsh_runner] usage: pwsh_runner.ps1 <script> [args...]")
     exit 127
 }
 
-if ($RemainingArgs) {
-    & $Script @RemainingArgs
+$ScriptPath = $args[0]
+$ScriptArgs = if ($args.Count -gt 1) { $args[1..($args.Count - 1)] } else { @() }
+
+if (-not (Test-Path -LiteralPath $ScriptPath)) {
+    [Console]::Error.WriteLine("[pwsh_runner] script not found: $ScriptPath")
+    exit 127
+}
+
+if ($ScriptArgs.Count -gt 0) {
+    & $ScriptPath @ScriptArgs
 } else {
-    & $Script
+    & $ScriptPath
 }
 exit $LASTEXITCODE

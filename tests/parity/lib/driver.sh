@@ -116,18 +116,27 @@ parity_run_case() {
     cp -R "$repo_root/$PRE_FS/." "$sh_dir/"
   fi
 
-  # 引数の決定
+  # 引数の決定（__SANDBOX__ プレースホルダをサイドごとの絶対パスに置換）
   local -a ps_args=()
   local -a sh_args=()
+  local a
   if [[ ${#ARGS_PS[@]} -gt 0 ]]; then
-    ps_args=("${ARGS_PS[@]}")
+    for a in "${ARGS_PS[@]}"; do
+      ps_args+=("$(parity_sandbox_substitute "$ps_dir" "$a")")
+    done
   else
-    ps_args=("${ARGS[@]+"${ARGS[@]}"}")
+    for a in "${ARGS[@]+"${ARGS[@]}"}"; do
+      ps_args+=("$(parity_sandbox_substitute "$ps_dir" "$a")")
+    done
   fi
   if [[ ${#ARGS_BASH[@]} -gt 0 ]]; then
-    sh_args=("${ARGS_BASH[@]}")
+    for a in "${ARGS_BASH[@]}"; do
+      sh_args+=("$(parity_sandbox_substitute "$sh_dir" "$a")")
+    done
   else
-    sh_args=("${ARGS[@]+"${ARGS[@]}"}")
+    for a in "${ARGS[@]+"${ARGS[@]}"}"; do
+      sh_args+=("$(parity_sandbox_substitute "$sh_dir" "$a")")
+    done
   fi
 
   # 環境変数の決定（__SANDBOX__ 置換）
@@ -161,9 +170,10 @@ parity_run_case() {
 
   # PowerShell ラッパー経由で起動し、Console エンコーディングを UTF-8 に強制する。
   # これにより Bash 側 (UTF-8) との出力比較で文字化けを防ぐ。
+  # -NonInteractive: Mandatory パラメータ未指定時に対話プロンプトを抑制してエラー終了させる。
   local ps_env_arr=ps_env
   parity_capture "$ps_dir/obs" "$stdin_abs" "$ps_env_arr" "$ps_dir" \
-    "$pwsh_cmd" -NoProfile -File "$PARITY_LIB_DIR/pwsh_runner.ps1" \
+    "$pwsh_cmd" -NoProfile -NonInteractive -File "$PARITY_LIB_DIR/pwsh_runner.ps1" \
     "$repo_root/$SCRIPT_PS_REL" "${ps_args[@]+"${ps_args[@]}"}"
 
   # ---- Bash 側を実行 ----

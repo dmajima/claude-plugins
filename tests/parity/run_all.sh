@@ -45,8 +45,9 @@ total_skip=0
 declare -a failed_ids=()
 
 for runner in "${runners[@]}"; do
-  plugin_dir="$(cd "$runner/../../.." && pwd)"
-  plugin_name="$(basename "$plugin_dir")"
+  # runner は plugins/<plugin>/tests/parity/run.sh
+  plugin_dir="$(dirname -- "$(dirname -- "$(dirname -- "$runner")")")"
+  plugin_name="$(basename -- "$plugin_dir")"
 
   if [[ -n "$ONLY" && "$plugin_name" != "$ONLY" ]]; then
     continue
