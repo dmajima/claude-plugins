@@ -355,7 +355,7 @@ cp references/hooks-fallback/hooks.sh.json hooks/hooks.json
 # Claude Code を再起動
 ```
 
-Bash 版（`*.sh`）と PowerShell 版（`*.sh`）は、`tests/parity/run_all.sh` で同じ入力（stdin JSON）に対して同じ JSON 出力・exit code を返すことが自動検証されています。詳細手順は `references/hooks-fallback/README.md` 参照。
+Bash 版（`*.sh`）と PowerShell 版（`*.ps1`）は、同じ入力（stdin JSON）に対して同じ JSON 出力・exit code を返すよう実装されています。詳細手順は `references/hooks-fallback/README.md` 参照。
 
 ## ライセンス
 

@@ -443,8 +443,7 @@ cp references/hooks-fallback/hooks.sh.json hooks/hooks.json
 Bash 版 (`build_index_on_start.sh` / `route_prompt.sh` / `toggle.sh` /
 `resolve_base.sh` / `clear_embedding_cache.sh` / `setup_venv.sh` /
 `teardown_venv.sh`) と PowerShell 版 (`.ps1`) は同じ Python lifecycle と
-disabled フラグを共有するため、切替後も状態を引き継ぎます。動作等価性は
-`tests/parity/run_all.sh` で自動検証されています。
+disabled フラグを共有するため、切替後も状態を引き継ぎます。
 
 ## ライセンス
 

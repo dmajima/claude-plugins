@@ -26,5 +26,5 @@ cp references/hooks-fallback/hooks.bash.json.template hooks/hooks.json
 
 ## 動作等価性の保証
 
-Bash 起動の `*.sh` と PowerShell 起動の `*.ps1` は、`tests/parity/run_all.sh`
-で同じ入力に対して同じ観測結果を返すことが自動検証される。
+Bash 起動の `*.sh` と PowerShell 起動の `*.ps1` は、同じ入力に対して
+同じ観測結果を返すよう実装されている。

@@ -228,7 +228,7 @@ maintenance/
 PowerShell を起動しません (Phase 9c 完成)。
 
 PowerShell 版 (`.ps1`) は **フォールバック手順用** として同階層に保持されます。
-動作差異ゼロは parity test (`plugins/maintenance/tests/parity/`) で機械的に検証済み。
+両実装は同一の入出力仕様に従い、動作差異がないよう実装されています。
 
 ### フォールバック適用条件
 

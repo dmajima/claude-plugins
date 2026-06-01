@@ -173,7 +173,7 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/output/run_d
 
 </details>
 
-Bash 版と PowerShell 版は `tests/parity/run_all.sh` で同じ入力に対して同じ観測結果を返すことが自動検証されています。
+Bash 版と PowerShell 版は同じ入力に対して同じ観測結果を返すよう実装されています。
 
 ## ライセンス
 
