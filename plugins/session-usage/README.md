@@ -134,7 +134,7 @@ Claude Code のカスタムコマンドは Bash ツール経由で実行され�
 
 PowerShell 版 (`aggregate.sh`) は **フォールバック手順用** として同階層に保持され、
 .NET StreamReader / Set-Clipboard 等を利用したオリジナル実装です。
-動作差異ゼロは parity test での検証対象とはしていませんが、
+動作差異ゼロの自動検証は行っていませんが、
 両実装は同じ JSONL 集計仕様・整形ルールに従います。
 
 ### フォールバック適用条件

@@ -361,7 +361,7 @@ cp references/hooks-fallback/hooks.sh.json hooks/hooks.json
 # Claude Code を再起動
 ```
 
-Bash 版と PowerShell 版の動作等価性は `tests/parity/run_all.sh` で自動検証されています。詳細は `references/hooks-fallback/README.md` を参照。
+Bash 版と PowerShell 版は同じ入力に対して同じ観測結果を返すよう実装されています。詳細は `references/hooks-fallback/README.md` を参照。
 
 > 補足: 旧版では PSScriptAnalyzer / PSModule セットアップ機能を同梱していましたが、PowerShell 専用機能で Bash 等価実装が不可のため、Phase 9a で本プラグインから削除しました (リポジトリ全体の Bash 標準化方針との整合)。
 

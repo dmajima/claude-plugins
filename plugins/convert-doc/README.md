@@ -322,7 +322,7 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from
 
 ### 動作等価性の保証
 
-Bash 版と PowerShell 版は、`tests/parity/run_all.sh` で同じ入力に対して同じ観測結果（stdout / stderr / exit code / ファイルシステム）を返すことが自動検証されています。フォールバックに切り替えても、動作結果は変わりません。
+Bash 版と PowerShell 版は、同じ入力に対して同じ観測結果（stdout / stderr / exit code / ファイルシステム）を返すよう実装されています。フォールバックに切り替えても、動作結果は変わりません。
 
 ## ライセンス
 
