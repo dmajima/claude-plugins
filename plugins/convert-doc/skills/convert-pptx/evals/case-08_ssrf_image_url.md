@@ -12,7 +12,7 @@
 
 ## 期待動作
 
-1. `_load_image_bytes()` で `urlparse(src)` を実行
+1. `_load_image_bytes` で `urlparse(src)` を実行
 2. `_is_public_host(parsed.hostname)` が:
    - `192.168.1.10` → `ipaddress.ip_address("192.168.1.10").is_private` が True → **拒否**
    - `127.0.0.1` → `is_loopback` が True → **拒否**

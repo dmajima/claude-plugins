@@ -60,22 +60,6 @@ rendered=$(bash scripts/aggregate/aggregate.sh --stdout)
 # JSON 形式で取得
 bash scripts/aggregate/aggregate.sh --as-object | jq .
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-# 整形済み文字列を表示+コピー（Bash 経由想定）
-pwsh -File scripts/aggregate/aggregate.ps1 -Stdout -Copy
-
-# 整形済み文字列を変数で取得（pwsh 内呼び出し用）
-$rendered = & pwsh -File scripts/aggregate/aggregate.ps1
-
-# オブジェクト形式で取得
-pwsh -File scripts/aggregate/aggregate.ps1 -AsObject | ConvertTo-Json
-```
-
-</details>
-
 ## 既知の制限
 
 - Windows 専用（`Set-Clipboard` が前提）

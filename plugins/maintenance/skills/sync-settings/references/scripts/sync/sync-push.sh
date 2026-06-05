@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # sync-push.sh - sync 結果を Git push (Bash + git + gh CLI 純粋実装)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: sync-push.ps1 (機能等価、歴史的経緯で保持)
 #
 # 処理の流れ:
 #   1. sync-mappings.json から該当スコープのマッピングを取得
@@ -392,7 +390,7 @@ else
 - 新ブランチ: $new_branch
 - ベースブランチ: $branch
 
-このブランチは sync-push.ps1 が作成しました。マージ後に削除してください。"
+このブランチは sync-push.sh が作成しました。マージ後に削除してください。"
     fi
 
     gh_out_file="$(mktemp)"

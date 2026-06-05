@@ -72,25 +72,6 @@ git clone --depth 1 --branch $Branch $Repo $repoDir
     git clean -fdx
     Pop-Location
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$repoDir = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance\repo'
-
-if (-not (Test-Path $repoDir)) {
-    git clone --depth 1 --branch $Branch $Repo $repoDir
-} else {
-    Push-Location $repoDir
-    git fetch --depth 1 origin $Branch
-    git reset --hard "origin/$Branch"
-    git clean -fdx
-    Pop-Location
-}
-```
-
-</details>
-
 ### 2.3 同期対象の検出
 
 `--targets` で指定された各エントリについて、クローン先で実在するかを確認する。優先順位:
@@ -137,26 +118,6 @@ New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
 
         Copy-Item -Recurse -Force -LiteralPath $src -Destination $dst
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$backupRoot = Join-Path $env:USERPROFILE '.claude\.local\plugins\maintenance\backup'
-$ts = Get-Date -Format 'yyyyMMdd_HHmmss'
-$backupDir = Join-Path $backupRoot $ts
-New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
-
-foreach ($target in $targets) {
-    $src = Join-Path $env:USERPROFILE ".claude\$target"
-    if (Test-Path $src) {
-        $dst = Join-Path $backupDir $target
-        Copy-Item -Recurse -Force -LiteralPath $src -Destination $dst
-    }
-}
-```
-
-</details>
-
 ### 3.4 認証情報の除外
 
 バックアップ取得時も以下は除外:

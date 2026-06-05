@@ -8,10 +8,10 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で入力 PPTX を検証
-2. `export_structured_json()` で `structured.json` を出力 → `wrote_anything = True`
+1. `_validate_pptx` で入力 PPTX を検証
+2. `export_structured_json` で `structured.json` を出力 → `wrote_anything = True`
 3. `wrote_anything = True` かつ `converter.json_only = False` のため `if converter.json_only: return 0` ガードが不成立
-4. そのまま `converter.convert()` に進み、`output.md` も生成
+4. そのまま `converter.convert` に進み、`output.md` も生成
 5. 画像は `<basename>_images/` に共通抽出
 6. 終了コード: 0
 
@@ -33,10 +33,10 @@ Images dir: <セッション>/output_images
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:main()` のフロー:
+`convert_from_pptx.py:main` のフロー:
 ```python
 if converter.structured_json_path is not None:
-    json_path = converter.export_structured_json()
+    json_path = converter.export_structured_json
     print(f"Wrote JSON: {json_path}")
     wrote_anything = True
 # ... (per-slide / compact-view も同様)
@@ -45,7 +45,7 @@ if wrote_anything:
     if converter.json_only:
         return 0  # ← --json-only ありならここで終了
 # --json-only 無し → そのまま MD 直接出力に進む
-output_path = converter.convert()
+output_path = converter.convert
 ```
 
 このケースは `--json-only` なし + `--structured-json` ありで「両方出力」のパスを検証する。

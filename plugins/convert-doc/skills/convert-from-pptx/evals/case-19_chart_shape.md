@@ -8,7 +8,7 @@
 
 ## 期待動作
 
-1. `_collect_shape()` で `getattr(shape, "has_chart", False)` が True
+1. `_collect_shape` で `getattr(shape, "has_chart", False)` が True
 2. `_summarize_chart(shape.chart)` を呼び出し
 3. `chart.chart_type` の文字列と `chart.series` の各 name を抽出
 4. `> チャート: <type> 系列=[...]` 形式の引用ブロックを `kind=chart` として `collected` に追加
@@ -26,7 +26,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_collect_shape()`:
+`convert_from_pptx.py:_collect_shape`:
 ```python
 if getattr(shape, "has_chart", False) and shape.has_chart:
     block = self._summarize_chart(shape.chart)
@@ -34,7 +34,7 @@ if getattr(shape, "has_chart", False) and shape.has_chart:
     return
 ```
 
-`_summarize_chart()`:
+`_summarize_chart`:
 ```python
 return f"> チャート: {type_name} 系列={series_names}"
 ```

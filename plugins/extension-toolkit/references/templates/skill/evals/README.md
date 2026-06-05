@@ -25,19 +25,6 @@ bash evals/demo.sh
 # 実コマンド実行（dry-run のみ含むため副作用なし）
 bash evals/demo.sh --execute
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-# 計画のみ表示（副作用ゼロ、既定）
-pwsh -NoProfile -File evals/demo.ps1
-
-# 実コマンド実行（dry-run のみ含むため副作用なし）
-pwsh -NoProfile -File evals/demo.ps1 -WhatIf:$false
-```
-
-</details>
-
 `demo.sh` は以下の 4 ステップを順次実行する:
 
 1. 代表的な正常系（dry-run）

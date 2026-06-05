@@ -11,8 +11,8 @@
 
 ## 期待動作
 
-1. `FlowExtractor.build_mermaid()` を起動
-2. `_infer_direction()` が `x_range > y_range * 1.5` を満たすため `"LR"` を返す
+1. `FlowExtractor.build_mermaid` を起動
+2. `_infer_direction` が `x_range > y_range * 1.5` を満たすため `"LR"` を返す
 3. Mermaid フローチャートを `flowchart LR` で生成
 4. 終了コード: 0
 
@@ -33,7 +33,7 @@ flowchart LR
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:FlowExtractor._infer_direction()`:
+`convert_from_pptx.py:FlowExtractor._infer_direction`:
 ```python
 x_range = max(xs) - min(xs)
 y_range = max(ys) - min(ys)

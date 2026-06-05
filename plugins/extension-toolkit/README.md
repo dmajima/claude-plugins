@@ -211,7 +211,7 @@ Claude（要約）:
 
 | 配置 | 内容 |
 |-----|-----|
-| `hooks/hooks.json` | フック設定（`PreToolUse Edit\|Write\|MultiEdit` + `PreToolUse Bash`（git commit 検出）+ `Stop`）。各 hook は `"shell": "bash"` を明示（PowerShell フォールバック適用時のみ `"powershell"`） |
+| `hooks/hooks.json` | フック設定（`PreToolUse Edit\|Write\|MultiEdit` + `PreToolUse Bash`（git commit 検出）+ `Stop`）。各 hook は `"shell": "bash"` を明示 |
 | `references/scripts/hooks/enforce_toolkit_routing.sh` | PreToolUse Edit\|Write\|MultiEdit: 推奨スキル名の提示 |
 | `references/scripts/hooks/check_version_bump_on_commit.sh` | PreToolUse Bash: `git commit` 検出時に check_version_bump.sh に委譲（ADR-027） |
 | `references/scripts/hooks/check_version_bump.sh` | Stop: version 更新検証 |
@@ -351,19 +351,6 @@ plugins/extension-toolkit/
 ### アーキテクチャ判断
 
 詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) を参照（全 ADR）。
-
-## PowerShell フォールバック
-
-通常運用は Bash 経路 (`.sh` フック / スクリプト) を使用します。Git Bash 不調時等で Bash 経路が機能しない場合、PowerShell 経路に切り替えられます。
-
-```bash
-cp references/hooks-fallback/hooks.sh.json hooks/hooks.json
-# Claude Code を再起動
-```
-
-Bash 版と PowerShell 版は同じ入力に対して同じ観測結果を返すよう実装されています。詳細は `references/hooks-fallback/README.md` を参照。
-
-> 補足: 旧版では PSScriptAnalyzer / PSModule セットアップ機能を同梱していましたが、PowerShell 専用機能で Bash 等価実装が不可のため、Phase 9a で本プラグインから削除しました (リポジトリ全体の Bash 標準化方針との整合)。
 
 ## ライセンス
 

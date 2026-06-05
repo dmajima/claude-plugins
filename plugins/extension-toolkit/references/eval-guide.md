@@ -133,7 +133,7 @@ B-2（改善バックログ由来、git 履歴で経緯を参照）。`evals/cas
 ```yaml
 ---
 runnable: true                    # 必須。false / 未指定なら自動実行対象外
-command: |                        # 必須。bash で起動するシェルコマンド (PowerShell フォールバックの場合は pwsh -Command)
+command: |                        # 必須。bash で起動するシェルコマンド
   bash scripts/foo.sh --dry-run
 expect_exit_code: 0               # 任意（既定: 0）
 expect_output_regex:              # 任意（複数可）。全マッチで合格
@@ -170,22 +170,6 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" "<workspace>"
   --scope-root . \
   --parallel 4
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-# venv 経由（推奨）
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" "<workspace>"
-& "<workspace>/.venv/Scripts/python.exe" `
-  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/evals/run_evals.py" `
-  --target plugins/maintenance/skills/cleanup-workspace/evals `
-  --output .claude/.local/work/{session}/evals-result.json `
-  --scope-root . `
-  --parallel 4
-```
-
-</details>
-
 ### 10.4 出力 JSON 構造
 
 ```json

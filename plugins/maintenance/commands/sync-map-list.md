@@ -19,17 +19,6 @@ argument-hint: "[--show]"
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/skills/sync-settings/references/scripts/sync/sync-mappings.sh" -Action $action
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
-$action = if ('$ARGUMENTS' -match '--show') { 'show' } else { 'list' }
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1" -Action $action
-```
-
-</details>
-
 ## 関連
 
 - マッピング設定ファイル: `~/.claude/.local/plugins/maintenance/sync-mappings.json`

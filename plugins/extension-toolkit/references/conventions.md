@@ -228,7 +228,7 @@ references/
 ```text
 plugins/{plugin-name}/references/scripts/
 └── setup/
-    ├── setup_venv.sh       # venv 構築 + 依存インストール (Bash 標準・PowerShell フォールバック、shell-preference.md 準拠)
+    ├── setup_venv.sh       # venv 構築 + 依存インストール
     ├── teardown_venv.sh    # venv 削除
     └── requirements.txt     # 全スキルの依存統合リスト
 ```
@@ -273,7 +273,7 @@ plugins/{plugin-name}/references/scripts/
 |-------|------|
 | venv 実体の作成先 | `<work_dir>/.venv`（セッション作業領域内） |
 | venv ライフサイクルスクリプト | プラグイン直下 `references/scripts/setup/` |
-| 各スキルの呼び出し方 | `bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$WorkDir" -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"` (PowerShell フォールバック: `pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" ...`) |
+| 各スキルの呼び出し方 | `bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$WorkDir" -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"`  |
 | `environment-setup-toolkit` の役割 | プラグイン直下スクリプト呼び出しのオーケストレーション（自前で setup を持たない、ADR-024） |
 
 詳細は [`scripts-policy.md`](scripts-policy.md) 節 5 を参照。

@@ -34,39 +34,6 @@ argument-hint: "[--scope ...] [--strategy ...] [--dry-run] [--yes]"
     # interactive 戦略は Claude 主導のループ実装（下記参照）
     bash "$CLAUDE_PLUGIN_ROOT/skills/sync-settings/references/scripts/sync/sync.sh" "${args[@]}"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
-
-# --- 引数を個別に抽出（$ARGUMENTS 直展開は禁止） ---
-$argText = '$ARGUMENTS'
-$params  = @{}
-
-if ($argText -match '--scope\s+(global|project)\b')                                   { $params.Mapping     = $matches[1] }
-if ($argText -match '--strategy\s+(overwrite|merge|skip|interactive)\b')              { $params.Strategy    = $matches[1] }
-if ($argText -match '--project-path\s+"([^"]+)"|--project-path\s+(\S+)')              { $params.ProjectPath = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
-if ($argText -match '\B--dry-run\b')                                                  { $params.DryRun      = $true }
-if ($argText -match '\B--no-backup\b')                                                { $params.NoBackup    = $true }
-if ($argText -match '\B--prune\b')                                                    { $params.Prune       = $true }
-if ($argText -match '\B--yes\b')                                                      { $params.Yes         = $true }
-
-if (-not $params.ContainsKey('Mapping')) {
-    Write-Error "--scope <global|project> が必須です（対話モードでの起動は別フロー）。"
-    exit 1
-}
-
-# interactive は別フローへ分岐（下記 Step 2-B 参照）
-if ($params.Strategy -eq 'interactive') {
-    # interactive 戦略は Claude 主導のループ実装（下記参照）
-} else {
-    pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync.ps1" @params
-}
-```
-
-</details>
-
 `--strategy interactive` が指定された場合は、下記の interactive フローへ分岐する。
 
 ## 2. 対話モード（`$ARGUMENTS` が空）
@@ -112,15 +79,6 @@ AskUserQuestion({
 ```bash
 bash "...sync.sh" -Mapping <scope> -Strategy <strategy>
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "...sync.ps1" -Mapping <scope> -Strategy <strategy>
-```
-
-</details>
-
 #### 2-B. strategy = interactive（差分ごとの対話）
 
 interactive 戦略は **Claude 主導のループ実装**:
@@ -130,16 +88,6 @@ interactive 戦略は **Claude 主導のループ実装**:
 ```bash
 bash "...sync.sh" -Mapping <scope> -EmitDiffJson "$tmpJson"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$tmpJson = ".claude/.local/work/<session>/workspace/sync-diff.json"
-pwsh -NoProfile -File "...sync.ps1" -Mapping <scope> -EmitDiffJson "$tmpJson"
-```
-
-</details>
-
 `-EmitDiffJson` 指定時、sync.sh は差分検出後に JSON ファイルへ書き出して exit 0。実適用はしない。
 
 ##### Step 2-B-2: JSON 解析 + 件数による分岐

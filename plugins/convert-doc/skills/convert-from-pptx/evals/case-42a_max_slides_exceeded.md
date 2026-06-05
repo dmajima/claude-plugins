@@ -7,8 +7,8 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で ZIP マジック・拡張子・ZIP bomb 検査を通過
-2. `_load_presentation()` 内で `len(list(presentation.slides))` を計測
+1. `_validate_pptx` で ZIP マジック・拡張子・ZIP bomb 検査を通過
+2. `_load_presentation` 内で `len(list(presentation.slides))` を計測
 3. `slide_count > MAX_SLIDES` で `ValueError` を raise
 4. メッセージ: `slide count 1001 exceeds MAX_SLIDES (1000)`
 5. python-pptx での詳細処理は行われない（早期停止・fail-closed）
@@ -21,7 +21,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_load_presentation()`:
+`convert_from_pptx.py:_load_presentation`:
 ```python
 slide_count = len(list(self._presentation_cache.slides))
 if slide_count > MAX_SLIDES:

@@ -25,24 +25,6 @@ argument-hint: "[--scope <global|project>] [--project-path <path>] [--force]"
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/skills/sync-settings/references/scripts/sync/sync-mappings.sh" "${args[@]}"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
-
-$argText = '$ARGUMENTS'
-$params  = @{ Action = 'delete' }
-
-if ($argText -match '--scope\s+(global|project)\b')                       { $params.Scope       = $matches[1] }
-if ($argText -match '--project-path\s+"([^"]+)"|--project-path\s+(\S+)')  { $params.ProjectPath = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
-if ($argText -match '\B--force\b')                                        { $params.Force       = $true }
-
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-mappings.ps1" @params
-```
-
-</details>
-
 > **note**: `--force` が引数に含まれていない場合、スクリプト側で「`-Force` を併用してください」エラーで終了する。
 
 ## 2. 対話モード（`$ARGUMENTS` が空）

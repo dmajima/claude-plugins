@@ -6,7 +6,7 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で `zf.infolist()` を走査
+1. `_validate_pptx` で `zf.infolist` を走査
 2. `info.compress_size > 0` で `ratio = info.file_size / info.compress_size` を算出
 3. `ratio > MAX_COMPRESSION_RATIO` が True になった時点で `ValueError` を raise
 4. メッセージ: `Suspicious compression ratio (<ratio>x) for entry '<filename>' in <path>`
@@ -19,7 +19,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_validate_pptx()`:
+`convert_from_pptx.py:_validate_pptx`:
 ```python
 if info.compress_size > 0:
     ratio = info.file_size / info.compress_size

@@ -6,7 +6,7 @@
 
 ## 期待動作
 
-1. `convert.py` 内で `Path(input).exists()` チェックが失敗
+1. `convert.py` 内で `Path(input).exists` チェックが失敗
 2. stderr に `Error: Input file not found: <path>` を出力
 3. `sys.exit(1)` で終了（戻り値 1）
 
@@ -19,8 +19,8 @@
 
 ## 分岐の根拠
 
-`references/scripts/convert-html/convert.py:main()` の入力検証:
-> `if not input_path.exists(): print(...); sys.exit(1)`
+`references/scripts/convert-html/convert.py:main` の入力検証:
+> `if not input_path.exists: print(...); sys.exit(1)`
 
 ## 関連ケース
 

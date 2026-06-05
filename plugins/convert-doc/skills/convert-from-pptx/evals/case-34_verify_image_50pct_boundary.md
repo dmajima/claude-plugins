@@ -12,7 +12,7 @@
 
 ## 期待動作
 
-1. `verify()` で `pptx_image_total = 4`、`md_image_total` をそれぞれカウント
+1. `verify` で `pptx_image_total = 4`、`md_image_total` をそれぞれカウント
 2. 判定式 `pptx_image_total and md_image_total < pptx_image_total * 0.5` を評価
 3. 34a: `2 < 4 * 0.5 = 2.0` は False → PASS
 4. 34b: `1 < 2.0` は True → FAIL（`images: pptx=4 md=1 (less than 50%)` を `failures` に追加）
@@ -25,7 +25,7 @@
 
 ## 分岐の根拠
 
-`verify_md.py:verify()`:
+`verify_md.py:verify`:
 ```python
 if pptx_image_total and md_image_total < pptx_image_total * 0.5:
     failures.append(f"images: pptx={pptx_image_total} md={md_image_total} (less than 50%)")

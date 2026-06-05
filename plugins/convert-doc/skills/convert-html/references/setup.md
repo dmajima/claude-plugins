@@ -29,17 +29,6 @@
 New-Item -ItemType Directory -Force -Path "$SessionDir/inputs" | Out-Null
 New-Item -ItemType Directory -Force -Path "$SessionDir/workspace" | Out-Null
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$SessionDir = ".claude/.local/work/yyyyMMdd_nn_convert_html"
-New-Item -ItemType Directory -Force -Path "$SessionDir/inputs" | Out-Null
-New-Item -ItemType Directory -Force -Path "$SessionDir/workspace" | Out-Null
-```
-
-</details>
-
 - 最終成果物（HTML）は `$SessionDir` 直下に出力する
 - 中間生成物・venv は `$SessionDir/workspace/` 配下に置く
 - ユーザー提供の入力Markdownを `$SessionDir/inputs/` に置いてもよい（読み取り専用）
@@ -52,25 +41,8 @@ venv は `workspace/` 配下に作成する（`workspace/.venv/`）。
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$SessionDir/workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" -WorkDir "$SessionDir/workspace"
-```
-
-</details>
-
 ### 3. venv 削除（スキル完了後）
 
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" -WorkDir "$SessionDir/workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir "$SessionDir/workspace"
-```
-
-</details>

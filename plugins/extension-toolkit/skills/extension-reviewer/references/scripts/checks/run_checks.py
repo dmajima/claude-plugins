@@ -281,7 +281,7 @@ def iter_inspectable_lines(path: pathlib.Path, text: str):
             if fence_open_len > 0:
                 continue  # フェンス内はスキップ
             yield line_num, line, _strip_backtick_spans(line)
-        elif suffix in {".sh", ".py", ".ps1", ".yaml", ".yml"}:
+        elif suffix in {".sh", ".py", ".yaml", ".yml"}:
             stripped = line.lstrip()
             if stripped.startswith("#"):
                 continue
@@ -308,7 +308,7 @@ def check_path_portability(target: pathlib.Path, collector: IssueCollector) -> N
     - 自己参照ファイル（run_checks.py / secret-scan.md / path-portability.md）
     """
     for path in iter_text_files(target):
-        if path.suffix not in {".md", ".json", ".sh", ".py", ".ps1", ".yaml", ".yml", ".txt"}:
+        if path.suffix not in {".md", ".json", ".sh", ".py", ".yaml", ".yml", ".txt"}:
             continue
         if path.name in PATH_PORTABILITY_EXCLUDED_FILES:
             continue
@@ -835,7 +835,7 @@ def check_cross_marketplace_readme(target: pathlib.Path, collector: IssueCollect
 
 
 # --------------------------------------------------------------------------- #
-# 12. PowerShell ベタ起動の hook 検出（Bash 標準・PowerShell フォールバック方針）
+# 12. PowerShell ベタ起動の hook 検出（Bash 標準方針）
 #     旧版は Bash 禁止チェックだったが、リポジトリの Bash 標準化方針 (Phase 9)
 #     に伴い、検査ロジックを **反転** させた。
 # --------------------------------------------------------------------------- #
@@ -846,16 +846,15 @@ def check_cross_marketplace_readme(target: pathlib.Path, collector: IssueCollect
 _HOOK_POWERSHELL_COMMAND_PATTERN = re.compile(r"^\s*(pwsh|powershell)(\.exe)?\s+", re.IGNORECASE)
 
 # 除外条件
-_BASH_USAGE_EXCLUDED_DIRS = {"templates", "template", "evals", "node_modules", "hooks-fallback"}
+_BASH_USAGE_EXCLUDED_DIRS = {"templates", "template", "evals", "node_modules"}
 
 
 def check_no_bash_invocation(target: pathlib.Path, collector: IssueCollector) -> None:
-    """12. PowerShell ベタ起動の hook 検出（Bash 標準・PowerShell フォールバック方針）.
+    """12. PowerShell ベタ起動の hook 検出（Bash 標準方針）.
 
     検出項目:
         - hooks.json の command フィールドが `pwsh ...` / `powershell ...` で始まる -> Medium
-          (通常運用は Bash 起動。PowerShell 起動は `references/hooks-fallback/` 配下の
-           フォールバック専用エントリでのみ許容)
+          (通常運用は Bash 起動)
 
     旧版チェック (撤廃):
         - 旧: `.sh` 残存を High 指摘 -> 撤廃 (Bash 標準方針下では `.sh` は通常運用ファイル)
@@ -863,7 +862,7 @@ def check_no_bash_invocation(target: pathlib.Path, collector: IssueCollector) ->
         - 旧: md 内の `bash ...sh` 起動例を Medium 指摘 -> 撤廃 (Bash 主軸書換と矛盾)
 
     除外:
-        - templates / template / evals / hooks-fallback / node_modules 配下
+        - templates / template / evals / node_modules 配下
         - hooks/ 配下以外の hooks.json (誤検出防止)
     """
     for hooks_json in target.rglob("hooks.json"):
@@ -894,7 +893,7 @@ def check_no_bash_invocation(target: pathlib.Path, collector: IssueCollector) ->
                                 "Medium",
                                 "PowerShell ベタ起動の hook 検出 (Bash 標準方針 / shell-preference.md)",
                                 hooks_json,
-                                f"通常運用は `bash \"...\"` 起動。PowerShell 起動は references/hooks-fallback/ 配下のみ許容: {mask_preview(v)}",
+                                f"通常運用は `bash \"...\"` 起動: {mask_preview(v)}",
                             )
                     else:
                         _walk(v)
@@ -906,26 +905,25 @@ def check_no_bash_invocation(target: pathlib.Path, collector: IssueCollector) ->
 
 
 # --------------------------------------------------------------------------- #
-# 13. hook の shell フィールド明示チェック（Bash 標準・PowerShell フォールバック補強）
+# 13. hook の shell フィールド明示チェック（Bash 標準）
 # --------------------------------------------------------------------------- #
 
 # `bash "..."` を書いていても Claude Code の起動側シェルが PowerShell だと
 # 引数解釈や PATH 解決でエッジケースが発生しうる。各 hook エントリで
 # `"shell": "bash"` を明示することを必須化する (フォールバック時は `"powershell"`)。
-_ALLOWED_SHELL_VALUES = {"powershell", "bash"}
-_HOOK_SHELL_EXCLUDED_DIRS = {"templates", "template", "evals", "hooks-fallback"}
+_ALLOWED_SHELL_VALUES = {"bash"}
+_HOOK_SHELL_EXCLUDED_DIRS = {"templates", "template", "evals"}
 
 
 def check_hook_shell_field(target: pathlib.Path, collector: IssueCollector) -> None:
-    """13. hook の shell フィールド明示チェック（Bash 標準・PowerShell フォールバック補強）.
+    """13. hook の shell フィールド明示チェック（Bash 標準）.
 
     検出項目:
         - hooks.json 内の `type: "command"` を持つエントリに `"shell"` キーが存在しない -> High
-        - `"shell"` 値が `"bash"` / `"powershell"` 以外                                    -> High
-        - 本マーケットプレイス通常運用で `"shell": "powershell"` (フォールバックではない場合) -> Medium
+        - `"shell"` 値が `"bash"` 以外                                                      -> High
 
     除外:
-        - templates / template / evals / hooks-fallback 配下のテンプレート・テスト fixture
+        - templates / template / evals 配下のテンプレート・テスト fixture
         - hooks/ 配下以外の hooks.json (誤検出防止)
     """
     for hooks_json in target.rglob("hooks.json"):
@@ -968,7 +966,7 @@ def check_hook_shell_field(target: pathlib.Path, collector: IssueCollector) -> N
                     if "shell" not in hook_def:
                         collector.add(
                             "High",
-                            "hook の `shell` フィールド未指定（Bash 標準・PowerShell フォールバック補強、shell-preference.md）",
+                            "hook の `shell` フィールド未指定（Bash 標準、shell-preference.md）",
                             hooks_json,
                             f"event={event_name} command={mask_preview(str(hook_def.get('command', '')))}",
                         )
@@ -979,15 +977,7 @@ def check_hook_shell_field(target: pathlib.Path, collector: IssueCollector) -> N
                             "High",
                             "hook の `shell` フィールド値が不正",
                             hooks_json,
-                            f"event={event_name} shell={shell_value!r} (期待値: 'bash' / 'powershell')",
-                        )
-                        continue
-                    if shell_value == "powershell":
-                        collector.add(
-                            "Medium",
-                            "hook で `shell: powershell` 指定（本マーケットプレイスは Bash 標準）",
-                            hooks_json,
-                            f"event={event_name} (通常運用は 'bash' を推奨。PowerShell 起動は references/hooks-fallback/ 配下のフォールバックエントリで利用)",
+                            f"event={event_name} shell={shell_value!r} (期待値: 'bash')",
                         )
 
 
@@ -1215,8 +1205,8 @@ def check_python_start_job_wrapper(target: pathlib.Path, collector: IssueCollect
     検出項目:
         - 起動例が `& "...python(.exe)?" "...\\.py"` 形式で、同じファイルに
           `Start-Job` / `run_via_job` / `Wait-Job` への参照が無い  -> High
-        - `Start-Process -NoNewWindow` の組み合わせが .md / .ps1 に出現    -> High
-        - .py を含むプラグインに Start-Job を含む .ps1 が一切無い          -> Medium
+        - `Start-Process -NoNewWindow` の組み合わせが .md に出現           -> High
+        - .py を含むプラグインに run_via_job ラッパーが一切無い            -> Medium
 
     除外:
         - templates / template / evals / checklists 配下
@@ -1235,29 +1225,16 @@ def check_python_start_job_wrapper(target: pathlib.Path, collector: IssueCollect
     if not py_files:
         return
 
-    # 2. .md / .ps1 を走査
+    # 2. .sh を走査して run_via_job ラッパーの有無を確認
     has_start_job_wrapper = False
-    for ps1_path in target.rglob("*.ps1"):
-        if _path_excluded_for_py_hang(ps1_path, target):
+    for sh_path in target.rglob("*.sh"):
+        if _path_excluded_for_py_hang(sh_path, target):
             continue
-        text = read_text_safe(ps1_path)
+        text = read_text_safe(sh_path)
         if text is None:
             continue
-        if "Start-Job" in text:
+        if "Start-Job" in text or "run_via_job" in sh_path.name:
             has_start_job_wrapper = True
-
-        # Start-Process -NoNewWindow 組み合わせ検出
-        if _START_PROCESS_NONEWWINDOW_PATTERN.search(text):
-            # 自分自身が Start-Job ラッパー（中の説明文ならスキップ）
-            if "Start-Job" in text and "ScriptBlock" in text:
-                continue
-            # Markdown 内のコード例ではないため検出対象
-            collector.add(
-                "High",
-                "Start-Process -NoNewWindow + Python 子プロセスでハングする可能性。Start-Job 経由ラッパーへ移行",
-                ps1_path,
-                "Start-Process -NoNewWindow を含む PowerShell ファイル",
-            )
 
     for md_path in target.rglob("*.md"):
         if _path_excluded_for_py_hang(md_path, target):
@@ -1281,13 +1258,13 @@ def check_python_start_job_wrapper(target: pathlib.Path, collector: IssueCollect
                     line=line_num,
                 )
 
-    # 3. .py がある場合に Start-Job ラッパーが一切無いプラグイン -> Medium
+    # 3. .py がある場合に run_via_job ラッパーが一切無いプラグイン -> Medium
     if not has_start_job_wrapper:
         collector.add(
             "Medium",
-            "Python スクリプトがあるが Start-Job ラッパー (.ps1) が見つからない。run_via_job.ps1 相当のラッパー作成を推奨",
+            "Python スクリプトがあるが run_via_job ラッパー (.sh) が見つからない。run_via_job.sh 相当のラッパー作成を推奨",
             target,
-            f"{len(py_files)} .py files but no Start-Job .ps1 found",
+            f"{len(py_files)} .py files but no run_via_job .sh found",
         )
 
 
@@ -1308,8 +1285,8 @@ CHECKS = [
     ("シークレット混入", check_secrets),
     ("クロスマーケ依存時 README D-1/D-2/D-3 揃い（ADR-028 / R-2-7）", check_cross_marketplace_readme),
     ("プラグイン MIT LICENSE 配備（ADR-029）", check_mit_license),
-    ("PowerShell ベタ起動の hook 検出（Bash 標準・PowerShell フォールバック方針、shell-preference.md）", check_no_bash_invocation),
-    ("hook の shell フィールド明示（Bash 標準・PowerShell フォールバック補強、shell-preference.md）", check_hook_shell_field),
+    ("PowerShell ベタ起動の hook 検出（Bash 標準方針、shell-preference.md）", check_no_bash_invocation),
+    ("hook の shell フィールド明示（Bash 標準、shell-preference.md）", check_hook_shell_field),
     # PSScriptAnalyzer 静的解析（B-1）は extension-toolkit から削除済み (Bash 標準移行)
     ("Python 直起動禁止 / Start-Job ラッパー必須（automated-checks.md §15）", check_python_start_job_wrapper),
 ]

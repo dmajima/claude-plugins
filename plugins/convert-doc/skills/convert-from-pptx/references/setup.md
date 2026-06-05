@@ -18,33 +18,12 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
   -WorkDir "$SESSION_DIR/workspace" \
   -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.ps1" `
-  -WorkDir "$SESSION_DIR/workspace" `
-  -RequirementsPath "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt"
-```
-
-</details>
-
 ## 削除スクリプト
 
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
   -WorkDir "$SESSION_DIR/workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.ps1" `
-  -WorkDir "$SESSION_DIR/workspace"
-```
-
-</details>
-
 ## オフライン要件
 
 本スキルは外部 API へのアクセスを行わない。インターネット接続がない環境でも変換可能。

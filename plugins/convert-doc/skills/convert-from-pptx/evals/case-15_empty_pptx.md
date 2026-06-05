@@ -7,7 +7,7 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` は通過（ZIP として正当・Content_Types に presentationml あり）
+1. `_validate_pptx` は通過（ZIP として正当・Content_Types に presentationml あり）
 2. `for slide in presentation.slides:` がループしない
 3. `markdown_chunks` は空のままで `body = ""`
 4. 末尾の `\n` のみが書き出される
@@ -22,7 +22,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:convert()`:
+`convert_from_pptx.py:convert`:
 ```python
 for slide in presentation.slides:
     if self._is_hidden(slide) and not self.include_hidden:

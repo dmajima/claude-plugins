@@ -8,8 +8,8 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で入力 PPTX を検証（マジック / 拡張子 / ZIP bomb / Content_Types）
-2. `export_structured_json()` が全 shape を構造化 JSON に dump（装飾フィルタ未適用）
+1. `_validate_pptx` で入力 PPTX を検証（マジック / 拡張子 / ZIP bomb / Content_Types）
+2. `export_structured_json` が全 shape を構造化 JSON に dump（装飾フィルタ未適用）
 3. `<セッション>/structured.json` に `metadata` + `slides[]` を書き出し
 4. `--json-only` 指定のため Markdown 直接生成はスキップ
 5. 画像は `<basename>_images/` に同時抽出
@@ -44,7 +44,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:export_structured_json()`:
+`convert_from_pptx.py:export_structured_json`:
 ```python
 document = {
     "metadata": { ... "schema_version": "1.0" },
@@ -54,7 +54,7 @@ with open(self.structured_json_path, "w", encoding="utf-8", newline="\n") as fh:
     json.dump(document, fh, ensure_ascii=False, indent=2)
 ```
 
-`main()` の `--json-only` 分岐で Markdown 生成をスキップする。
+`main` の `--json-only` 分岐で Markdown 生成をスキップする。
 
 ## 関連ケース
 

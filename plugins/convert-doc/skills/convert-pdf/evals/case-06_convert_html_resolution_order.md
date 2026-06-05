@@ -28,20 +28,20 @@
 
 ## 分岐の根拠
 
-`references/scripts/convert-pdf/convert_pdf.py:locate_convert_html_script()`:
+`references/scripts/convert-pdf/convert_pdf.py:locate_convert_html_script`:
 ```python
 explicit = os.environ.get("CONVERT_HTML_SCRIPT")
-if explicit and Path(explicit).exists():
+if explicit and Path(explicit).exists:
     return Path(explicit)
 plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
 if plugin_root:
     candidate = Path(plugin_root) / "references" / "scripts" / "convert-html" / "convert.py"
-    if candidate.exists():
+    if candidate.exists:
         return candidate
 # fallback: same-plugin sibling
-this_file = Path(__file__).resolve()
+this_file = Path(__file__).resolve
 sibling = this_file.parent.parent / "convert-html" / "convert.py"
-if sibling.exists():
+if sibling.exists:
     return sibling
 sys.exit(1)
 ```

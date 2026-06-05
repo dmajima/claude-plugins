@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # clear_embedding_cache.sh - Clear the skill-router embedding cache (Bash 版)
-# 通常運用は本スクリプトを利用する。PowerShell フォールバック: clear_embedding_cache.ps1
 #
 # Usage: bash clear_embedding_cache.sh [-Base <base>] | <base>
 #
@@ -15,8 +14,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$base" ]]; then
-  # メッセージは PowerShell 版と完全一致 (動作差異ゼロ保証のため拡張子も同じ表記)
-  echo 'skill-router: <base> argument required for clear_embedding_cache.ps1'
+  echo 'skill-router: <base> argument required for clear_embedding_cache.sh'
   exit 0
 fi
 

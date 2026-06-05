@@ -59,36 +59,6 @@ argument-hint: "[--scope ...] [--no-pr] [--dry-run] [--yes]"
 
 bash "$CLAUDE_PLUGIN_ROOT/skills/sync-settings/references/scripts/sync/sync-push.sh" "${args[@]}"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
-
-# --- 引数を個別に抽出（$ARGUMENTS 直展開は禁止） ---
-$argText = '$ARGUMENTS'
-$params  = @{}
-
-if ($argText -match '--scope\s+(global|project)\b')                                                            { $params.Mapping       = $matches[1] }
-if ($argText -match '--commit-message\s+"([^"]+)"|--commit-message\s+(\S+)')                                   { $params.CommitMessage = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
-if ($argText -match '--branch-prefix\s+([A-Za-z0-9._\-]+)')                                                    { $params.BranchPrefix  = $matches[1] }
-if ($argText -match '--pr-title\s+"([^"]+)"|--pr-title\s+(\S+)')                                               { $params.PrTitle       = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
-if ($argText -match '--pr-body\s+"([^"]+)"|--pr-body\s+(\S+)')                                                 { $params.PrBody        = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
-if ($argText -match '--project-path\s+"([^"]+)"|--project-path\s+(\S+)')                                       { $params.ProjectPath   = ($matches[1], $matches[2] -ne '' | Select-Object -First 1) }
-if ($argText -match '\B--no-pr\b')                                                                              { $params.NoPr          = $true }
-if ($argText -match '\B--dry-run\b')                                                                            { $params.DryRun        = $true }
-if ($argText -match '\B--yes\b')                                                                                { $params.Yes           = $true }
-
-if (-not $params.ContainsKey('Mapping')) {
-    Write-Error "--scope <global|project> が必須です（対話モードでの起動は別フロー）。"
-    exit 1
-}
-
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/sync-settings/references/scripts/sync/sync-push.ps1" @params
-```
-
-</details>
-
 ## 2. 対話モード（`$ARGUMENTS` が空）
 
 ### Step 1: AskUserQuestion 2 質問同時発火

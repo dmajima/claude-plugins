@@ -24,7 +24,7 @@ ADR-024 / ADR-025 に従ったスクリプト配置・インラインスクリ�
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| SP-3-1 | High | プラグインに `.py` ファイルが 1 つ以上あり、標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.sh` が存在する（Bash 標準・PowerShell フォールバック） | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.2 / ADR-024 |
+| SP-3-1 | High | プラグインに `.py` ファイルが 1 つ以上あり、標準ライブラリ以外の `import` を含む場合、`references/scripts/setup/setup_venv.sh` が存在する | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.2 / ADR-024 |
 | SP-3-2 | High | 同上で `references/scripts/setup/teardown_venv.sh` が存在する | 同上 |
 | SP-3-3 | High | 同上で `references/scripts/setup/requirements.txt` が存在し、**全スキルの依存をマージ** している | 同上 |
 | SP-3-4 | High | スキルごとの個別 `requirements.txt` が存在しない | 同上 |
@@ -53,14 +53,14 @@ ADR-024 / ADR-025 に従ったスクリプト配置・インラインスクリ�
 
 ## SP-7. Bash 経由実行とエンコーディング担保（shell-preference.md / python-encoding-mandatory.md）
 
-shell-preference.md (Bash 標準・PowerShell フォールバック) と python-encoding-mandatory.md (Python 実行時の必須3点セット) を併せて担保する。
+shell-preference.md  と python-encoding-mandatory.md (Python 実行時の必須3点セット) を併せて担保する。
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| SP-7-1 | High | 機械チェックスクリプトは **Bash 経由 + venv 内 Python + JSON ファイル出力** で実施されている（PowerShell フォールバック適用時のみ pwsh 経由） | [automated-checks.md](../automated-checks.md) / [shell-preference.md](https://github.com/dmajima/claude-plugins) |
-| SP-7-2 | High | `.sh` / `.ps1` いずれも UTF-8 (no BOM) で stdin/stdout/stderr が扱われている | [console-encoding.md](https://github.com/dmajima/claude-plugins) |
+| SP-7-1 | High | 機械チェックスクリプトは **Bash 経由 + venv 内 Python + JSON ファイル出力** で実施されている（のみ pwsh 経由） | [automated-checks.md](../automated-checks.md) / [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| SP-7-2 | High | `.sh` は UTF-8 (no BOM) で stdin/stdout/stderr が扱われている | [console-encoding.md](https://github.com/dmajima/claude-plugins) |
 | SP-7-3 | High | Python スクリプト先頭で `sys.stdout.reconfigure(encoding='utf-8')` を実施している（必須3点セット） | [python-encoding-mandatory.md](https://github.com/dmajima/claude-plugins) |
-| SP-7-4 | High | Python の `open()` で `encoding='utf-8'` を明示している（必須3点セット） | 同上 |
+| SP-7-4 | High | Python の `open` で `encoding='utf-8'` を明示している（必須3点セット） | 同上 |
 | SP-7-5 | Medium | venv 内 Python は明示パス指定で呼び出している（`<venv>/Scripts/python` 直接実行） | [python-venv.md](https://github.com/dmajima/claude-plugins) |
 
 ## SP-8. 機械チェックでの違反検出（自己整合性）
@@ -70,14 +70,14 @@ shell-preference.md (Bash 標準・PowerShell フォールバック) と python-
 | SP-8-1 | High | `run_checks.py` が md 内の 6 行以上のフェンス付きコードブロックを High 指摘として報告していない（=違反なし） | [scripts-policy.md](../../../references/scripts-policy.md) 節 7 |
 | SP-8-2 | High | `run_checks.py` がトップレベル `scripts/` 配下を High 指摘として報告していない（=違反なし） | 同上 |
 
-## SP-9. Bash 標準・PowerShell フォールバック（shell-preference.md）
+## SP-9. Bash 標準（shell-preference.md）
 
 `~/.claude/rules/tools/shell-preference.md` に従い、プラグイン側のスクリプト・hooks.json・
-ドキュメントは Bash 標準・PowerShell フォールバックの方針で統一する。
+ドキュメントは Bash 標準の方針で統一する。
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| SP-9-1 | High | `hooks/hooks.json` の `command` フィールドが `bash "...sh"` 形式（フォールバック用に `pwsh -NoProfile -File "...ps1"` 形式を `references/hooks-fallback/` 配下に併存可） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
-| SP-9-2 | High | `references/scripts/` 配下に `.sh` が配置されている（フォールバック用に動作等価な `.ps1` 併存可） | 同上 |
-| SP-9-3 | Medium | md ドキュメント内の実行例が `bash ...sh` を主軸とし、PowerShell 例は `<details>` 折りたたみで併記している | 同上 |
+| SP-9-1 | High | `hooks/hooks.json` の `command` フィールドが `bash "...sh"` 形式である | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| SP-9-2 | High | `references/scripts/` 配下に `.sh` が配置されている | 同上 |
+| SP-9-3 | Medium | md ドキュメント内の実行例が `bash ...sh` を主軸としている | 同上 |
 | SP-9-4 | High | `run_checks.py` の `check_no_bash_invocation` がチェックを通している（旧版の Bash 禁止検査は本リポジトリでは無効化済み） | [automated-checks.md](../automated-checks.md) #12 |

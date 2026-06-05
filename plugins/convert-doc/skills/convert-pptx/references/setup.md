@@ -18,25 +18,8 @@
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$SessionDir/workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" -WorkDir "$SessionDir/workspace"
-```
-
-</details>
-
 ## 削除スクリプト
 
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" -WorkDir "$SessionDir/workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir "$SessionDir/workspace"
-```
-
-</details>

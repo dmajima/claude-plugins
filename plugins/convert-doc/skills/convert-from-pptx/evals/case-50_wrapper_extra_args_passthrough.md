@@ -36,30 +36,6 @@
     & $py -u $script @jobArgs 2>&1 | ForEach-Object { "$_" }
     ...
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-[Parameter(ValueFromRemainingArguments=$true)] [string[]]$ExtraArgs
-...
-$pythonArgs = @($InputPath, $OutputPath)
-if ($ExtraArgs) {
-    # 先頭の "--" セパレータは除去（PowerShell から渡される場合）
-    if ($ExtraArgs[0] -eq "--") {
-        $ExtraArgs = $ExtraArgs[1..($ExtraArgs.Count - 1)]
-    }
-    $pythonArgs += $ExtraArgs
-}
-$job = Start-Job -ScriptBlock {
-    param($py, $script, $jobArgs)
-    ...
-    & $py -u $script @jobArgs 2>&1 | ForEach-Object { "$_" }
-    ...
-} -ArgumentList $PythonExe, $convertScript, (,$pythonArgs)
-```
-
-</details>
-
 ## 確認パターン
 
 | 入力 | 期待 |

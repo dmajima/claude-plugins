@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # setup_venv.sh - extension-toolkit プラグイン共通 venv 構築 (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: setup_venv.ps1
 #
 # 使い方:
 #   bash setup_venv.sh <work_dir> [<requirements_path>] [<min_python_version>]

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # check_version_bump.sh - Stop フック (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: check_version_bump.ps1
 #
 # Claude のターン終了時、plugins/{name}/ 配下に未コミット変更があり、
 # かつ plugin.json の version が未更新の場合に stderr で警告する。

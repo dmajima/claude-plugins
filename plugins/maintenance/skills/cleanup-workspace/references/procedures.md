@@ -35,25 +35,6 @@
 # 推奨経路: progress.md mtime を atime とする
     # フォールバック: 配下最大 mtime
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$progressPath = Join-Path $session.FullName 'progress.md'
-if (Test-Path -LiteralPath $progressPath) {
-    # 推奨経路: progress.md mtime を atime とする
-    $lastAccess = (Get-Item -LiteralPath $progressPath).LastWriteTimeUtc
-} else {
-    # フォールバック: 配下最大 mtime
-    $lastAccess = $session.LastWriteTimeUtc
-    Get-ChildItem -LiteralPath $session.FullName -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
-        if ($_.LastWriteTimeUtc -gt $lastAccess) { $lastAccess = $_.LastWriteTimeUtc }
-    }
-}
-```
-
-</details>
-
 ## 2. 古さ判定 + keep-recent 適用
 
 ### 2.1 古さ判定
@@ -68,37 +49,9 @@ if (Test-Path -LiteralPath $progressPath) {
 ### 2.2 進行中セッション保護
 
 `progress.md` の mtime が UtcNow から `active_session_minutes` 分以内（初期値 5 分）なら、古さ判定を満たしても候補から除外する。閾値は `cleanup-config.json` の `active_session_minutes` で変更可能（`/cleanup-config --set-active-minutes N` または `cleanup-config.sh -SetActiveSessionMinutes N`）。
-
-<details><summary>PowerShell フォールバック (Bash 等価は未整備)</summary>
-
-```powershell
-$activeThreshold = $nowUtc.AddMinutes(-[int]$config.active_session_minutes)
-$progressPath = Join-Path $session.FullName 'progress.md'
-if (Test-Path $progressPath) {
-    $progMtime = (Get-Item $progressPath).LastWriteTimeUtc
-    if ($progMtime -gt $activeThreshold) { continue }
-}
-```
-
-</details>
-
 ### 2.3 keep-recent 適用
 
 `--keep-recent N` が指定された場合、スコープごとに新しい順で N 件を候補から除外する。
-
-<details><summary>PowerShell フォールバック (Bash 等価は未整備)</summary>
-
-```powershell
-$filtered = @()
-foreach ($scope in ($candidates | Group-Object Scope)) {
-    $sorted = $scope.Group | Sort-Object LastWrite -Descending
-    $filtered += $sorted | Select-Object -Skip $KeepRecent
-}
-$candidates = $filtered
-```
-
-</details>
-
 ## 3. AskUserQuestion 構造（対話モード）
 
 候補一覧と合計容量を表示した後、以下の構造で確認する。
@@ -141,23 +94,6 @@ AskUserQuestion({
 try {
         Remove-Item -Path $c.Path -Recurse -Force -ErrorAction Stop
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-foreach ($c in $candidates) {
-    try {
-        Remove-Item -Path $c.Path -Recurse -Force -ErrorAction Stop
-        $deleted++
-        $freedBytes += $c.SizeBytes
-    } catch {
-        $failed += [PSCustomObject]@{ Path=$c.Path; Error=$_.Exception.Message }
-    }
-}
-```
-
-</details>
-
 ### 4.2 失敗時の挙動
 
 | 失敗種別 | 対応 |
@@ -175,25 +111,6 @@ Where-Object { $_.Name -match $SESSION_REGEX -and $_.LinkType -ne 'SymbolicLink'
         ForEach-Object {
                     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-foreach ($root in $roots) {
-    Get-ChildItem -Path $root.Path -Directory -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -match $SESSION_REGEX -and $_.LinkType -ne 'SymbolicLink' } |
-        ForEach-Object {
-            $tmpPath = Join-Path $_.FullName 'workspace\tmp'
-            if (Test-Path $tmpPath) {
-                Get-ChildItem -Path $tmpPath -Recurse -ErrorAction SilentlyContinue |
-                    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-            }
-        }
-}
-```
-
-</details>
-
 `workspace/tmp/` 自体は残し、配下のファイルのみ削除する。
 
 ## 6. サマリ出力

@@ -17,22 +17,6 @@
   --input "$SESSION_DIR\workspace\minutes.json" \
   --output "$SESSION_DIR\minutes.md"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& chcp.com 65001 | Out-Null
-[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-
-$venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
-& $venvPy "${env:CLAUDE_SKILL_DIR}\scripts\output\generate_md.py" `
-  --input "$SESSION_DIR\workspace\minutes.json" `
-  --output "$SESSION_DIR\minutes.md"
-```
-
-</details>
-
 ## トラブルシューティング
 
 | 問題 | 対処 |

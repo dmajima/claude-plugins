@@ -32,13 +32,13 @@ output_images/
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_handle_picture()`:
+`convert_from_pptx.py:_handle_picture`:
 ```python
 filename = f"slide{slide_no}_img{img_no}.{ext}"
 out_path = self.images_dir / filename
 out_path.write_bytes(blob)
 rel = out_path.relative_to(self.output_path.parent)
-return f"![{alt}]({rel.as_posix()})"
+return f"![{alt}]({rel.as_posix})"
 ```
 
 ## 関連ケース

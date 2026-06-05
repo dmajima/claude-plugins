@@ -579,7 +579,7 @@ expected: { "version": 2, "plugins": { "<plugin>@<mp>": [ {scope, projectPath?, 
 `installed_plugins.json["plugins"]` の各キー `<plugin>@<mp>` について、配列の各要素を以下のように分類する:
 
 ```text
-for plugin_at_mp, entries in installed_plugins["plugins"].items():
+for plugin_at_mp, entries in installed_plugins["plugins"].items:
     plugin, mp = plugin_at_mp.split("@", 1)
     # XR-1 の入力検証は A-1 で済んでいるが、installed_plugins.json 由来の値は
     # 未検証のため A-3 でも再度 XR-1 を適用してから採用する

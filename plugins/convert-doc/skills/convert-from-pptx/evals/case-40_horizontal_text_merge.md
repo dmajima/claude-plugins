@@ -12,7 +12,7 @@
 
 ## 期待動作
 
-1. `_merge_horizontal_text_rows()` が同一スライドの text shape リストを走査
+1. `_merge_horizontal_text_rows` が同一スライドの text shape リストを走査
 2. 連続する shape の top 差が `TOP_TOLERANCE = 250_000 EMU` 以内なら同一行とみなし、全角スペース `　` 区切りで結合
 3. 40a / 40b は 1 行のテキストとして出力、40c は 2 つの段落として出力
 4. 終了コード: 0
@@ -24,7 +24,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_merge_horizontal_text_rows()`:
+`convert_from_pptx.py:_merge_horizontal_text_rows`:
 - `TOP_TOLERANCE = 250_000 EMU`（標準スライド高 6,858,000 EMU で約 3.6%）
 - 連続 shape が `abs(curr.top - prev.top) <= TOP_TOLERANCE` を満たす場合に同一行扱い
 - 結合区切りは全角スペース `　`（日本語スライド前提）

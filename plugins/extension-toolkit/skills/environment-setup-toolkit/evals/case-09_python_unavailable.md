@@ -13,7 +13,7 @@
 
 ### Phase 1: Python コマンド検出
 
-`setup_venv.sh` 内で以下の順序で検索（Bash 標準・PowerShell フォールバック、bash コードは旧実装の参考）:
+`setup_venv.sh` 内で以下の順序で検索:
 
 ```bash
 if command -v python3 >/dev/null 2>&1; then

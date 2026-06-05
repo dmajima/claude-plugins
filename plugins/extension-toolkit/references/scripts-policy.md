@@ -20,7 +20,7 @@ plugins/{plugin-name}/
 ├── references/
 │   └── scripts/                      ← プラグイン共通リソース（全スキルから参照可）
 │       └── setup/
-│           ├── setup_venv.sh        # venv 構築 + 依存インストール (Bash 標準・PowerShell フォールバック)
+│           ├── setup_venv.sh        # venv 構築 + 依存インストール
 │           ├── teardown_venv.sh     # venv 削除
 │           └── requirements.txt      # 全スキルの依存をマージしたリスト
 └── skills/
@@ -81,7 +81,7 @@ Python で YAML / JSON パース。エラー時は Critical 指摘。
 import yaml, json
 
 with open(skill_md, 'r', encoding='utf-8') as f:
-    content = f.read()
+    content = f.read
 parts = content.split('---', 2)
 yaml.safe_load(parts[1])
 ```
@@ -145,16 +145,6 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
   -WorkDir "$SessionDir/workspace" \
   -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
-  -WorkDir "$SessionDir/workspace" `
-  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
-```
-
-</details>
 ````
 
 ## 5. プラグイン単位 venv
@@ -163,15 +153,15 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_ve
 
 | 階層 | ファイル | 役割 |
 |-----|--------|------|
-| プラグイン直下 | `references/scripts/setup/setup_venv.sh` | venv 構築 + 依存インストール (PowerShell) |
-| プラグイン直下 | `references/scripts/setup/teardown_venv.sh` | venv 削除 (PowerShell) |
+| プラグイン直下 | `references/scripts/setup/setup_venv.sh` | venv 構築 + 依存インストール |
+| プラグイン直下 | `references/scripts/setup/teardown_venv.sh` | venv 削除 |
 | プラグイン直下 | `references/scripts/setup/requirements.txt` | プラグイン全体の依存パッケージ統合リスト |
 | セッション作業領域 | `<work_dir>/.venv/` | 実体（ユーザの作業セッションに紐づく一時領域） |
 
 ### 5.2 必須要件
 
 - venv は **プラグイン単位で 1 つ**。複数スキルが協業する場合も同じ venv を再利用する
-- `setup_venv.sh` / `teardown_venv.sh` / `requirements.txt` は **プラグイン直下** の `references/scripts/setup/` に配置する（Bash 標準・PowerShell フォールバック、shell-preference.md 準拠）
+- `setup_venv.sh` / `teardown_venv.sh` / `requirements.txt` は **プラグイン直下** の `references/scripts/setup/` に配置する
 - スキル配下に独自の `references/scripts/setup/` を置いてはならない（重複・乖離防止）
 - 各スキルは setup スクリプトを **呼び出すだけ**（独自に venv を作成・破棄しない）
 - `requirements.txt` は **全スキルの依存をマージ** したものとする（スキルごとの個別 requirements.txt は禁止）。スキル固有のスクリプトが利用するパッケージも含めてプラグイン直下に統合する
@@ -180,7 +170,7 @@ pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_ve
 
 以下に該当するプラグインは venv 関連スクリプトを設置しなくてよい:
 
-- プラグイン全体で Python を一切使用しない（PowerShell / Node のみ等）
+- プラグイン全体で Python を一切使用しない（Node のみ等）
 - 利用する Python が標準ライブラリのみで完結し、外部依存パッケージが無い
 
 判断基準: `references/scripts/` 配下に `.py` ファイルが存在し、かつ標準ライブラリ以外の `import` を含む場合は venv 必須。
@@ -201,31 +191,11 @@ bash "$CLAUDE_SKILL_DIR/references/scripts/{業務}/run_via_job.sh" \
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
   -WorkDir "$SessionDir/workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-# 1. 構築（セッション開始時）
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
-  -WorkDir "$SessionDir/workspace" `
-  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
-
-# 2. Python 実行（Start-Job ラッパー経由必須・5.5 参照）
-pwsh -NoProfile -File "$env:CLAUDE_SKILL_DIR/references/scripts/{業務}/run_via_job.ps1" `
-  -PythonExe "$SessionDir/workspace/.venv/Scripts/python.exe" <その他引数>
-
-# 3. 撤去（セッション完了時）
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" `
-  -WorkDir "$SessionDir/workspace"
-```
-
-</details>
-
 呼び出し側（各スキル）は **この 3 ステップのみ** を実施する。venv 内部のロジック（python コマンド検出・pip 操作・OS 別パス分岐等）はすべて setup スクリプト側で完結させる。
 
 ### 5.5 Python 子プロセス起動は **Start-Job 経由ラッパー必須**（MANDATORY）
 
-Windows + PowerShell から Python スクリプトを **`Start-Process -NoNewWindow` または `&` + ファイルリダイレクトで直接起動**すると、ライブラリ（`python-pptx.Presentation()` 等）の呼び出しでハングする既知事象がある。グローバルルール [`~/.claude/rules/tools/python-subprocess-hang-windows.md`](file:///C:/Users/wwdmajima/.claude/rules/tools/python-subprocess-hang-windows.md) および [`powershell-pitfalls.md`](powershell-pitfalls.md) 節 7.3 参照。
+Windows + PowerShell から Python スクリプトを **`Start-Process -NoNewWindow` または `&` + ファイルリダイレクトで直接起動**すると、ライブラリ（`python-pptx.Presentation` 等）の呼び出しでハングする既知事象がある。グローバルルール [`~/.claude/rules/tools/python-subprocess-hang-windows.md`](file:///C:/Users/wwdmajima/.claude/rules/tools/python-subprocess-hang-windows.md) および [`powershell-pitfalls.md`](powershell-pitfalls.md) 節 7.3 参照。
 
 **Python スクリプトを呼ぶ拡張要素（スキル / コマンド）を作る場合、必ず Start-Job 経由ラッパーを `references/scripts/{業務}/` に同梱**し、procedures.md 等の起動例ではラッパー経由のみを示すこと。
 
@@ -258,58 +228,6 @@ Windows + PowerShell から Python スクリプトを **`Start-Process -NoNewWin
 Remove-Job $job -Force
 exit $rc
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-# ラッパー実装の最小骨格（コピペ可能テンプレート）
-[CmdletBinding()]
-param(
-    [Parameter(Mandatory=$true, Position=0)] [string]$InputPath,
-    [Parameter(Mandatory=$true, Position=1)] [string]$OutputPath,
-    [string]$PythonExe,
-    [int]$TimeoutSec = 600,
-    [Parameter(ValueFromRemainingArguments=$true)] [string[]]$ExtraArgs
-)
-& chcp.com 65001 | Out-Null
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$pyScript = Join-Path $scriptDir "your_script.py"
-$pythonArgs = @($InputPath, $OutputPath)
-if ($ExtraArgs) { $pythonArgs += $ExtraArgs }
-
-$job = Start-Job -ScriptBlock {
-    param($py, $script, $jobArgs)
-    & chcp.com 65001 | Out-Null
-    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    $OutputEncoding = [System.Text.Encoding]::UTF8
-    $env:PYTHONUTF8 = "1"
-    $env:PYTHONIOENCODING = "utf-8"
-    & $py -u $script @jobArgs
-    return $LASTEXITCODE
-} -ArgumentList $PythonExe, $pyScript, (,$pythonArgs)
-
-$completed = Wait-Job $job -Timeout $TimeoutSec
-if (-not $completed) {
-    Write-Error "timed out after $TimeoutSec sec"
-    Stop-Job $job
-    Remove-Job $job -Force
-    exit 124
-}
-$output = Receive-Job $job
-$rc = 0
-if ($output -is [array] -and $output.Count -gt 0 -and $output[-1] -is [int]) {
-    $rc = [int]$output[-1]
-    if ($output.Count -gt 1) { $output[0..($output.Count - 2)] | Write-Output }
-}
-Remove-Job $job -Force
-exit $rc
-```
-
-</details>
-
 ## 6. インラインで残してよいコードブロック
 
 以下は「実行スクリプト」ではなく **設定ファイル例 / 出力例 / フォーマット例** であり、本ポリシーの対象外（残してよい）:

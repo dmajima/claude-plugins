@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # teardown_venv.sh - venv 撤去 (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: teardown_venv.ps1
 #
 # 使い方: bash teardown_venv.sh <work_dir>
 #         bash teardown_venv.sh -WorkDir <path>

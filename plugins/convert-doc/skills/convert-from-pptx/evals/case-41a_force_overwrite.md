@@ -8,8 +8,8 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で入力 PPTX を検証
-2. `convert()` 内で `_check_safe_output(self.output_path, self._force)` を呼ぶ
+1. `_validate_pptx` で入力 PPTX を検証
+2. `convert` 内で `_check_safe_output(self.output_path, self._force)` を呼ぶ
 3. `self._force = True` のため、既存ファイルがあっても `ValueError` を raise せず通過
 4. ただし既存ファイルが **シンボリックリンク** の場合は `--force` 有無に関わらず拒否（HR-A）
 5. 新しい内容で `output.md` を上書き
@@ -24,11 +24,11 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_check_safe_output()`:
+`convert_from_pptx.py:_check_safe_output`:
 ```python
 def _check_safe_output(path: Path, force: bool = False) -> None:
-    if path.exists():
-        if path.is_symlink():
+    if path.exists:
+        if path.is_symlink:
             raise ValueError(f"Refusing to write through symlink: {path}")
         if not force:
             raise ValueError(f"Output already exists (use --force to overwrite): {path}")

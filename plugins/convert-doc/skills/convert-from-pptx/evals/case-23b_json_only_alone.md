@@ -8,7 +8,7 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で入力 PPTX を検証
+1. `_validate_pptx` で入力 PPTX を検証
 2. `structured_json_path` / `per_slide_json_dir` / `compact_view_dir` がいずれも `None`
 3. `wrote_anything = False` のまま 3 つの `if converter.<dir>_path is not None` ブロックを通過
 4. `if wrote_anything: ... if converter.json_only: return 0` のガードが不成立（`wrote_anything=False`）のため通常の Markdown 直接出力に進む
@@ -24,7 +24,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:main()` の制御フロー（実装事実）:
+`convert_from_pptx.py:main` の制御フロー（実装事実）:
 ```python
 wrote_anything = False
 if converter.structured_json_path is not None:
@@ -38,7 +38,7 @@ if wrote_anything:
     if converter.json_only:
         return 0
 # JSON 系オプション未指定 or --json-only 無し → 従来の Markdown 直接出力
-output_path = converter.convert()
+output_path = converter.convert
 ```
 
 `--json-only` 単独指定は出力先 JSON が無いため `wrote_anything=False` のまま通常 MD 生成に到達する。

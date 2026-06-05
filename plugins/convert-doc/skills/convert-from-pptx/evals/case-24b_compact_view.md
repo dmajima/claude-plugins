@@ -8,8 +8,8 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で入力 PPTX を検証
-2. `export_compact_view()` がスライドごとに 1 ファイル 1 スライドの簡潔ビュー `slide-NN.txt` を出力
+1. `_validate_pptx` で入力 PPTX を検証
+2. `export_compact_view` がスライドごとに 1 ファイル 1 スライドの簡潔ビュー `slide-NN.txt` を出力
 3. 各 shape を 1 行で「pos (top, left) / size (h, w) / フォント / プレースホルダ / フラグ / テキスト」形式で表示
 4. shape は視覚順（top → left）でソート
 5. 終了コード: 0
@@ -39,7 +39,7 @@ shape_count: 3, connector_count: 0
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:export_compact_view()` および `_render_compact_slide_view()`:
+`convert_from_pptx.py:export_compact_view` および `_render_compact_slide_view`:
 ```python
 view_text = self._render_compact_slide_view(slide, emitted, template_texts)
 view_path = self.compact_view_dir / f"slide-{emitted:02d}.txt"

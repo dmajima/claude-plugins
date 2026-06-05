@@ -15,16 +15,6 @@
 ```bash
 bash "...sync.sh" -Mapping project -EmitDiffJson "$tmpJson"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$tmpJson = ".claude/.local/work/<session>/workspace/sync-diff.json"
-pwsh -NoProfile -File "...sync.ps1" -Mapping project -EmitDiffJson "$tmpJson"
-```
-
-</details>
-
 - sync.sh が差分検出後、JSON ファイルへ書き出して exit 0
 - 実適用はしない
 

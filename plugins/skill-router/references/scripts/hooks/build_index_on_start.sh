@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # build_index_on_start.sh - SessionStart hook for skill-router (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。PowerShell フォールバック: build_index_on_start.ps1
 #
 # venv ライフサイクル管理 (references/scripts/lib/venv_lifecycle.py):
 #   session-reset → ensure → python-bin → build_index 実行

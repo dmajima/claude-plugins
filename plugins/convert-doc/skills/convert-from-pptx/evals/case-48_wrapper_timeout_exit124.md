@@ -35,25 +35,6 @@
     Remove-Job $job -Force
     exit 124
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$completed = Wait-Job $job -Timeout $TimeoutSec
-if (-not $completed) {
-    Write-Error "convert_from_pptx.py timed out after $TimeoutSec sec"
-    # IMPL-M1: Stop-Job は非同期のため Wait-Job で待つ
-    Stop-Job $job | Out-Null
-    Wait-Job $job -Timeout 10 | Out-Null
-    $partial = Receive-Job $job -ErrorAction SilentlyContinue
-    if ($partial) { Write-Output $partial }
-    Remove-Job $job -Force
-    exit 124
-}
-```
-
-</details>
-
 ## 実機検証ログ
 
 セッション `20260521_01_convert_from_pptx_hung_repro` で本ケースを実機検証済み:

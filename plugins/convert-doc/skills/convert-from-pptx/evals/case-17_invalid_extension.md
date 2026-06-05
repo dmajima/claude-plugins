@@ -6,8 +6,8 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` でファイル存在は通過
-2. `path.suffix.lower() not in (".pptx", ".pptm")` が True → `ValueError`
+1. `_validate_pptx` でファイル存在は通過
+2. `path.suffix.lower not in (".pptx", ".pptm")` が True → `ValueError`
 3. メッセージ: `Input file is not PPTX/PPTM (extension): <path>`
 4. stderr 出力後 `sys.exit(1)`
 
@@ -18,9 +18,9 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_validate_pptx()`:
+`convert_from_pptx.py:_validate_pptx`:
 ```python
-if path.suffix.lower() not in (".pptx", ".pptm"):
+if path.suffix.lower not in (".pptx", ".pptm"):
     raise ValueError(f"Input file is not PPTX/PPTM (extension): {path}")
 ```
 

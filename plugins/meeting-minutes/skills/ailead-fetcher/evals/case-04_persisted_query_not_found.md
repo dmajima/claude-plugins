@@ -12,12 +12,12 @@
 
 1. URL から share key を抽出する
 2. HTML ページを取得し、`buildId` を正規表現で抽出する
-3. `fetch_share.py` の `try_known_hashes()` で既知の `operationHash` を順に試行する
+3. `fetch_share.py` の `try_known_hashes` で既知の `operationHash` を順に試行する
 4. 全ての既知ハッシュに対して `PERSISTED_QUERY_NOT_FOUND` エラーが返されることを検出する
-5. `try_known_hashes()` が `(None, None)` を返し、JS チャンクからの再抽出フローに移行する:
+5. `try_known_hashes` が `(None, None)` を返し、JS チャンクからの再抽出フローに移行する:
    - HTML ソース内の `<script>` タグから `pages/share/%5Bkey%5D-*.js` パターンの JS URL を検索する
    - JS チャンクを取得し、`externalShare/dataflow/query.*?hash:"([0-9a-f]{64})"` で抽出を試みる
-6. JS チャンクからもハッシュ形式が変更されており、正規表現にマッチしないため `extract_operation_hash_from_js()` が `None` を返す
+6. JS チャンクからもハッシュ形式が変更されており、正規表現にマッチしないため `extract_operation_hash_from_js` が `None` を返す
 7. スクリプトが `sys.exit(1)` で終了し、stderr に `"ERROR: Could not extract operationHash from JS chunk."` を出力する
 8. ユーザーに以下を報告する:
    - operationHash の自動抽出に失敗したこと
@@ -35,7 +35,7 @@
 
 ## 分岐の根拠
 
-`fetch_share.py` の `try_known_hashes()`: 既知ハッシュの `query_graphql()` 呼び出しでレスポンスの `errors[0].extensions.code` が `PERSISTED_QUERY_NOT_FOUND` の場合、そのハッシュをスキップして次を試行する。全ハッシュが失敗すると `(None, None)` を返す。続いて `extract_operation_hash_from_js()` を呼ぶが、JS チャンク内のハッシュ形式が正規表現パターンと不一致の場合 `None` を返し、`sys.exit(1)` に到達する。`references/procedures.md` エラーハンドリング表: 「`PERSISTED_QUERY_NOT_FOUND`: ハッシュ形式の不一致 → `extensions.operationHash` 形式であることを確認」。
+`fetch_share.py` の `try_known_hashes`: 既知ハッシュの `query_graphql` 呼び出しでレスポンスの `errors[0].extensions.code` が `PERSISTED_QUERY_NOT_FOUND` の場合、そのハッシュをスキップして次を試行する。全ハッシュが失敗すると `(None, None)` を返す。続いて `extract_operation_hash_from_js` を呼ぶが、JS チャンク内のハッシュ形式が正規表現パターンと不一致の場合 `None` を返し、`sys.exit(1)` に到達する。`references/procedures.md` エラーハンドリング表: 「`PERSISTED_QUERY_NOT_FOUND`: ハッシュ形式の不一致 → `extensions.operationHash` 形式であることを確認」。
 
 ## 関連ケース
 

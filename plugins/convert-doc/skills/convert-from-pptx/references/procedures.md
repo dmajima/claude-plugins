@@ -6,7 +6,7 @@
 
 Windows + PowerShell + python-pptx の組み合わせで、`Start-Process -NoNewWindow`
 または `&` 演算子 + ファイルリダイレクトで Python を子プロセスとして起動すると、
-`python-pptx.Presentation()` 呼び出しで**ハングして終了しない既知事象**がある
+`python-pptx.Presentation` 呼び出しで**ハングして終了しない既知事象**がある
 （Claude Code の Bash ツール経由実行が該当）。
 
 このため、本スクリプトは **`Start-Job` 経由のラッパー（`run_via_job.sh`）** から
@@ -27,25 +27,6 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/run_via_job.sh" \
   [--no-first-slide-as-title] \
   [--max-image-size <BYTES>]
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_via_job.ps1" `
-  "<入力PPTXファイルパス>" `
-  "<出力MDファイルパス>" `
-  -PythonExe "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-  [-TimeoutSec <秒>] `
-  [--images-dir <DIR>] `
-  [--no-mermaid] `
-  [--include-notes] `
-  [--include-hidden] `
-  [--no-first-slide-as-title] `
-  [--max-image-size <BYTES>]
-```
-
-</details>
-
 - 第 1 引数: 入力 PPTX パス（位置パラメータ）
 - 第 2 引数: 出力 MD パス（位置パラメータ）
 - `-PythonExe`: venv の python.exe（環境変数 `CONVERT_FROM_PPTX_PYTHON` でも指定可）
@@ -60,18 +41,6 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from
   "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/convert_from_pptx.py" \
   "<入力>" "<出力>"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-# ✗ 禁止: -NoNewWindow / &+redirect で起動するとハングする
-& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
-  "<入力>" "<出力>"
-```
-
-</details>
-
 事象再現と原因切り分けの詳細は本リポジトリ調査セッション参照
 （`.claude/.local/work/20260521_01_convert_from_pptx_hung_repro/root-cause.md`）。
 
@@ -94,22 +63,6 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/run_verify_via_jo
   [--threshold <0.85 等>] \
   [--max-missing-shown <件数>]
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_verify_via_job.ps1" `
-  "<入力PPTXファイルパス>" `
-  "<検証対象MDファイルパス>" `
-  -PythonExe "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-  [-TimeoutSec <秒>] `
-  [--report <REPORT.json>] `
-  [--threshold <0.85 等>] `
-  [--max-missing-shown <件数>]
-```
-
-</details>
-
 設計と挙動は `run_via_job.sh` と対称（タイムアウト時 exit 124、PythonExe 検証、
 stderr マージ等の動作仕様すべて共通）。
 
@@ -170,7 +123,7 @@ stderr マージ等の動作仕様すべて共通）。
 | 日本語が文字化け | 出力は UTF-8（BOM なし）。読み込みエディタのエンコーディング設定を確認 |
 | 大量の画像で生成が遅い | `--max-image-size` を下げる、または前段で不要画像を削除した PPTX に差し替える |
 | **起動して 30 秒以上経っても何も出力されずプロセスが終了しない** | **直接 `python.exe` を `&` / `Start-Process -NoNewWindow` で呼んでいないか確認**。必ず `run_via_job.sh` ラッパー経由で起動する（procedures.md 冒頭参照） |
-| stdout/stderr が両方とも 0 byte のまま固まる | 同上。Windows + PowerShell + python-pptx の組み合わせ問題で、`Presentation()` 呼び出しでハングする |
+| stdout/stderr が両方とも 0 byte のまま固まる | 同上。Windows + PowerShell + python-pptx の組み合わせ問題で、`Presentation` 呼び出しでハングする |
 | 「`exited: False`」がログに出る | プロセスがタイムアウトで kill された証拠。`run_via_job.sh` 経由に切り替える |
 
 ## 情報開示・運用上の注意（CI / 共有環境向け）

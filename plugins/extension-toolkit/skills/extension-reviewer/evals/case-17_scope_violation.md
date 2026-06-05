@@ -13,7 +13,7 @@
 
 ### Phase 1: パストラバーサル防御
 
-`run_checks.py` 内 `assert_in_scope(scope_root, target)` が `target.resolve()` と `scope_root.resolve()` を比較し、`target` が scope-root 配下でないことを検出して `ValueError` を raise する。
+`run_checks.py` 内 `assert_in_scope(scope_root, target)` が `target.resolve` と `scope_root.resolve` を比較し、`target` が scope-root 配下でないことを検出して `ValueError` を raise する。
 
 ### Phase 2: スクリプトの fail-closed 終了
 
@@ -57,7 +57,7 @@ exit code: 2
 
 ## 分岐の根拠
 
-`run_checks.py` の `assert_in_scope()` は `resolve()` で symlink を展開してから祖先関係を検証するため、`/etc/passwd` のような絶対パス・`../../../etc/passwd` のような相対経路いずれも一様に検出できる。`extension-reviewer` 側はこの fail-closed をユーザに優しく提示する責務を持つ。
+`run_checks.py` の `assert_in_scope` は `resolve` で symlink を展開してから祖先関係を検証するため、`/etc/passwd` のような絶対パス・`../../../etc/passwd` のような相対経路いずれも一様に検出できる。`extension-reviewer` 側はこの fail-closed をユーザに優しく提示する責務を持つ。
 
 ## 関連ケース
 

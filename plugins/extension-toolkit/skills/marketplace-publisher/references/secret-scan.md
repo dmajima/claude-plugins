@@ -152,7 +152,7 @@ EXCLUDE_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".tox", ".mypy_c
 def is_binary(path: pathlib.Path) -> bool:
     """先頭 8KB に NUL バイトを含むファイルはバイナリ判定（BOM 持ちは除外）."""
     try:
-        chunk = path.read_bytes()[:8192]
+        chunk = path.read_bytes[:8192]
     except Exception:
         return True
     # UTF-16 / UTF-8 BOM を持つファイルはテキストとして扱う
@@ -172,7 +172,7 @@ def is_placeholder_value(value: str) -> bool:
 def scan(plugin_root: pathlib.Path) -> list[dict]:
     findings = []
     for path in plugin_root.rglob("*"):
-        if not path.is_file():
+        if not path.is_file:
             continue
         # 除外ディレクトリ配下はスキップ（.git / .venv / node_modules 等）
         if is_in_excluded_dir(path, plugin_root):
@@ -201,14 +201,14 @@ def scan(plugin_root: pathlib.Path) -> list[dict]:
                 continue
         except Exception:
             continue
-        for name, pat in CONTENT_PATTERNS.items():
+        for name, pat in CONTENT_PATTERNS.items:
             for m in re.finditer(pat, text):
                 # プレースホルダ値は除外
                 matched = m.group(0)
                 if is_placeholder_value(matched):
                     continue
                 # 行番号を計算（マッチ位置までの改行数 + 1）
-                line_num = text[: m.start()].count("\n") + 1
+                line_num = text[: m.start].count("\n") + 1
                 # CWE-532 対応: 検出値の prefix も残さない（パターン名 + ファイルパス + 行番号のみ）
                 findings.append({"file": str(path), "line": line_num, "reason": f"content:{name}"})
                 break

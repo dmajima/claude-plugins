@@ -11,11 +11,11 @@
 ## 期待動作
 
 1. `_is_section_cover_layout(slide)` で章扉判定 → True
-2. `_compute_slide_visual_stats()` 内の装飾判定で shape A について以下を確認:
+2. `_compute_slide_visual_stats` 内の装飾判定で shape A について以下を確認:
    - `is_section_cover_layout = True`（章扉）
    - `_is_decoration_number(shape)` で True（純数字 1〜3 桁テキスト）
 3. shape A の shape_id を `_current_decoration_shape_ids` に登録
-4. `_collect_shape()` 内で当該 shape_id が登録済みのためスキップ
+4. `_collect_shape` 内で当該 shape_id が登録済みのためスキップ
 5. shape B（章タイトル）と shape C（補足）は通常通り出力
 6. 終了コード: 0
 
@@ -34,17 +34,17 @@ shape A「3」は装飾扱いで本文に含まれない。
 
 `convert_from_pptx.py` の装飾除外:
 ```python
-# _compute_slide_visual_stats() 内
+# _compute_slide_visual_stats 内
 if self._current_is_section_cover and self._is_decoration_number(shape):
     self._current_decoration_shape_ids.add(shape_id)
 ```
 
-`_is_decoration_number()`:
+`_is_decoration_number`:
 ```python
 def _is_decoration_number(self, shape) -> bool:
     """章扉スライドの純数字 1〜3 桁テキストを装飾として判定."""
-    text = (shape.text_frame.text or "").strip()
-    return text.isdigit() and len(text) <= 3
+    text = (shape.text_frame.text or "").strip
+    return text.isdigit and len(text) <= 3
 ```
 
 章扉スライドでは、視覚的な装飾として大きく配置される章番号（1, 2, 3 等）が本文として誤って Markdown に出力されないようフィルタする境界ケース。

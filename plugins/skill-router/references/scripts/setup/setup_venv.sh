@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # setup_venv.sh - skill-router プラグイン venv 構築 (Bash 版)
-# 通常運用は本スクリプトを利用する。PowerShell フォールバック: setup_venv.ps1
 set -euo pipefail
 
 work_dir=""

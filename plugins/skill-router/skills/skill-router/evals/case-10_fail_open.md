@@ -24,7 +24,7 @@
 |-------|------|
 | 1 | `route.py` が `index.json` ロードを試行 |
 | 2 | `json.JSONDecodeError` / `OSError` を捕捉し `{}` を返す |
-| 3 | `select_candidates` で 0 件となり `route()` が None を返す |
+| 3 | `select_candidates` で 0 件となり `route` が None を返す |
 | 4 | `additionalContext` を出力せず exit 0 |
 | 5 | 重大な例外時は `<base>/error.log` に traceback を書き込み、それでも exit 0 |
 
@@ -39,7 +39,7 @@
 
 ## 分岐の根拠
 
-`references/scripts/lib/route.py` と `build_index.py` の `main()` の `try/except` フェイルオープン構造、および `references/scripts/hooks/route_prompt.sh` の「Bash 側で JSON パースしない」原則。ルーティング処理は補助機能でありユーザの本来作業をブロックしてはならないため、すべての例外パスで exit 0 を貫く。
+`references/scripts/lib/route.py` と `build_index.py` の `main` の `try/except` フェイルオープン構造、および `references/scripts/hooks/route_prompt.sh` の「Bash 側で JSON パースしない」原則。ルーティング処理は補助機能でありユーザの本来作業をブロックしてはならないため、すべての例外パスで exit 0 を貫く。
 
 ## 関連ケース
 

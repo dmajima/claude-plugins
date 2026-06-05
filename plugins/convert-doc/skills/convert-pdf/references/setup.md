@@ -20,25 +20,6 @@
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$SessionDir/workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir "$SessionDir/workspace"
-```
-
-</details>
-
 ## Chromium の再ダウンロードを避けたい場合
 
 `PLAYWRIGHT_BROWSERS_PATH` 環境変数で共有キャッシュディレクトリを指定するとダウンロードが 1 回で済む。
-
-<details><summary>PowerShell フォールバック (Bash 等価は未整備)</summary>
-
-<details><summary>PowerShell フォールバック (Bash 等価は未整備)</summary>
-
-```powershell
-$env:PLAYWRIGHT_BROWSERS_PATH = "$env:USERPROFILE/.cache/ms-playwright"
-```
-
-</details>

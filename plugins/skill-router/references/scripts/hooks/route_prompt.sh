@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # route_prompt.sh - UserPromptSubmit hook for skill-router (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。PowerShell フォールバック: route_prompt.ps1
 #
 # CRITICAL: stdin JSON は Bash で parse せず、Python (json.load) に委譲する。
 # Bash の責務は: Python interpreter の起動 / toggle (disabled) check / stdin の素通し のみ。

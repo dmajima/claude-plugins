@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # sync.sh - Claude Code 設定の Git 経由同期 (pull, Bash + jq + git 純粋実装)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: sync.ps1 (機能等価、歴史的経緯で保持)
 #
 # 処理の流れ:
 #   1. Mapping 解決 (sync-mappings.json)

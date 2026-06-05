@@ -13,8 +13,8 @@
 ## 期待動作
 
 1. テキスト持ち shape は `shapes_meta` に蓄積
-2. `_is_connector()` がコネクタを判定し `_collect_connector()` で `{begin, end}` 抽出
-3. `FlowExtractor.build_mermaid()` で direction を `TD` と判定（縦並びのため）
+2. `_is_connector` がコネクタを判定し `_collect_connector` で `{begin, end}` 抽出
+3. `FlowExtractor.build_mermaid` で direction を `TD` と判定（縦並びのため）
 4. ひし形は `{ "条件分岐" }` ノードに変換
 5. 末尾に Mermaid コードフェンスを出力
 
@@ -35,14 +35,14 @@ flowchart TD
 
 ## 分岐の根拠
 
-`FlowExtractor._infer_direction()`:
+`FlowExtractor._infer_direction`:
 ```python
 if x_range > y_range * 1.5:
     return "LR"
 return "TD"
 ```
 
-`FlowExtractor._bracket_for_shape()`:
+`FlowExtractor._bracket_for_shape`:
 ```python
 if "DIAMOND" in auto or "FLOWCHART_DECISION" in auto:
     return ("{", "}")

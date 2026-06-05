@@ -8,8 +8,8 @@
 
 ## 期待動作
 
-1. `_extract_pptx_inventory()` で PPTX 内のテキスト・テーブル・画像・コネクタを抽出
-2. `_extract_md_features()` で MD の正規化テキスト・画像・Mermaid ブロックを抽出
+1. `_extract_pptx_inventory` で PPTX 内のテキスト・テーブル・画像・コネクタを抽出
+2. `_extract_md_features` で MD の正規化テキスト・画像・Mermaid ブロックを抽出
 3. テキストカバレッジ・テーブルセルカバレッジを計算
 4. `text_coverage >= 0.85` かつ `table_cell_coverage >= 0.85` を満たす
 5. 画像数も PPTX 画像数の 50% 以上
@@ -44,7 +44,7 @@
 
 ## 分岐の根拠
 
-`verify_md.py:verify()` の判定ロジック:
+`verify_md.py:verify` の判定ロジック:
 ```python
 failures = []
 if text_coverage < coverage_threshold:
@@ -68,20 +68,6 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/run_verify_via_jo
   --report "<セッション>/coverage_report.json" \
   --threshold 0.85
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/run_verify_via_job.ps1" `
-  "<入力PPTXパス>" `
-  "<検証対象MDパス>" `
-  -PythonExe "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-  --report "<セッション>/coverage_report.json" `
-  --threshold 0.85
-```
-
-</details>
-
 直接 `& "$py.exe" verify_md.py ...` で起動するとハングする可能性があるため必ず
 ラッパー経由とする。設計と挙動は `run_via_job.sh` と対称。
 

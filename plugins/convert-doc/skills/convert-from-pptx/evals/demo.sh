@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # convert-from-pptx スキルの代表的な evals ケースを実機検証する再現スクリプト (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: demo.ps1
 #
 # extension-toolkit の completion-checklist.md 節 2.4.5 に従い、各スキルに
 # evals/demo.sh 相当の再現可能シナリオを用意する。セッションを跨いで

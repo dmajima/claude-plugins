@@ -16,7 +16,7 @@ C-1 由来（改善バックログ、経緯は git 履歴を参照）。各落�
 |------|------|
 | 症状 | `"/foo/bar".TrimStart("/foo/")` のような呼び出しで、文字列接頭辞ではなく **個別文字の集合** (`'/'`, `'f'`, `'o'`, `'b'`, `'a'`, `'r'`) として扱われる |
 | 結果 | 期待: `"bar"` / 実際: 文字集合に含まれる先頭文字を全て除去するため、想定外の結果になる |
-| 発見契機 | コミット `bbefbd0`（2026-05-18、maintenance プラグイン sync-settings/sync.ps1）|
+| 発見契機 | コミット `bbefbd0`（2026-05-18、maintenance プラグイン sync-settings）|
 | 根本原因 | .NET の `String.TrimStart` のオーバーロードは `(params char[])` のみで、`(string)` シグネチャを持たない。PowerShell の柔軟な型変換で文字列が char[] に暗黙変換される |
 | **誤** | `$rel = $path.TrimStart('./').TrimStart('/')` ← `.`, `/` の 2 文字集合として扱う（運良く動くが意図と異なる）|
 | **正** | `$rel = if ($path.StartsWith('./')) { $path.Substring(2) } else { $path } ; $rel = $rel.TrimStart('/')` |
@@ -167,13 +167,13 @@ if ($s.StartsWith("./")) { $s = $s.Substring(2) }
 
 | 項目 | 内容 |
 |------|------|
-| 症状 | `Start-Process -NoNewWindow` または `&` + ファイルリダイレクトで Python を起動すると、`python-pptx.Presentation()` 呼び出しでプロセスが終了せずハング |
+| 症状 | `Start-Process -NoNewWindow` または `&` + ファイルリダイレクトで Python を起動すると、`python-pptx.Presentation` 呼び出しでプロセスが終了せずハング |
 | 発見契機 | セッション `20260521_01_convert_from_pptx_hung_repro`（fix/convert-from-pptx-hung ブランチ）|
 | 観測 | stdout/stderr 共に 0 byte のまま 30 秒以上経過、Python プロセスは生きているが CPU=0% |
-| 根本原因 | PowerShell ツールから直接子プロセスとして起動した Python は親の特定のコンソール/ハンドル環境を継承し、python-pptx の `Presentation()` 内部処理で詰まる（`sys.stdin.close()` / `os._exit()` でも改善しない） |
+| 根本原因 | PowerShell ツールから直接子プロセスとして起動した Python は親の特定のコンソール/ハンドル環境を継承し、python-pptx の `Presentation` 内部処理で詰まる（`sys.stdin.close` / `os._exit` でも改善しない） |
 | **誤** | `& $py.exe script.py input.pptx output.md 1> stdout.log 2> stderr.log` ← ハング |
 | **誤** | `Start-Process -FilePath $py -ArgumentList @(...) -NoNewWindow -RedirectStandardOutput ...` ← ハング |
-| **正** | `Start-Job` 経由ラッパースクリプトを介して起動（実装例: `plugins/convert-doc/references/scripts/convert-from-pptx/run_via_job.ps1`）|
+| **正** | `Start-Job` 経由ラッパースクリプトを介して起動（実装例: `plugins/convert-doc/references/scripts/convert-from-pptx/run_via_job.sh`）|
 | 検出方法 | `procedures.md` の起動例が「ラッパー経由」になっているか、生 `&` / `Start-Process` 直叩きになっていないかをレビュー時に確認 |
 | グローバルルール | `~/.claude/rules/tools/python-subprocess-hang-windows.md` を参照（全プロジェクト共通）|
 

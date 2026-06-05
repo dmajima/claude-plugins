@@ -6,7 +6,7 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で `zf.infolist()` を走査
+1. `_validate_pptx` で `zf.infolist` を走査
 2. `total_uncompressed += info.file_size` の累積値が 256 MiB を超過した時点で `ValueError` を raise
 3. メッセージ: `Input PPTX exceeds uncompressed size limit (<N> > <max>): <path>`
 4. python-pptx での読み込みは行われない（fail-closed）
@@ -18,9 +18,9 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_validate_pptx()`:
+`convert_from_pptx.py:_validate_pptx`:
 ```python
-for info in zf.infolist():
+for info in zf.infolist:
     total_uncompressed += info.file_size
     if total_uncompressed > MAX_TOTAL_UNCOMPRESSED_BYTES:
         raise ValueError(

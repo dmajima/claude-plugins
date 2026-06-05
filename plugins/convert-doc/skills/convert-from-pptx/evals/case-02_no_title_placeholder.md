@@ -22,13 +22,13 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_convert_slide()`:
+`convert_from_pptx.py:_convert_slide`:
 ```python
 if slide_no == 1 and self.first_slide_as_title:
     heading = f"# {title or 'タイトル'}"
 ```
 
-`_extract_title()` で title 取得失敗時に None を返す → デフォルト文言にフォールバック。
+`_extract_title` で title 取得失敗時に None を返す → デフォルト文言にフォールバック。
 
 ## 関連ケース
 

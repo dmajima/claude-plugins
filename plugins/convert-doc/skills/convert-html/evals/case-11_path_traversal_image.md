@@ -13,9 +13,9 @@
 
 ## 期待動作
 
-1. `convert.py:embed_image()` が以下の判定を行う:
+1. `convert.py:embed_image` が以下の判定を行う:
    - `src` が `data:` `http://` `https://` で始まる → そのまま返す
-   - 解決後パス（`base_dir / src`）が `base_dir.resolve()` 配下でない → **元の src をそのまま返し、埋め込まない**
+   - 解決後パス（`base_dir / src`）が `base_dir.resolve` 配下でない → **元の src をそのまま返し、埋め込まない**
 2. 出力 HTML には `<img src="../../etc/passwd">` のような元の `src` が残る（base64 化されない）
 3. ファイル内容は HTML に埋め込まれず、機密情報が漏洩しない
 
@@ -27,10 +27,10 @@
 
 ## 分岐の根拠
 
-`references/scripts/convert-html/convert.py:embed_image()`:
+`references/scripts/convert-html/convert.py:embed_image`:
 ```python
 candidate = base_dir / src
-if candidate.exists() and _is_within(base_dir, candidate):
+if candidate.exists and _is_within(base_dir, candidate):
     img_path = candidate
 else:
     return src   # 範囲外は埋め込まずに元 src を返す

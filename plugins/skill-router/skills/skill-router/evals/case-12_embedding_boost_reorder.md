@@ -20,10 +20,10 @@ Markdown を PDF に変換したい
 
 | Phase | 動作 |
 |-------|------|
-| 1 | `route.route()` がヒューリスティックで候補スキルをスコアリング |
+| 1 | `route.route` がヒューリスティックで候補スキルをスコアリング |
 | 2 | `convert-doc:convert-pdf` / `convert-doc:convert-html` / `convert-doc:convert-pptx` のスコアが近接（mid 帯境界） |
 | 3 | `embedding.enabled=true` のため `embedding_enrich.load_manifest` + `load_vectors` を `expected_sha256` 付きで読み込み |
-| 4 | `embedding_route.boost_rows()` がプロンプトをベクトル化し、各候補とのコサイン類似度を `weight * max(0, sim - min_similarity)` で加算 |
+| 4 | `embedding_route.boost_rows` がプロンプトをベクトル化し、各候補とのコサイン類似度を `weight * max(0, sim - min_similarity)` で加算 |
 | 5 | 再ソート後、`convert-doc:convert-pdf` が `top1` として固定（意味的に最近接のため） |
 
 ## 期待出力

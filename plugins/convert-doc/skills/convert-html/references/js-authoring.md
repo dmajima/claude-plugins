@@ -6,12 +6,12 @@
 すべてのファイルは **即時実行関数式（IIFE）** でラップし、グローバルスコープを汚染しないこと。
 
 ```javascript
-(function () {
+(function  {
   'use strict';
 
   // ここに機能の実装
 
-})();
+});
 ```
 
 ## 競合防止ルール
@@ -35,9 +35,9 @@
 var scale = 1;
 
 // OK: IIFE内変数
-(function () {
+(function  {
   var scale = 1;
-})();
+});
 ```
 
 ### 3. 他の機能ファイルに依存しない

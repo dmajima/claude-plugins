@@ -2,7 +2,6 @@
 # install_rule_template.sh (Bash 版)
 #
 # credentials-manager プラグインの SessionStart フック。
-# PowerShell フォールバック: install_rule_template.ps1
 #
 # 「認証情報が必要な処理では credentials-manager を最優先せよ」と定める
 # 最重要ルールファイルのテンプレートを、プラグインのインストールスコープに応じた

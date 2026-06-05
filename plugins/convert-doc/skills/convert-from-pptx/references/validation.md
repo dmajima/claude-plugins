@@ -25,20 +25,6 @@ PPTX → Markdown 変換の最終フェーズとして、生成された Markdow
   --report "<セッション>/coverage_report.json" \
   --threshold 0.85
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py" `
-  "<入力 PPTX>" `
-  "<生成 MD>" `
-  --report "<セッション>/coverage_report.json" `
-  --threshold 0.85
-```
-
-</details>
-
 ### 2.2 出力 (`coverage_report.json`)
 
 | フィールド | 内容 |

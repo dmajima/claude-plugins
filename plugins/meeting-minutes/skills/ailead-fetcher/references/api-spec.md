@@ -190,28 +190,10 @@ https://firebasestorage.googleapis.com/v0/b/champs-production.appspot.com/o/comp
 ```bash
 ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=<key>" -c copy output.mp4
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=<key>" -c copy output.mp4
-```
-
-</details>
-
 音声のみ:
 ```bash
 ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=<key>" -vn -acodec copy output.aac
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=<key>" -vn -acodec copy output.aac
-```
-
-</details>
-
 ## 5. パスワード保護されたリンク
 
 パスワード保護されたリンクには追加のエンドポイントが存在する。

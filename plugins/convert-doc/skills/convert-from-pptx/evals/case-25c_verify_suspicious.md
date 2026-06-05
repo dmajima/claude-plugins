@@ -8,7 +8,7 @@
 
 ## 期待動作
 
-1. `verify()` でカバレッジ計算（PPTX → MD は問題なし、`text_coverage >= 0.85`）
+1. `verify` でカバレッジ計算（PPTX → MD は問題なし、`text_coverage >= 0.85`）
 2. MD 内のフレーズを抽出して PPTX 全テキスト連結文字列と照合
 3. `len(phrase) >= 16` かつ Mermaid 構文等の偽陽性除外を経たフレーズで、PPTX に存在しないものを `suspicious_md_phrases` に追加
 4. `suspicious_md_phrases` は警告扱い（FAIL にはしない設計）
@@ -42,7 +42,7 @@ RESULT: PASSED
 
 ## 分岐の根拠
 
-`verify_md.py:verify()`:
+`verify_md.py:verify`:
 ```python
 suspicious_md_phrases: list = []
 for phrase in md["phrases"]:
@@ -50,7 +50,7 @@ for phrase in md["phrases"]:
         continue
     if any(tok in phrase for tok in ("![", "```", "http", "->", "flowchart", "subgraph", "<br")):
         continue
-    cmp_phrase = phrase.replace("*", "").replace("`", "").strip()
+    cmp_phrase = phrase.replace("*", "").replace("`", "").strip
     if len(cmp_phrase) < 16:
         continue
     if cmp_phrase not in pptx_all_text_norm:

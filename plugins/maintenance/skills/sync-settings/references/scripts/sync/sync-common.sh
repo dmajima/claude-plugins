@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # sync-common.sh - sync-settings スキル pull / push スクリプト共通ライブラリ (Bash 純粋実装)
 #
-# 通常運用は本ファイルを source して利用する。
-# PowerShell フォールバック: sync-common.ps1 (機能等価、歴史的経緯で保持)
 #
 # 提供する SSOT:
 #   - 認証情報除外リスト (EXCLUDE_TARGETS / EXCLUDE_PATTERNS / ENV_FILE_REGEX)

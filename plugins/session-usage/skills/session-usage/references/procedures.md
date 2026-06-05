@@ -20,17 +20,6 @@ Bash で以下を実行する:
 bash "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.sh" \
   --stdout [--session-id <UUID>]
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass `
-  -File "${env:CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" `
-  -Stdout [-SessionId <UUID>]
-```
-
-</details>
-
 | フラグ | 役割 |
 |-------|------|
 | `--stdout` | UTF-8 で stdout に直接書き出し（Bash 経由でも文字化けしない） |
@@ -86,17 +75,6 @@ AskUserQuestion({
 bash "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.sh" \
   --copy [--session-id <UUID>]
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass `
-  -File "${env:CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" `
-  -Copy [-SessionId <UUID>]
-```
-
-</details>
-
 - `--copy` のみ指定（`--stdout` なし）
 - aggregate.sh が再集計し、結果をクリップボードへコピー（OS 別に `clip.exe` / `pbcopy` / `xclip` を自動選択）
 - stdout には `[OK] clipboard へコピーしました` のみ出る（罫線レイアウトは再表示しない）

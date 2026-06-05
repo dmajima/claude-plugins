@@ -222,32 +222,6 @@ maintenance/
 - ローカルデータ領域: `~/.claude/rules/claude/local-data-directory.md`（`.claude/.local/` 全般）
 - 自動更新ポリシー: `~/.claude/rules/claude/plugin-auto-update.md`（`autoUpdate: true` 必須・週 1 回更新チェック）
 
-## PowerShell フォールバック
-
-通常運用は Bash 経路 (`.sh` 純粋実装) を使用します。`cleanup.sh` / `cleanup-config.sh` /
-`sync.sh` / `sync-common.sh` / `sync-mappings.sh` / `sync-push.sh` はすべて
-**Bash + jq + git + Python (settings.json 安全マージのみ) による純粋実装** で、
-PowerShell を起動しません (Phase 9c 完成)。
-
-PowerShell 版 (`.ps1`) は **フォールバック手順用** として同階層に保持されます。
-両実装は同一の入出力仕様に従い、動作差異がないよう実装されています。
-
-### フォールバック適用条件
-
-以下のいずれかが該当する場合は PowerShell 経路へ切り替えてください:
-
-- Git Bash の `add_item failed` 等の Cygwin 初期化エラーが再発した
-- `jq` / `sha256sum` などが PATH に無い環境で利用したい
-- 動作差異の疑いがあり、PowerShell 元実装の出力を直接確認したい
-
-切替手順:
-
-```bash
-# 任意の maintenance スクリプトを呼ぶ際、.sh の代わりに以下を実行
-pwsh -NoProfile -File "<plugin-root>/skills/.../scripts/.../<name>.ps1" [args...]
-```
-
-`pwsh` (PowerShell 7+) のインストール手順は `~/.claude/rules/tools/powershell-fallback-mode.md` を参照。
 
 ## ライセンス
 

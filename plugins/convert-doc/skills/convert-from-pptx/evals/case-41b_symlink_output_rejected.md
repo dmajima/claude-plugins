@@ -8,9 +8,9 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で入力 PPTX を検証
-2. `convert()` 内で `_check_safe_output(self.output_path, self._force)` を呼ぶ
-3. `self.output_path.exists()` が True、`self.output_path.is_symlink()` が True のため、`--force` の値に関わらず `ValueError` を raise
+1. `_validate_pptx` で入力 PPTX を検証
+2. `convert` 内で `_check_safe_output(self.output_path, self._force)` を呼ぶ
+3. `self.output_path.exists` が True、`self.output_path.is_symlink` が True のため、`--force` の値に関わらず `ValueError` を raise
 4. メッセージ: `Refusing to write through symlink: <絶対パス>`
 5. python-pptx での読み込みは行われるが、書き込み直前で停止（fail-closed）
 6. 終了コード: 1
@@ -23,10 +23,10 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_check_safe_output()`:
+`convert_from_pptx.py:_check_safe_output`:
 ```python
-if path.exists():
-    if path.is_symlink():
+if path.exists:
+    if path.is_symlink:
         raise ValueError(f"Refusing to write through symlink: {path}")
     if not force:
         raise ValueError(f"Output already exists (use --force to overwrite): {path}")

@@ -34,7 +34,7 @@ router のインデックスを再構築して
 
 ## 分岐の根拠
 
-`commands/router-rebuild.md` と `references/scripts/lib/build_index.py` の `build()` 関数。`/router-rebuild` は index 手動再構築の唯一のエントリポイントであり、SessionStart 自動再構築では足りないシナリオ（プラグイン追加直後・evals 編集後）を救済する分岐。
+`commands/router-rebuild.md` と `references/scripts/lib/build_index.py` の `build` 関数。`/router-rebuild` は index 手動再構築の唯一のエントリポイントであり、SessionStart 自動再構築では足りないシナリオ（プラグイン追加直後・evals 編集後）を救済する分岐。
 
 ## 関連ケース
 

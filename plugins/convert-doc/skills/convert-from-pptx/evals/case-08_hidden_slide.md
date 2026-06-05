@@ -39,7 +39,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:convert()`:
+`convert_from_pptx.py:convert`:
 ```python
 for slide in presentation.slides:
     if self._is_hidden(slide) and not self.include_hidden:
@@ -47,7 +47,7 @@ for slide in presentation.slides:
     emitted_slide_no += 1
 ```
 
-`_is_hidden()`:
+`_is_hidden`:
 ```python
 return slide.element.get("show") == "0"
 ```
