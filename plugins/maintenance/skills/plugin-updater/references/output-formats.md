@@ -1,4 +1,4 @@
-# Output Formats (plugin-updater)
+﻿# Output Formats (plugin-updater)
 
 `plugin-updater` スキルが Phase F / G で出力するテーブル・警告・質問文のフォーマット集約 SSOT。
 変数表記の `<count>` 等は実行時に実際の値に置き換える。
@@ -28,7 +28,7 @@
 （将来 CLI が MP レベルで `not found` を返すようになった場合は仕様改訂）。
 **列名定義**: 「成功」= Updated（実際に更新が走ったエントリ）、「変更なし」= No change（既に最新版）、
 「Missing」= マーケットプレイスから消失（リトライ対象外）、「スキップ」= XR-1 不正値 / XR-2 サーキットブレーカー作動 /
-A-2 MP 未登録 / **A-3 由来（現在のプロジェクト外 / 未インストール / disabled / enabledPlugins 未登録 /
+A-2 MP 未登録 / **A-3 由来（projectPath ディレクトリ不在（target=all の場合）/ 現在のプロジェクト外（target=current-project の場合）/ 未インストール / disabled / enabledPlugins 未登録 /
 projectPath 欠落）** 等で対象外、「失敗」= Failed（リトライ対象）、「Unknown」= exit code と出力解析で分類できなかった
 要手動確認エントリ。**「スキップ」の内訳は F-3 備考列で区別** する。
 
@@ -72,12 +72,20 @@ XR-5 の閾値（試行済み件数の 20%）を超える場合、cross-cutting-
 | <plugin> | <marketplace> | Updated / No change / Missing / Skipped / Failed / Unknown | <サニタイズ後の備考> |
 
 ### Project プラグイン
-（User と同形式。git リポジトリ外かつ scope 未指定なら "リポジトリ外のため省略" を表示。
-scope=project 明示時は Phase A-0 で git リポジトリ存在を要求し、不在ならエラー中断するため
-本テーブルには到達しない）
+
+`target=all` の場合は projectPath ごとにグルーピングして表示する:
+
+#### <projectPath（XR-3 サニタイズ済み）>
+
+| プラグイン | マーケットプレイス | 結果 | 備考 |
+|----------|-----------------|-----|-----|
+| <plugin> | <marketplace> | Updated / No change / Missing / Skipped / Failed / Unknown | <サニタイズ後の備考> |
+
+`target=current-project` の場合は従来通り（projectPath ヘッダなし）:
+（User と同形式。`target=current-project` + git リポジトリ外の場合はエラー終了するため本テーブルには到達しない）
 
 ### Local プラグイン
-（User と同形式。同様に scope 未指定時のみ "リポジトリ外のため省略" を表示）
+（Project と同形式。`target=all` 時は projectPath ごとにグルーピング、`target=current-project` 時はヘッダなし）
 ```
 
 ### F-3 備考列の Skipped 区分定型文（ADR-PU-009 / Phase A-3 由来）
@@ -87,6 +95,7 @@ scope=project 明示時は Phase A-0 で git リポジトリ存在を要求し�
 
 | Skipped 区分 | 備考列定型文 |
 |--------------|------------|
+| projectPath ディレクトリ不在 | `projectPath のディレクトリが存在しないためスキップしました` |
 | 現在のプロジェクト外 | `現在のプロジェクト外にインストールされたプラグインをスキップしました` |
 | 未インストール | `installed_plugins.json に該当エントリがありません` |
 | disabled | `enabledPlugins で false / null のため対象外` |
@@ -115,8 +124,8 @@ A-2 / B-1 / XR-1 由来は既存仕様に基づく）。
 | 区分 | 実行予定件数 | スキップ | （備考）|
 |-----|------------|---------|--------|
 | マーケットプレイス | <count> | - | 全 MP 対象 |
-| User プラグイン | <count> | <count> | scope=<scope> によりフィルタ |
-| Project プラグイン | <count> | <count> | 同上 / git リポジトリ外なら省略 |
+| User プラグイン | <count> | <count> | target に応じて対象を決定 |
+| Project プラグイン | <count> | <count> | target=all: 全 projectPath 対象 / target=current-project: 現在の git リポジトリのみ |
 | Local プラグイン | <count> | <count> | 同上 |
 ```
 
@@ -142,10 +151,19 @@ A-2 / B-1 / XR-1 由来は既存仕様に基づく）。
 | <plugin> | <marketplace> | `claude plugin update <plugin>@<marketplace> --scope user` |
 
 ### Project プラグイン（実行予定コマンド）
-（User と同形式。git リポジトリ外なら "リポジトリ外のため省略" を表示）
+
+`target=all` の場合は projectPath ごとにグルーピングして表示する:
+
+#### <projectPath（XR-3 サニタイズ済み）>
+
+| プラグイン | マーケットプレイス | 実行予定コマンド |
+|----------|-----------------|---------------|
+| <plugin> | <marketplace> | `claude plugin update <plugin>@<marketplace> --scope project` |
+
+`target=current-project` の場合はヘッダなし（User と同形式）
 
 ### Local プラグイン（実行予定コマンド）
-（User と同形式）
+（Project と同形式）
 ```
 
 dry-run 時の備考列は「（実行予定）」固定文言を入れ、サニタイズ対象の実エラー出力は発生しないため
@@ -170,9 +188,10 @@ XR-3 適用は不要。
 
   特に `hooks` セクションが新規追加・変更されている場合、次回起動時に自動実行されます。
 - Missing と判定されたエントリは `enabledPlugins` から除外することを検討（マーケットプレイスから消失）
-- **Skipped（現在のプロジェクト外）が 1 件以上**: 該当プラグインを更新したい場合は、その
-  `projectPath` のディレクトリ内で Claude Code を起動し再度 `/update-all --scope project`（または
-  `local`）を実行してください
+- **Skipped（現在のプロジェクト外）が 1 件以上**（`target=current-project` の場合のみ表示）:
+  `/update-all` を実行すれば全プロジェクトのプラグインを更新できます
+- **Skipped（projectPath ディレクトリ不在）が 1 件以上**: 該当 projectPath のディレクトリが存在しません。
+  ディレクトリを復元するか、`enabledPlugins` から除外してください
 - **Skipped（未インストール）が 1 件以上**: 該当エントリを `enabledPlugins` から除外するか、
   `claude plugin install <plugin>@<marketplace>` でインストールしてください
 - **Skipped（disabled / enabledPlugins 未登録）が 1 件以上**: 該当プラグインを有効化したい場合は
@@ -344,10 +363,10 @@ AskUserQuestion({
 > 各ファイルは本セクションを参照し、独自にエラー文言を再定義しない。
 > 文言を変更する際は本セクションのみを編集し、他箇所は参照を維持する（ADR-PU-004 SSOT 配置原則準拠）。
 
-### 不正な scope 値
+### 不正な target 値
 
 ```text
-エラー: 不正な scope 値 "<value>" が指定されました。有効な値は user / project / local / all です。
+エラー: 不正な target 値 "<value>" が指定されました。有効な値は all / current-project です。
 ```
 
 ### CLI 不在 / 不正実装
@@ -401,16 +420,18 @@ Claude Code のインストール状況と PATH を確認してください。
 処理を中断します。settings.json の構造を確認してください。
 ```
 
-### git リポジトリ外で project/local 明示時
+### git リポジトリ外で target=current-project 指定時
 
 ```text
-エラー: scope=<scope> が指定されましたが、git リポジトリ外のため Project / Local スコープを処理できません。
+エラー: target=current-project が指定されましたが、git リポジトリ外のため Project / Local スコープを処理できません。
+全プロジェクトのプラグインを更新したい場合は /update-all を使用してください。
 ```
 
-### git リポジトリ外で scope 未指定時の INFO
+### git リポジトリ外で target=all の場合の INFO
 
 ```text
-INFO: git リポジトリ外で実行されたため Project / Local スコープを対象から除外しました。
+INFO: git リポジトリ外で実行されたため、target=all でも現在のプロジェクトの Project / Local スコープはありません。
+他プロジェクトの Project / Local プラグインは installed_plugins.json の projectPath に基づいて更新されます。
 ```
 
 ### Phase B 後新規 MP 追加時の INFO

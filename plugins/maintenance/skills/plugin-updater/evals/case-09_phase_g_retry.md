@@ -6,7 +6,7 @@
 |-----|---|
 | 起動経路 | `/update-all` |
 | コマンドから委譲される `mode` | `normal` |
-| コマンドから委譲される `scope` | `all` |
+| コマンドから委譲される `target` | `all` |
 | 既存状態 | Phase C / D / E のいずれかで 3 件の Failed が発生（5 件閾値未満）|
 
 ## 期待動作
@@ -28,8 +28,8 @@ AskUserQuestion({
     header: "Phase G リトライ",
     options: [
       { label: "全件リトライ", description: "3 件すべてを順次再試行します。" },
-      { label: "個別判断（1 件ずつ確認）", description: "各 Failed を 1 件ずつ確認します。" },
-      { label: "中止", description: "リトライせず終了します。" }
+      { label: "個別に判断", description: "各 Failed を 1 件ずつ確認します。" },
+      { label: "全件スキップ", description: "Failed エントリは諦めて完了する" }
     ],
     multiSelect: false
   }]

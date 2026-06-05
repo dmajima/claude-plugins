@@ -1,6 +1,6 @@
 # plugin-updater (skill)
 
-Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin update`）を経由して、インストール済みマーケットプレイスとプラグインを全スコープ（User / Project / Local）で一括最新化する実作業スキル。`/update-all` コマンドから委譲されて起動する。
+Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin update`）を経由して、インストール済みマーケットプレイスとプラグインを一括最新化する実作業スキル。`/update-all`（全プロジェクト対象）または `/update`（現在のプロジェクトのみ）コマンドから委譲されて起動する。
 
 ## このドキュメントについて
 
@@ -17,7 +17,7 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 
 | 業務 | 担当 |
 |-----|-----|
-| 引数（`--dry-run` / `--scope`）の解釈・バリデーション | `commands/update-all.md`（呼び出し元コマンド） |
+| 引数（`--dry-run`）の解釈・バリデーション | `commands/update-all.md` / `commands/update.md`（呼び出し元コマンド） |
 | `marketplace.json` / マーケットプレイス README の編集 | `extension-toolkit:marketplace-toolkit` |
 | プラグインの新規公開 | `extension-toolkit:marketplace-publisher` |
 
@@ -34,17 +34,14 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 
 ### 起動方法
 
-本スキルは `/update-all` コマンド経由でのみ起動します（AI による自動起動は想定外）。
+本スキルは `/update-all` または `/update` コマンド経由でのみ起動します（AI による自動起動は想定外）。
 
 ```text
-/update-all
-/update-all --dry-run
-/update-all --scope user
-/update-all --scope project
-/update-all --scope local
+/update-all              # 全プロジェクトのプラグインを一括更新
+/update-all --dry-run    # 実行予定のみ表示
+/update                  # 現在のプロジェクトの Project / Local プラグインのみ更新
+/update --dry-run        # 実行予定のみ表示
 ```
-
-`--dry-run` と `--scope` は併用可能。`--scope` 指定時もマーケットプレイス更新（Phase B）は常に実行されます。
 
 ## 利用方法
 
@@ -54,16 +51,15 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 > `/update-all`
 
 Claude（要約）:
-> Phase A 対象収集 → Phase B マーケットプレイス更新 → Phase C/D/E スコープ別プラグイン更新 → Phase F サマリ報告 → 失敗があれば Phase G で対応確認
+> Phase A 対象収集 → Phase B マーケットプレイス更新 → Phase C/D/E 全プロジェクトのスコープ別プラグイン更新 → Phase F サマリ報告 → 失敗があれば Phase G で対応確認
 
 ### 応用例
 
 | 目的 | コマンド | 動作 |
 |-----|---------|------|
-| 実行予定のみ確認（変更なし） | `/update-all --dry-run` | 実行予定 CLI コマンド一覧を表示。変更系 CLI は実行しない（ただし対象収集のため `settings.json` の Grep 読み取りと `marketplace list` は実行） |
-| User スコープのみ更新 | `/update-all --scope user` | マーケットプレイス更新後、User スコープのプラグインのみ更新 |
-| Project スコープのみ更新 | `/update-all --scope project` | マーケットプレイス更新後、Project スコープのプラグインのみ更新 |
-| Local スコープのみ更新 | `/update-all --scope local` | マーケットプレイス更新後、Local スコープのプラグインのみ更新 |
+| 全プロジェクト一括更新 | `/update-all` | マーケットプレイス + User + 全プロジェクトの Project / Local を更新 |
+| 実行予定のみ確認（変更なし） | `/update-all --dry-run` | 実行予定 CLI コマンド一覧を表示 |
+| 現在のプロジェクトのみ更新 | `/update` | 現在のプロジェクトの Project / Local のみ更新（Marketplace / User はスキップ） |
 | 失敗発生時の対応 | 失敗ありで実行完了 | Phase G で `AskUserQuestion` により再試行 / スキップ / 個別判断を確認 |
 
 ## 動作要件
@@ -89,7 +85,7 @@ Claude（要約）:
 | キー | 値の例 | 説明 |
 |------|--------|------|
 | `mode` | `normal` / `dry-run` | 通常実行か実行予定提示のみか |
-| `scope` | `user` / `project` / `local` / `all` | 対象スコープ（`all` 既定） |
+| `target` | `all` / `current-project` | 全プロジェクト更新 or 現在のプロジェクトのみ |
 
 ## ファイル構成
 
@@ -101,7 +97,7 @@ skills/plugin-updater/
     ├── phase-flow.md                     # Phase A-0〜G の固定順序・実行手順詳細（実行順序の SSOT）
     ├── cross-cutting-rules.md            # 横断ルール XR-1〜XR-5
     ├── output-formats.md                 # Phase F のテーブル / 警告 / 質問文フォーマット集
-    └── architecture-decisions.md         # 設計判断記録 ADR-PU-001〜008
+    └── architecture-decisions.md         # 設計判断記録 ADR-PU-001〜015
 ```
 
 ## 関連スキル / ドキュメント
@@ -109,7 +105,8 @@ skills/plugin-updater/
 | 用途 | 参照先 |
 |-----|------|
 | プラグイン全体の概要 | [`../../README.md`](../../README.md) |
-| 呼び出し元コマンド | [`../../commands/update-all.md`](../../commands/update-all.md) |
+| 呼び出し元コマンド（全プロジェクト） | [`../../commands/update-all.md`](../../commands/update-all.md) |
+| 呼び出し元コマンド（現在のプロジェクト） | [`../../commands/update.md`](../../commands/update.md) |
 | Phase 仕様の SSOT | [`references/phase-flow.md`](references/phase-flow.md) |
 | 横断ルール SSOT | [`references/cross-cutting-rules.md`](references/cross-cutting-rules.md) |
 | 出力フォーマット | [`references/output-formats.md`](references/output-formats.md) |

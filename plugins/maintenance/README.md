@@ -11,7 +11,8 @@ Claude Code 環境のメンテナンスを統合的に支援するプラグイ�
 
 | 機能 | 種別 | 説明 |
 |-----|------|------|
-| `/update-all` | コマンド | 全マーケットプレイスとインストール済みプラグインを公式 CLI 経由で一括更新 |
+| `/update-all` | コマンド | 全マーケットプレイスとインストール済みプラグインを公式 CLI 経由で全プロジェクト一括更新 |
+| `/update` | コマンド | 現在のプロジェクトの Project / Local スコーププラグインのみを更新 |
 | `plugin-updater` | スキル | `/update-all` の実作業を担う（Phase A-0〜G、横断ルール XR-1〜5） |
 | `cleanup-workspace` | スキル | `.claude/.local/work/` 配下の古いセッションフォルダ・一時ファイルを多層安全装置付きで削除 |
 | `sync-settings` | スキル | 特定の Git リポジトリから `~/.claude/` 配下の設定（settings.json / skills / rules 等）を pull 同期 |
@@ -115,9 +116,10 @@ cleanup-workspace の dry-run を実行して
 
 | コマンド | 効果 |
 |---------|-----|
-| `/update-all` | 全マーケットプレイスとプラグインを最新化 |
+| `/update-all` | 全プロジェクトのマーケットプレイスとプラグインを一括最新化 |
 | `/update-all --dry-run` | 実行予定の CLI コマンドのみ表示 |
-| `/update-all --scope user\|project\|local` | 指定スコープのプラグインのみ更新 |
+| `/update` | 現在のプロジェクトの Project / Local プラグインのみ更新 |
+| `/update --dry-run` | 実行予定の CLI コマンドのみ表示 |
 
 ### 自然言語トリガー
 

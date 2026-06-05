@@ -6,7 +6,7 @@
 |-----|---|
 | 起動経路 | `/update-all` |
 | コマンドから委譲される `mode` | `normal` |
-| コマンドから委譲される `scope` | `all` |
+| コマンドから委譲される `target` | `all` |
 | 既存状態 | `~/.claude/settings.json` に以下の機密情報を含む構造:<br>- `enabledPlugins`（正常）<br>- `env.OPENAI_API_KEY = "sk-***"`<br>- `hooks.PreToolUse[].command` （実行コマンド文字列）<br>- `permissions` ブロック |
 
 ## 期待動作
@@ -46,6 +46,6 @@ A-Sec は全実行で適用される制約のため、本ケースは「機密�
 
 ## 関連ケース
 
-- `case-05_scope_all.md`（A-Sec を経由する基本フロー）
+- `case-05_target_all.md`（A-Sec を経由する基本フロー）
 - ADR-PU-005: exit code 一次判定（Grep 失敗 fail-closed）
 - ADR-PU-008: コマンド / スキル責務分離（A-Sec はスキル側の責務）

@@ -6,7 +6,7 @@
 |-----|---|
 | 起動経路 | `/update-all` |
 | `mode` | `normal` |
-| `scope` | `all` |
+| `target` | `all` |
 | 既存状態 | claude plugin CLI が exit code 0 を返すが、出力フォーマットがロケール変化等で
   既定の正規表現にマッチしない（例: `Already up to date.` → `すでに最新です`）|
 
