@@ -7,7 +7,7 @@
 
 ## 期待動作
 
-1. `locate_convert_html_script()` で convert-html を解決
+1. `locate_convert_html_script` で convert-html を解決
 2. tempdir に中間 HTML を生成（subprocess で convert-html を呼び出し、`shell=False`）
 3. Playwright Chromium で `page.goto(file://, wait_until="networkidle")`
 4. `page.pdf(format="A4", landscape=False, margin={top:20mm,...}, print_background=True)`
@@ -21,7 +21,7 @@
 
 ## 分岐の根拠
 
-`references/scripts/convert-pdf/convert_pdf.py:main()` のデフォルト値:
+`references/scripts/convert-pdf/convert_pdf.py:main` のデフォルト値:
 - `--format`: `"A4"`
 - `--landscape`: action `store_true`（未指定 → False）
 - `--margin`: `"20mm"`

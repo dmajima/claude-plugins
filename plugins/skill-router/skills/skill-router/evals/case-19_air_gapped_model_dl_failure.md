@@ -28,12 +28,12 @@ export HF_HUB_OFFLINE=1
 
 | Phase | 動作 |
 |-------|------|
-| 1 | `build_index.build()` 内で `embedding_enrich.ensure_skill_vectors()` を呼ぶ |
-| 2 | `embedding_client.get_model()` が `fastembed.TextEmbedding()` を構築試行 |
+| 1 | `build_index.build` 内で `embedding_enrich.ensure_skill_vectors` を呼ぶ |
+| 2 | `embedding_client.get_model` が `fastembed.TextEmbedding` を構築試行 |
 | 3 | モデル DL 失敗 → 例外発生 |
-| 4 | `get_model()` の except 節で `None` 返却 |
-| 5 | `ensure_skill_vectors()` が `({}, None)` を返却 |
-| 6 | `build_index.build()` の except で WARNING ログを `index.log` に記録（`heuristic-only` に縮退）|
+| 4 | `get_model` の except 節で `None` 返却 |
+| 5 | `ensure_skill_vectors` が `({}, None)` を返却 |
+| 6 | `build_index.build` の except で WARNING ログを `index.log` に記録（`heuristic-only` に縮退）|
 | 7 | `stats.embedding.enabled=false`、`skills_vectorised=0` で `index.json` 書き出し |
 | 8 | UserPromptSubmit でも `matrix is None` で `boost_rows` をスキップ |
 
@@ -43,13 +43,13 @@ export HF_HUB_OFFLINE=1
 |-----|------|
 | `index.json` | `stats.embedding.enabled=false`、`stats.embedding.skills_vectorised=0` |
 | `index.log` | `embedding vectorisation failed; continuing with heuristic only` 等の WARNING |
-| `error.log` | （任意）`traceback.format_exc()` を `mask_secrets` 経由で記録 |
+| `error.log` | （任意）`traceback.format_exc` を `mask_secrets` 経由で記録 |
 | 副作用 | プロセス継続、例外伝播なし。`vectors.npz` / `manifest.json` 未生成 |
 | ユーザ体感 | 通常通り heuristic ベースのルーティング推奨が動作（embedding なしで運用） |
 
 ## 分岐の根拠
 
-`references/scripts/lib/embedding_client.py` の `get_model()` および `embedding_enrich.ensure_skill_vectors()` の例外 → `None` 返却 → `build_index.build()` の except 節という多層フェイルオープン経路。エアギャップ環境での運用継続性を担保する分岐（review evals H-F）。
+`references/scripts/lib/embedding_client.py` の `get_model` および `embedding_enrich.ensure_skill_vectors` の例外 → `None` 返却 → `build_index.build` の except 節という多層フェイルオープン経路。エアギャップ環境での運用継続性を担保する分岐（review evals H-F）。
 
 ## 関連ケース
 

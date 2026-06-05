@@ -46,10 +46,10 @@
 | 箇条書き | 段落レベル付きテキストフレーム |
 | 見出し（H3+） | 太字・プライマリ色のテキストフレーム |
 | コードブロック | モノスペースフォント（Consolas/Menlo）のテキストフレーム |
-| 表 | `shapes.add_table()` ネイティブ表 |
-| mermaid | `shapes.add_picture()` PNG 画像 |
-| ローカル画像 | `shapes.add_picture()` |
-| HTTP 画像 | `requests` で取得 → `shapes.add_picture()` |
+| 表 | `shapes.add_table` ネイティブ表 |
+| mermaid | `shapes.add_picture` PNG 画像 |
+| ローカル画像 | `shapes.add_picture` |
+| HTTP 画像 | `requests` で取得 → `shapes.add_picture` |
 
 ## トラブルシューティング
 

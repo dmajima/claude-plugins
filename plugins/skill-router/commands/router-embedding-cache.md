@@ -39,7 +39,6 @@ argument-hint: "[--clear] [--show <qualified_name>]"
    ```bash
    BASE="$(bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.sh")"
    ```
-   PowerShell フォールバック: `pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/commands/resolve_base.ps1"`
 
 2. `$BASE/embeddings_cache/manifest.json` を Read。
 3. `$BASE/embeddings_cache/vectors.npz` のサイズを確認。
@@ -60,7 +59,7 @@ argument-hint: "[--clear] [--show <qualified_name>]"
 
 ### --clear
 
-クリア処理は `references/scripts/commands/clear_embedding_cache.sh` に切り出しています（ADR-025 準拠）。PowerShell フォールバック (`.ps1`) も同階層に併存します。
+クリア処理は `references/scripts/commands/clear_embedding_cache.sh` に切り出しています（ADR-025 準拠）。
 
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/clear_embedding_cache.sh" "$BASE"

@@ -2,7 +2,6 @@
 # preempt_credentials_check.sh (Bash 版)
 #
 # credentials-manager プラグインの PreToolUse フック。
-# PowerShell フォールバック: preempt_credentials_check.ps1
 #
 # 認証情報のやり取りが発生し得るすべてのツール呼び出しを検出し、
 # Claude へ「credentials-reader スキルでの照合・自動マッチを最優先で行うこと」を

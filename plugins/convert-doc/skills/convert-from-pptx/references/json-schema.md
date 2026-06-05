@@ -143,17 +143,6 @@ LLM 呼び出しが行えない場面では、JSON を生成せず Python 単独
   "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/convert_from_pptx.py" \
   "<input.pptx>" "<output.md>"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
-  "<input.pptx>" "<output.md>"
-```
-
-</details>
-
 この場合、装飾フィルタは Python 側のヒューリスティック（フォントサイズ統計・色判定・位置統計）で実行される。`--structured-json` モードとの差分は「意味解釈の精度」のみであり、出力フォーマット自体は同じ Markdown となる。
 
 ## 4. JSON サイズの目安

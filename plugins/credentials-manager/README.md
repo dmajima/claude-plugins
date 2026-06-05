@@ -13,9 +13,9 @@ Claude Code セッションをまたいで認証情報（API キー・トーク�
 | `credentials-reader` | スキル | 取得（retrieve）／一覧（list、参照目的）／URL 自動マッチ／プロアクティブ検出。フック経由で最優先起動される軽量スキル |
 | `credentials-manager` | スキル | 追加（save）／編集（update）／削除（delete）／修復（repair）。書き込み系の管理操作を担当 |
 | `/credentials-manager:manage` | コマンド | `AskUserQuestion` ベースの対話メニュー UI で reader と manager を呼び分ける設定 UI |
-| `install_rule_template.sh` | フック (SessionStart) | スコープ判定（user / project）に応じて最重要ルール `credentials-management.md` を `.claude/rules/security/` 配下へ自動配置（既存ファイルは温存）。Bash 通常運用 / `install_rule_template.sh` は PowerShell フォールバック |
-| `preempt_credentials_check.sh` | フック (PreToolUse) | 外部通信・認証情報系ファイル・コンテンツ内シークレット検出時に Claude へ「`credentials-reader` を最優先起動」と注意喚起。Bash 通常運用 / `preempt_credentials_check.sh` は PowerShell フォールバック |
-| `detect_credentials_in_prompt.sh` | フック (UserPromptSubmit) | ユーザー入力にシークレットパターン検出時、Claude へ「マスキング + `credentials-reader` 起動 + 必要時 `credentials-manager` 引き継ぎ」と通知。Bash 通常運用 / `detect_credentials_in_prompt.sh` は PowerShell フォールバック |
+| `install_rule_template.sh` | フック (SessionStart) | スコープ判定（user / project）に応じて最重要ルール `credentials-management.md` を `.claude/rules/security/` 配下へ自動配置（既存ファイルは温存） |
+| `preempt_credentials_check.sh` | フック (PreToolUse) | 外部通信・認証情報系ファイル・コンテンツ内シークレット検出時に Claude へ「`credentials-reader` を最優先起動」と注意喚起 |
+| `detect_credentials_in_prompt.sh` | フック (UserPromptSubmit) | ユーザー入力にシークレットパターン検出時、Claude へ「マスキング + `credentials-reader` 起動 + 必要時 `credentials-manager` 引き継ぎ」と通知 |
 
 ## 導入手順
 
@@ -322,7 +322,7 @@ plugins/credentials-manager/
 
 ### 採用技術
 
-- Markdown / JSON / PowerShell
+- Markdown / JSON / Bash
 - Claude Code Skills API（`SKILL.md` の description ベースの自動トリガー判定を活用）
 - Claude Code Hooks API（SessionStart / PreToolUse / UserPromptSubmit）
 - Claude Code Commands API（`/credentials-manager:manage`）
@@ -344,18 +344,6 @@ plugins/credentials-manager/
 - `credentials-reader` → `credentials-manager` 引き継ぎ時はマスク済み情報のみが渡され、フル値はユーザに再入力させる仕様。
 
 詳細は `skills/credentials-reader/references/security.md` および `skills/credentials-manager/references/security.md` を参照してください。
-
-## PowerShell フォールバック
-
-通常運用は Bash 経路（`.sh` フック）を使用します。Git Bash の初期化不調等で Bash 経路が機能しない場合、PowerShell 経路に手動切替できます。
-
-```bash
-# Bash → PowerShell へ切替
-cp references/hooks-fallback/hooks.sh.json hooks/hooks.json
-# Claude Code を再起動
-```
-
-Bash 版（`*.sh`）と PowerShell 版（`*.ps1`）は、同じ入力（stdin JSON）に対して同じ JSON 出力・exit code を返すよう実装されています。詳細手順は `references/hooks-fallback/README.md` 参照。
 
 ## ライセンス
 

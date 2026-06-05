@@ -36,7 +36,7 @@
 > 1 枚目のタイトル placeholder → `# <タイトル>`
 > 2 枚目以降のタイトル placeholder → `## <タイトル>`
 
-`convert_from_pptx.py:_convert_slide()`:
+`convert_from_pptx.py:_convert_slide`:
 ```python
 if slide_no == 1 and self.first_slide_as_title:
     heading = f"# {title or 'タイトル'}"

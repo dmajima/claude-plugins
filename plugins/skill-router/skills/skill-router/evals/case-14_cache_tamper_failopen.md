@@ -27,7 +27,7 @@ printf '\x00' >> "<base>/embeddings_cache/vectors.npz"
 
 | Phase | 動作 |
 |-------|------|
-| 1 | `route.route()` が `embedding_enrich.load_vectors_sha256_from_manifest(base)` で expected_sha256 取得 |
+| 1 | `route.route` が `embedding_enrich.load_vectors_sha256_from_manifest(base)` で expected_sha256 取得 |
 | 2 | `embedding_enrich.load_vectors(base, expected_sha256=...)` が改竄ファイルの SHA-256 を再計算 |
 | 3 | manifest 記録値と不一致 → `None` 返却 |
 | 4 | `route.py` で `matrix is None` → `embedding_route.boost_rows` 呼出をスキップ |

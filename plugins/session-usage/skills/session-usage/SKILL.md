@@ -44,7 +44,6 @@ description: カレントセッション（または指定セッション）の�
 ## 前提
 
 - Python 3.8+ が PATH 上にある（通常運用、`aggregate.sh` から呼び出し）
-- 代替: Windows + PowerShell 7+（`pwsh` が PATH 上にある、PowerShell フォールバック時）
 - Claude Code の JSONL ログ形式（`message.usage` フィールド構造）
 
 ## 実行フロー
@@ -62,17 +61,6 @@ Bash 経由で以下を実行する:
 bash "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.sh" \
   --stdout [--session-id <UUID>]
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass `
-  -File "${env:CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.ps1" `
-  -Stdout [-SessionId <UUID>]
-```
-
-</details>
-
 `-Stdout` のみ（`-Copy` は付けない）。**この時点ではクリップボードへのコピーは行わない**。
 
 スクリプトの標準出力は Claude のコンテキストに取り込まれる。Claude UI 上の
@@ -132,7 +120,7 @@ AskUserQuestion({
 
 - **自動コピーは行わない**: 表示時点ではクリップボードに書き込まない。コピーは
   ユーザが `AskUserQuestion` で明示的に選んだときだけ実行する
-- **Claude UI の Bash は stdin 閉鎖**: `[System.Console]::ReadKey()` 等の対話キー入力は不可。
+- **Claude UI の Bash は stdin 閉鎖**: `[System.Console]::ReadKey` 等の対話キー入力は不可。
   操作選択は `AskUserQuestion` に集約する
 - **集計対象は `type=assistant` レコードのみ**
 - **Cache Read は累計で大きく見える**（同じトークンを毎リクエスト読み出すため）

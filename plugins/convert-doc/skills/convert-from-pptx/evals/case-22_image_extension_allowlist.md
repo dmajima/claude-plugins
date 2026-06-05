@@ -9,7 +9,7 @@
 
 ## 期待動作
 
-1. `_handle_picture()` で `raw_ext = (shape.image.ext or "png").lower()`
+1. `_handle_picture` で `raw_ext = (shape.image.ext or "png").lower`
 2. 許可リスト `{png, jpg, jpeg, gif, bmp, tiff, webp, emf, wmf}` 照合
 3. 非許可の場合は `ext = "bin"` に正規化
 4. stderr に Warning: `image extension '<raw>' is not in allowlist; normalized to 'bin' on slide <N>`
@@ -33,9 +33,9 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_handle_picture()`:
+`convert_from_pptx.py:_handle_picture`:
 ```python
-raw_ext = (shape.image.ext or "png").lower()
+raw_ext = (shape.image.ext or "png").lower
 ext = raw_ext if raw_ext in ALLOWED_IMAGE_EXTS else "bin"
 if ext != raw_ext:
     print(f"Warning: image extension '{raw_ext}' is not in allowlist; ...", file=sys.stderr)

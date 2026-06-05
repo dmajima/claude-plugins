@@ -8,8 +8,8 @@
 
 ## 期待動作
 
-1. `parse_args()` で `args.output = None`
-2. `__init__()` で `self.output_path = self.input_path.with_suffix(".md")` を適用
+1. `parse_args` で `args.output = None`
+2. `__init__` で `self.output_path = self.input_path.with_suffix(".md")` を適用
 3. 解決結果: `/work/input.md`
 4. `images_dir` のデフォルトは `/work/input_images/`（output_path の親 + `<stem>_images`）
 5. 正常に Markdown を生成
@@ -26,14 +26,14 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:__init__()`:
+`convert_from_pptx.py:__init__`:
 ```python
 self.output_path = (
-    Path(args.output).resolve() if args.output else self.input_path.with_suffix(".md")
+    Path(args.output).resolve if args.output else self.input_path.with_suffix(".md")
 )
 ```
 
-`parse_args()` の argparse 定義（`output` は `nargs="?"`）:
+`parse_args` の argparse 定義（`output` は `nargs="?"`）:
 ```python
 parser.add_argument(
     "output",

@@ -56,7 +56,7 @@ exit code: 2
 
 ## 分岐の根拠
 
-`run_checks.py` 冒頭の `target.exists()` 確認に失敗すると `[ERROR] target not found` を出力して exit code 2 で終了するため、`extension-reviewer` 側はこれを検知してエージェント起動をスキップする必要がある。
+`run_checks.py` 冒頭の `target.exists` 確認に失敗すると `[ERROR] target not found` を出力して exit code 2 で終了するため、`extension-reviewer` 側はこれを検知してエージェント起動をスキップする必要がある。
 
 ## 関連ケース
 

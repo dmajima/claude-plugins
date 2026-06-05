@@ -6,7 +6,7 @@
 
 ## 期待動作
 
-1. `_collect_shape()` で `_is_smartart(shape) == True`
+1. `_collect_shape` で `_is_smartart(shape) == True`
 2. `_smartart_to_mermaid(shape)` を呼び出すが以下のいずれかで `None` を返す:
    - `relIds` が空
    - `rid_data` が空
@@ -37,7 +37,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_collect_shape()`:
+`convert_from_pptx.py:_collect_shape`:
 ```python
 if self._is_smartart(shape):
     mermaid = None
@@ -49,10 +49,10 @@ if self._is_smartart(shape):
         collected.append({"kind": "smartart", "text": self._smartart_fallback_text(shape)})
 ```
 
-`_smartart_fallback_text()`:
+`_smartart_fallback_text`:
 ```python
 text_nodes = shape.element.findall(f".//{{{NS_A}}}t")
-lines = [f"- {node.text.strip()}" for node in text_nodes if node.text and node.text.strip()]
+lines = [f"- {node.text.strip}" for node in text_nodes if node.text and node.text.strip]
 if lines:
     return "> SmartArt（テキスト抽出）:\n" + "\n".join(lines)
 return "> SmartArt（解析失敗・テキスト抽出不可）"

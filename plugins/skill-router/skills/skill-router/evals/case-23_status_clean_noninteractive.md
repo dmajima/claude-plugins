@@ -23,7 +23,7 @@
 | 1 | `--clean` 引数を確定済みとして検出（`AskUserQuestion` を発行しない） |
 | 2 | `references/scripts/commands/resolve_base.sh` で `<base>` を解決 |
 | 3 | `references/scripts/commands/clean_old_sessions.py "<base>"` を Bash 経由で起動 |
-| 4 | `<base>/sessions/*/` を走査し `time.time() - st_mtime > 2592000` (30 日) のディレクトリを `shutil.rmtree(ignore_errors=True)` で削除 |
+| 4 | `<base>/sessions/*/` を走査し `time.time - st_mtime > 2592000` (30 日) のディレクトリを `shutil.rmtree(ignore_errors=True)` で削除 |
 | 5 | 標準出力に `clean_old_sessions: removed N session(s) older than 30 days` を 1 行出力 |
 | 6 | 削除完了後、通常の `/router-status` フロー (統計・直近決定・スコア分布) に進む |
 

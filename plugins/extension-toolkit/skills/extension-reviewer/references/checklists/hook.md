@@ -8,7 +8,7 @@
 |-----|-------|---------|-----|
 | H-1-1 | High | フック設定ファイルが `hooks/hooks.json` または `settings.json` の `hooks` セクションに配置されている | [conventions.md](../../../references/conventions.md) 節 1 |
 | H-1-2 | High | フック実スクリプトが `references/scripts/hooks/` 配下に配置されている（ADR-025） | [scripts-policy.md](../../../references/scripts-policy.md) 節 9 |
-| H-1-3 | High | フック実スクリプトが `.sh` で実装されている（PowerShell フォールバック用に `.ps1` 併存可、shell-preference.md） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| H-1-3 | High | フック実スクリプトが `.sh` で実装されている | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
 
 ## H-2. JSON valid
 
@@ -84,9 +84,9 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-11-1 | High | `hooks.json` の `command` が `bash "${CLAUDE_PLUGIN_ROOT}/..."` 形式である（PowerShell フォールバック適用時のみ `pwsh -NoProfile -File "...ps1"`） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
-| H-11-2 | High | `references/scripts/hooks/` 配下に `.sh` が配置されており、必要に応じて `.ps1` フォールバックも併存している | 同上 |
-| H-11-3 | High | `.sh` / `.ps1` 内で stdin / stdout / stderr が UTF-8 (no BOM) で扱われている | [console-encoding.md](https://github.com/dmajima/claude-plugins) |
+| H-11-1 | High | `hooks.json` の `command` が `bash "${CLAUDE_PLUGIN_ROOT}/..."` 形式である | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| H-11-2 | High | `references/scripts/hooks/` 配下に `.sh` が配置されている | 同上 |
+| H-11-3 | High | `.sh` 内で stdin / stdout / stderr が UTF-8 (no BOM) で扱われている | [console-encoding.md](https://github.com/dmajima/claude-plugins) |
 | H-11-4 | Medium | Bash 経由で Python を呼ぶ場合、venv 内 Python の明示パス指定 + `python-encoding-mandatory.md` の必須3点セットを遵守 | [python-encoding-mandatory.md](https://github.com/dmajima/claude-plugins) |
 
 ## H-12. shell フィールド明示（MANDATORY / shell-preference.md / 補強）
@@ -94,11 +94,10 @@
 `bash "..."` で書いていても、Claude Code 側の起動シェルが PowerShell の場合に
 引数解釈・PATH 解決でエッジケースが発生しうる。各 hook エントリの `type: "command"` と
 同階層に **`"shell": "bash"`** を明示することで、Bash ホストでの起動を一義的に伝える。
-PowerShell フォールバック適用時は `"shell": "powershell"` に切替える。
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-12-1 | High | `hooks.json` の各 hook エントリに `"shell": "bash"` が **明示** されている（`type: "command"` と同階層、フォールバック時は `"powershell"`） | [hook-events.md](../../../../hook-toolkit/references/hook-events.md) 節「shell 指定（MANDATORY）」 |
+| H-12-1 | High | `hooks.json` の各 hook エントリに `"shell": "bash"` が **明示** されている（`type: "command"` と同階層） | [hook-events.md](../../../../hook-toolkit/references/hook-events.md) 節「shell 指定（MANDATORY）」 |
 | H-12-2 | High | `settings.json` の `hooks` セクションに追加するエントリも同様に `"shell"` を明示している | 同上 |
-| H-12-3 | Medium | `"shell"` の値が `"bash"`（通常運用）または `"powershell"`（フォールバック）のいずれか | 同上 |
+| H-12-3 | Medium | `"shell"` の値が `"bash"` である | 同上 |
 | H-12-4 | High | `run_checks.py` の `check_hook_shell_field` （automated-checks.md #13）が High 指摘として報告していない | [automated-checks.md](../automated-checks.md) #13 |

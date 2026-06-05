@@ -6,7 +6,7 @@
 |-----|---|
 | 起動経路 | `/update-all` |
 | コマンドから委譲される `mode` | `normal` |
-| コマンドから委譲される `scope` | `all` |
+| コマンドから委譲される `target` | `all` |
 | 既存状態 | claude plugin CLI の出力フォーマットが想定と異なり、exit code は 0 だが出力パターンマッチ不能（Unknown 区分）が多数発生 |
 
 ## 期待動作
@@ -54,6 +54,6 @@ unknown_count / attempted_count > 0.20
 
 ## 関連ケース
 
-- `case-05_scope_all.md`（Unknown 発生なしの正常系）
+- `case-05_target_all.md`（Unknown 発生なしの正常系）
 - `case-09_phase_g_retry.md`（Failed 発生時）
 - references/cross-cutting-rules.md XR-5 詳細仕様

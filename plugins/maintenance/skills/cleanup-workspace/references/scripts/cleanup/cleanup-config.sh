@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # cleanup-config.sh - cleanup-workspace 閾値設定の表示・変更・リセット (Bash + jq 純粋実装)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: cleanup-config.ps1 (機能等価、歴史的経緯で保持)
 #
 # 使い方:
 #   bash cleanup-config.sh                       # 現在の設定表示

@@ -9,12 +9,12 @@
 
 ### Playwright パッケージ未インストール時
 
-1. `render_pdf()` 内の `from playwright.sync_api import sync_playwright` で `ImportError`
+1. `render_pdf` 内の `from playwright.sync_api import sync_playwright` で `ImportError`
 2. Python ランタイムが `ImportError` のスタックトレースを stderr に出力して終了
 
 ### Chromium バイナリ未取得時
 
-1. `p.chromium.launch()` で `playwright._impl._errors.Error: Executable doesn't exist at ...` 系のエラー
+1. `p.chromium.launch` で `playwright._impl._errors.Error: Executable doesn't exist at ...` 系のエラー
 2. ユーザーに `playwright install chromium` の実行を促すメッセージ
 
 ## 期待出力
@@ -25,7 +25,7 @@
 
 ## 分岐の根拠
 
-`references/scripts/convert-pdf/convert_pdf.py:render_pdf()`:
+`references/scripts/convert-pdf/convert_pdf.py:render_pdf`:
 ```python
 from playwright.sync_api import sync_playwright   # 関数内 import
 ```

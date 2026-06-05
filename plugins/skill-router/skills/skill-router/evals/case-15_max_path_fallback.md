@@ -23,7 +23,7 @@ Windows 環境で `<base>/embeddings_cache/models/` のフルパス長が 100 �
 | 1 | `embedding_client._resolve_cache_dir(cfg, base)` が呼ばれる |
 | 2 | `cfg.cache_dir is None` のため primary candidate `<base>/embeddings_cache/models` を計算 |
 | 3 | `os.name == "nt"` かつ `len(str(primary)) > 100` を検出 |
-| 4 | `_fallback_cache_dir()` が `~/AppData/Local/skill-router/models` を返す |
+| 4 | `_fallback_cache_dir` が `~/AppData/Local/skill-router/models` を返す |
 | 5 | `<base>/index.log` に WARNING ログ記録（フォールバック理由・推奨対処） |
 | 6 | fastembed が短いパスでモデル DL 成功（`[WinError 206] ファイル名が長すぎます` を回避） |
 

@@ -9,8 +9,8 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` を通過
-2. `_handle_picture()` 内で書込前に上限チェック
+1. `_validate_pptx` を通過
+2. `_handle_picture` 内で書込前に上限チェック
 3. 42d-A: 1001 枚目で `image count exceeds MAX_IMAGE_COUNT_PER_PPTX (1000)` を raise
 4. 42d-B: `_image_total_bytes + len(blob) > MAX_TOTAL_IMAGE_BYTES` が True になった時点で `total image bytes would exceed MAX_TOTAL_IMAGE_BYTES (...)` を raise
 5. いずれも終了コード 1
@@ -22,7 +22,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_handle_picture()`:
+`convert_from_pptx.py:_handle_picture`:
 ```python
 if self._image_total_count >= MAX_IMAGE_COUNT_PER_PPTX:
     raise ValueError(

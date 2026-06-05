@@ -7,8 +7,8 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` を通過
-2. `_walk_shape_to_dict()` または `_collect_shape()` の走査ループ内で shape 5001 個目に到達した時点で `ValueError` を raise
+1. `_validate_pptx` を通過
+2. `_walk_shape_to_dict` または `_collect_shape` の走査ループ内で shape 5001 個目に到達した時点で `ValueError` を raise
 3. メッセージ: `shape count exceeds MAX_SHAPES_PER_SLIDE (5000) on slide N`
 4. 早期停止により残りの shape は処理されない（fail-closed）
 5. 終了コード: 1
@@ -20,7 +20,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_walk_shape_to_dict()`:
+`convert_from_pptx.py:_walk_shape_to_dict`:
 ```python
 for shape in shape_iter:
     if len(shapes_out) >= MAX_SHAPES_PER_SLIDE:

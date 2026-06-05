@@ -34,7 +34,7 @@ JSON
 
 | Phase | 動作 |
 |-------|------|
-| 1 | `embedding_enrich.ensure_skill_vectors()` がスキル毎に `content_hash` を計算 |
+| 1 | `embedding_enrich.ensure_skill_vectors` がスキル毎に `content_hash` を計算 |
 | 2 | `manifest.json` の既存エントリと `(content_hash, model)` を比較 |
 | 3 | `content_hash` は一致するが `model` が異なるため **全エントリがキャッシュミス判定** |
 | 4 | `BAAI/bge-small-en-v1.5` モデルを HF ハブから DL（初回時のみ） |

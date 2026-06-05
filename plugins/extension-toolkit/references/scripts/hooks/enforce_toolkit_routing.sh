@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # enforce_toolkit_routing.sh - PreToolUse Edit/Write フック (Bash 版、警告型)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: enforce_toolkit_routing.ps1
 #
 # 目的:
 #   プラグイン / スキル領域への直接 Edit/Write を検知し、適切な
@@ -59,7 +57,7 @@ elif [[ "$normalized_path" =~ /commands/[^/]+\.md$ ]]; then
   recommended="command-toolkit"
 elif [[ "$normalized_path" =~ /agents/[^/]+\.md$ ]]; then
   recommended="agent-toolkit"
-elif [[ "$normalized_path" =~ /hooks/(hooks\.json|[^/]+\.json|[^/]+\.sh|[^/]+\.ps1)$ ]]; then
+elif [[ "$normalized_path" =~ /hooks/(hooks\.json|[^/]+\.json|[^/]+\.sh)$ ]]; then
   recommended="hook-toolkit"
 elif [[ "$normalized_path" =~ /README\.md$ ]]; then
   recommended="readme-toolkit"

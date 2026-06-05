@@ -43,39 +43,6 @@ function Sync-Overwrite {
     # --prune 指定時はローカルのみのファイルを削除
                 Remove-Item -LiteralPath $_.FullName -Force
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-function Sync-Overwrite {
-    param([string]$Source, [string]$Destination, [bool]$Prune)
-
-    # リモート側を走査して新規・更新
-    Get-ChildItem -LiteralPath $Source -Recurse -File | ForEach-Object {
-        $relative = $_.FullName.Substring($Source.Length).TrimStart('\','/')
-        $destFile = Join-Path $Destination $relative
-        $destDir = Split-Path -Parent $destFile
-        if (-not (Test-Path $destDir)) {
-            New-Item -ItemType Directory -Force -Path $destDir | Out-Null
-        }
-        Copy-Item -LiteralPath $_.FullName -Destination $destFile -Force
-    }
-
-    # --prune 指定時はローカルのみのファイルを削除
-    if ($Prune) {
-        Get-ChildItem -LiteralPath $Destination -Recurse -File | ForEach-Object {
-            $relative = $_.FullName.Substring($Destination.Length).TrimStart('\','/')
-            $remoteFile = Join-Path $Source $relative
-            if (-not (Test-Path $remoteFile)) {
-                Remove-Item -LiteralPath $_.FullName -Force
-            }
-        }
-    }
-}
-```
-
-</details>
-
 ## 2. merge 戦略
 
 ### 2.1 動作
@@ -119,47 +86,6 @@ function Merge-Json {
 
     # プリミティブはリモート値
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-function Merge-Json {
-    param([object]$Local, [object]$Remote)
-
-    if ($null -eq $Local) { return $Remote }
-    if ($null -eq $Remote) { return $Local }
-
-    if ($Remote -is [array]) {
-        # 配列はリモートで置換
-        return $Remote
-    }
-
-    if ($Remote -is [hashtable] -or $Remote -is [PSCustomObject]) {
-        $result = [ordered]@{}
-        # ローカルのキーを先に取り込み
-        if ($Local -is [hashtable] -or $Local -is [PSCustomObject]) {
-            foreach ($key in $Local.PSObject.Properties.Name) {
-                $result[$key] = $Local.$key
-            }
-        }
-        # リモートのキーで上書き or 再帰マージ
-        foreach ($key in $Remote.PSObject.Properties.Name) {
-            if ($result.Contains($key) -and ($result[$key] -is [hashtable] -or $result[$key] -is [PSCustomObject])) {
-                $result[$key] = Merge-Json -Local $result[$key] -Remote $Remote.$key
-            } else {
-                $result[$key] = $Remote.$key
-            }
-        }
-        return [PSCustomObject]$result
-    }
-
-    # プリミティブはリモート値
-    return $Remote
-}
-```
-
-</details>
-
 ## 3. skip 戦略
 
 ### 3.1 動作
@@ -189,31 +115,6 @@ function Sync-Skip {
             Copy-Item -LiteralPath $_.FullName -Destination $destFile -Force
         # 既存ファイルはスキップ
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-function Sync-Skip {
-    param([string]$Source, [string]$Destination)
-
-    Get-ChildItem -LiteralPath $Source -Recurse -File | ForEach-Object {
-        $relative = $_.FullName.Substring($Source.Length).TrimStart('\','/')
-        $destFile = Join-Path $Destination $relative
-
-        if (-not (Test-Path $destFile)) {
-            $destDir = Split-Path -Parent $destFile
-            if (-not (Test-Path $destDir)) {
-                New-Item -ItemType Directory -Force -Path $destDir | Out-Null
-            }
-            Copy-Item -LiteralPath $_.FullName -Destination $destFile -Force
-        }
-        # 既存ファイルはスキップ
-    }
-}
-```
-
-</details>
-
 ## 4. 戦略選択のフロー
 
 ユーザが対話モードで戦略を変更したい場合の AskUserQuestion 構造:

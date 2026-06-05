@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 # meeting-minutes プラグイン共通 venv 構築スクリプト (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: setup_venv.ps1 （Git Bash 不調時等）
 #
-# PowerShell 版 (setup_venv.ps1) と完全に同じメッセージ・終了コード・副作用を持つ。
 #
 # 使い方:
 #   bash setup_venv.sh <work_dir>

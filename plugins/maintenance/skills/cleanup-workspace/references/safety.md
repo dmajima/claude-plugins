@@ -44,36 +44,6 @@
 ```bash
 function Test-ValidSessionPath {
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-function Test-ValidSessionPath {
-    param([string]$Path)
-
-    if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return $false }
-
-    $item = Get-Item -LiteralPath $Path
-    if ($item.LinkType -eq 'SymbolicLink') { return $false }
-
-    $name = $item.Name
-    if ($name -notmatch '^\d{8}_\d{2}_[A-Za-z0-9._\-]+$') { return $false }
-
-    $parent = $item.Parent
-    if ($null -eq $parent -or $parent.Name -ne 'work') { return $false }
-
-    $grand = $parent.Parent
-    if ($null -eq $grand -or $grand.Name -ne '.local') { return $false }
-
-    $great = $grand.Parent
-    if ($null -eq $great -or $great.Name -ne '.claude') { return $false }
-
-    return $true
-}
-```
-
-</details>
-
 ## 3. シンボリックリンク保護
 
 ### 3.1 対象判定
@@ -101,23 +71,6 @@ Windows ではディレクトリのハードリンクは作成不可。ファイ
 # 進行中: 削除対象から除外
         return
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$activeThreshold = $nowUtc.AddMinutes(-[int]$config.active_session_minutes)
-$progressPath = Join-Path $session.FullName 'progress.md'
-if (Test-Path $progressPath) {
-    $progMtime = (Get-Item $progressPath).LastWriteTimeUtc
-    if ($progMtime -gt $activeThreshold) {
-        # 進行中: 削除対象から除外
-        return
-    }
-}
-```
-
-</details>
-
 ### 4.2 閾値の設計根拠
 
 - Claude Code の典型的なタスク粒度（数十秒〜数分）に対し十分な保護幅となるよう **初期値 5 分** を採用

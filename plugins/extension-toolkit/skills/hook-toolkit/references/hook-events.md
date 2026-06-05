@@ -58,7 +58,7 @@ Claude Code のフックイベント別の意味と使い方。
 | 値 | 用途 | 推奨度 |
 |---|---|------|
 | `"bash"` | Git Bash / bash で実行 | **本マーケットプレイスのデフォルト** |
-| `"powershell"` | Windows PowerShell / pwsh で実行 | PowerShell フォールバック適用時 |
+| `"powershell"` | Windows PowerShell / pwsh で実行 |  |
 | `"bash"` | POSIX bash で実行 | macOS / Linux 限定（本マーケットプレイスでは未使用） |
 
 #### 必須化の根拠

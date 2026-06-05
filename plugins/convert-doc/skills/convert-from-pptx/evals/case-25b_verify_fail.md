@@ -8,7 +8,7 @@
 
 ## 期待動作
 
-1. `verify()` 内でカバレッジを計算
+1. `verify` 内でカバレッジを計算
 2. `text_coverage = 10/20 = 0.50` < `0.85` で `failures` に追加
 3. `missing_texts` 配列に欠落した PPTX テキストを格納（slide_no / shape_id / text プレビュー）
 4. `passed: false`
@@ -37,13 +37,13 @@
 
 ## 分岐の根拠
 
-`verify_md.py:verify()`:
+`verify_md.py:verify`:
 ```python
 if text_coverage < coverage_threshold:
     failures.append(f"text_coverage {text_coverage:.2%} < threshold {coverage_threshold:.0%}")
 ```
 
-`main()` の `return 1` パス。
+`main` の `return 1` パス。
 
 ## 関連ケース
 

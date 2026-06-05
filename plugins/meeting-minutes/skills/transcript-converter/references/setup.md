@@ -14,20 +14,6 @@ transcript-converter 固有の追加依存はない。
 bash "$CLAUDE_PLUGIN_ROOT\references\scripts\setup\setup_venv.sh" \
   "$SESSION_DIR\workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& chcp.com 65001 | Out-Null
-[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\setup\setup_venv.ps1" `
-  "$SESSION_DIR\workspace"
-```
-
-</details>
-
 `$SESSION_DIR` はセッション作業領域（`.claude/.local/work/{yyyyMMdd_nn_summary}/`）。
 
 ## venv 削除
@@ -36,12 +22,3 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\setup\setup_
 bash "$CLAUDE_PLUGIN_ROOT\references\scripts\setup\teardown_venv.sh" \
   "$SESSION_DIR\workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\setup\teardown_venv.ps1" `
-  "$SESSION_DIR\workspace"
-```
-
-</details>

@@ -7,8 +7,8 @@
 
 ## 期待動作
 
-1. `_convert_table()` が `table.rows` を走査
-2. すべてのセルが空文字列（`.strip()` 後）であることを検出
+1. `_convert_table` が `table.rows` を走査
+2. すべてのセルが空文字列（`.strip` 後）であることを検出
 3. テーブルブロックを出力せず空文字列を返す
 4. 該当スライドの他の本文 shape は通常通り出力
 5. 終了コード: 0
@@ -19,9 +19,9 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_convert_table()` 内の全セル空判定:
+`convert_from_pptx.py:_convert_table` 内の全セル空判定:
 ```python
-if not any(any(cell.strip() for cell in row) for row in cells_text):
+if not any(any(cell.strip for cell in row) for row in cells_text):
     return ""  # all-cells-empty を装飾とみなして抑制
 ```
 

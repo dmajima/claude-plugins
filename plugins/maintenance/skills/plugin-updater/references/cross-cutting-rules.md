@@ -1,11 +1,11 @@
-# Cross-cutting Rules (maintenance/plugin-updater)
+﻿# Cross-cutting Rules (maintenance/plugin-updater)
 
 `maintenance` プラグインの `plugin-updater` スキルの全 Phase に横断的に適用されるルール。
 本ファイルは XR-1〜XR-5 の **SSOT**。コマンド本文 (`commands/update-all.md`) は本ルールへの参照のみを持ち、規則本体を再定義しない。
 
 | ID | ルール | 適用対象 |
 |----|------|---------|
-| XR-1 | 入力検証 | A-0-1（`--scope` 引数値）/ A-1（識別子）/ B / C / D / E / G-3 |
+| XR-1 | 入力検証 | A-0-1（`target` 引数値）/ A-1（識別子）/ B / C / D / E / G-3 |
 | XR-2 | タイムアウト + サーキットブレーカー | B / C / D / E / G-3 |
 | XR-3 | 出力サニタイズ | F-2 / F-3 / G-2 / B-1 例外行抽出時（F-1 は件数のみのため対象外） |
 | XR-4 | リトライ上限 | G-3 |
@@ -28,7 +28,7 @@
 |------|------|
 | plugin-name / marketplace-name | NFKC 正規化後、正規表現 `^[A-Za-z0-9]([A-Za-z0-9_.-]{0,62}[A-Za-z0-9])?$` に合致（先頭・末尾は英数字、長さ 1〜64） |
 | scope（A-1 内部表現の検証用） | ホワイトリスト `user` / `project` / `local` のいずれかと完全一致 |
-| `--scope` 引数値（A-0-1 のユーザー入力検証用） | ホワイトリスト `user` / `project` / `local` / `all` のいずれかと完全一致（`all` は省略時の既定値であり明示指定も可。A-1 では `all` は scope ループ展開後にスコープ別 `user` / `project` / `local` の値で再検証される） |
+| `target` 引数値（A-0-1 のユーザー入力検証用） | ホワイトリスト `all` / `current-project` のいずれかと完全一致 |
 | `<plugin>@<marketplace>` 識別子 | `@` 文字が **正確に 1 個** であること（複数あればエントリ拒否） |
 
 ### 適用詳細
@@ -80,6 +80,10 @@
 同一マーケットプレイスに対する **累計 3 件以上の Failed**（連続・非連続問わず）が発生した場合、
 当該 MP 配下の残エントリを Skipped（サーキットブレーカー作動）として時間浪費を抑制する。
 集計は MP 単位カウンタでフェーズ横断（Phase B / C / D / E すべての Failed をカウント）。
+
+`target=all` での複数 `projectPath` 処理では、サーキットブレーカーの MP 単位カウンタは
+**全 projectPath を横断して単一カウンタ** で集計する（projectPath ごとに独立カウントしない）。
+これにより、特定 MP の障害が全プロジェクトに波及している場合に早期遮断が効く。
 
 ### 適用詳細
 

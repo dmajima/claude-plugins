@@ -41,7 +41,7 @@
 
 ## 分岐の根拠
 
-`references/scripts/lib/build_index.py` の `build()` で記録される `stats.scan_duration_ms` と `references/research/s5_python_startup_latency.py`（Python 起動 cold/warm レイテンシ実測）。SessionStart 起動遅延は `build_index.py` の処理時間か Python 起動コストか他フック干渉のいずれかで、各原因を切り分ける必要がある。
+`references/scripts/lib/build_index.py` の `build` で記録される `stats.scan_duration_ms` と `references/research/s5_python_startup_latency.py`（Python 起動 cold/warm レイテンシ実測）。SessionStart 起動遅延は `build_index.py` の処理時間か Python 起動コストか他フック干渉のいずれかで、各原因を切り分ける必要がある。
 
 ## 関連ケース
 

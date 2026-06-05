@@ -73,13 +73,3 @@
   "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/convert_from_pptx.py" \
   "<入力PPTX>" "<出力MD>" [オプション]
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
-  "<入力PPTX>" "<出力MD>" [オプション]
-```
-
-</details>

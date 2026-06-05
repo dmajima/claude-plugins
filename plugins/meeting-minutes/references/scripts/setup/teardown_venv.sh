@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 # meeting-minutes プラグイン venv 削除スクリプト (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: teardown_venv.ps1 （Git Bash 不調時等）
 #
-# PowerShell 版 (teardown_venv.ps1) と完全に同じメッセージ・終了コード・副作用を持つ。
 #
 # 使い方:
 #   bash teardown_venv.sh <work_dir>

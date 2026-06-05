@@ -57,10 +57,9 @@ Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>"
 | `--requirements` | setup | 任意 | requirements.txt のパス（省略時は依存インストールをスキップ） |
 | `--min-python-version` | setup | 任意 | 最小 Python バージョン要件（例: `3.10`） |
 
-### シェル直叩き（プラグイン同梱配布時のみ動作、Bash 主軸 + PowerShell フォールバック）
+### シェル直叩き（プラグイン同梱配布時のみ動作、Bash）
 
 ADR-024 に基づき、setup スクリプトは **対象プラグインの `references/scripts/setup/`** に配置されている。`environment-setup-toolkit` 自身は実スクリプトを保有しない。
-shell-preference.md に従い Bash 版 `.sh` を通常運用とし、PowerShell 版 `.ps1` はフォールバック扱い。
 
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
@@ -68,32 +67,11 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
   -WorkDir <work_dir>
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
-  -WorkDir <work_dir> [-RequirementsPath <path>] [-MinPythonVersion <ver>]
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" `
-  -WorkDir <work_dir>
-```
-
-</details>
-
 名前付きパラメータを使用するため、`-RequirementsPath` を省略して `-MinPythonVersion` だけ指定することができる:
 
 ```bash
 bash setup_venv.sh -WorkDir "$WorkDir" -MinPythonVersion "3.10"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File setup_venv.ps1 -WorkDir "$WorkDir" -MinPythonVersion "3.10"
-```
-
-</details>
-
 ## 各 *-toolkit スキルからの利用
 
 各スキルは **環境構築の手順詳細を本スキルに委譲** する。SKILL.md / references で以下のように参照する:
@@ -107,7 +85,7 @@ Python 利用時は `environment-setup-toolkit` スキルに委譲する。**`Sk
 Skill(skill: "environment-setup-toolkit", args: "setup --work-dir <work_dir> --requirements <requirements>")
 \`\`\`
 
-直接スクリプト呼び出しが必要な場合（プラグイン同梱配布時のみ動作、Bash 経由 / PowerShell はフォールバック）:
+直接スクリプト呼び出しが必要な場合（プラグイン同梱配布時のみ動作、Bash 経由）:
 
 \`\`\`bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \\
@@ -115,13 +93,6 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \\
   -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 \`\`\`
 
-PowerShell フォールバック:
-
-\`\`\`powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
-  -WorkDir "$WorkDir" `
-  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
-\`\`\`
 
 `$env:CLAUDE_PLUGIN_ROOT` は **当該プラグイン由来のスキル/コマンド/フック実行時のみ** Claude Code が解決する。スタンドアロン配布のスキル（`<repo>/.claude/skills/{name}/` 等）からは未定義となるため `Skill` ツール経由を選ぶこと。
 ```

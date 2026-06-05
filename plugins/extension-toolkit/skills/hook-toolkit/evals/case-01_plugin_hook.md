@@ -17,7 +17,7 @@
 
 ### Phase 2: テンプレート展開
 
-`${CLAUDE_PLUGIN_ROOT}/references/templates/hook/hooks.json` をコピー、引数値を反映。テンプレートに含まれる `"shell": "powershell"` 指定は **必ず保持** する（Bash 標準・PowerShell フォールバック補強、shell-preference.md）。
+`${CLAUDE_PLUGIN_ROOT}/references/templates/hook/hooks.json` をコピー、引数値を反映。テンプレートに含まれる `"shell": "powershell"` 指定は **必ず保持** する。
 
 ### Phase 3: パスポータビリティ + shell 指定チェック
 

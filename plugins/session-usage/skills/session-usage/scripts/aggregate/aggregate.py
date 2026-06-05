@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """aggregate.py - Claude Code セッション JSONL からトークン消費量を集計する (Python 再実装版)
 
-aggregate.ps1 の Python 移植。aggregate.sh から起動する。
+aggregate.sh から起動する Python 集計スクリプト。
 
 設計:
 - 標準ライブラリのみで実装（pyperclip 等の追加依存なし）

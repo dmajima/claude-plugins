@@ -2,7 +2,6 @@
 # aggregate.sh - Claude Code セッション JSONL からトークン消費量を集計 (Bash + Python 版)
 #
 # 通常運用は本スクリプトを利用する。本体は aggregate.py (Bash から Python 起動)。
-# PowerShell フォールバック: aggregate.ps1 (歴史的経緯で保持、機能は aggregate.py と等価)
 #
 # 引数:
 #   --session-id <id>     : 対象セッション ID

@@ -8,12 +8,12 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で入力 PPTX を検証
-2. `__init__()` で `_workspace_root = <セッション>/work` を確定
+1. `_validate_pptx` で入力 PPTX を検証
+2. `__init__` で `_workspace_root = <セッション>/work` を確定
 3. `--structured-json ../../../etc/evil.json` を `_enforce_under(workspace_root, candidate, "--structured-json")` で検証
-4. `candidate.resolve()` が `_workspace_root` 配下に解決されないため `ValueError` を raise
+4. `candidate.resolve` が `_workspace_root` 配下に解決されないため `ValueError` を raise
 5. メッセージ: `--structured-json must be under workspace root (path traversal blocked): <絶対パス>`
-6. main() の `except ValueError` で stderr 出力 + 終了コード 1
+6. main の `except ValueError` で stderr 出力 + 終了コード 1
 7. python-pptx での読み込みは行われない（fail-closed）
 
 ## 期待出力
@@ -24,7 +24,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_enforce_under()` および `__init__()` 内の検証:
+`convert_from_pptx.py:_enforce_under` および `__init__` 内の検証:
 ```python
 self.structured_json_path = (
     _enforce_under(

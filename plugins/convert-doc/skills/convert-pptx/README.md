@@ -62,5 +62,5 @@ skills/convert-pptx/
 ## カスタマイズ
 
 - 色・フォント・レイアウトの調整は `references/scripts/convert-pptx/convert_pptx.py` 冒頭の定数（`PRIMARY`, `BODY_FONT`, `CODE_FONT`, `SLIDE_WIDTH_IN`, `SLIDE_HEIGHT_IN` など）を編集する
-- スライド分割規則の変更（例: H3 でもスライド分割する）は `split_into_slides()` を編集する
+- スライド分割規則の変更（例: H3 でもスライド分割する）は `split_into_slides` を編集する
 - mermaid の PNG サイズは `MERMAID_MAX_WIDTH_IN` / `MERMAID_MAX_HEIGHT_IN` を変更する

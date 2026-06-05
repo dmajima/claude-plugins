@@ -12,7 +12,7 @@
 
 ## 期待動作
 
-1. `verify()` で PPTX のコネクタ数 (`begin` / `end` が両方設定済みのもの) と MD 内 Mermaid edges をカウント
+1. `verify` で PPTX のコネクタ数 (`begin` / `end` が両方設定済みのもの) と MD 内 Mermaid edges をカウント
 2. 判定式 `pptx_conn_total >= 5 and mermaid_edge_total == 0` を評価
 3. 35a: `4 >= 5` が False → 検証スキップ → PASS
 4. 35b: `5 >= 5 and 0 == 0` が True → `failures` に追加 → FAIL
@@ -25,7 +25,7 @@
 
 ## 分岐の根拠
 
-`verify_md.py:verify()`:
+`verify_md.py:verify`:
 ```python
 if pptx_conn_total >= 5 and mermaid_edge_total == 0:
     failures.append(f"connectors: pptx={pptx_conn_total} but no Mermaid edges in MD")

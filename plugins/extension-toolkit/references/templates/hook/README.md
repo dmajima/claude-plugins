@@ -37,7 +37,7 @@ Claude Code フックの設定テンプレート。`hooks/hooks.json` 1 ファ�
 | 値 | 用途 |
 |---|---|
 | `"bash"` | Git Bash / bash（**本マーケットプレイス標準**、通常運用） |
-| `"powershell"` | Windows PowerShell / pwsh（PowerShell フォールバック適用時、Git Bash 不調時の保険） |
+| `"powershell"` | Windows PowerShell / pwsh（、Git Bash 不調時の保険） |
 
 ### 指定する理由
 

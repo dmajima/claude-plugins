@@ -7,9 +7,9 @@
 
 ## 期待動作
 
-1. `_convert_slide()` で `self.no_mermaid == True` のため `FlowExtractor.build_mermaid()` は呼ばれない
-2. SmartArt も `_smartart_to_mermaid()` をスキップし `_smartart_fallback_text()` のみ実行
-3. 通常の各図形のテキストは個別の段落として `_convert_text_frame()` 経由で出力される
+1. `_convert_slide` で `self.no_mermaid == True` のため `FlowExtractor.build_mermaid` は呼ばれない
+2. SmartArt も `_smartart_to_mermaid` をスキップし `_smartart_fallback_text` のみ実行
+3. 通常の各図形のテキストは個別の段落として `_convert_text_frame` 経由で出力される
 4. コネクタはテキスト出力されない（接続情報は失われる）
 
 ## 期待出力（抜粋）
@@ -30,14 +30,14 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_convert_slide()`:
+`convert_from_pptx.py:_convert_slide`:
 ```python
 if not self.no_mermaid:
     extractor = FlowExtractor(shapes_meta, connectors)
-    mermaid_md = extractor.build_mermaid()
+    mermaid_md = extractor.build_mermaid
 ```
 
-`_collect_shape()`:
+`_collect_shape`:
 ```python
 if self._is_smartart(shape):
     mermaid = None

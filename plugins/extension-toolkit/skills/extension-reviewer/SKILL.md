@@ -109,7 +109,7 @@ PowerShell から `python` を直接起動すると Claude Code の stdout 解�
 
 実行は **Bash 経由 + venv** を通常運用とする（shell-preference.md 準拠、PowerShell はフォールバック）。
 venv 関連はプラグイン直下スクリプト（ADR-024）に委譲。
-`.sh` / `.ps1` いずれも UTF-8 を強制するため文字化けは発生しない。
+`.sh` は UTF-8 を強制するため文字化けは発生しない。
 詳細手順は [references/automated-checks.md](references/automated-checks.md) を参照。
 
 ```bash
@@ -128,28 +128,6 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
   -WorkDir "$SessionDir/workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-# 1. venv 構築（初回のみ・プラグイン共通）
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
-  -WorkDir "$SessionDir/workspace" `
-  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
-
-# 2. チェック実行（出力は JSON ファイル）
-& "$SessionDir/workspace/.venv/Scripts/python" `
-  "$env:CLAUDE_SKILL_DIR/references/scripts/checks/run_checks.py" `
-  --target "<対象パス>" --scope-root "<スコープルート>" `
-  --output "$SessionDir/workspace/checks_result.json"
-
-# 3. 完了後の venv 削除（プラグイン共通）
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" `
-  -WorkDir "$SessionDir/workspace"
-```
-
-</details>
-
 ### 5. 結果統合
 
 各エージェントの結果と自動チェック結果を統合し、優先度別に整理（Critical / High / Medium / Low / Suggestion + 総合判定 APPROVE / CONDITIONAL_APPROVE / REJECT）。詳細フォーマットは [`references/review-perspectives.md`](references/review-perspectives.md) の「総合判定ルール」を参照。

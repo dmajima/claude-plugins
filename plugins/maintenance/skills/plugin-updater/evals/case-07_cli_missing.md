@@ -6,13 +6,13 @@
 |-----|---|
 | 起動経路 | `/update-all` |
 | コマンドから委譲される `mode` | `normal` |
-| コマンドから委譲される `scope` | `all` |
+| コマンドから委譲される `target` | `all` |
 | 既存状態 | `claude` コマンドが PATH 上に存在しない、または必要なサブコマンド（`plugin marketplace list` 等）が認識されない |
 
 ## 期待動作
 
 ### Phase A-0-1: 引数バリデーション
-- `mode` / `scope` は正常に確定
+- `mode` / `target` は正常に確定
 
 ### Phase A-0-2: Claude Code CLI 存在チェック（失敗）
 - `claude` コマンドの起動 / `--help` のチェックを試みる
@@ -37,5 +37,5 @@
 
 ## 関連ケース
 
-- `case-06_invalid_scope.md`（A-0-1 で失敗）
+- `case-06_invalid_target.md`（A-0-1 で失敗）
 - `case-01_dry_run.md`（CLI 存在前提の正常系）

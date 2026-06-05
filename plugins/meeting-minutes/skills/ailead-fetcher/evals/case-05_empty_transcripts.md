@@ -15,7 +15,7 @@
 2. HTML ページを取得し、`buildId` を抽出する
 3. 既知の `operationHash` で GraphQL API を呼び出す
 4. レスポンスを正常に受信する（HTTP 200 + `data.externalShare` が存在、`errors` なし）
-5. `build_transcript_text()` が空の `transcripts` 配列を処理し、空文字列を返す
+5. `build_transcript_text` が空の `transcripts` 配列を処理し、空文字列を返す
 6. `workspace/transcript.txt` を空ファイル（0 byte）として出力する
 7. `workspace/response.json`、`workspace/summary.md`、`workspace/metadata.json` は通常どおり出力する
 8. `metadata.json` の `transcriptCount` が `0` であることを確認する
@@ -37,7 +37,7 @@
 
 ## 分岐の根拠
 
-`references/procedures.md` エラーハンドリング表: 「空の `transcripts`: 文字起こし未完了 → `callTasks` の `TRANSCRIPT` ステータスを確認」。`fetch_share.py` の `build_transcript_text()` は `transcripts` 配列をイテレーションするため、空配列の場合は空文字列を返し、空ファイルが出力される。`references/api-spec.md` セクション3 の `callTasks` フィールド解説: 処理タスクのステータスとして `RECORD`/`TRANSCRIPT`/`SUMMARY`/`EXTRACT`/`CONVERT` が存在し、各タスクの完了状態が取得可能。
+`references/procedures.md` エラーハンドリング表: 「空の `transcripts`: 文字起こし未完了 → `callTasks` の `TRANSCRIPT` ステータスを確認」。`fetch_share.py` の `build_transcript_text` は `transcripts` 配列をイテレーションするため、空配列の場合は空文字列を返し、空ファイルが出力される。`references/api-spec.md` セクション3 の `callTasks` フィールド解説: 処理タスクのステータスとして `RECORD`/`TRANSCRIPT`/`SUMMARY`/`EXTRACT`/`CONVERT` が存在し、各タスクの完了状態が取得可能。
 
 ## 関連ケース
 

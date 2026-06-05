@@ -2,7 +2,6 @@
 # detect_credentials_in_prompt.sh (Bash 版)
 #
 # credentials-manager プラグインの UserPromptSubmit フック。
-# PowerShell フォールバック: detect_credentials_in_prompt.ps1
 #
 # ユーザーが投入したプロンプトに認証情報らしい文字列が含まれている場合、
 # credentials-reader スキルでマスキング・既存照合・保存提案を最優先で実施するよう

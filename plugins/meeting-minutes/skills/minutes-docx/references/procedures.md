@@ -22,21 +22,6 @@ bash "$CLAUDE_PLUGIN_ROOT\references\scripts\output\run_docx_via_job.sh" \
   -OutputDocx "$SESSION_DIR\minutes.docx" \
   -TemplatePath "$CLAUDE_SKILL_DIR\assets\template\minutes-template.docx"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\output\run_docx_via_job.ps1" `
-  -PythonExe $venvPy `
-  -ScriptPath "${env:CLAUDE_SKILL_DIR}\scripts\output\generate_docx.py" `
-  -InputJson "$SESSION_DIR\workspace\minutes.json" `
-  -OutputDocx "$SESSION_DIR\minutes.docx" `
-  -TemplatePath "${env:CLAUDE_SKILL_DIR}\assets\template\minutes-template.docx"
-```
-
-</details>
-
 ### 3. テンプレートの再生成（必要時のみ）
 
 テンプレートのスタイルを変更したい場合:
@@ -45,17 +30,6 @@ pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}\references\scripts\output\run_d
 & $venvPy "$CLAUDE_SKILL_DIR\scripts\output\create_template.py" \
   --output "$CLAUDE_SKILL_DIR\assets\template\minutes-template.docx"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
-& $venvPy "${env:CLAUDE_SKILL_DIR}\scripts\output\create_template.py" `
-  --output "${env:CLAUDE_SKILL_DIR}\assets\template\minutes-template.docx"
-```
-
-</details>
-
 ## トラブルシューティング
 
 | 問題 | 対処 |

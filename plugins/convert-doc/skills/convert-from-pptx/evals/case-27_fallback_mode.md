@@ -9,8 +9,8 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で入力 PPTX を検証
-2. `PPTXMarkdownConverter.convert()` を呼び、Python 側のヒューリスティック（フォントサイズ統計・色判定・位置統計）で装飾フィルタ・タイトル推定・Mermaid 化を実行
+1. `_validate_pptx` で入力 PPTX を検証
+2. `PPTXMarkdownConverter.convert` を呼び、Python 側のヒューリスティック（フォントサイズ統計・色判定・位置統計）で装飾フィルタ・タイトル推定・Mermaid 化を実行
 3. Phase 2（Claude 解釈）を経ずに直接 Markdown 出力
 4. 出力品質は対話モード（2 フェーズ）より劣るが、人手介入なしで完結
 5. 終了コード: 0
@@ -38,7 +38,7 @@
 LLM 呼び出しが行えない自動処理コンテキストでは、従来通り Python 単独で Markdown を直接生成する
 ```
 
-`convert_from_pptx.py:main()` の通常パス（`--structured-json` / `--json-only` 未指定時）。
+`convert_from_pptx.py:main` の通常パス（`--structured-json` / `--json-only` 未指定時）。
 
 ## 関連ケース
 

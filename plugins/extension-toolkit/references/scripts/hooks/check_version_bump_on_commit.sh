@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # check_version_bump_on_commit.sh - PreToolUse Bash フック (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: check_version_bump_on_commit.ps1
 #
 # `git commit ...` 直前に check_version_bump.sh を呼び出し、
 # バージョン未更新のプラグインがある場合は警告する。

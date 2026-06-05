@@ -28,21 +28,6 @@
 ```bash
 exit 2
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-if (-not $PythonExe) {
-    $PythonExe = $env:CONVERT_FROM_PPTX_PYTHON
-}
-if (-not $PythonExe -or -not (Test-Path $PythonExe)) {
-    Write-Error "PythonExe not found. Specify -PythonExe or set CONVERT_FROM_PPTX_PYTHON env var to venv python.exe path."
-    exit 2
-}
-```
-
-</details>
-
 ## 追加バリアント: SEC-M2 PythonExe が `.exe` でない
 
 `.bat` / `.cmd` / その他のスクリプトファイルを `-PythonExe` に指定した場合も exit 2:
@@ -50,18 +35,6 @@ if (-not $PythonExe -or -not (Test-Path $PythonExe)) {
 ```bash
 exit 2
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-if (-not ($PythonExe.ToLower().EndsWith('.exe'))) {
-    Write-Error "PythonExe must be a .exe file: $PythonExe"
-    exit 2
-}
-```
-
-</details>
-
 | 入力 | 終了コード | エラーメッセージ |
 |---|---|---|
 | `-PythonExe` 未指定 + 環境変数なし | 2 | `PythonExe not found. ...` |

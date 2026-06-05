@@ -55,18 +55,6 @@ Claude（要約）:
   "<入力PPTX>" "<出力MD>" \
   [--images-dir DIR] [--no-mermaid] [--include-notes]
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& "$SESSION_DIR/workspace/.venv/Scripts/python.exe" `
-  "${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py" `
-  "<入力PPTX>" "<出力MD>" `
-  [--images-dir DIR] [--no-mermaid] [--include-notes]
-```
-
-</details>
-
 ## 技術スタック / 動作要件
 
 | 項目 | 内容 |
@@ -118,6 +106,6 @@ plugins/convert-doc/
 
 - Mermaid 変換のしきい値（コネクタ最小本数、対象シェイプ種別など）は `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py` 冒頭の定数を編集する
 - モノスペース判定対象フォント名は `MONOSPACE_FONTS` 定数で管理する
-- 画像の最大サイズや出力ファイル名規則は `--max-image-size` および `_image_filename()` を編集する
-- スピーカーノートのプレフィックス（`> [!NOTE]`）は `_format_notes()` を編集する
+- 画像の最大サイズや出力ファイル名規則は `--max-image-size` および `_image_filename` を編集する
+- スピーカーノートのプレフィックス（`> [!NOTE]`）は `_format_notes` を編集する
 - 抽出を許可する画像拡張子（既定: png/jpg/jpeg/gif/bmp/tiff/webp/emf/wmf）は `ALLOWED_IMAGE_EXTS` 定数で管理する。`emf` / `wmf` は Markdown レンダラ側で表示できない場合があるが、Office 文書由来の素材として原本保持の意義があるため allowlist に含めている

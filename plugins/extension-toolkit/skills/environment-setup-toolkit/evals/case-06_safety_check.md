@@ -13,7 +13,7 @@
 
 ### Phase 1: 安全装置 1（パス正規化、fail-closed）
 
-`teardown_venv.sh` 内部で `[System.IO.Path]::GetFullPath` を呼び出してシンボリックリンク迂回を防ぐ（Bash 標準・PowerShell フォールバック、shell-preference.md 準拠）。
+`teardown_venv.sh` 内部で `[System.IO.Path]::GetFullPath` を呼び出してシンボリックリンク迂回を防ぐ。
 解決に失敗する環境では **fail-closed**（exit 1）で削除を拒否する。下記コード例は旧 Bash 実装の参考であり、現行は PowerShell 版で同等の安全装置を実装している。
 
 ```bash

@@ -26,7 +26,7 @@ HTML に変換したい
 
 | Phase | 動作 |
 |-------|------|
-| 1 | `build_index.build()` が `embedding_enrich.ensure_skill_vectors()` を呼ぶ |
+| 1 | `build_index.build` が `embedding_enrich.ensure_skill_vectors` を呼ぶ |
 | 2 | `EmbeddingConfig.enabled=False` のため早期 return（`({}, None)`） |
 | 3 | `vectors.npz` / `manifest.json` ともに生成されない |
 | 4 | `index.json` の `stats.embedding.enabled` は `false` |

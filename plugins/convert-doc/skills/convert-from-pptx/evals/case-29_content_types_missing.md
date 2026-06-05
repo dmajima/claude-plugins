@@ -7,7 +7,7 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で ZIP マジックは通過
+1. `_validate_pptx` で ZIP マジックは通過
 2. ZIP bomb 検査も通過（総サイズ・圧縮率は正常）
 3. `zf.read("[Content_Types].xml")` で `KeyError` が発生
 4. `KeyError` を捕捉して `ValueError` に変換し raise
@@ -22,7 +22,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_validate_pptx()`:
+`convert_from_pptx.py:_validate_pptx`:
 ```python
 try:
     with zipfile.ZipFile(path, "r") as zf:

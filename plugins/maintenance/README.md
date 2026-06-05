@@ -11,7 +11,8 @@ Claude Code 環境のメンテナンスを統合的に支援するプラグイ�
 
 | 機能 | 種別 | 説明 |
 |-----|------|------|
-| `/update-all` | コマンド | 全マーケットプレイスとインストール済みプラグインを公式 CLI 経由で一括更新 |
+| `/update-all` | コマンド | 全マーケットプレイスとインストール済みプラグインを公式 CLI 経由で全プロジェクト一括更新 |
+| `/update` | コマンド | 現在のプロジェクトの Project / Local スコーププラグインのみを更新 |
 | `plugin-updater` | スキル | `/update-all` の実作業を担う（Phase A-0〜G、横断ルール XR-1〜5） |
 | `cleanup-workspace` | スキル | `.claude/.local/work/` 配下の古いセッションフォルダ・一時ファイルを多層安全装置付きで削除 |
 | `sync-settings` | スキル | 特定の Git リポジトリから `~/.claude/` 配下の設定（settings.json / skills / rules 等）を pull 同期 |
@@ -115,9 +116,10 @@ cleanup-workspace の dry-run を実行して
 
 | コマンド | 効果 |
 |---------|-----|
-| `/update-all` | 全マーケットプレイスとプラグインを最新化 |
+| `/update-all` | 全プロジェクトのマーケットプレイスとプラグインを一括最新化 |
 | `/update-all --dry-run` | 実行予定の CLI コマンドのみ表示 |
-| `/update-all --scope user\|project\|local` | 指定スコープのプラグインのみ更新 |
+| `/update` | 現在のプロジェクトの Project / Local プラグインのみ更新 |
+| `/update --dry-run` | 実行予定の CLI コマンドのみ表示 |
 
 ### 自然言語トリガー
 
@@ -220,32 +222,6 @@ maintenance/
 - ローカルデータ領域: `~/.claude/rules/claude/local-data-directory.md`（`.claude/.local/` 全般）
 - 自動更新ポリシー: `~/.claude/rules/claude/plugin-auto-update.md`（`autoUpdate: true` 必須・週 1 回更新チェック）
 
-## PowerShell フォールバック
-
-通常運用は Bash 経路 (`.sh` 純粋実装) を使用します。`cleanup.sh` / `cleanup-config.sh` /
-`sync.sh` / `sync-common.sh` / `sync-mappings.sh` / `sync-push.sh` はすべて
-**Bash + jq + git + Python (settings.json 安全マージのみ) による純粋実装** で、
-PowerShell を起動しません (Phase 9c 完成)。
-
-PowerShell 版 (`.ps1`) は **フォールバック手順用** として同階層に保持されます。
-両実装は同一の入出力仕様に従い、動作差異がないよう実装されています。
-
-### フォールバック適用条件
-
-以下のいずれかが該当する場合は PowerShell 経路へ切り替えてください:
-
-- Git Bash の `add_item failed` 等の Cygwin 初期化エラーが再発した
-- `jq` / `sha256sum` などが PATH に無い環境で利用したい
-- 動作差異の疑いがあり、PowerShell 元実装の出力を直接確認したい
-
-切替手順:
-
-```bash
-# 任意の maintenance スクリプトを呼ぶ際、.sh の代わりに以下を実行
-pwsh -NoProfile -File "<plugin-root>/skills/.../scripts/.../<name>.ps1" [args...]
-```
-
-`pwsh` (PowerShell 7+) のインストール手順は `~/.claude/rules/tools/powershell-fallback-mode.md` を参照。
 
 ## ライセンス
 

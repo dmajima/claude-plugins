@@ -11,7 +11,10 @@
 > output-formats.md のみを編集し、本ファイルは参照を維持する（ADR-PU-004 SSOT 配置原則準拠）。
 
 実行順は **A-0-1 → A-0-2 → A → A-1 → A-2 → A-3 → B → C → D → E → F → G** の固定順
-（ADR-PU-003 / ADR-PU-009 に準拠、変更不可）。
+（ADR-PU-003 / ADR-PU-009 / ADR-PU-015 に準拠、変更不可）。
+
+ただし `target=current-project` の場合、Phase B（マーケットプレイス更新）と Phase C（User スコープ更新）
+はスキップされる（ADR-PU-015）。
 
 ---
 
@@ -21,12 +24,12 @@ A-0 は Phase A の前に **以下の順序** で必ず実行する。
 
 ### A-0-1. 引数バリデーション
 
-呼び出し元コマンドから受け取った `scope` 値を XR-1（[cross-cutting-rules.md](cross-cutting-rules.md)）の
-ホワイトリスト `user` / `project` / `local` / `all` と照合する。
+呼び出し元コマンドから受け取った `target` 値を XR-1（[cross-cutting-rules.md](cross-cutting-rules.md)）の
+ホワイトリスト `all` / `current-project` と照合する。
 不正値の場合は以下のエラーで処理を中断する（後続フェーズには進まない）:
 
 ```text
-エラー: 不正な scope 値 "<value>" が指定されました。有効な値は user / project / local / all です。
+エラー: 不正な target 値 "<value>" が指定されました。有効な値は all / current-project です。
 ```
 
 ### A-0-2. Claude Code CLI 存在チェック
@@ -98,17 +101,26 @@ exit 0 で通過しているため処理は中断しない）。
 
 ## Phase A: 対象収集（読み取りのみ・dry-run 時も全手順通常実行・変更系 CLI のみ省略）
 
-| 項目 | 取得元 | 取得方法 |
-|-----|-------|---------|
-| マーケットプレイス一覧 | Claude Code CLI | `claude plugin marketplace list` |
-| User プラグイン | `~/.claude/settings.json` の `enabledPlugins` | **Grep で `enabledPlugins` ブロックを抽出**（A-Sec 手順に従う） |
-| Project プラグイン | `<repo>/.claude/settings.json` の `enabledPlugins` | 同上 |
-| Local プラグイン | `<repo>/.claude/settings.local.json` の `enabledPlugins` | 同上 |
+### target による収集範囲
+
+| target | 収集対象 |
+|--------|---------|
+| `all` | マーケットプレイス一覧 + User / Project / Local の全 `enabledPlugins` |
+| `current-project` | Project / Local の `enabledPlugins` のみ（`<repo>` 配下の settings のみ） |
+
+### 収集項目
+
+| 項目 | 取得元 | 取得方法 | target=current-project |
+|-----|-------|---------|----------------------|
+| マーケットプレイス一覧 | Claude Code CLI | `claude plugin marketplace list` | スキップ |
+| User プラグイン | `~/.claude/settings.json` の `enabledPlugins` | **Grep で `enabledPlugins` ブロックを抽出**（A-Sec 手順に従う） | スキップ |
+| Project プラグイン | `<repo>/.claude/settings.json` の `enabledPlugins` | 同上 | 実行 |
+| Local プラグイン | `<repo>/.claude/settings.local.json` の `enabledPlugins` | 同上 | 実行 |
 
 > **NOTE（A-3 連携）**: Phase A は「`enabledPlugins` の有効/無効フラグ集合」を抽出するに留まり、
-> **スコープ真値判定（projectPath 一致確認）は Phase A-3 が `~/.claude/plugins/installed_plugins.json`
-> から取得する**（ADR-PU-009）。Phase A の `User / Project / Local` 区分は settings.json の所在に基づく
-> 暫定区分であり、最終的な C/D/E への振り分けは A-3 結果が確定する。
+> **スコープ判定は Phase A-3 が `~/.claude/plugins/installed_plugins.json`
+> から取得する**（ADR-PU-009 / ADR-PU-015）。Phase A の `User / Project / Local` 区分は settings.json の
+> 所在に基づく暫定区分であり、最終的な C/D/E への振り分けは A-3 結果が確定する。
 
 `settings.json` 系の読み取りは **必ず A-Sec 手順（Grep + ブロック終端検出）** で行う。
 **全文 Read ツールでの読み込みは禁止**（`mcpServers` / `extraKnownMarketplaces` / `hooks` /
@@ -331,15 +343,32 @@ exit 0 で通過しているため処理は中断しない）。
 
 検証失敗時は Project / Local 処理をスキップして INFO で理由を表示する（フェイルクローズ）。
 
-git リポジトリ外で実行され、かつ `--scope project` または `--scope local` が **明示指定** された場合は
-エラーを返して中断する。`--scope` 未指定時は Project / Local を省略するが、その旨を以下の INFO で明示する:
+#### target と git リポジトリの関係
+
+| target | git リポジトリ状態 | 動作 |
+|--------|------------------|------|
+| `current-project` | リポジトリ外 | エラーで中断 |
+| `current-project` | リポジトリ内 | `<repo>` を使用して通常実行 |
+| `all` | リポジトリ外 | `<repo>` は不要。Marketplace + User は実行。Project / Local は `installed_plugins.json` の各 `projectPath` から更新 |
+| `all` | リポジトリ内 | `<repo>` は参考情報として保持するが、Project / Local の対象範囲は `installed_plugins.json` の全 `projectPath` |
+
+`target=current-project` で git リポジトリ外の場合:
 
 ```text
-INFO: git リポジトリ外で実行されたため Project / Local スコープを対象から除外しました。
+エラー: target=current-project が指定されましたが、git リポジトリ外のため Project / Local スコープを処理できません。
+全プロジェクトのプラグインを更新したい場合は /update-all を使用してください。
 ```
 
-各プラグインエントリは **(scope, plugin-name, marketplace-name)** の 3 つ組として記録。
-スコープが異なれば同一 (plugin-name, marketplace-name) でも別エントリとして扱う。
+`target=all` で git リポジトリ外の場合の INFO:
+
+```text
+INFO: git リポジトリ外で実行されたため、target=all でも現在のプロジェクトの Project / Local スコープはありません。
+他プロジェクトの Project / Local プラグインは installed_plugins.json の projectPath に基づいて更新されます。
+```
+
+各プラグインエントリは `target=all` の場合 **(scope, plugin-name, marketplace-name, projectPath)** の
+4 つ組、`target=current-project` の場合 **(scope, plugin-name, marketplace-name)** の 3 つ組として記録。
+スコープ / projectPath が異なれば同一 (plugin-name, marketplace-name) でも別エントリとして扱う。
 
 ### `enabledPlugins` のスキーマ例
 
@@ -392,9 +421,22 @@ Claude Code の `enabledPlugins` は **キーがプラグイン識別子（`<plu
 `enabledPlugins` 内の `marketplace-name` のうち、Phase A で取得した `claude plugin marketplace list`
 の結果に **存在しないもの** を Skipped（マーケットプレイス未登録）として除外する。
 
+### target=current-project 時の A-2 挙動
+
+`target=current-project` では Phase A で `claude plugin marketplace list` を **スキップ** するため、
+A-2 の MP 整合性検証に必要なデータが存在しない。この場合 **A-2 自体をスキップ** し、
+Phase A-3 の `installed_plugins.json` ベース検証のみで Project/Local エントリを処理する。
+
+A-2 スキップ時の影響:
+- XR-2 サーキットブレーカーの MP 名解決は Phase B 不実行のため不要（`target=current-project` では
+  Phase B 自体がスキップされるため、B-1 由来の Failed カウントは発生しない）
+- MP 未登録エントリが Phase D/E に到達する可能性があるが、CLI 側で `not found` を返すため
+  Missing として記録される（ADR-PU-005 の exit code 一次判定で吸収）
+
 ### 二重実施の挙動と A→B 間ドリフト
 
-A-2 は **Phase A 直後に 1 回のみ実施** する。Phase B 後の再実施は行わない（ADR-PU-003 / ADR-PU-002 参照）。
+A-2 は `target=all` の場合、**Phase A 直後に 1 回のみ実施** する。Phase B 後の再実施は行わない
+（ADR-PU-003 / ADR-PU-002 参照）。
 
 **ドリフト影響**: Phase B でマーケットプレイスが新規追加された場合、当該 MP 配下の `enabledPlugins`
 エントリは A-2 時点で「未登録」と判定されているため Skipped 扱いのまま当該セッションでは更新されない。
@@ -416,26 +458,37 @@ B 実行後の MP 失敗による配下プラグインの動的制御は **XR-2 
 
 ---
 
-## Phase A-3: スコープ真値判定（installed_plugins.json による）
+## Phase A-3: スコープ判定（installed_plugins.json による）
 
 ### A-3 が解決する問題
 
 `enabledPlugins`（settings.json）は **そのスコープにおける有効/無効フラグ** であり、
 プラグインが **どこに（user / project / local のどの projectPath に）インストールされたか** を
 表現しない。`scope=project|local` のプラグインは `~/.claude/plugins/installed_plugins.json` の
-`projectPath` フィールドが **真のインストール先** を示すため、現在の `<repo>` と異なる
-`projectPath` のエントリを `claude plugin update --scope project` で更新しようとしても CLI が失敗する。
+`projectPath` フィールドが **真のインストール先** を示す。
 
-A-3 は `installed_plugins.json` を **スコープ判定の SSOT** として読み取り、各エントリを以下に分類する:
+A-3 は `installed_plugins.json` を **スコープ判定の SSOT** として読み取り、`target` パラメータに
+応じて各エントリを分類する。
+
+#### target=all の場合（全プロジェクト更新）
+
+| 判定 | 扱い |
+|------|------|
+| `projectPath` のディレクトリが実在する project/local エントリ | Phase D / E の更新対象（当該 `projectPath` で CLI を実行） |
+| `projectPath` のディレクトリが実在しない project/local エントリ | **Skipped（projectPath ディレクトリ不在）** |
+| `scope=user` のエントリ | Phase C の更新対象 |
+| `installed_plugins.json` に存在しない `enabledPlugins` エントリ | **Skipped（未インストール）** |
+
+#### target=current-project の場合（現在のプロジェクトのみ）
 
 | 判定 | 扱い |
 |------|------|
 | 現在の `<repo>` と一致する `projectPath` を持つ project/local エントリ | Phase D / E の更新対象 |
 | `projectPath` が現在の `<repo>` と不一致な project/local エントリ | **Skipped（現在のプロジェクト外）** |
-| `scope=user` のエントリ | Phase C の更新対象 |
+| `scope=user` のエントリ | スキップ（Phase C 自体が `target=current-project` では非実行） |
 | `installed_plugins.json` に存在しない `enabledPlugins` エントリ | **Skipped（未インストール）** |
 
-設計判断は ADR-PU-009 を参照。
+設計判断は ADR-PU-009 / ADR-PU-015 を参照。
 
 ### A-3-1. installed_plugins.json の Read
 
@@ -526,7 +579,7 @@ expected: { "version": 2, "plugins": { "<plugin>@<mp>": [ {scope, projectPath?, 
 `installed_plugins.json["plugins"]` の各キー `<plugin>@<mp>` について、配列の各要素を以下のように分類する:
 
 ```text
-for plugin_at_mp, entries in installed_plugins["plugins"].items():
+for plugin_at_mp, entries in installed_plugins["plugins"].items:
     plugin, mp = plugin_at_mp.split("@", 1)
     # XR-1 の入力検証は A-1 で済んでいるが、installed_plugins.json 由来の値は
     # 未検証のため A-3 でも再度 XR-1 を適用してから採用する
@@ -536,20 +589,35 @@ for plugin_at_mp, entries in installed_plugins["plugins"].items():
     for entry in entries:
         scope = entry["scope"]
         if scope == "user":
-            候補に追加: (scope=user, plugin, mp)
+            if target == "all":
+                候補に追加: (scope=user, plugin, mp)
+            # target=current-project の場合は user スコープをスキップ
         elif scope in ("project", "local"):
             project_path = entry.get("projectPath")
             if not project_path:
                 記録: Skipped（installed_plugins.json projectPath 欠落）
                 continue
-            if 正規化(project_path) == 正規化(<repo>):
-                候補に追加: (scope, plugin, mp)
-            else:
-                記録: Skipped（現在のプロジェクト外）
-                # projectPath 値はメインコンテキストに保持しない（XR-3 サニタイズの C:\Users\... マスク方針に整合）
+            if target == "all":
+                # ディレクトリ存在確認のみ（<repo> との一致は不要）
+                if ディレクトリが実在する(正規化(project_path)):
+                    候補に追加: (scope, plugin, mp, project_path)  # project_path を保持
+                else:
+                    記録: Skipped（projectPath ディレクトリ不在）
+            elif target == "current-project":
+                # 現在の <repo> と一致チェック（従来の挙動）
+                if 正規化(project_path) == 正規化(<repo>):
+                    候補に追加: (scope, plugin, mp)
+                else:
+                    記録: Skipped（現在のプロジェクト外）
+            # projectPath 値はメインコンテキストに保持しない（XR-3 サニタイズの C:\Users\... マスク方針に整合）
         else:
             記録: Skipped（未知の scope 値）
 ```
+
+> **`target=all` でのディレクトリ存在確認**: `projectPath` のディレクトリが実在するかどうかは
+> XR-1 パス検証（A-3-3-pre）通過後に確認する。実在判定は Read ツールまたは
+> `test -d <path>`（Bash）/ `Test-Path <path>`（PowerShell）で行う。
+> `projectPath` は正規化済みかつ XR-1 パス検証済みであるため、コマンドインジェクションのリスクは排除済み。
 
 ### A-3-5. settings.json の `enabledPlugins` と突合（disabled 除外）
 
@@ -569,19 +637,20 @@ A-3-4 で抽出した候補に対し、Phase A で取得済みの該当スコー
 
 ### A-3 から派生する Skipped 区分（リトライ対象外）
 
-A-3 が確定した時点で、以下 5 種の Skipped 区分が派生する。**いずれも Phase G リトライ対象から除外** する。
+A-3 が確定した時点で、以下の Skipped 区分が派生する。**いずれも Phase G リトライ対象から除外** する。
 備考列の定型文は [`output-formats.md`](output-formats.md) の「F-3 備考列の Skipped 区分定型文」表が SSOT。
 
-| 区分 | 備考列定型文（output-formats.md SSOT より） |
-|------|------------------------------------------|
-| **Skipped（現在のプロジェクト外）** | `現在のプロジェクト外にインストールされたプラグインをスキップしました` |
-| **Skipped（未インストール）** | `installed_plugins.json に該当エントリがありません` |
-| **Skipped（disabled）** | `enabledPlugins で false / null のため対象外` |
-| **Skipped（enabledPlugins 未登録）** | `当該スコープの enabledPlugins に未登録` |
-| **Skipped（projectPath 欠落）** | `project / local スコープに projectPath が記録されていません` |
+| 区分 | 発生条件 | 備考列定型文（output-formats.md SSOT より） |
+|------|---------|------------------------------------------|
+| **Skipped（projectPath ディレクトリ不在）** | `target=all` かつ `projectPath` のディレクトリが実在しない | `projectPath のディレクトリが存在しないためスキップしました` |
+| **Skipped（現在のプロジェクト外）** | `target=current-project` かつ `projectPath != <repo>` | `現在のプロジェクト外にインストールされたプラグインをスキップしました` |
+| **Skipped（未インストール）** | 共通 | `installed_plugins.json に該当エントリがありません` |
+| **Skipped（disabled）** | 共通 | `enabledPlugins で false / null のため対象外` |
+| **Skipped（enabledPlugins 未登録）** | 共通 | `当該スコープの enabledPlugins に未登録` |
+| **Skipped（projectPath 欠落）** | 共通 | `project / local スコープに projectPath が記録されていません` |
 
-> **リトライ対象外の根拠**: これらの Skipped は「設定の問題」（enabledPlugins 編集 / 別プロジェクト
-> での更新 / `/plugin install` 等）でしか解消しない永続的状態であり、CLI のリトライでは
+> **リトライ対象外の根拠**: これらの Skipped は「設定の問題」（enabledPlugins 編集 /
+> `/plugin install` / ディレクトリ復元 等）でしか解消しない永続的状態であり、CLI のリトライでは
 > 回復しないため Phase G の対象としない。Missing と同様の扱い（ADR-PU-007 / ADR-PU-009）。
 
 ### A-3-6. Phase F-4 アクション提示の追加
@@ -591,9 +660,10 @@ A-3 由来の Skipped が 1 件以上発生した場合、Phase F-4 の「次の
 のように一般語で表現し、実値を出力する場合は **必ず XR-3 サニタイズ（`<user-home>` マスク）を
 通したうえで** 出力する。
 
-- **Skipped（現在のプロジェクト外）が 1 件以上**: 「該当プラグインを更新したい場合は、その
-  `projectPath` のディレクトリ内で Claude Code を起動し再度 `/update-all --scope project`（または
-  `local`）を実行してください」
+- **Skipped（projectPath ディレクトリ不在）が 1 件以上**: 「該当 projectPath のディレクトリが
+  存在しません。ディレクトリを復元するか、`enabledPlugins` から該当エントリを除外してください」
+- **Skipped（現在のプロジェクト外）が 1 件以上**（`target=current-project` の場合のみ）:
+  「全プロジェクトのプラグインを更新したい場合は `/update-all` を実行してください」
 - **Skipped（未インストール）が 1 件以上**: 「該当エントリを `enabledPlugins` から除外するか、
   `claude plugin install <plugin>@<marketplace>` でインストールしてください」
 - **Skipped（disabled）/（enabledPlugins 未登録）が 1 件以上**: 「該当プラグインを有効化したい
@@ -603,7 +673,7 @@ A-3 由来の Skipped が 1 件以上発生した場合、Phase F-4 の「次の
 
 ## Phase B: マーケットプレイス更新（最初に必ず実行・XR-1/XR-2/XR-3 を適用・dry-run 時はコマンド表示のみ）
 
-呼び出し元の `scope` の値にかかわらず、本フェーズは常に実行する。
+`target=all` の場合は常に実行する。`target=current-project` の場合は **スキップ** する（ADR-PU-015）。
 
 ```bash
 claude plugin marketplace update
@@ -631,20 +701,49 @@ claude plugin marketplace update
 ## Phase C / D / E: スコープ別プラグイン更新（XR-1/XR-2/XR-3 を適用・dry-run 時はコマンド表示のみ）
 
 各スコープの更新対象は **Phase A-3 で確定した候補集合**（A-3-5 で `enabledPlugins=true` と
-判定されたエントリ）から取得する。A-3 で派生した 5 種の Skipped（現在のプロジェクト外 /
-未インストール / disabled / enabledPlugins 未登録 / projectPath 欠落）はすべて C/D/E の
-対象外であり、Phase F-3 にスキップ理由を備考付きで表示するのみで CLI を呼び出さない。
+判定されたエントリ）から取得する。A-3 で派生した Skipped（projectPath ディレクトリ不在 /
+現在のプロジェクト外 / 未インストール / disabled / enabledPlugins 未登録 / projectPath 欠落）は
+すべて C/D/E の対象外であり、Phase F-3 にスキップ理由を備考付きで表示するのみで CLI を呼び出さない。
 
-各スコープの (plugin-name, marketplace-name) ごとに以下を実行する:
+### Phase C: User スコープ更新
+
+`target=all` の場合のみ実行。`target=current-project` の場合はスキップ。
 
 ```bash
-# Phase C: User スコープ（scope が user または all のとき）
 claude plugin update <plugin-name>@<marketplace-name> --scope user
+```
 
-# Phase D: Project スコープ（scope が project または all、かつ git リポジトリ配下のとき）
+### Phase D / E: Project / Local スコープ更新
+
+#### target=all の場合（全プロジェクト更新・ADR-PU-015）
+
+候補集合を **`projectPath` でグルーピング** し、各 `projectPath` ディレクトリ内で CLI を実行する。
+
+```bash
+# 各 projectPath ごとに、サブシェルでディレクトリを変更して実行する（cwd 復帰保証）
+(cd <projectPath> && claude plugin update <plugin-name>@<marketplace-name> --scope project)
+(cd <projectPath> && claude plugin update <plugin-name>@<marketplace-name> --scope local)
+```
+
+- **cwd 復帰保証（MANDATORY）**: `cd <projectPath>` は **必ずサブシェル `(...)` で囲む**。
+  これにより CLI の成否に関わらず、後続の projectPath 処理前に元のディレクトリに自動復帰する。
+  `pushd`/`popd` パターンでも可だが、サブシェルの方がエラー時の復帰保証が確実。
+  Phase G-3 のリトライ時にも同じサブシェルパターンを適用する
+- `projectPath` は A-3-3-pre の XR-1 パス検証を通過済みであること（必須前提）
+- ディレクトリ移動前に `projectPath` が A-3-4 のディレクトリ存在確認を通過していること
+- **実行順序**: `projectPath` ごとにまとめて処理し、同一 `projectPath` 内では Phase D（project）→
+  Phase E（local）の順で逐次実行する。`projectPath` 間の実行順序は `projectPath` の
+  アルファベット順（正規化後）で固定し、Phase F-3 の表示順序と一致させる
+
+#### target=current-project の場合（現在のプロジェクトのみ）
+
+現在のディレクトリ（`<repo>`）で従来通り実行する。
+
+```bash
+# Phase D: Project スコープ
 claude plugin update <plugin-name>@<marketplace-name> --scope project
 
-# Phase E: Local スコープ（scope が local または all、かつ git リポジトリ配下のとき）
+# Phase E: Local スコープ
 claude plugin update <plugin-name>@<marketplace-name> --scope local
 ```
 
@@ -726,8 +825,8 @@ XR-2 のサーキットブレーカー作動中の MP には適用しない。
 
 | 失敗種別 | 再実行範囲 |
 |---------|-----------|
-| マーケットプレイス Failed | **Phase B を引数なしで再度実行**（`claude plugin marketplace update` = 全マーケットプレイス対象）。`--scope` 指定の有無によらず Phase B は常に全 MP 対象（ADR-PU-003「Phase B を常に実行する理由」参照）。**サーキットブレーカー作動中の MP も Phase B 全件リトライでは再試行され得る**: Phase B は MP 単位個別指定をサポートしないため、XR-2 「サーキットブレーカー作動中の MP は G-3 のリトライ対象から除外」原則は **プラグイン単位（C/D/E）のリトライにのみ適用** され、MP 単位の Phase B 全件リトライには適用されない（設計上の許容事項）。CLI が `claude plugin marketplace update <name>` の引数指定をサポートしたら個別 MP リトライに切り替えてサーキットブレーカー除外を厳密化する（ADR-PU-002 Future Direction 参照） |
-| プラグイン Failed（C/D/E 由来） | `claude plugin update <plugin>@<marketplace> --scope <scope>` を当該エントリのみ実行 |
+| マーケットプレイス Failed（`target=all` のみ） | **Phase B を引数なしで再度実行**（`claude plugin marketplace update` = 全マーケットプレイス対象）。**サーキットブレーカー作動中の MP も Phase B 全件リトライでは再試行され得る**: Phase B は MP 単位個別指定をサポートしないため、XR-2 「サーキットブレーカー作動中の MP は G-3 のリトライ対象から除外」原則は **プラグイン単位（C/D/E）のリトライにのみ適用** され、MP 単位の Phase B 全件リトライには適用されない（設計上の許容事項）。CLI が `claude plugin marketplace update <name>` の引数指定をサポートしたら個別 MP リトライに切り替えてサーキットブレーカー除外を厳密化する（ADR-PU-002 Future Direction 参照） |
+| プラグイン Failed（C/D/E 由来） | `claude plugin update <plugin>@<marketplace> --scope <scope>` を当該エントリのみ実行。`target=all` の場合は当該 `projectPath` ディレクトリ内で実行 |
 
 XR-4 によりリトライは元の失敗集合に対し最大 1 回。リトライ中の新規失敗は記録のみ。
 
@@ -761,10 +860,12 @@ Missing は Phase G の対象としないため、リトライ後も Missing の
   ブロック終端検出で `settings.json` 系を読み取り、`claude plugin marketplace list` を実行。
   事後検証ガード（第四手順）も dry-run 時に省略しない。`marketplace list` はキャッシュ参照のみで
   更新通信を行わないことが期待されるが、CLI バージョンにより異なる場合がある）
-- Phase A-1 / A-2 / A-3 の検証も実行（A-3 は読み取り専用・スコープ真値判定）
+- Phase A-1 / A-2 / A-3 の検証も実行（A-3 は読み取り専用・スコープ判定）
 - Phase B / C / D / E（**変更系 CLI**）の代わりに、実行予定の CLI コマンド一覧を表示。フォーマットは
   [`output-formats.md`](output-formats.md) の **「Phase F（dry-run モード）」セクション**
   （F-1 / F-2 / F-3 dry-run 専用テーブル）を SSOT として参照する
+- `target=current-project` の場合は Phase B / C の実行予定コマンドも省略される
+- `target=all` の場合は `projectPath` ごとにグルーピングされた実行予定コマンド一覧が表示される
 - **XR-3 サニタイズは Phase B/C/D/E の更新ログに対しては適用不要**: dry-run 時は変更系 CLI 出力が
   発生しないため。ただし **Phase A の `claude plugin marketplace list` 出力** は通常モードでも
   サニタイズ対象外（出力フォーマットが MP 名・URL 主体で機密性が低い）であり、dry-run でも同様の
@@ -774,8 +875,6 @@ Missing は Phase G の対象としないため、リトライ後も Missing の
 **重要な制約**: `--dry-run` は **実行予定のコマンド一覧** のみを提示します。
 **各プラグインの変更内容（新規 hooks / MCP / agents の追加）は確認しません**。
 変更内容の確認には実行後 `claude plugin show <plugin>@<marketplace>` を別途実行する必要があります。
-
-`scope` と組み合わせた場合（例: `mode=dry-run, scope=user`）は、指定スコープに限定したプレビューを表示。
 
 ---
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # resolve_base.sh - Resolve skill-router <base> directory (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。PowerShell フォールバック: resolve_base.ps1
 #
 # Resolution order (build_index.resolve_base_dir と lock-step):
 #   1. ${CLAUDE_PLUGIN_DATA}

@@ -20,8 +20,8 @@
 
 | Phase | 動作 |
 |-------|------|
-| 1 | `references/scripts/lib/build_index.py` の `build()` 実行 |
-| 2 | `embedding_enrich.ensure_skill_vectors()` で各スキルの `content_hash` を計算 |
+| 1 | `references/scripts/lib/build_index.py` の `build` 実行 |
+| 2 | `embedding_enrich.ensure_skill_vectors` で各スキルの `content_hash` を計算 |
 | 3 | `manifest.json` の既存 entry と `(content_hash, model)` が一致 → 再ベクトル化スキップ |
 | 4 | 既存 `vectors.npz` を `expected_sha256` 検証付きで `load_vectors` 経由再利用 |
 | 5 | `index.json` を上書き、`stats.embedding.skills_vectorised` は既存件数と同じ |
@@ -33,7 +33,7 @@
 | 標準出力 | `index.json` 末尾の `stats` 抜粋（`build_duration_ms` が初回より顕著に小さい） |
 | 副作用 | `vectors.npz` / `manifest.json` のバイト列は変化なし（`vectors_sha256` 一致） |
 | 計測値 | 2 回目の `build_duration_ms` が 1 回目の 1/100 程度（モデル推論をスキップしているため）|
-| 失敗時 | `<base>/error.log` に `traceback.format_exc()` を `mask_secrets` 経由で記録、フェイルオープン |
+| 失敗時 | `<base>/error.log` に `traceback.format_exc` を `mask_secrets` 経由で記録、フェイルオープン |
 
 ## 分岐の根拠
 

@@ -10,7 +10,7 @@
 
 ## 期待動作
 
-1. `_convert_table()` が `table.rows` を線形に走査
+1. `_convert_table` が `table.rows` を線形に走査
 2. python-pptx のマージセル挙動により、colspan=2 のセルは 2 つの異なる cell オブジェクトとして同一テキストを返す
 3. GFM パイプ表として出力（列数を保つ）
 4. マージ表現は GFM に存在しないため、同一テキストが両セルに展開される
@@ -29,7 +29,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_convert_table()` のロジック:
+`convert_from_pptx.py:_convert_table` のロジック:
 ```python
 for row in shape.table.rows:
     cells_text = [_cell_text(cell) for cell in row.cells]

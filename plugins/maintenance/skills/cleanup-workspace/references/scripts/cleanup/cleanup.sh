@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # cleanup.sh - .claude/.local/work/ 配下のセッションフォルダクリーンアップ (Bash + jq 純粋実装)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: cleanup.ps1 (機能等価、歴史的経緯で保持)
 #
 # 多層安全装置:
 #   1. 名前パターン検証 (yyyyMMdd_nn_<summary>)

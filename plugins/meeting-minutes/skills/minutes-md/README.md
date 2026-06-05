@@ -41,10 +41,10 @@ Claude:
 
 | 関数 | 対象 |
 |------|------|
-| `render_agenda()` | 議題セクションのレイアウト |
-| `render_action_items()` | アクションまとめのレイアウト |
-| `render_next_meeting()` | 次回予定のレイアウト |
-| `format_participants()` | 参加者一覧のフォーマット |
+| `render_agenda` | 議題セクションのレイアウト |
+| `render_action_items` | アクションまとめのレイアウト |
+| `render_next_meeting` | 次回予定のレイアウト |
+| `format_participants` | 参加者一覧のフォーマット |
 
 ### テンプレート参照
 

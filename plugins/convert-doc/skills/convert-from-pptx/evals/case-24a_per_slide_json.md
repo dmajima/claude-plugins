@@ -8,8 +8,8 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で入力 PPTX を検証
-2. `export_per_slide_json()` がスライドごとに `slide-NN.json` を分割出力
+1. `_validate_pptx` で入力 PPTX を検証
+2. `export_per_slide_json` がスライドごとに `slide-NN.json` を分割出力
 3. 同時に `metadata.json` を出力し、`slides_index[]` に各スライドのサマリ（layout_name / shape_count / connector_count / has_notes）を含める
 4. 画像は単一の `<basename>_images/` に共通抽出される
 5. 終了コード: 0
@@ -45,7 +45,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:export_per_slide_json()`:
+`convert_from_pptx.py:export_per_slide_json`:
 ```python
 slide_path = self.per_slide_json_dir / f"slide-{emitted:02d}.json"
 with open(slide_path, "w", encoding="utf-8", newline="\n") as fh:

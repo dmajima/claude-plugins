@@ -44,7 +44,7 @@ Markdown ファイルを Wiki デザインの PDF に変換する。
 | 入力 | モード | 動作 |
 |-----|-------|------|
 | `/convert-pdf` または自然言語依頼 | 通常 | デフォルトオプション（A4 縦・背景印刷あり）で処理 |
-| `--landscape` / `--no-background` / `--format` 等のオプション指定 | カスタム | 指定されたオプションで Playwright `page.pdf()` を呼び出し |
+| `--landscape` / `--no-background` / `--format` 等のオプション指定 | カスタム | 指定されたオプションで Playwright `page.pdf` を呼び出し |
 
 ## 実行フロー
 
@@ -78,8 +78,8 @@ Markdown ファイルを Wiki デザインの PDF に変換する。
 
 - convert-html スクリプトの解決順は `$CONVERT_HTML_SCRIPT` → `$CLAUDE_PLUGIN_ROOT` → 同一プラグイン内兄弟ディレクトリ
 - いずれの解決でも convert-html が見つからない場合は `sys.exit(1)` で停止
-- Playwright の `browser.close()` は `try/finally` で保護され、PDF 生成例外時もリソースリークしない
-- 中間 HTML は `tempfile.TemporaryDirectory()` 配下に作成され処理完了時に自動削除
+- Playwright の `browser.close` は `try/finally` で保護され、PDF 生成例外時もリソースリークしない
+- 中間 HTML は `tempfile.TemporaryDirectory` 配下に作成され処理完了時に自動削除
 - `subprocess.run(..., shell=False)` を使用し、シェル注入を回避
 
 ## 依存スキル

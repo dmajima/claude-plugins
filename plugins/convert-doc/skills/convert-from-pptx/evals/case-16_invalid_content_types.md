@@ -6,9 +6,9 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` で拡張子・ZIP マジックは通過
+1. `_validate_pptx` で拡張子・ZIP マジックは通過
 2. `zf.read("[Content_Types].xml")` 取得成功
-3. `"presentationml" not in content_types.lower()` が True → `ValueError`
+3. `"presentationml" not in content_types.lower` が True → `ValueError`
 4. メッセージ: `Input file is not a PresentationML document: <path>`
 5. stderr 出力後 `sys.exit(1)`
 
@@ -19,9 +19,9 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_validate_pptx()`:
+`convert_from_pptx.py:_validate_pptx`:
 ```python
-if "presentationml" not in content_types.lower():
+if "presentationml" not in content_types.lower:
     raise ValueError(f"Input file is not a PresentationML document: {path}")
 ```
 

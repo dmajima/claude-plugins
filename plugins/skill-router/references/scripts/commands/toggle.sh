@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # toggle.sh - Toggle skill-router routing on/off (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。PowerShell フォールバック: toggle.ps1
 #
 # Usage:
 #   bash toggle.sh status   # print "skill-router: ON" or "skill-router: OFF"

@@ -58,7 +58,7 @@ def replace_section(content: str, heading: str, new_table: str) -> str:
     heading_found = False
     table_replaced = False
     while i < len(lines):
-        if lines[i].strip() == heading:
+        if lines[i].strip == heading:
             heading_found = True
             out.append(lines[i])
             i += 1
@@ -75,7 +75,7 @@ def replace_section(content: str, heading: str, new_table: str) -> str:
                         table_replaced = True
                     # テーブル行はスキップ
                 else:
-                    if in_table and sl.strip() == "":
+                    if in_table and sl.strip == "":
                         in_table = False
                     out.append(sl)
         else:
@@ -97,8 +97,8 @@ def assert_source_safe(repo_root: pathlib.Path, source: str) -> pathlib.Path:
     if ".." in pathlib.PurePosixPath(source).parts:
         raise ValueError(f"source must not contain '..': {source}")
     # 解決後パスがリポジトリルート配下であることを確認
-    resolved = (repo_root / source).resolve()
-    repo_resolved = repo_root.resolve()
+    resolved = (repo_root / source).resolve
+    repo_resolved = repo_root.resolve
     if repo_resolved not in resolved.parents and resolved != repo_resolved:
         raise ValueError(f"source resolves outside of repo: {source}")
     return resolved
@@ -130,7 +130,7 @@ def sync_marketplace_readme(repo_root: pathlib.Path):
     # 3. README.md 内のテーブルを置換
     readme = repo_root / "README.md"
     with open(readme, encoding="utf-8") as f:
-        content = f.read()
+        content = f.read
 
     new_content = replace_section(content, "## プラグイン一覧", table)
 

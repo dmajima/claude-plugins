@@ -24,12 +24,12 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:__init__()`:
+`convert_from_pptx.py:__init__`:
 ```python
 self.first_slide_as_title = not bool(args.no_first_slide_as_title)
 ```
 
-`_convert_slide()`:
+`_convert_slide`:
 ```python
 if slide_no == 1 and self.first_slide_as_title:
     heading = f"# {title or 'タイトル'}"

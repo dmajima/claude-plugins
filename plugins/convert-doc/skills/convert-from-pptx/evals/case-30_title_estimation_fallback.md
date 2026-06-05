@@ -9,8 +9,8 @@
 
 ## 期待動作
 
-1. スライド 1: `_guess_title_shape()` の優先順位 A（最上部・薄い帯・短文）で TextBox をタイトル推定 → `## 導入`
-2. スライド 2: `_guess_title_shape()` の優先順位 B（章扉中央・最大フォントに近い大型テキスト）でタイトル推定
+1. スライド 1: `_guess_title_shape` の優先順位 A（最上部・薄い帯・短文）で TextBox をタイトル推定 → `## 導入`
+2. スライド 2: `_guess_title_shape` の優先順位 B（章扉中央・最大フォントに近い大型テキスト）でタイトル推定
 3. いずれも代替推定パスを通り、placeholder ベースの推定にフォールバックしない
 4. 終了コード: 0
 
@@ -28,7 +28,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_guess_title_shape()` の閾値は **EMU 絶対値** で実装されている:
+`convert_from_pptx.py:_guess_title_shape` の閾値は **EMU 絶対値** で実装されている:
 - 優先順位 A: `top <= TOP_THRESHOLD_EMU (1_500_000)` かつ `height <= HEIGHT_THRESHOLD_EMU (1_400_000)` の短文（`MAX_TITLE_LEN = 80` 文字以下）
 - 優先順位 B: `is_section_cover_layout` かつ `font_size_max_pt >= max_font_pt * 0.8`
 

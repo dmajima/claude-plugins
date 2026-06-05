@@ -35,7 +35,7 @@ case-02 と同じ要領で、追加対象スキルが **旧構造（廃止済）
 |---------------------------------|-------|
 | スキル直下 `scripts/{業務}/` | `references/scripts/{業務}/` にリネーム |
 | スキル直下 `requirements.txt` / `scripts/deps/requirements.txt` | **既存プラグイン直下** `references/scripts/setup/requirements.txt` にマージ（バージョン競合あればユーザ確認） |
-| スキル直下 `setup_venv.sh` / `setup_venv.sh` 等 | 削除（プラグイン直下 `setup_venv.sh` を再利用、Bash 標準・PowerShell フォールバック） |
+| スキル直下 `setup_venv.sh` / `setup_venv.sh` 等 | 削除（プラグイン直下 `setup_venv.sh` を再利用） |
 
 バージョン競合時の 3 択分岐（上書き / 維持 / キャンセル）は case-02 Phase 5.5 の競合判断分岐と同じ動作とする（キャンセル時は追加全体をロールバック）。
 

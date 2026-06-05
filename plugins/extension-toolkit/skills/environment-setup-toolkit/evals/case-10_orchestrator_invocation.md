@@ -27,17 +27,6 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
   -WorkDir "$WorkDir" \
   -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
-  -WorkDir "$WorkDir" `
-  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
-```
-
-</details>
-
 スクリプト内部で:
 - work_dir 安全装置（`.claude/.local/` 配下チェック）
 - python 検出（`python` → `python3` → `py`、`-m venv --help` で実体検証）
@@ -80,15 +69,6 @@ Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>"
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" -WorkDir "$WorkDir"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" -WorkDir "$WorkDir"
-```
-
-</details>
-
 | 観点 | 内容 |
 |-----|------|
 | 安全装置 | teardown_venv.sh 内 2 段ガード（`[System.IO.Path]::GetFullPath` 正規化 + `.claude/.local/` 限定）が常に動作 |

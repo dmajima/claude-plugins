@@ -1,4 +1,4 @@
-# Architecture Decision Records (maintenance/plugin-updater)
+﻿# Architecture Decision Records (maintenance/plugin-updater)
 
 `maintenance` プラグインの `plugin-updater` スキル固有の設計判断記録（旧 `plugins-update` プラグインの ADR を継承し、ADR-PU-010 で統合決定）。プラグイン横断の規約は親マーケットプレイス側
 （`extension-toolkit/references/architecture-decisions.md`）を参照。
@@ -13,14 +13,15 @@
 |------|---------|------|------------------|----------------------------|
 | ADR-PU-001 | 単一プラグイン化（vs marketplace-toolkit への統合 / vs スキル化） | **Superseded by ADR-PU-010** | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-002 | 公式 CLI 委譲（vs 低レベル git 操作 / vs 内部実装）— **Trigger ADR** | Accepted | 2026-05-01 (v1.0.0) | 2026-05-01 (v1.0.0) |
-| ADR-PU-003 | Phase A-0〜G 固定順序 | Accepted | 2026-05-01 (v1.0.0) | 2026-05-03 (v1.1.0 / A-3 追加) |
+| ADR-PU-003 | Phase A-0〜G 固定順序 | Accepted | 2026-06-05 (target 導入) | 2026-06-05 (target 導入 / B/C スキップ追加) |
 | ADR-PU-004 | 横断ルール SSOT 配置（cross-cutting-rules.md への分離） | Accepted | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-005 | exit code 一次判定 + Unknown 区分 | Accepted | 2026-05-01 (v1.0.0) | 2026-05-01 (v1.0.0) |
 | ADR-PU-006 | サーキットブレーカー閾値と粒度 | Accepted | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-007 | 失敗対応の対話モデル | Accepted | N/A | 2026-05-01 (v1.0.0) |
 | ADR-PU-008 | コマンドとスキルの責務分離（トリガー / 実作業） | Accepted | N/A | 2026-05-01 (v1.0.0) |
-| ADR-PU-009 | installed_plugins.json をスコープ判定の SSOT に採用（Phase A-3） | Accepted | 2026-05-03 (v1.1.0) | 2026-05-03 (v1.1.0) |
+| ADR-PU-009 | installed_plugins.json をスコープ判定の SSOT に採用（Phase A-3） | Accepted | 2026-06-05 (target 導入 / projectPath 活用拡張) | 2026-06-05 (target 導入 / projectPath 活用拡張) |
 | ADR-PU-010 | `maintenance` プラグインへの統合（ADR-PU-001 の発展形）| Accepted | N/A | 2026-05-18 (maintenance v0.2.0) |
+| ADR-PU-015 | 全プロジェクト更新と `target` パラメータの導入（`scope` 廃止） | Accepted | 2026-06-05 | 2026-06-05 |
 
 > **追従漏れ検知**: 「最終 CLI 仕様確認日」「最終 Future Direction 改訂日」列は ADR-PU-002（Trigger ADR）
 > の改訂時に追従が必要な ADR を可視化するため。本表が SSOT。CLI 仕様変更時は ADR-PU-002 の
@@ -177,7 +178,7 @@ CLI が `--output json` 等の構造化出力モードを提供したら、ADR-P
 > **A-0-2 検証強化案**:
 > - **セッション内初回のみ INFO 提示**: 現在は毎回提示する設計だが、同セッション内で `/update-all` を
 >   複数回実行する運用シナリオではノイズ化する。Claude Code がセッションスコープ状態保持機構を
->   提供したら「セッション内初回のみ提示」「`--scope` 指定時の省略可」等の条件付き提示に発展させる
+>   提供したら「セッション内初回のみ提示」「`target=current-project` 指定時の省略可」等の条件付き提示に発展させる
 > - **`--verify-cli-signature` フラグの導入**: 明示指定時のみ OS 別の署名検証コマンド
 >   （`codesign -v` / `Get-AuthenticodeSignature` / `dpkg -V`）を自動実行するオプションを追加し、
 >   セキュリティ重視ユーザの真正性確認を自動化する
@@ -197,13 +198,13 @@ CLI が `--output json` 等の構造化出力モードを提供したら、ADR-P
 
 | Phase | 内容 | 実行順 |
 |-------|------|-------|
-| A-0-1 | 引数バリデーション（`--scope` 値のホワイトリスト照合） | 1（最優先） |
+| A-0-1 | 引数バリデーション（`target` 値のホワイトリスト照合） | 1（最優先） |
 | A-0-2 | Claude Code CLI 存在チェック + 必要サブコマンド連続文字列照合 | 2 |
 | A | 対象収集（`marketplace list` + `enabledPlugins` 抽出） | 3 |
 | A-1 | プラグイン名・MP 名・スコープ名の入力検証（XR-1） | 4 |
 | A-2 | マーケットプレイス整合性検証（`enabledPlugins` の MP が `marketplace list` に存在するか） | 5 |
 | A-3 | スコープ真値判定（`installed_plugins.json` の `scope` / `projectPath` を SSOT として project/local の現在のプロジェクト外エントリ等を除外。詳細は ADR-PU-009） | 6 |
-| B | マーケットプレイス更新（`--scope` 指定でも常に実行） | 7 |
+| B | マーケットプレイス更新（`target=current-project` ではスキップ） | 7 |
 | C | User スコープのプラグイン更新 | 8 |
 | D | Project スコープのプラグイン更新 | 9 |
 | E | Local スコープのプラグイン更新 | 10 |
@@ -235,8 +236,9 @@ CLI が `--output json` 等の構造化出力モードを提供したら、ADR-P
 - **MP → User → Project → Local** の固定順は、(a) マーケットプレイス本体が SSOT のため最新化を
   プラグイン更新より先に行う必要があり、(b) スコープは上書き優先順位（より狭いスコープが優先）の
   逆順で更新することで「広いスコープから順に最新化される」ためユーザの認知モデルに合致する。
-- **Phase B を `--scope` 指定でも常に実行** する理由: マーケットプレイスは全プラグインの SSOT であり、
-  スコープ限定更新でも最新の MP インデックスが必要なため。
+- **Phase B を `target=all` では常に実行** する理由: マーケットプレイスは全プラグインの SSOT であり、
+  プラグイン更新前に最新の MP インデックスが必要なため。`target=current-project` では Phase B をスキップする
+  （現在のプロジェクトの project/local のみ対象のため。ADR-PU-015 参照）。
 - **冪等性**: 同一 (plugin, marketplace) を複数スコープで処理しても CLI 側で冪等性が保証される
   （`enabledPlugins` がスコープごとに独立 SSOT であるため）。
 
@@ -1114,8 +1116,8 @@ maintenance キャッシュへの干渉は行わない（責務分離の明示�
 
 ### Context
 
-`plugin-updater` スキルは ADR-PU-008 で「`/update-all` コマンド経由のみ起動」と方針化したが、
-SKILL.md の description には `Use only when explicitly invoked via /update-all` と記載しても、
+`plugin-updater` スキルは ADR-PU-008 で「コマンド経由のみ起動」と方針化したが、
+SKILL.md の description には `Use only when explicitly invoked via /update-all or /update` と記載しても、
 Claude Code の AI トリガー判定は description のキーワード適合度で起動を判断するため、
 ユーザが「プラグインを最新にして」等と発話した場合、AI が直接スキルを起動する可能性が残る。
 
@@ -1127,9 +1129,9 @@ Cycle 5 アーキレビュー H-arch-3 で「直接起動時の引数不在に�
 
 | 起動経路 | 引数渡し | フェイルセーフ動作 |
 |---------|---------|------------------|
-| `/update-all` コマンド経由 | `mode=<value> scope=<value>` を明示 | コマンド側が validated 済みの値を渡す |
-| AI 直接起動 | `mode` / `scope` 不在または空文字列 | `mode = normal`, `scope = all` を採用 |
-| `mode` / `scope` に不正値 | 任意 | A-0-1 で早期失敗（既存挙動） |
+| `/update-all` または `/update` コマンド経由 | `mode=<value> target=<value>` を明示 | コマンド側が validated 済みの値を渡す |
+| AI 直接起動 | `mode` / `target` 不在または空文字列 | `mode = normal`, `target = all` を採用 |
+| `mode` / `target` に不正値 | 任意 | A-0-1 で早期失敗（既存挙動） |
 
 ### Rationale
 
@@ -1141,3 +1143,62 @@ Cycle 5 アーキレビュー H-arch-3 で「直接起動時の引数不在に�
 
 - v0.2.x: SKILL.md「起動コンテキスト」に既定値を明示（Cycle 6 完了）
 - v0.3.0+: phase-flow.md A-0-1 にフェイルセーフ判定の擬似コードを追加する案を検討
+
+---
+
+## ADR-PU-015: 全プロジェクト更新と `target` パラメータの導入（`scope` 廃止）
+
+### Context
+
+v1.1.x までは `--scope` パラメータ（`user` / `project` / `local` / `all`）で更新対象スコープを
+指定していたが、以下の運用上の課題があった:
+
+1. **クロスプロジェクト更新の欠如**: `--scope project` / `--scope local` は現在の `<repo>` 配下の
+   プラグインのみを対象とし、他プロジェクトにインストールされたプラグインは「Skipped（現在のプロジェクト外）」
+   としてスキップされた（ADR-PU-009 Phase A-3）。ユーザは各プロジェクトで個別に `/update-all` を
+   実行する必要があり、全環境の一括更新ができなかった。
+2. **スコープ指定の複雑さ**: `--scope` の使い分けは直感的でなく、「全部更新したい」ユースケースが
+   大半であった。
+
+### Decision
+
+- 旧 `--scope` パラメータを廃止し、`target` パラメータ（`all` / `current-project`）を導入する。
+- `/update-all` コマンドは `target=all` で起動し、**全プロジェクトのプラグインを一括更新** する。
+  `installed_plugins.json` の全 `projectPath` を走査し、ディレクトリが実在するものを更新対象とする。
+- `/update` コマンド（新設）は `target=current-project` で起動し、現在のプロジェクトの
+  Project / Local スコーププラグインのみを更新する（Marketplace / User スコープはスキップ）。
+
+### Rationale
+
+- **ユーザ体験の向上**: どのプロジェクトから `/update-all` を実行しても、全環境が最新化される。
+- **操作の単純化**: スコープ指定が不要になり、コマンド体系が明快になる（`/update-all` = 全部、
+  `/update` = 現在のプロジェクトだけ）。
+- **`installed_plugins.json` の活用深化**: ADR-PU-009 で SSOT として採用した
+  `installed_plugins.json` の `projectPath` フィールドを、フィルタリングだけでなく
+  更新先ディレクトリの発見にも活用する。
+
+### Trade-offs
+
+- **クロスプロジェクト更新のセキュリティ面**: 各 `projectPath` ディレクトリへの `cd` が発生する。
+  XR-1 パス検証（A-3-3-pre）を `projectPath` に対しても適用することで、パストラバーサル等の
+  リスクを排除する（ADR-PU-009 で既に実装済み）。
+- **実行時間の増大**: 全プロジェクトを走査するため、プロジェクト数が多い場合に実行時間が伸びる。
+  XR-2 の全体タイムアウト（30 分）で暴走を防ぐ。
+- **`--scope` の後方互換性の喪失**: 旧 `--scope` 引数は受け付けない。ただし `--scope` を使う
+  ユースケースの大半は `target=all`（旧 `--scope all` 相当）で代替可能であり、特定スコープのみ
+  更新したいケースは `/update`（現在のプロジェクトの project/local のみ）でカバーする。
+- **`projectPath` ディレクトリの不在**: プロジェクトが移動・削除された場合、
+  `Skipped（projectPath ディレクトリ不在）` として記録し、Phase F-4 でユーザに案内する。
+
+### Alternatives Considered
+
+- **`--scope` を維持しつつ `--all-projects` フラグを追加**: パラメータが増えて複雑化。却下。
+- **`projectPath` の自動修復（ディレクトリ移動の検知）**: Claude Code 側の責務であり、
+  本プラグインの範囲外。却下。
+
+### Future Direction
+
+- CLI が `claude plugin update --project-path <path>` 等のフラグを提供した場合、`cd` による
+  ディレクトリ変更を CLI 引数に置き換える。
+- `installed_plugins.json` の `projectPath` が相対パスで記録されるケースへの対応（現状は
+  絶対パスのみを前提としている）。

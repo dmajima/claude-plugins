@@ -8,8 +8,8 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` を通過
-2. `_walk_shape_to_dict()` がグループの再帰で `depth + 1` を渡す
+1. `_validate_pptx` を通過
+2. `_walk_shape_to_dict` がグループの再帰で `depth + 1` を渡す
 3. depth = 21 に到達した時点で関数冒頭の `depth > MAX_GROUP_DEPTH` 判定が True
 4. `ValueError` を raise
 5. メッセージ: `Group nesting exceeds MAX_GROUP_DEPTH (20) on slide N`
@@ -23,7 +23,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_walk_shape_to_dict()`:
+`convert_from_pptx.py:_walk_shape_to_dict`:
 ```python
 def _walk_shape_to_dict(self, ..., depth: int = 0) -> None:
     if depth > MAX_GROUP_DEPTH:

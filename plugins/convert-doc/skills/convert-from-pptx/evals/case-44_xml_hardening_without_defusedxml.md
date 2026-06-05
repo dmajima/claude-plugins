@@ -11,9 +11,9 @@
 
 1. スクリプト起動時に `defusedxml` への依存は無いため、import エラー・AttributeError・exit はいずれも発生しない
 2. python-pptx の lxml に対する XML 攻撃保護は、以下の多層防御で代替される:
-   - `_validate_pptx()` の **ZIP bomb 検査**（`MAX_TOTAL_UNCOMPRESSED_BYTES = 256 MiB` / `MAX_COMPRESSION_RATIO = 200`）
+   - `_validate_pptx` の **ZIP bomb 検査**（`MAX_TOTAL_UNCOMPRESSED_BYTES = 256 MiB` / `MAX_COMPRESSION_RATIO = 200`）
    - **上限定数**（`MAX_SLIDES` / `MAX_SHAPES_PER_SLIDE` / `MAX_GROUP_DEPTH` / `MAX_TEXT_PER_SHAPE` / `MAX_TOTAL_IMAGE_BYTES` / `MAX_IMAGE_COUNT_PER_PPTX`）
-   - スクリプト独自の lxml 解析（SmartArt 等）は `_hardened_xml_parser()` 経由（`resolve_entities=False / no_network=True / load_dtd=False / huge_tree=False`）
+   - スクリプト独自の lxml 解析（SmartArt 等）は `_hardened_xml_parser` 経由（`resolve_entities=False / no_network=True / load_dtd=False / huge_tree=False`）
 3. 通常の変換処理が実行され、Markdown が生成される
 4. 終了コード: 0
 
@@ -33,11 +33,11 @@
 
 ```python
 # XML 攻撃対策（XXE / Billion Laughs / DTD / external entity, CWE-611 / CWE-776）:
-# - 本スクリプト独自の lxml 解析は `_hardened_xml_parser()` で
+# - 本スクリプト独自の lxml 解析は `_hardened_xml_parser` で
 #   resolve_entities=False / no_network=True / load_dtd=False / huge_tree=False を適用.
 # - python-pptx 内部の lxml は直接ハードニングしない代わりに、`_validate_pptx` の
 #   ZIP bomb 検査 と 上限定数 で DoS / 巨大エンティティ展開の影響範囲を限定する.
-# - 旧コード `defusedxml.lxml.monkey_patch_lxml()` は defusedxml 0.7 で API が
+# - 旧コード `defusedxml.lxml.monkey_patch_lxml` は defusedxml 0.7 で API が
 #   削除されたため撤去した（呼び出すと AttributeError → fail-close で起動不能）.
 ```
 

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # sync-mappings.sh - sync 対象マッピング管理 (Bash + jq CRUD)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: sync-mappings.ps1 (機能等価、歴史的経緯で保持)
 #
 # 引数:
 #   -Action <get|set|delete|list|show>  必須
@@ -67,7 +65,7 @@ fi
 CONFIG_DIR="$home_dir/.claude/.local/plugins/maintenance"
 CONFIG_FILE="$CONFIG_DIR/sync-mappings.json"
 
-# PowerShell 版 (sync.ps1 / sync-push.ps1) と同じ既定 targets
+# 既定 targets
 DEFAULT_GLOBAL_TARGETS='["settings.json","skills","rules","agents","hooks","CLAUDE.md"]'
 DEFAULT_PROJECT_TARGETS='[".claude/settings.json",".claude/skills",".claude/rules",".claude/agents",".claude/hooks",".claude/CLAUDE.md"]'
 

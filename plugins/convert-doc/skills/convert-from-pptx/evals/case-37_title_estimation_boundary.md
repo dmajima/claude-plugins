@@ -12,7 +12,7 @@
 
 ## 期待動作
 
-1. スライドの placeholder にタイトル shape がない場合に `_guess_title_shape()` が起動
+1. スライドの placeholder にタイトル shape がない場合に `_guess_title_shape` が起動
 2. 優先順位 A: `top <= TOP_THRESHOLD_EMU (1_500_000)` かつ `height <= HEIGHT_THRESHOLD_EMU (1_400_000)` かつ短文（`MAX_TITLE_LEN = 80` 字以下）
 3. 優先順位 B: `is_section_cover_layout` かつ `font_size_max_pt >= max_font_pt * 0.8`
 4. いずれも該当しない場合は `## スライド<N>` フォールバック
@@ -25,7 +25,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_guess_title_shape()` の定数:
+`convert_from_pptx.py:_guess_title_shape` の定数:
 ```python
 TOP_THRESHOLD_EMU = 1_500_000
 HEIGHT_THRESHOLD_EMU = 1_400_000

@@ -9,9 +9,9 @@
 
 ## 期待動作
 
-1. `_is_smartart()` が graphic frame の URI に "diagram" を検出
-2. `_smartart_to_mermaid()` が `dgm:relIds` から data part の rel id を取得
-3. data part の XML を `lxml.etree.fromstring()` で読み込み
+1. `_is_smartart` が graphic frame の URI に "diagram" を検出
+2. `_smartart_to_mermaid` が `dgm:relIds` から data part の rel id を取得
+3. data part の XML を `lxml.etree.fromstring` で読み込み
 4. `dgm:pt` から modelId とテキストを抽出
 5. `dgm:cxn[type="parOf"]` のみエッジ採用
 6. ノード ID は modelId の英数字部分を `S` プレフィックス + 20 文字以内
@@ -36,7 +36,7 @@ flowchart TD
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_smartart_to_mermaid()`:
+`convert_from_pptx.py:_smartart_to_mermaid`:
 ```python
 for connection in data_xml.findall(".//dgm:cxn", namespaces=ns):
     src = connection.get("srcId")
@@ -49,4 +49,4 @@ for connection in data_xml.findall(".//dgm:cxn", namespaces=ns):
 ## 関連ケース
 
 - [case-05_flowchart_mermaid.md](case-05_flowchart_mermaid.md): 図形 + コネクタ
-- 解析できない構造は `_smartart_fallback_text()` で `> SmartArt（テキスト抽出）:` 形式に
+- 解析できない構造は `_smartart_fallback_text` で `> SmartArt（テキスト抽出）:` 形式に

@@ -13,16 +13,6 @@ key = re.search(r'/share/([^/?#]+)', url).group(1)
 ```
 
 ## 2. HTML から buildId を取得
-
-<details><summary>PowerShell フォールバック (Bash 等価は未整備)</summary>
-
-```powershell
-$resp = Invoke-WebRequest -Uri "https://dashboard.ailead.app/share/$key" -UseBasicParsing
-$buildId = [regex]::Match($resp.Content, '"buildId":"([^"]+)"').Groups[1].Value
-```
-
-</details>
-
 buildId は Next.js のデプロイごとに変わるため、毎回 HTML から動的に取得する。
 
 ## 3. JS チャンクから operationHash を取得（必要時のみ）
@@ -33,18 +23,6 @@ buildId は Next.js のデプロイごとに変わるため、毎回 HTML から
 ```bash
 # HTML から share ページの JS チャンク URL を抽出
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-# HTML から share ページの JS チャンク URL を抽出
-$jsUrl = [regex]::Match($resp.Content, '/_next/static/chunks/pages/share/%5Bkey%5D-[^"]+\.js').Value
-$jsResp = Invoke-WebRequest -Uri "https://dashboard.ailead.app$jsUrl" -UseBasicParsing
-$hash = [regex]::Match($jsResp.Content, 'externalShare/dataflow/query.*?hash:"([0-9a-f]{64})"').Groups[1].Value
-```
-
-</details>
-
 ## 4. GraphQL API を呼び出す
 
 ### 4.1 Python スクリプト経由（推奨）
@@ -57,22 +35,6 @@ $hash = [regex]::Match($jsResp.Content, 'externalShare/dataflow/query.*?hash:"([
   --url "https://dashboard.ailead.app/share/<key>" \
   --output "$SESSION_DIR\workspace"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& chcp.com 65001 | Out-Null
-[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
-
-$venvPy = "$SESSION_DIR\workspace\.venv\Scripts\python.exe"
-& $venvPy "${env:CLAUDE_SKILL_DIR}\scripts\fetch\fetch_share.py" `
-  --url "https://dashboard.ailead.app/share/<key>" `
-  --output "$SESSION_DIR\workspace"
-```
-
-</details>
-
 スクリプトは以下を自動実行する:
 - share key の抽出
 - buildId の取得
@@ -92,27 +54,6 @@ operationName = 'externalShare'
     -Method Post -Body $jsonBody \
     -ContentType 'application/json; charset=utf-8' -UseBasicParsing
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-$body = @{
-    operationName = 'externalShare'
-    variables = @{ key = $shareKey }
-    extensions = @{
-        operationHash = $hash
-        buildId = $buildId
-    }
-} | ConvertTo-Json -Depth 5
-
-$jsonBody = [System.Text.Encoding]::UTF8.GetBytes($body)
-$resp = Invoke-WebRequest -Uri 'https://dashboard.ailead.app/api/v2/graphql' `
-    -Method Post -Body $jsonBody `
-    -ContentType 'application/json; charset=utf-8' -UseBasicParsing
-```
-
-</details>
-
 ## 5. レスポンスの処理
 
 ### 5.1 成果物の配置
@@ -152,19 +93,6 @@ ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=$shareKey" -
 # 音声のみ
 ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=$shareKey" -vn -acodec copy output.aac
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-# MP4 (映像+音声)
-ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=$shareKey" -c copy output.mp4
-
-# 音声のみ
-ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=$shareKey" -vn -acodec copy output.aac
-```
-
-</details>
-
 ## 7. エラーハンドリング
 
 | エラー | 原因 | 対処 |

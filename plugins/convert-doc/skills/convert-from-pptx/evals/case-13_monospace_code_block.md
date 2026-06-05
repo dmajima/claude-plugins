@@ -32,21 +32,21 @@ let y = x + 1;
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_convert_text_frame()`:
+`convert_from_pptx.py:_convert_text_frame`:
 ```python
 code_buffer: List[str] = []
 
-def flush_code():
+def flush_code:
     if code_buffer:
         rendered_paragraphs.append("```\n" + "\n".join(code_buffer) + "\n```")
-        code_buffer.clear()
+        code_buffer.clear
 
 for paragraph in text_frame.paragraphs:
     if self._is_monospace_paragraph(paragraph):
         raw = "".join((run.text or "") for run in paragraph.runs)
         code_buffer.append(raw)
         continue
-    flush_code()
+    flush_code
 ```
 
 ## 関連ケース

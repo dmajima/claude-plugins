@@ -6,7 +6,7 @@
 
 ## 期待動作
 
-1. `_validate_pptx()` でファイル先頭 4 バイトを読み取り
+1. `_validate_pptx` でファイル先頭 4 バイトを読み取り
 2. `PK\x03\x04` と一致しない → `ValueError`
 3. メッセージ: `Input file is not a valid PPTX (zip magic): <path>`
 4. stderr に出力して `sys.exit(1)`
@@ -18,7 +18,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_validate_pptx()`:
+`convert_from_pptx.py:_validate_pptx`:
 ```python
 with open(path, "rb") as fh:
     magic = fh.read(4)

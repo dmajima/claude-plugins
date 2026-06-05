@@ -28,28 +28,6 @@ argument-hint: "[--show] [--set-... N|name] [--reset --yes]"
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.sh" "${args[@]}"
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
-
-$argText = '$ARGUMENTS'
-$params  = @{}
-
-if ($argText -match '\B--show\b')                              { $params.Show                    = $true }
-if ($argText -match '--set-days\s+(\d+)\b')                    { $params.SetDays                 = [int]$matches[1] }
-if ($argText -match '--set-keep-recent\s+(\d+)\b')             { $params.SetKeepRecent           = [int]$matches[1] }
-if ($argText -match '--set-scope\s+(global|project|both)\b')   { $params.SetScope                = $matches[1] }
-if ($argText -match '--set-active-minutes\s+(\d+)\b')          { $params.SetActiveSessionMinutes = [int]$matches[1] }
-if ($argText -match '\B--reset\b')                             { $params.Reset                   = $true }
-if ($argText -match '\B--yes\b')                               { $params.Yes                     = $true }
-
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.ps1" @params
-```
-
-</details>
-
 ## 2. 対話モード（`$ARGUMENTS` が空）
 
 **AskUserQuestion 1 回で 4 質問を同時発火** し、`default_days` → `default_keep_recent` → `default_scope` → `active_session_minutes` の順に一気に設定する。
@@ -179,16 +157,6 @@ options: [
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.sh" -SetDays 90 -SetKeepRecent 3 -SetScope global -SetActiveSessionMinutes 10
 ```
-
-<details><summary>PowerShell フォールバック</summary>
-
-```powershell
-& chcp.com 65001 | Out-Null; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $OutputEncoding = [System.Text.Encoding]::UTF8;
-pwsh -NoProfile -File "${env:CLAUDE_PLUGIN_ROOT}/skills/cleanup-workspace/references/scripts/cleanup/cleanup-config.ps1" -SetDays 90 -SetKeepRecent 3 -SetScope global -SetActiveSessionMinutes 10
-```
-
-</details>
-
 ### Step 4: 完了報告
 
 更新後の設定全体を表示し、変更前→変更後の差分をユーザに提示する。

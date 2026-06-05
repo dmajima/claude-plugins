@@ -1,6 +1,6 @@
 # case-21 manifest entries_sha256 tamper detection
 
-`<base>/embeddings_cache/manifest.json` の `entries` を書き換えても `entries_sha256` を更新し忘れた攻撃シナリオで、`load_manifest()` が **自己整合性チェックで全件破棄** することを確認するエラー系。
+`<base>/embeddings_cache/manifest.json` の `entries` を書き換えても `entries_sha256` を更新し忘れた攻撃シナリオで、`load_manifest` が **自己整合性チェックで全件破棄** することを確認するエラー系。
 
 ## 入力
 
@@ -37,8 +37,8 @@ p.write_text(json.dumps(data), encoding='utf-8')
 
 | Phase | 動作 |
 |-------|------|
-| 1 | `route.route()` が `embedding_enrich.load_manifest(base)` を呼ぶ |
-| 2 | `load_manifest()` で manifest を JSON パース後、`entries_sha256` を取得 |
+| 1 | `route.route` が `embedding_enrich.load_manifest(base)` を呼ぶ |
+| 2 | `load_manifest` で manifest を JSON パース後、`entries_sha256` を取得 |
 | 3 | 現在の `entries` から `_compute_entries_signature(entries)` を再計算 |
 | 4 | 記録値と再計算値が不一致 → **空 dict 返却** |
 | 5 | `route.py` で `qn_to_idx` が空 → `embedding_route.boost_rows` 呼出スキップ |
@@ -55,7 +55,7 @@ p.write_text(json.dumps(data), encoding='utf-8')
 
 ## 分岐の根拠
 
-`references/scripts/lib/embedding_enrich.py` の `_compute_entries_signature()` 自己整合チェック（B11 で追加、`test_embedding_enrich.py::test_load_manifest_rejects_tampered_entries` でユニット保証）。manifest 自体の改竄を best-effort で検出する CWE-345 緩和策の eval 形式化（review evals M-8）。
+`references/scripts/lib/embedding_enrich.py` の `_compute_entries_signature` 自己整合チェック（B11 で追加、`test_embedding_enrich.py::test_load_manifest_rejects_tampered_entries` でユニット保証）。manifest 自体の改竄を best-effort で検出する CWE-345 緩和策の eval 形式化（review evals M-8）。
 
 ## 関連ケース
 

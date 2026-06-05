@@ -7,7 +7,7 @@
 
 ## 期待動作
 
-1. `_handle_picture()` で `len(blob)` を計測
+1. `_handle_picture` で `len(blob)` を計測
 2. `self.max_image_bytes`（5 MiB）を超過
 3. stderr に `Warning: image too large (...) > 5242880` を出力
 4. バイナリ書き込みをスキップ
@@ -26,7 +26,7 @@
 
 ## 分岐の根拠
 
-`convert_from_pptx.py:_handle_picture()`:
+`convert_from_pptx.py:_handle_picture`:
 ```python
 if size > self.max_image_bytes:
     print(f"Warning: image too large ...", file=sys.stderr)

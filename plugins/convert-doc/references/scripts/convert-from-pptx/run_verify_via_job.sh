@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # verify_md.py を Bash 経由で起動するラッパー (Bash 版)
 #
-# 通常運用は本スクリプトを利用する。
-# PowerShell フォールバック: run_verify_via_job.ps1 （Git Bash 不調時等）
 #
 # verify_md.py は内部で python-pptx を使うが、Bash ツール経由なら
 # Windows での python-pptx ハング事象は再現しないため、PowerShell 版のような
