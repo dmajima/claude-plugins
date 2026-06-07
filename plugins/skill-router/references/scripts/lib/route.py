@@ -54,7 +54,6 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "high_score": 8.0,
         "high_ratio": 1.10,
         "mid_score": 4.0,
-        "mid_ratio": 1.02,
     },
     "candidate_filter": {
         "max_candidates_per_route": 50,
@@ -330,7 +329,7 @@ def determine_tier(
     ratio = top1 / max(top2, 0.1)
     if top1 >= thresholds["high_score"] and ratio >= thresholds["high_ratio"]:
         return "high"
-    if top1 >= thresholds["mid_score"] and ratio >= thresholds.get("mid_ratio", 1.0):
+    if top1 >= thresholds["mid_score"]:
         return "mid"
     return "low"
 
