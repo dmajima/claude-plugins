@@ -99,20 +99,17 @@ plugins/{plugin-name}/
 
 呼び出し側（各スキル）は以下の 3 ステップのみを実施する:
 
-```powershell
+`ash
 # 1. 構築（セッション開始時）
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.ps1" `
-  -WorkDir "$SessionDir/workspace" `
-  -RequirementsPath "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$SessionDir/workspace"
 
 # 2. Python 実行（Start-Job ラッパー経由必須・5.5 参照）
-pwsh -NoProfile -File "$env:CLAUDE_SKILL_DIR/references/scripts/{業務}/run_via_job.ps1" `
-  -PythonExe "$SessionDir/workspace/.venv/Scripts/python.exe"
+bash "$CLAUDE_SKILL_DIR/references/scripts/{業務}/run_via_job.sh" -PythonExe "$SessionDir/workspace/.venv/Scripts/python.exe"
 
 # 3. 撤去（セッション完了時）
-pwsh -NoProfile -File "$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.ps1" `
-  -WorkDir "$SessionDir/workspace"
-```
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" -WorkDir "$SessionDir/workspace"
+`
+
 venv 内部のロジック（python コマンド検出・pip 操作・OS 別パス分岐等）はすべて setup スクリプト側で完結させる。
 
 ### 5.5 Python 子プロセス起動は Start-Job 経由ラッパー必須（MANDATORY）

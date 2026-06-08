@@ -242,7 +242,7 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 
 Windows + PowerShell + python-pptx 等で Python 子プロセスがハングする既知事象
 （[`powershell-pitfalls.md`](../../../references/guides/powershell-pitfalls.md) 節 7.3 / グローバルルール
-`~/.claude/rules/tools/python-subprocess-hang-windows.md`）を踏まえ、
+[`~/.claude/rules/tools/python-subprocess-hang-windows.md`](file:///C:/Users/wwdmajima/.claude/rules/tools/python-subprocess-hang-windows.md)）を踏まえ、
 プラグイン配下に `.py` ファイルが存在する場合、その実行手順が **Start-Job 経由ラッパー** を介しているかをレビューする。
 
 | 検査項目 | 重大度 | 検出方法 |
