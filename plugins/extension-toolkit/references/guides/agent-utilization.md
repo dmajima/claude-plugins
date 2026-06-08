@@ -1,4 +1,4 @@
-# エージェント活用ルール（SSOT）
+﻿# エージェント活用ルール（SSOT）
 
 メインコンテキストの圧迫を避けるため、Claude Code が提供するサブエージェント・専用機能を積極的に活用するルール。
 
@@ -84,12 +84,12 @@ Agent({
 
 ### 5.0 レビューはフレッシュインスタンスで起動する（ADR-021 必須）
 
-第三者レビューは **必ず新規 Agent インスタンス**（過去の議論履歴・修正実装履歴を持たないインスタンス）で起動する。修正実装と同一コンテキストでレビューを行ってはならない。詳細・スポーンプロンプト骨格・引き継ぎ事項は [`review-freshness.md`](review-freshness.md) を参照。
+第三者レビューは **必ず新規 Agent インスタンス**（過去の議論履歴・修正実装履歴を持たないインスタンス）で起動する。修正実装と同一コンテキストでレビューを行ってはならない。詳細・スポーンプロンプト骨格・引き継ぎ事項は [`review-freshness.md`](../checklists/review-freshness.md) を参照。
 
 ### 5.1 グローバル専門家エージェント（`~/.claude/agents/`）
 
 > **利用者環境非依存性に関する注意（ADR-022）**:
-> グローバルエージェントは利用者環境にのみ存在するため、本プラグインがそれらに依存すると **利用者ごとに動作が異なる** 可能性がある。本プラグインは段階的に主要エージェントを `agents/` 配下に同梱化していく方針を採る。詳細は [`self-containment.md`](self-containment.md) 節 2.2 を参照。
+> グローバルエージェントは利用者環境にのみ存在するため、本プラグインがそれらに依存すると **利用者ごとに動作が異なる** 可能性がある。本プラグインは段階的に主要エージェントを `agents/` 配下に同梱化していく方針を採る。詳細は [`self-containment.md`](../policies/self-containment.md) 節 2.2 を参照。
 
 `~/.claude/agents/` 配下にプロジェクト横断の専門家エージェントが定義されている場合、利用可能なら利用する。例:
 
@@ -121,9 +121,9 @@ Agent({
 
 | チーム名 | 用途 | 定義ファイル（メンバー詳細はこちら） |
 |---------|------|-----------|
-| `plugin-review-team` | プラグイン横断レビュー | [`teams/plugin-review-team.md`](teams/plugin-review-team.md) |
-| `skill-review-team` | スキル単体レビュー | [`teams/skill-review-team.md`](teams/skill-review-team.md) |
-| `hook-security-team` | フック安全性レビュー | [`teams/hook-security-team.md`](teams/hook-security-team.md) |
+| `plugin-review-team` | プラグイン横断レビュー | [`teams/plugin-review-team.md`](../teams/plugin-review-team.md) |
+| `skill-review-team` | スキル単体レビュー | [`teams/skill-review-team.md`](../teams/skill-review-team.md) |
+| `hook-security-team` | フック安全性レビュー | [`teams/hook-security-team.md`](../teams/hook-security-team.md) |
 | （例）`gender-perspective-team` | 観点が 2 つに固定の場合の参考例（本プラグインでは未定義） | — |
 
 ### 5.4 単独並列起動するエージェント
@@ -243,8 +243,8 @@ Agent({ subagent_type: "evals-coverage-reviewer",
 |-----|---------|
 | 専門家エージェント・チーム設計 | [`../skills/agent-toolkit/references/team-design.md`](../skills/agent-toolkit/references/team-design.md) |
 | レビュー観点 | [`../skills/extension-reviewer/references/review-perspectives.md`](../skills/extension-reviewer/references/review-perspectives.md) |
-| レビューフレッシュ起動原則 | [`review-freshness.md`](review-freshness.md)（ADR-021） |
-| 自己完結性ポリシー | [`self-containment.md`](self-containment.md)（ADR-022） |
+| レビューフレッシュ起動原則 | [`review-freshness.md`](../checklists/review-freshness.md)（ADR-021） |
+| 自己完結性ポリシー | [`self-containment.md`](../policies/self-containment.md)（ADR-022） |
 
 > **グローバルルール（`~/.claude/rules/claude/`）への参照について**:
 > 利用者環境にあるグローバルルール（`agent-architecture.md` / `agent-teams.md` / `agent-usage.md`）は **存在すれば追加情報として参照可能** だが、本プラグインは ADR-022 準拠で利用者環境に依存しない。本ファイルおよびプラグイン内 SSOT のみで完結する設計とし、グローバルルール不在時のフォールバック動作を必要としない。グローバルルールは「あれば便利」な参考情報の位置付け。

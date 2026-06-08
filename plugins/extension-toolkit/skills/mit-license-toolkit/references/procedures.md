@@ -161,14 +161,14 @@ AskUserQuestion({
 
 ## 7. 検証
 
-完了前に以下を確認（[`../../../references/completion-checklist.md`](../../../references/completion-checklist.md) の自己検証フォーマットに従って報告）:
+完了前に以下を確認（[`../../../references/checklists/completion-checklist.md`](../../../references/checklists/completion-checklist.md) の自己検証フォーマットに従って報告）:
 
 - [ ] `plugins/{name}/LICENSE` 存在
 - [ ] `LICENSE` 本文が MIT 標準文（[`../template/LICENSE`](../template/LICENSE)）と一致
 - [ ] `Copyright (c) <year> <holder>` の `<year>` `<holder>` 空でなく、プレースホルダ未残存
 - [ ] `plugin.json.license == "MIT"`
 - [ ] `license-info.json`（保存した場合）が valid JSON、`version: 1`、`licenses[]` 1 件以上
-- [ ] パスポータビリティ合格（[`../../../references/path-portability.md`](../../../references/path-portability.md)）
+- [ ] パスポータビリティ合格（[`../../../references/policies/path-portability.md`](../../../references/policies/path-portability.md)）
 - [ ] エンコーディング UTF-8 / 改行 LF
 
 ## 8. エラーハンドリング

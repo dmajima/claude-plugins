@@ -61,7 +61,7 @@ Agent({ subagent_type: "{member-2}", prompt: "..." })                           
 - `description-trigger-reviewer`（プラグイン同梱）
 - 対象に応じたグローバル専門家（例: `architect`）
 
-最低 3 名を満たさない場合は適宜追加する。観点が 2 つに固定される対象（例: `gender-perspective` のような 2 視点固定）では 2 名でも可（[`agent-utilization.md`](../../../references/agent-utilization.md) 参照）。
+最低 3 名を満たさない場合は適宜追加する。観点が 2 つに固定される対象（例: `gender-perspective` のような 2 視点固定）では 2 名でも可（[`agent-utilization.md`](../../../references/guides/agent-utilization.md) 参照）。
 
 ## 機械チェックとの組み合わせ
 
@@ -69,7 +69,7 @@ Agent({ subagent_type: "{member-2}", prompt: "..." })                           
 
 ## フォールバック起動（チーム機能利用不可時）
 
-`TeamCreate` 機能が利用できない環境では、各チーム定義から **メンバー一覧 + スポーンプロンプト** を抽出し、`Agent` ツールでメンバーを **個別並列起動** する。詳細手順とチーム機能との差分は [`../../../references/agent-utilization.md`](../../../references/agent-utilization.md) の「6.1 チーム機能が利用できない環境でのフォールバック」を参照。
+`TeamCreate` 機能が利用できない環境では、各チーム定義から **メンバー一覧 + スポーンプロンプト** を抽出し、`Agent` ツールでメンバーを **個別並列起動** する。詳細手順とチーム機能との差分は [`../../../references/guides/agent-utilization.md`](../../../references/guides/agent-utilization.md) の「6.1 チーム機能が利用できない環境でのフォールバック」を参照。
 
 | 起動方式 | 適用条件 | 結果統合 |
 |---------|--------|--------|

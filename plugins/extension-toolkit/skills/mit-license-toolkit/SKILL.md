@@ -5,7 +5,7 @@ description: Claude Code プラグイン直下に MIT LICENSE と plugin.json �
 
 # MIT License Toolkit
 
-Claude Code プラグインに **MIT ライセンス** を付与・更新するスキル。`LICENSE` ファイルの生成、`plugin.json` の `license` フィールド設定、ライセンス情報（著作権者・年・別名）の保存・取得・選択を一括管理する（ADR-029 / [`../../references/license-policy.md`](../../references/license-policy.md) 準拠）。
+Claude Code プラグインに **MIT ライセンス** を付与・更新するスキル。`LICENSE` ファイルの生成、`plugin.json` の `license` フィールド設定、ライセンス情報（著作権者・年・別名）の保存・取得・選択を一括管理する（ADR-029 / [`../../references/policies/license-policy.md`](../../references/policies/license-policy.md) 準拠）。
 
 ## 責務
 
@@ -116,11 +116,11 @@ Claude Code プラグインに **MIT ライセンス** を付与・更新する�
 - [ ] `plugin.json` の `license == "MIT"`
 - [ ] `license-info.json` を新規保存した場合、`.claude/.local/plugins/extension-toolkit/` 配下に配置されている
 - [ ] `license-info.json` の `version` が `1`、`licenses[]` が valid JSON
-- [ ] パスポータビリティチェック合格（[`../../references/path-portability.md`](../../references/path-portability.md)）
+- [ ] パスポータビリティチェック合格（[`../../references/policies/path-portability.md`](../../references/policies/path-portability.md)）
 
 ### 8. 引き渡し
 
-**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、LICENSE 生成内容のプレビュー + `plugin.json.license` の値確認を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。法的文書のため軽微変更でも省略不可。
+**作業完了報告の前に必須**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、LICENSE 生成内容のプレビュー + `plugin.json.license` の値確認を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。法的文書のため軽微変更でも省略不可。
 
 生成・変更したファイル一覧を提示する。
 
@@ -139,23 +139,23 @@ Claude Code プラグインに **MIT ライセンス** を付与・更新する�
 - 既存ファイル更新時はエンコーディング・改行コード維持（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
 - `plugin.json` 編集時は `versioning.md` のバージョン更新を実施
 - パスポータビリティチェック必須
-- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
-- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
+- 利用者環境非依存性の維持（[`../../references/policies/self-containment.md`](../../references/policies/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021）
 - `git commit` 以降の操作は実行しない
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
-| ライセンスポリシー（SSOT） | [`../../references/license-policy.md`](../../references/license-policy.md) |
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| AI 誤認回避 | [`../../references/ai-readability.md`](../../references/ai-readability.md) |
-| ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
-| ユーザ対話 | [`../../references/user-interaction.md`](../../references/user-interaction.md) |
-| AskUserQuestion 発火戦略 | [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md) |
-| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.2） |
-| バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md) |
+| ライセンスポリシー（SSOT） | [`../../references/policies/license-policy.md`](../../references/policies/license-policy.md) |
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| AI 誤認回避 | [`../../references/policies/ai-readability.md`](../../references/policies/ai-readability.md) |
+| ポータブルパス | [`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) |
+| ユーザ対話 | [`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) |
+| AskUserQuestion 発火戦略 | [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md) |
+| 検証ルール | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（節 1 + 2.2） |
+| バージョン管理 | [`../../references/policies/versioning.md`](../../references/policies/versioning.md) |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
 | LICENSE テンプレート | [`references/template/LICENSE`](references/template/LICENSE) |
 | 動作例 | [`evals/`](evals/) |

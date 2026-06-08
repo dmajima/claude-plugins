@@ -78,7 +78,7 @@ Claude Code のスキル一式（`SKILL.md` + `README.md` + `references/` + `eva
 
 ### 5. evals 整備
 
-動作分岐があるスキルは `evals/` を作成する。判定基準は [`../../references/eval-guide.md`](../../references/eval-guide.md) を参照。
+動作分岐があるスキルは `evals/` を作成する。判定基準は [`../../references/guides/eval-guide.md`](../../references/guides/eval-guide.md) を参照。
 
 `evals/` 作成時は以下を併せて配置する（B-3、ADR-032 のデモ承認フローと整合）:
 
@@ -89,8 +89,8 @@ Claude Code のスキル一式（`SKILL.md` + `README.md` + `references/` + `eva
 
 - [ ] SKILL.md が 200 行以内
 - [ ] frontmatter `name` がディレクトリ名と一致
-- [ ] description が [`../../references/description-guide.md`](../../references/description-guide.md) の方針に準拠
-- [ ] パスポータビリティチェック合格（[`../../references/path-portability.md`](../../references/path-portability.md)）
+- [ ] description が [`../../references/guides/description-guide.md`](../../references/guides/description-guide.md) の方針に準拠
+- [ ] パスポータビリティチェック合格（[`../../references/policies/path-portability.md`](../../references/policies/path-portability.md)）
 - [ ] スキル固有スクリプトは `references/scripts/{業務}/` に配置されている（スキル直下 `scripts/` は ADR-025 で禁止）
 - [ ] Python 利用時、依存はプラグイン直下 `references/scripts/setup/requirements.txt` に統合され、venv 構築は `environment-setup-toolkit` への委譲が明記されている（ADR-024）
 - [ ] `agents/` を重複理由で削除していない
@@ -98,7 +98,7 @@ Claude Code のスキル一式（`SKILL.md` + `README.md` + `references/` + `eva
 
 ### 7. 引き渡し
 
-**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（実行コマンド・標準出力・生成ファイル・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。承認なしに以下を提示しても引き渡し完了とみなさない。
+**作業完了報告の前に必須**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（実行コマンド・標準出力・生成ファイル・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。承認なしに以下を提示しても引き渡し完了とみなさない。
 
 生成・変更したファイル一覧を提示する。
 
@@ -112,23 +112,23 @@ Claude Code のスキル一式（`SKILL.md` + `README.md` + `references/` + `eva
 - `agents/` ディレクトリは重複理由で削除しない（プラグイン配布のため）
 - 既存ファイル更新時はエンコーディング・改行コード維持（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
 - パスポータビリティチェック必須
-- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
-- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
+- 利用者環境非依存性の維持（[`../../references/policies/self-containment.md`](../../references/policies/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021）
 - `git commit` 以降の操作は実行しない
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md) 発火戦略）
-- コミットを伴う変更は [`../../references/commit-granularity.md`](../../references/commit-granularity.md) の作業単位ごと分割原則に従う
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) + [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md) 発火戦略）
+- コミットを伴う変更は [`../../references/policies/commit-granularity.md`](../../references/policies/commit-granularity.md) の作業単位ごと分割原則に従う
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| AI 誤認回避 | [`../../references/ai-readability.md`](../../references/ai-readability.md) |
-| description 設計 | [`../../references/description-guide.md`](../../references/description-guide.md) |
-| ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
-| evals 作成 | [`../../references/eval-guide.md`](../../references/eval-guide.md) |
-| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.1） |
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| AI 誤認回避 | [`../../references/policies/ai-readability.md`](../../references/policies/ai-readability.md) |
+| description 設計 | [`../../references/guides/description-guide.md`](../../references/guides/description-guide.md) |
+| ポータブルパス | [`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) |
+| evals 作成 | [`../../references/guides/eval-guide.md`](../../references/guides/eval-guide.md) |
+| 検証ルール | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（節 1 + 2.1） |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
 | 外部依存スキル | [`references/external-dependencies.md`](references/external-dependencies.md) |
 | 動作例 | [`evals/`](evals/) |

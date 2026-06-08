@@ -21,16 +21,16 @@
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
 | PR-3-1 | High | [`team-selection.md`](../team-selection.md) の対象別チーム表に従ってチームを起動した（または同等構成を Agent 並列起動した） | [SKILL.md](../../SKILL.md) 節 3 / [team-selection.md](../team-selection.md) |
-| PR-3-2 | High | TeamCreate 利用不可の場合、`Agent` ツールでメンバーを **同一メッセージ内で並列起動** している | [agent-utilization.md](../../../references/agent-utilization.md) 節 6.1 |
-| PR-3-3 | High | 最低 3 名のエージェントが並列起動された（観点 2 つに固定の場合は 2 名でも可、理由必須） | [validation-rules.md](../../../references/validation-rules.md) 節 2.5 |
-| PR-3-4 | High | `description-trigger-reviewer` が必要対象（スキル / コマンド / エージェント / チーム）でチーム外の単独並列起動として呼ばれている | [agent-utilization.md](../../../references/agent-utilization.md) 節 5.4 |
+| PR-3-2 | High | TeamCreate 利用不可の場合、`Agent` ツールでメンバーを **同一メッセージ内で並列起動** している | [agent-utilization.md](../../../references/guides/agent-utilization.md) 節 6.1 |
+| PR-3-3 | High | 最低 3 名のエージェントが並列起動された（観点 2 つに固定の場合は 2 名でも可、理由必須） | [validation-rules.md](../../../references/checklists/validation-rules.md) 節 2.5 |
+| PR-3-4 | High | `description-trigger-reviewer` が必要対象（スキル / コマンド / エージェント / チーム）でチーム外の単独並列起動として呼ばれている | [agent-utilization.md](../../../references/guides/agent-utilization.md) 節 5.4 |
 | PR-3-5 | High | フォールバック起動時、ユーザへの最終報告に「チーム機能不可のため Agent 並列起動で代替」が明記される予定である | 同 節 6.1.5 |
 
 ## PR-4. レビューフレッシュ起動原則（ADR-021）
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| PR-4-1 | High | 各エージェントのスポーンプロンプトに必須引き継ぎ事項（目的 / 役割 / ユーザー指摘 / 対象 / 観点 / 出力フォーマット）が明記されている | [review-freshness.md](../../../references/review-freshness.md) 節 2 |
+| PR-4-1 | High | 各エージェントのスポーンプロンプトに必須引き継ぎ事項（目的 / 役割 / ユーザー指摘 / 対象 / 観点 / 出力フォーマット）が明記されている | [review-freshness.md](../../../references/checklists/review-freshness.md) 節 2 |
 | PR-4-2 | High | スポーンプロンプトに引き継ぎ禁止事項（過去レビュー結論 / 「修正済み」「対応完了」/ 重大度予断）が含まれていない | 同 節 3 |
 | PR-4-3 | High | 修正実装と同一インスタンスでレビューを行っていない（フレッシュインスタンスで起動した） | 同 節 5 |
 | PR-4-4 | Medium | スポーンプロンプト末尾に「過去の議論・修正履歴・他レビュアーの結論は与えていません」等の注記が含まれる | 既存チーム定義の構成 |
@@ -43,7 +43,7 @@
 | PR-5-2 | High | `--target` `--scope-root` `--output` 引数を適切に指定した | 同上 |
 | PR-5-3 | High | 実行結果 JSON ファイルを Read で読み取り、`issues` 配列を統合した | 同上 |
 | PR-5-4 | High | 失敗（exit != 0）時は stderr の `[ERROR]` 行を `progress.md` の「ブロッカー・懸念事項」節に転記した | 同上 |
-| PR-5-5 | High | venv 構築・撤去はプラグイン直下 `references/scripts/setup/` のスクリプトに委譲した（ADR-024） | [scripts-policy.md](../../../references/scripts-policy.md) 節 5.4 |
+| PR-5-5 | High | venv 構築・撤去はプラグイン直下 `references/scripts/setup/` のスクリプトに委譲した（ADR-024） | [scripts-policy.md](../../../references/policies/scripts-policy.md) 節 5.4 |
 
 ## PR-6. 結果統合
 
@@ -84,7 +84,7 @@
 | PR-10-1 | High | 報告に「## レビュー結果統合」セクションがあり、Critical / High / Medium / Low / Suggestion の重大度別に整理されている | [SKILL.md](../../SKILL.md) 節 5 |
 | PR-10-2 | High | 各指摘にファイルパス + 行番号 + 担当エージェント名 + 具体的な問題と修正案を記載している | [review-perspectives.md](../review-perspectives.md) |
 | PR-10-3 | High | 報告に「## チェックリスト通過記録」セクションが含まれ、適用ファイル・項目数・OK/NG/未確認の集計が示されている | [README.md](README.md) 節 5 |
-| PR-10-4 | Medium | フォールバック起動時はその旨をユーザへの最終報告に明記している | [agent-utilization.md](../../../references/agent-utilization.md) 節 6.1.5 |
+| PR-10-4 | Medium | フォールバック起動時はその旨をユーザへの最終報告に明記している | [agent-utilization.md](../../../references/guides/agent-utilization.md) 節 6.1.5 |
 
 ## PR-11. 進捗管理（progress.md）
 
@@ -97,7 +97,7 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| PR-12-1 | High | [`completion-checklist.md`](../../../references/completion-checklist.md) の 3 軸（ルール順守 / 要件適合 / 結果完全性）を実施した | [completion-checklist.md](../../../references/completion-checklist.md) |
+| PR-12-1 | High | [`completion-checklist.md`](../../../references/checklists/completion-checklist.md) の 3 軸（ルール順守 / 要件適合 / 結果完全性）を実施した | [completion-checklist.md](../../../references/checklists/completion-checklist.md) |
 | PR-12-2 | High | 結果サマリ（チェック結果・要件適合性・結果完全性）を報告に含めている | 同 節 4 |
 
 ## PR-13. チェックリスト全体の通過確認

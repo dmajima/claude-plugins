@@ -94,7 +94,7 @@ git は空ディレクトリを追跡しないため、`.gitkeep` を置くか�
 
 ### 5. パスポータビリティチェック
 
-移管後のファイルすべてに対し Grep でローカル絶対パスを検出。詳細は [`../../../references/path-portability.md`](../../../references/path-portability.md) を参照。
+移管後のファイルすべてに対し Grep でローカル絶対パスを検出。詳細は [`../../../references/policies/path-portability.md`](../../../references/policies/path-portability.md) を参照。
 
 検出時の対応:
 

@@ -42,7 +42,7 @@
 |---------|------|
 | 1 | 変換元ディレクトリ全体を変換先にコピー |
 | 2 | `SKILL.md` の frontmatter `name` がディレクトリ名と一致するか確認 |
-| 3 | ハードコード絶対パスを Grep（[`../../../references/path-portability.md`](../../../references/path-portability.md)） |
+| 3 | ハードコード絶対パスを Grep（[`../../../references/policies/path-portability.md`](../../../references/policies/path-portability.md)） |
 | 4 | `README.md` 有無確認（無ければ警告し `readme-toolkit` 接続を提案） |
 | 5 | `references/scripts/{業務}/` の実行可能性確認（ADR-025、スキル直下 `scripts/` は禁止）。Python 利用時、依存はプラグイン直下 `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt` に統合する（ADR-024、スキル単位 `requirements.txt` 禁止）。venv 構築は同階層の `setup_venv.sh` を `environment-setup-toolkit` 経由で起動 |
 | 6 | `agents/` `evals/` のサブディレクトリ保持を確認 |

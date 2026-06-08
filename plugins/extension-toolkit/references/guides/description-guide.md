@@ -1,4 +1,4 @@
-# description 設計ガイド（SSOT）
+﻿# description 設計ガイド（SSOT）
 
 スキル・コマンド・エージェント・プラグインの `description` フィールドの設計指針。
 
@@ -198,7 +198,7 @@ argument-hint: [--dry-run] [--scope user|project|local|all]
 argument-hint: "[--dry-run] [--scope user|project|local|all]"
 ```
 
-検証は `frontmatter valid`（[`validation-rules.md`](validation-rules.md) 節 1）で機械的に検出される。
+検証は `frontmatter valid`（[`validation-rules.md`](../checklists/validation-rules.md) 節 1）で機械的に検出される。
 PR レビュー時には GitHub の Markdown プレビューで `Error in user YAML` が出ていないかを確認すること。
 
 ## 5. エージェントの description

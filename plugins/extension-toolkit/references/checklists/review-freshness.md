@@ -1,4 +1,4 @@
-# レビューフレッシュ実行原則（SSOT）
+﻿# レビューフレッシュ実行原則（SSOT）
 
 `extension-toolkit` プラグイン内のすべてのレビュー処理（`extension-reviewer` のチーム起動 / フォールバック並列起動 / 第三者レビュー全般）に適用される原則（ADR-021 準拠）。
 
@@ -176,7 +176,7 @@ Agent({ subagent_type: "security-engineer", prompt: "..." })                 # �
 
 | 用途 | ファイル |
 |-----|---------|
-| エージェント全般の活用方針 | [`agent-utilization.md`](agent-utilization.md) |
-| アーキテクチャ決定 | [`architecture-decisions.md`](architecture-decisions.md)（ADR-021） |
+| エージェント全般の活用方針 | [`agent-utilization.md`](../guides/agent-utilization.md) |
+| アーキテクチャ決定 | [`architecture-decisions.md`](../architecture/)（ADR-021） |
 | `extension-reviewer` のチーム選定 | [`../skills/extension-reviewer/references/team-selection.md`](../skills/extension-reviewer/references/team-selection.md) |
 | 完了前自己検証 | [`completion-checklist.md`](completion-checklist.md) |

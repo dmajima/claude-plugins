@@ -94,7 +94,7 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" `
 
 ### 2. パスポータビリティ
 
-[`../../../references/path-portability.md`](../../../references/path-portability.md) に
+[`../../../references/policies/path-portability.md`](../../../references/policies/path-portability.md) に
 列挙された NG パターン（Windows ドライブレター・Unix ユーザディレクトリ・環境変数・
 HOME 変数・UNC パス）を Grep で検出する。
 
@@ -172,7 +172,7 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 4. 不揃いがあれば **High 指摘**（detail に欠落ブロック名と該当依存マーケ名を記録）
 5. 同一マーケットプレイス依存のみ・依存なし・`marketplace` フィールド省略の依存しか持たないプラグインはスキップ
 
-詳細仕様は [`../../../references/architecture-decisions.md`](../../../references/architecture-decisions.md) ADR-028 / [`../../../references/readme-policy.md`](../../../references/readme-policy.md) 節 5.1 D を参照。
+詳細仕様は [`../../../references/architecture/decisions-001-010.md`](../../../references/architecture/decisions-001-010.md) ADR-028 / [`../../../references/policies/readme-policy.md`](../../../references/policies/readme-policy.md) 節 5.1 D を参照。
 
 ### 11. プラグイン MIT LICENSE 配備チェック（ADR-029）
 
@@ -181,7 +181,7 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 | 検査項目 | 重大度 | 検出方法 |
 |---------|-------|---------|
 | `plugins/{name}/LICENSE` の存在 | Critical | ファイル存在確認 |
-| `LICENSE` 本文が MIT 標準文（[`../../../references/license-policy.md`](../../../references/license-policy.md) 節 2.2）と一致（copyright 行除く） | Critical | 行単位比較（copyright 行は除外）|
+| `LICENSE` 本文が MIT 標準文（[`../../../references/policies/license-policy.md`](../../../references/policies/license-policy.md) 節 2.2）と一致（copyright 行除く） | Critical | 行単位比較（copyright 行は除外）|
 | `Copyright (c) <year> <holder>` の `<year>` `<holder>` が空でなく、プレースホルダ `{year}` `{copyright_holder}` 未残存 | Critical | 正規表現 `^Copyright \(c\) (\S.+) (\S.+)$` |
 | `plugin.json.license == "MIT"` | Critical | JSON フィールド確認 |
 | `README.md` に「ライセンス」セクションが存在し、`LICENSE` への相対リンクが含まれる | High | 見出しパターン + リンク検出 |
@@ -190,7 +190,7 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 
 `run_checks.py` の `check_mit_license` 関数で機械チェック実装済み。`$CLAUDE_PLUGIN_ROOT/skills/mit-license-toolkit/references/template/LICENSE` を SSOT として参照し、本文の行単位比較（copyright 行除く）+ Copyright 行の正規表現検証 + `plugin.json.license == "MIT"` を一括検査する。
 
-詳細仕様は [`../../../references/license-policy.md`](../../../references/license-policy.md) を参照。
+詳細仕様は [`../../../references/policies/license-policy.md`](../../../references/policies/license-policy.md) を参照。
 
 ### 12. PowerShell ベタ起動の hook 検出チェック（Bash 標準方針）
 
@@ -241,7 +241,7 @@ YAML / JSON のパースエラーを検出。`templates/` 配下のひな形は 
 ### 15. Python 直起動禁止 / Start-Job ラッパー必須チェック
 
 Windows + PowerShell + python-pptx 等で Python 子プロセスがハングする既知事象
-（[`powershell-pitfalls.md`](../../../references/powershell-pitfalls.md) 節 7.3 / グローバルルール
+（[`powershell-pitfalls.md`](../../../references/guides/powershell-pitfalls.md) 節 7.3 / グローバルルール
 [`~/.claude/rules/tools/python-subprocess-hang-windows.md`](file:///C:/Users/wwdmajima/.claude/rules/tools/python-subprocess-hang-windows.md)）を踏まえ、
 プラグイン配下に `.py` ファイルが存在する場合、その実行手順が **Start-Job 経由ラッパー** を介しているかをレビューする。
 

@@ -1,4 +1,4 @@
-# AI 誤認回避ライティング規約（SSOT）
+﻿# AI 誤認回避ライティング規約（SSOT）
 
 `extension-toolkit` が生成・編集する全ての SKILL.md・references・コマンド本文・エージェント定義における記述規約。**人間の読みやすさよりも AI エージェントが誤認しないこと** を優先する。
 
@@ -74,7 +74,7 @@
 | コマンド | 60 文字以内 | コマンドの効果を 1 文で |
 | エージェント | 制限なし | 専門領域・起動条件を網羅 |
 
-スキルの description は AI のトリガー判定に使われるため、**詳細・冗長で問題ない**。詳細は [description-guide.md](description-guide.md) を参照。
+スキルの description は AI のトリガー判定に使われるため、**詳細・冗長で問題ない**。詳細は [description-guide.md](../guides/description-guide.md) を参照。
 
 ## 5. SKILL.md の必須セクション
 

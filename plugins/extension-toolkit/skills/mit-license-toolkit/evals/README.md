@@ -30,7 +30,7 @@
 
 | 用途 | ファイル |
 |-----|---------|
-| ライセンスポリシー（SSOT） | [`../../../references/license-policy.md`](../../../references/license-policy.md) |
-| evals 設計ガイド | [`../../../references/eval-guide.md`](../../../references/eval-guide.md) |
+| ライセンスポリシー（SSOT） | [`../../../references/policies/license-policy.md`](../../../references/policies/license-policy.md) |
+| evals 設計ガイド | [`../../../references/guides/eval-guide.md`](../../../references/guides/eval-guide.md) |
 | スキル本体 | [`../SKILL.md`](../SKILL.md) |
 | 詳細手順 | [`../references/procedures.md`](../references/procedures.md) |

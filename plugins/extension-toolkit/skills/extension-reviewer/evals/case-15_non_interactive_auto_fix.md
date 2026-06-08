@@ -18,7 +18,7 @@
 
 ### Phase 2: フレッシュ起動でレビュー実施
 
-[`../references/team-selection.md`](../references/team-selection.md) に従い `skill-review-team` をフレッシュインスタンスで並列起動（ADR-021 / [`../../../references/review-freshness.md`](../../../references/review-freshness.md) 準拠）。
+[`../references/team-selection.md`](../references/team-selection.md) に従い `skill-review-team` をフレッシュインスタンスで並列起動（ADR-021 / [`../../../references/checklists/review-freshness.md`](../../../references/checklists/review-freshness.md) 準拠）。
 
 ### Phase 3: 軽微指摘の自動修正適用
 

@@ -80,7 +80,7 @@
 4. キャンセル
 ```
 
-選択肢の提示は `AskUserQuestion`（[`../../../references/user-interaction.md`](../../../references/user-interaction.md)）を用いる。
+選択肢の提示は `AskUserQuestion`（[`../../../references/guides/user-interaction.md`](../../../references/guides/user-interaction.md)）を用いる。
 「3. 誤検出として続行」は二重確認（"本当に公開してよいか？" の追加質問）を必ず行う。
 
 ### 非対話・フルオート併用時の特例（fail-closed 強化）
@@ -229,4 +229,4 @@ def scan(plugin_root: pathlib.Path) -> list[dict]:
 
 - 検出されたシークレットが既にコミット履歴にある場合、本スキルでは履歴の書き換えを行わない（`git filter-repo` 等は別途ユーザに案内）
 - 認証情報そのものの管理はグローバル `credentials-manager` スキル（インストール済みの場合）に委譲。本スキルは公開対象に「混入していないか」のみを担当する。`credentials-manager` 未導入時は利用者に直接認証情報の確認・再設定を依頼する（ADR-022 自己完結性原則のグローバルスキル依存フォールバック）
-- 関連: [`../../../references/validation-rules.md`](../../../references/validation-rules.md) のセクション 2.2「プラグイン実体検証」
+- 関連: [`../../../references/checklists/validation-rules.md`](../../../references/checklists/validation-rules.md) のセクション 2.2「プラグイン実体検証」

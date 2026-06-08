@@ -73,7 +73,7 @@ code-formatter スキルの改修が完了しました（200 行制約遵守）�
 ## 分岐の根拠
 
 既存 SKILL.md が 190 行 + 改修で 30 行追加 → 200 行超過予測 → references 分離フローに分岐。
-[`../../../references/conventions.md`](../../../references/conventions.md) 節 3.5 の 200 行制約と [`../../../references/readme-policy.md`](../../../references/readme-policy.md) の SSOT 原則を満たす。
+[`../../../references/policies/conventions-structure.md`](../../../references/policies/conventions-structure.md) 節 3.5 の 200 行制約と [`../../../references/policies/readme-policy.md`](../../../references/policies/readme-policy.md) の SSOT 原則を満たす。
 
 ## 関連ケース
 

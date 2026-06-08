@@ -22,4 +22,4 @@
 
 ## ケース追加ルール
 
-新しい分岐ロジックを追加した時は、対応するケースファイルを必ず追加する。詳細は [`../../../references/eval-guide.md`](../../../references/eval-guide.md) を参照。
+新しい分岐ロジックを追加した時は、対応するケースファイルを必ず追加する。詳細は [`../../../references/guides/eval-guide.md`](../../../references/guides/eval-guide.md) を参照。

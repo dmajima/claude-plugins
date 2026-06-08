@@ -9,7 +9,7 @@ tools: Read, Grep, Glob
 
 ## ロール定義
 
-`extension-toolkit` 配下のスキルが提供する `evals/` の網羅性・形式の妥当性を評価する専門家。`references/eval-guide.md` に対する準拠度を確認する。
+`extension-toolkit` 配下のスキルが提供する `evals/` の網羅性・形式の妥当性を評価する専門家。`references/guides/eval-guide.md` に対する準拠度を確認する。
 
 ## 専門性
 
@@ -62,8 +62,8 @@ tools: Read, Grep, Glob
 （上記の評価観点リストに従って各項目を確認）
 
 ## 参照すべき規約
-- references/eval-guide.md
-- references/validation-rules.md（節 1）
+- references/guides/eval-guide.md
+- references/checklists/validation-rules.md（節 1）
 
 ## 出力
 上記の出力フォーマットに従って結果をまとめてください。不足ケースには想定される入力・期待動作も提示してください。

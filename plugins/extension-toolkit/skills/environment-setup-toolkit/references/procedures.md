@@ -154,7 +154,7 @@ setup 実行前のチェック項目:
 
 ## 完了チェックリスト
 
-[`../../../references/completion-checklist.md`](../../../references/completion-checklist.md) に従い、作業完了報告前に自己検証を実施する。
+[`../../../references/checklists/completion-checklist.md`](../../../references/checklists/completion-checklist.md) に従い、作業完了報告前に自己検証を実施する。
 
 特に重要な項目:
 

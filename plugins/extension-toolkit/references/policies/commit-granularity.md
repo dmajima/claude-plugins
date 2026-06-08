@@ -123,7 +123,7 @@ docs(backlog): improvement-backlog DONE マーキング
 
 | 項目 | 配置先 | 1 コミット内同梱可否 |
 |------|--------|---------------------|
-| 設計判断の根拠（ADR 本体） | `references/architecture-decisions.md` 内のセクション | **同梱可**: 同 ADR が動機付ける単一の実装変更と同コミットに含めてよい |
+| 設計判断の根拠（ADR 本体） | `references/architecture/` 内のセクション | **同梱可**: 同 ADR が動機付ける単一の実装変更と同コミットに含めてよい |
 | 設計判断 + 実装の両方を伴う複数の変更 | 別コミットに分割 | **同梱不可**: 「ADR-xxx 追加」と「ADR-xxx に従う実装」は別コミット |
 
 具体例:
@@ -156,7 +156,7 @@ docs(backlog): improvement-backlog DONE マーキング
 |----------|---------|---------|
 | 1 コミット内のファイル変更数 | 大規模（> 20 ファイル）の場合は分割妥当性をレビューで判断 | 専門家レビューで実施 |
 | 1 コミット内のスコープ混在 | コミットメッセージのスコープと変更ファイルパスの不一致 | 専門家レビューで実施（機械検出は将来実装） |
-| ADR 追加と実装の同梱 | `architecture-decisions.md` の変更行数とコミット全体行数の比率 | 専門家レビューで実施（機械検出は将来実装） |
+| ADR 追加と実装の同梱 | `architecture/` 配下 の変更行数とコミット全体行数の比率 | 専門家レビューで実施（機械検出は将来実装） |
 
 違反が見つかった場合は **コミット分割を強く推奨** する（強制リバートはしない。利用者の git 履歴に対する裁量を尊重する）。
 
@@ -176,6 +176,6 @@ docs(backlog): improvement-backlog DONE マーキング
 
 ## 9. 参照
 
-- ADR-031（`architecture-decisions.md`）
+- ADR-031（`architecture/` 配下）
 - Conventional Commits 1.0.0 仕様
 - [git-bisect](https://git-scm.com/docs/git-bisect) のドキュメント

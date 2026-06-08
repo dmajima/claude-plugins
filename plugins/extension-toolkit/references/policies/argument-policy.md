@@ -1,4 +1,4 @@
-# コマンド引数ポリシー（SSOT）
+﻿# コマンド引数ポリシー（SSOT）
 
 `extension-toolkit` プラグインが生成・改修するすべてのスラッシュコマンドが従う引数仕様のルール。
 
@@ -68,7 +68,7 @@ argument-hint: "[--show] [--reset]"
 ### 3.1 対話モード（既定）
 
 複数情報が必要な場合、`AskUserQuestion` で対話的に収集する。
-発火戦略は [`askquestion-strategy.md`](askquestion-strategy.md) に従う。
+発火戦略は [`askquestion-strategy.md`](../guides/askquestion-strategy.md) に従う。
 
 | ケース | 戦略 |
 |--------|------|
@@ -182,7 +182,7 @@ flowchart TD
 
 ## 8. 関連ドキュメント
 
-- [`user-interaction.md`](user-interaction.md) — AskUserQuestion の利用原則・利用不可ケース・フォールバック
-- [`askquestion-strategy.md`](askquestion-strategy.md) — AskUserQuestion の発火戦略（A-6）
+- [`user-interaction.md`](../guides/user-interaction.md) — AskUserQuestion の利用原則・利用不可ケース・フォールバック
+- [`askquestion-strategy.md`](../guides/askquestion-strategy.md) — AskUserQuestion の発火戦略（A-6）
 - ADR-013 — Claude UI 必須化
 - ADR-023 — `argument-hint` の必須化

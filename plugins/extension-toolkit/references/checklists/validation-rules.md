@@ -1,4 +1,4 @@
-# 検証ルール（SSOT）
+﻿# 検証ルール（SSOT）
 
 `extension-toolkit` の各 `*-toolkit` および `extension-reviewer` が共通で参照する検証チェックリスト。同じ検証ルールを複数箇所に書かないようにこのファイルに集約する。
 
@@ -8,28 +8,28 @@
 |-----|-------|---------|
 | frontmatter valid | Critical | YAML パース |
 | JSON valid | Critical | JSON パース |
-| パスポータビリティ | Critical or High | Grep（[`path-portability.md`](path-portability.md) 参照） |
+| パスポータビリティ | Critical or High | Grep（[`path-portability.md`](../policies/path-portability.md) 参照） |
 | プレースホルダ残存（`{kebab-case}`） | High | Grep `{[a-z][a-z0-9-]*}` |
 | `§` 記号の使用 | Medium | Grep `§` |
 | エンコーディング・改行コード保持 | Critical | バイト列比較 |
-| description 文字数 | Medium | 文字数カウント（[`description-guide.md`](description-guide.md) 参照） |
+| description 文字数 | Medium | 文字数カウント（[`description-guide.md`](../guides/description-guide.md) 参照） |
 | ディレクトリ構造の許可リスト遵守 | High | `conventions.md` 節 2.1 / 3.1 と照合 |
-| 利用者環境非依存性（ADR-022） | High | グローバルルール / グローバルエージェント / 外部ツール前提の棚卸し（[`self-containment.md`](self-containment.md) 節 5） |
+| 利用者環境非依存性（ADR-022） | High | グローバルルール / グローバルエージェント / 外部ツール前提の棚卸し（[`self-containment.md`](../policies/self-containment.md) 節 5） |
 | レビュー起動はフレッシュインスタンス（ADR-021） | High | スポーンプロンプトに必須引き継ぎ事項が含まれ、引き継ぎ禁止事項が含まれないこと（[`review-freshness.md`](review-freshness.md) 節 2-3） |
-| **md インラインスクリプト不在（ADR-025）** | High | フェンス付きコードブロック（`bash` / `python` / `sh` / `powershell` 等）が 6 行以上、または制御構造を含む 5 行以上を検出すれば違反（[`scripts-policy.md`](scripts-policy.md) 節 3-4） |
+| **md インラインスクリプト不在（ADR-025）** | High | フェンス付きコードブロック（`bash` / `python` / `sh` / `powershell` 等）が 6 行以上、または制御構造を含む 5 行以上を検出すれば違反（[`scripts-policy.md`](../policies/scripts-policy.md) 節 3-4） |
 | **トップレベル `scripts/` 不在（ADR-025）** | High | `plugins/{name}/scripts/` および `plugins/{name}/skills/{skill}/scripts/` が存在しないことを確認（実スクリプトは `references/scripts/` に集約） |
 | **プラグイン直下 `references/scripts/setup/` 構成（ADR-024）** | High | プラグインに `.py` ファイルが 1 つ以上ある場合、`plugins/{name}/references/scripts/setup/setup_venv.sh` `teardown_venv.sh` `requirements.txt` の存在を確認|
 | **スキル直下 venv スクリプト不在（ADR-024）** | High | `plugins/{name}/skills/{skill}/references/scripts/setup/setup_venv.sh` 等が存在しないことを確認（プラグイン直下に集約済） |
 
 ### 1.1 ディレクトリ構造の許可リスト機械チェック（厳格対象のみ）
 
-[`conventions.md`](conventions.md) の許可リストを正典として、**厳格運用 2 階層** に対して機械チェックする。`references/` 直下と `scripts/` 直下は推奨例のため対象外（人間レビューで確認）。
+[`conventions-structure.md`](../policies/conventions-structure.md) の許可リストを正典として、**厳格運用 2 階層** に対して機械チェックする。`references/` 直下と `scripts/` 直下は推奨例のため対象外（人間レビューで確認）。
 
 | 階層 | 厳格度 | 許可リスト | 違反時の重大度 |
 |-----|-------|----------|------------|
 | プラグイン直下 | **厳格** | `.claude-plugin/` `README.md` `LICENSE` `commands/` `skills/` `agents/` `hooks/` `mcp/` `references/` | High |
 | スキル直下 | **厳格** | `SKILL.md` `README.md` `references/` `agents/` `evals/` | High |
-| `references/` 直下 | 推奨例 | （機械チェックなし、人間レビュー）。`scripts/` 配下は推奨業務単位サブフォルダ（[`conventions.md`](conventions.md) 節 5）| - |
+| `references/` 直下 | 推奨例 | （機械チェックなし、人間レビュー）。`scripts/` 配下は推奨業務単位サブフォルダ（[`conventions-structure.md`](../policies/conventions-structure.md) 節 5）| - |
 | `references/scripts/` 直下 | 推奨例 + 一部禁止 | 禁止項目（`knowledge/` `lib/` `bin/`、拡張子別サブフォルダ）のみ機械検出 | Medium |
 | トップレベル `scripts/` 直下（プラグイン/スキル両方） | **厳格・存在禁止** | 配置自体が ADR-025 違反 | High |
 
@@ -91,7 +91,7 @@ done
 | `scripts/` 命名（`knowledge/` 不可） | Medium | パス確認 |
 | Python 利用時の依存はプラグイン直下 `scripts/setup/requirements.txt` に統合（ADR-024） | High | ファイル存在確認 + スキル独自 requirements.txt 不在 |
 | スキル直下 `scripts/setup/setup_venv.sh` 等の venv 関連スクリプト不在（ADR-024） | High | パターン不在確認（プラグイン直下に集約済） |
-| md インライン実行スクリプト不在（ADR-025） | High | コードブロック行数 + 制御構造検出（[`scripts-policy.md`](scripts-policy.md)） |
+| md インライン実行スクリプト不在（ADR-025） | High | コードブロック行数 + 制御構造検出（[`scripts-policy.md`](../policies/scripts-policy.md)） |
 | `agents/` 削除痕跡なし（更新時） | High | git diff |
 | 動作分岐がある場合 `evals/` 存在 | High | ディレクトリ存在確認 |
 | `README.md` 存在 | Medium | ファイル存在確認 |
@@ -103,7 +103,7 @@ done
 | `plugin.json` の `name` がディレクトリ名と一致 | High | パス比較 |
 | `README.md` 存在 | High | ファイル存在確認 |
 | **`LICENSE` 存在（ADR-029）** | Critical | ファイル存在確認（`plugins/{name}/LICENSE`） |
-| **`LICENSE` 本文が MIT 標準文と一致（ADR-029）** | Critical | [`license-policy.md`](license-policy.md) 節 2.2 と本文比較（copyright 行除く） |
+| **`LICENSE` 本文が MIT 標準文と一致（ADR-029）** | Critical | [`license-policy.md`](../policies/license-policy.md) 節 2.2 と本文比較（copyright 行除く） |
 | **`LICENSE` の Copyright 行に year + holder が埋まっている（プレースホルダ未残存、ADR-029）** | Critical | 正規表現 `^Copyright \(c\) \S.+ \S.+$` + `{year}` `{copyright_holder}` 不在 |
 | **`plugin.json` の `license == "MIT"`（ADR-029）** | Critical | JSON フィールド確認 |
 | 移管シナリオで元ファイルが無傷 | Critical | git diff |
@@ -245,10 +245,10 @@ done
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`conventions.md`](conventions.md) |
-| AI 誤認回避 | [`ai-readability.md`](ai-readability.md) |
-| description 設計 | [`description-guide.md`](description-guide.md) |
-| ポータブルパス | [`path-portability.md`](path-portability.md) |
-| evals 設計 | [`eval-guide.md`](eval-guide.md) |
-| アーキテクチャ決定 | [`architecture-decisions.md`](architecture-decisions.md) |
-| ライセンスポリシー（MIT 必須化） | [`license-policy.md`](license-policy.md) |
+| 命名・配置規約 | [`conventions-structure.md`](../policies/conventions-structure.md) |
+| AI 誤認回避 | [`ai-readability.md`](../policies/ai-readability.md) |
+| description 設計 | [`description-guide.md`](../guides/description-guide.md) |
+| ポータブルパス | [`path-portability.md`](../policies/path-portability.md) |
+| evals 設計 | [`eval-guide.md`](../guides/eval-guide.md) |
+| アーキテクチャ決定 | [`architecture-decisions.md`](../architecture/) |
+| ライセンスポリシー（MIT 必須化） | [`license-policy.md`](../policies/license-policy.md) |

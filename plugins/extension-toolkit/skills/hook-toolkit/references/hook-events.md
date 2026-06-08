@@ -99,7 +99,7 @@ OK（shell 明示）:
 | プラグインのデータ領域 | `${CLAUDE_PLUGIN_DATA}/...` |
 | ホームディレクトリ | `~/.claude/...` |
 
-ローカル絶対パスのハードコード禁止。詳細は [`../../../references/path-portability.md`](../../../references/path-portability.md) を参照。
+ローカル絶対パスのハードコード禁止。詳細は [`../../../references/policies/path-portability.md`](../../../references/policies/path-portability.md) を参照。
 
 ### タイムアウト設計
 

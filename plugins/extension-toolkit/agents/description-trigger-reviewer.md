@@ -86,8 +86,8 @@ description: {{description 文字列}}
 （上記の対象種別に該当する評価観点リストに従う）
 
 ## 参照すべき規約
-- references/description-guide.md
-- references/ai-readability.md
+- references/guides/description-guide.md
+- references/policies/ai-readability.md
 
 ## 出力
 上記の出力フォーマットに従って結果をまとめてください。改善案を具体的に提示してください。

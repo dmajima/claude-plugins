@@ -130,8 +130,8 @@ plugins/extension-toolkit/skills/mit-license-toolkit/
 
 ## 関連リンク
 
-- ADR-029: [`../../references/architecture-decisions.md`](../../references/architecture-decisions.md)
-- ライセンスポリシー: [`../../references/license-policy.md`](../../references/license-policy.md)
+- ADR-029: [`../../references/architecture/decisions-001-010.md`](../../references/architecture/decisions-001-010.md)
+- ライセンスポリシー: [`../../references/policies/license-policy.md`](../../references/policies/license-policy.md)
 - MIT 標準文の出典: https://opensource.org/licenses/MIT / https://spdx.org/licenses/MIT.html
 
 ## ライセンス

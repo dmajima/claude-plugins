@@ -86,23 +86,23 @@ flowchart TD
 
 | 観点 | SSOT |
 |-----|------|
-| 命名・配置・構造 | [`../../../references/conventions.md`](../../../references/conventions.md) |
-| AI 誤認回避（必須セクション・条件表） | [`../../../references/ai-readability.md`](../../../references/ai-readability.md) |
-| README 規約 | [`../../../references/readme-policy.md`](../../../references/readme-policy.md) |
-| description 設計 | [`../../../references/description-guide.md`](../../../references/description-guide.md) |
-| ポータブルパス | [`../../../references/path-portability.md`](../../../references/path-portability.md) |
-| evals 設計 | [`../../../references/eval-guide.md`](../../../references/eval-guide.md) |
-| 検証ルール（種別別） | [`../../../references/validation-rules.md`](../../../references/validation-rules.md) |
-| 完了前自己検証 | [`../../../references/completion-checklist.md`](../../../references/completion-checklist.md) |
-| アーキテクチャ決定（ADR-001〜027） | [`../../../references/architecture-decisions.md`](../../../references/architecture-decisions.md) |
-| エージェント活用 | [`../../../references/agent-utilization.md`](../../../references/agent-utilization.md) |
-| 依存関係宣言 | [`../../../references/dependencies-policy.md`](../../../references/dependencies-policy.md) |
-| レビューフレッシュ起動 | [`../../../references/review-freshness.md`](../../../references/review-freshness.md) |
-| 自己完結性 | [`../../../references/self-containment.md`](../../../references/self-containment.md) |
-| スクリプトポリシー | [`../../../references/scripts-policy.md`](../../../references/scripts-policy.md) |
-| 状態ファイル形式 | [`../../../references/state-files.md`](../../../references/state-files.md) |
-| ユーザ対話 | [`../../../references/user-interaction.md`](../../../references/user-interaction.md) |
-| バージョニング | [`../../../references/versioning.md`](../../../references/versioning.md) |
+| 命名・配置・構造 | [`../../../references/policies/conventions-structure.md`](../../../references/policies/conventions-structure.md) |
+| AI 誤認回避（必須セクション・条件表） | [`../../../references/policies/ai-readability.md`](../../../references/policies/ai-readability.md) |
+| README 規約 | [`../../../references/policies/readme-policy.md`](../../../references/policies/readme-policy.md) |
+| description 設計 | [`../../../references/guides/description-guide.md`](../../../references/guides/description-guide.md) |
+| ポータブルパス | [`../../../references/policies/path-portability.md`](../../../references/policies/path-portability.md) |
+| evals 設計 | [`../../../references/guides/eval-guide.md`](../../../references/guides/eval-guide.md) |
+| 検証ルール（種別別） | [`../../../references/checklists/validation-rules.md`](../../../references/checklists/validation-rules.md) |
+| 完了前自己検証 | [`../../../references/checklists/completion-checklist.md`](../../../references/checklists/completion-checklist.md) |
+| アーキテクチャ決定（ADR-001〜027） | [`../../../references/architecture/decisions-001-010.md`](../../../references/architecture/decisions-001-010.md) |
+| エージェント活用 | [`../../../references/guides/agent-utilization.md`](../../../references/guides/agent-utilization.md) |
+| 依存関係宣言 | [`../../../references/policies/dependencies-policy.md`](../../../references/policies/dependencies-policy.md) |
+| レビューフレッシュ起動 | [`../../../references/checklists/review-freshness.md`](../../../references/checklists/review-freshness.md) |
+| 自己完結性 | [`../../../references/policies/self-containment.md`](../../../references/policies/self-containment.md) |
+| スクリプトポリシー | [`../../../references/policies/scripts-policy.md`](../../../references/policies/scripts-policy.md) |
+| 状態ファイル形式 | [`../../../references/policies/state-files.md`](../../../references/policies/state-files.md) |
+| ユーザ対話 | [`../../../references/guides/user-interaction.md`](../../../references/guides/user-interaction.md) |
+| バージョニング | [`../../../references/policies/versioning.md`](../../../references/policies/versioning.md) |
 | 機械チェック実行 | [`../automated-checks.md`](../automated-checks.md) |
 | レビュー観点・総合判定 | [`../review-perspectives.md`](../review-perspectives.md) |
 | チーム選定 | [`../team-selection.md`](../team-selection.md) |

@@ -148,9 +148,9 @@ AskUserQuestion({
 
 ### 6. 公開モードの選択
 
-**前提**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 のデモ + AskUserQuestion 承認取得が完了している（ADR-032）。
+**前提**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 のデモ + AskUserQuestion 承認取得が完了している（ADR-032）。
 
-`AskUserQuestion` で公開モードを選択する（[`../../references/user-interaction.md`](../../references/user-interaction.md) 節 1）:
+`AskUserQuestion` で公開モードを選択する（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) 節 1）:
 
 - **ハンドオフ**（推奨）: `git add` / `commit` / `push` / PR コマンドを提示してユーザが手動実行
 - **フルオート**: feature ブランチ確認 → `git push` → PR 作成まで自動実行（main 直接 push 禁止）
@@ -165,21 +165,21 @@ AskUserQuestion({
 - 重複検出時は **必ずユーザに提示**（自動マージ・自動却下しない）
 - フルオート実行前に **ユーザの明示的選択** が必須
 - 既存 marketplace.json のエンコーディング維持（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
-- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
-- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
-- 公開コミットの粒度は [`../../references/commit-granularity.md`](../../references/commit-granularity.md) の作業単位ごと分割原則に従う
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
+- 利用者環境非依存性の維持（[`../../references/policies/self-containment.md`](../../references/policies/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) + [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md)）
+- 公開コミットの粒度は [`../../references/policies/commit-granularity.md`](../../references/policies/commit-granularity.md) の作業単位ごと分割原則に従う
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
-| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.2 実体検証） |
-| バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md)（公開コミットでのバージョン更新確認）|
-| ライセンス必須化（fail-closed 検証）| [`../../references/license-policy.md`](../../references/license-policy.md) / ADR-029 |
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| ポータブルパス | [`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) |
+| 検証ルール | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（節 1 + 2.2 実体検証） |
+| バージョン管理 | [`../../references/policies/versioning.md`](../../references/policies/versioning.md)（公開コミットでのバージョン更新確認）|
+| ライセンス必須化（fail-closed 検証）| [`../../references/policies/license-policy.md`](../../references/policies/license-policy.md) / ADR-029 |
 | marketplace.json 仕様 | [`references/marketplace-json.md`](references/marketplace-json.md) |
 | 重複チェック詳細 | [`references/duplication-check.md`](references/duplication-check.md) |
 | シークレットスキャン | [`references/secret-scan.md`](references/secret-scan.md) |

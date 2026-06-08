@@ -83,7 +83,7 @@ Claude Code の拡張要素（スキル・プラグイン・コマンド・エ�
 
 対象別の採用チームと専門家エージェント一覧は [references/team-selection.md](references/team-selection.md) を参照。
 
-`TeamCreate` 機能が利用できない環境では、Agent ツールでメンバーを個別並列起動する **フォールバック** に切り替える。手順は [`../../references/agent-utilization.md`](../../references/agent-utilization.md) の「6.1 チーム機能が利用できない環境でのフォールバック」と [references/team-selection.md](references/team-selection.md) の「フォールバック起動」を参照。
+`TeamCreate` 機能が利用できない環境では、Agent ツールでメンバーを個別並列起動する **フォールバック** に切り替える。手順は [`../../references/guides/agent-utilization.md`](../../references/guides/agent-utilization.md) の「6.1 チーム機能が利用できない環境でのフォールバック」と [references/team-selection.md](references/team-selection.md) の「フォールバック起動」を参照。
 
 機械チェック（[references/automated-checks.md](references/automated-checks.md)）を並行して実行する。
 **実行は必ず Bash 経由 + venv 内 Python + JSON ファイル出力**（`references/scripts/checks/run_checks.py`）。
@@ -98,7 +98,7 @@ PowerShell から `python` を直接起動すると Claude Code の stdout 解�
 | チェック | 方法 |
 |---------|------|
 | SKILL.md 200 行以下 | `references/scripts/checks/run_checks.py` |
-| パスポータビリティ | 同上（[`../../references/path-portability.md`](../../references/path-portability.md) 準拠） |
+| パスポータビリティ | 同上（[`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) 準拠） |
 | プレースホルダ残存（`{...}`） | 同上 |
 | frontmatter valid | 同上（PyYAML パース） |
 | JSON valid | 同上 |
@@ -157,7 +157,7 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
 
 ### 8. 引き渡し
 
-**作業完了報告の前に**: 本スキルは「レビュー結果レポート」自体が成果物のため、[`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 の動作デモは原則対象外（節 2.4.4 の ADR 追加等と同様、レポート生成は実行確認済み）。ただし、レビュー結果に基づく **修正フェーズへの委譲時** は該当 `*-toolkit` 側でデモ承認を取得する責務がある（ADR-032）。
+**作業完了報告の前に**: 本スキルは「レビュー結果レポート」自体が成果物のため、[`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 の動作デモは原則対象外（節 2.4.4 の ADR 追加等と同様、レポート生成は実行確認済み）。ただし、レビュー結果に基づく **修正フェーズへの委譲時** は該当 `*-toolkit` 側でデモ承認を取得する責務がある（ADR-032）。
 
 | 結果 | 接続先 |
 |-----|-------|
@@ -170,28 +170,28 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
 
 - **【最重要・MANDATORY】レビュー結果報告の直前に必ず [`references/checklists/`](references/checklists/) の適用ファイル全項目を走査する**。未走査・部分走査での総合判定確定は禁止。High 以上の未確認項目がある場合、総合判定は最大 `CONDITIONAL_APPROVE` とし、未確認理由を報告に明記する
 - **レビューはチーム単位で起動**（[`../../references/teams/`](../../references/teams/) のチーム定義に従う）
-- **レビューは必ずフレッシュ Agent インスタンスで起動**（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021 準拠）。修正実装と同一コンテキストでレビューを行わない。スポーンプロンプトに必須引き継ぎ事項（目的 / 役割 / ユーザー指摘 / 対象 / 観点 / フォーマット）を明記し、引き継ぎ禁止事項（過去レビュー結論等）を含めない
+- **レビューは必ずフレッシュ Agent インスタンスで起動**（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021 準拠）。修正実装と同一コンテキストでレビューを行わない。スポーンプロンプトに必須引き継ぎ事項（目的 / 役割 / ユーザー指摘 / 対象 / 観点 / フォーマット）を明記し、引き継ぎ禁止事項（過去レビュー結論等）を含めない
 - 標準は最低 3 名（観点が 2 つに固定の場合は 2 名でも可）。メンバーは並列起動（独立観点）
 - 自動修正は軽微な指摘のみ。セキュリティ指摘は必ずユーザ確認
 - このスキル自身では構造変更を伴う修正は行わない
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
-- PowerShell スクリプトのレビュー観点は [`../../references/powershell-pitfalls.md`](../../references/powershell-pitfalls.md)
-- レビュー対象のコミット粒度は [`../../references/commit-granularity.md`](../../references/commit-granularity.md) 節 7 に従い、専門家レビューで判定する
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証を実施
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) + [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md)）
+- PowerShell スクリプトのレビュー観点は [`../../references/guides/powershell-pitfalls.md`](../../references/guides/powershell-pitfalls.md)
+- レビュー対象のコミット粒度は [`../../references/policies/commit-granularity.md`](../../references/policies/commit-granularity.md) 節 7 に従い、専門家レビューで判定する
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
 | **【最重要】レビュー全項目チェックリスト** | [`references/checklists/`](references/checklists/) |
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| AI 誤認回避 | [`../../references/ai-readability.md`](../../references/ai-readability.md) |
-| ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
-| evals 設計 | [`../../references/eval-guide.md`](../../references/eval-guide.md) |
-| 検証ルール（SSOT） | [`../../references/validation-rules.md`](../../references/validation-rules.md)（全節） |
-| アーキテクチャ決定 | [`../../references/architecture-decisions.md`](../../references/architecture-decisions.md) |
-| レビューフレッシュ起動原則 | [`../../references/review-freshness.md`](../../references/review-freshness.md) |
-| 自己完結性ポリシー | [`../../references/self-containment.md`](../../references/self-containment.md) |
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| AI 誤認回避 | [`../../references/policies/ai-readability.md`](../../references/policies/ai-readability.md) |
+| ポータブルパス | [`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) |
+| evals 設計 | [`../../references/guides/eval-guide.md`](../../references/guides/eval-guide.md) |
+| 検証ルール（SSOT） | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（全節） |
+| アーキテクチャ決定 | [`../../references/architecture/decisions-001-010.md`](../../references/architecture/decisions-001-010.md) |
+| レビューフレッシュ起動原則 | [`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md) |
+| 自己完結性ポリシー | [`../../references/policies/self-containment.md`](../../references/policies/self-containment.md) |
 | レビュー観点 | [`references/review-perspectives.md`](references/review-perspectives.md) |
 | チーム選定 | [`references/team-selection.md`](references/team-selection.md) |
 | 自動チェック | [`references/automated-checks.md`](references/automated-checks.md) |

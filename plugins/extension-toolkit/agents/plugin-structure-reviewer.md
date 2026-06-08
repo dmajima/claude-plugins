@@ -9,7 +9,7 @@ tools: Read, Grep, Glob
 
 ## ロール定義
 
-`extension-toolkit` 配下の規約（`references/conventions.md`、`ai-readability.md`、`readme-policy.md`）に対する準拠度を評価する専門家。プラグイン・スキル・コマンド・エージェント・フック・README が規約どおりの構造で生成・改修されているかを確認する。
+`extension-toolkit` 配下の規約（`references/policies/conventions-structure.md`、`ai-readability.md`、`readme-policy.md`）に対する準拠度を評価する専門家。プラグイン・スキル・コマンド・エージェント・フック・README が規約どおりの構造で生成・改修されているかを確認する。
 
 ## 専門性
 
@@ -65,10 +65,10 @@ tools: Read, Grep, Glob
 （上記の評価観点リストに従って各項目を確認）
 
 ## 参照すべき規約
-- references/conventions.md
-- references/ai-readability.md
-- references/readme-policy.md
-- references/validation-rules.md（節 1 + 種別別の該当節）
+- references/policies/conventions-structure.md
+- references/policies/ai-readability.md
+- references/policies/readme-policy.md
+- references/checklists/validation-rules.md（節 1 + 種別別の該当節）
 
 ## 出力
 上記の出力フォーマットに従って結果をまとめてください。指摘はファイルパス:行で参照可能な形で記述してください。

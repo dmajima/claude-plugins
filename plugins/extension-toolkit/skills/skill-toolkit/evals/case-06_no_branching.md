@@ -38,7 +38,7 @@
 
 ## 注意
 
-「動作分岐なし」と判定するのは慎重に行うこと。判定基準は [`../../../references/eval-guide.md`](../../../references/eval-guide.md) の「evals が必須となる条件」を参照。条件に該当する場合は `--no-branching` フラグでもユーザに警告する。
+「動作分岐なし」と判定するのは慎重に行うこと。判定基準は [`../../../references/guides/eval-guide.md`](../../../references/guides/eval-guide.md) の「evals が必須となる条件」を参照。条件に該当する場合は `--no-branching` フラグでもユーザに警告する。
 
 ## 関連ケース
 

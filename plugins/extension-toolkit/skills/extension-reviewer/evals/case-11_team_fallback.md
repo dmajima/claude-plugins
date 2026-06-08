@@ -18,7 +18,7 @@
 ### Phase 2: 起動方式判定（フォールバック検知）
 
 [`../references/team-selection.md`](../references/team-selection.md) の「フォールバック起動」節に従い、`TeamCreate` 利用可否を判定。
-利用不可と判定した場合、フォールバック経路に切り替える（[`../../../references/agent-utilization.md`](../../../references/agent-utilization.md) の 6.1 章 ADR-017 準拠）。
+利用不可と判定した場合、フォールバック経路に切り替える（[`../../../references/guides/agent-utilization.md`](../../../references/guides/agent-utilization.md) の 6.1 章 ADR-017 準拠）。
 
 ### Phase 3: チーム定義の抽出
 

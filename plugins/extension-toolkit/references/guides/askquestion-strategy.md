@@ -1,4 +1,4 @@
-# AskUserQuestion 発火戦略（SSOT）
+﻿# AskUserQuestion 発火戦略（SSOT）
 
 `AskUserQuestion` の発火タイミング・回数・複数質問束ね方の最適化ルール。
 [`user-interaction.md`](user-interaction.md) の利用原則と組み合わせて読む。
@@ -203,5 +203,5 @@ flowchart TD
 ## 7. 関連ドキュメント
 
 - [`user-interaction.md`](user-interaction.md) — AskUserQuestion 利用原則・利用不可ケース・フォールバック
-- [`argument-policy.md`](argument-policy.md) — コマンド引数を「単純な 1 引数」に圧縮し、不足情報を AskUserQuestion に集める原則（A-4）
+- [`argument-policy.md`](../policies/argument-policy.md) — コマンド引数を「単純な 1 引数」に圧縮し、不足情報を AskUserQuestion に集める原則（A-4）
 - ADR-013 — Claude UI（AskUserQuestion）の必須化
