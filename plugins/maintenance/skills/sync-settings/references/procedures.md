@@ -114,9 +114,9 @@ git clone --depth 1 --branch $Branch $Repo $repoDir
 ### 3.3 取得コマンド
 
 ```bash
-New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+mkdir -p "$backupDir"
 
-        Copy-Item -Recurse -Force -LiteralPath $src -Destination $dst
+        cp -r -- "$src" "$dst"
 ```
 ### 3.4 認証情報の除外
 

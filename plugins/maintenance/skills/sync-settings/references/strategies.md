@@ -34,14 +34,14 @@
 ### 1.4 実装
 
 ```bash
-function Sync-Overwrite {
+sync_overwrite() {
 
     # リモート側を走査して新規・更新
-            New-Item -ItemType Directory -Force -Path $destDir | Out-Null
-        Copy-Item -LiteralPath $_.FullName -Destination $destFile -Force
+            mkdir -p "$destDir"
+        cp -- "$src" "$destFile"
 
     # --prune 指定時はローカルのみのファイルを削除
-                Remove-Item -LiteralPath $_.FullName -Force
+                rm -f -- "$file"
 ```
 ## 2. merge 戦略
 
@@ -109,10 +109,10 @@ function Merge-Json {
 ### 3.4 実装
 
 ```bash
-function Sync-Skip {
+sync_skip() {
 
-                New-Item -ItemType Directory -Force -Path $destDir | Out-Null
-            Copy-Item -LiteralPath $_.FullName -Destination $destFile -Force
+                mkdir -p "$destDir"
+            cp -- "$src" "$destFile"
         # 既存ファイルはスキップ
 ```
 ## 4. 戦略選択のフロー

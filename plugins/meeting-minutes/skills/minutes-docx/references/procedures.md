@@ -26,8 +26,9 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/output/run_docx_via_job.sh" \
 テンプレートのスタイルを変更したい場合:
 
 ```bash
-& $venvPy "$CLAUDE_SKILL_DIR\scripts\output\create_template.py" \
-  --output "$CLAUDE_SKILL_DIR\assets\template\minutes-template.docx"
+"$SESSION_DIR/workspace/.venv/Scripts/python" \
+  "$CLAUDE_SKILL_DIR/scripts/output/create_template.py" \
+  --output "$CLAUDE_SKILL_DIR/assets/template/minutes-template.docx"
 ```
 ## トラブルシューティング
 
