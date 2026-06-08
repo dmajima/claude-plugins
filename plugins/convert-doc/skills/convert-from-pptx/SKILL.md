@@ -141,8 +141,8 @@ Phase 2 で Claude が JSON を解釈する際の規則は [`references/design.m
 
 ## アセットの場所
 
-- 変換スクリプト: `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py`
-- 検証スクリプト: `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py`
+- 変換スクリプト: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py`
+- 検証スクリプト: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/verify_md.py`
 - venv セットアップ: `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh`
 - venv 撤去: `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh`
 - 大規模 PPTX 等で Python ハング事象の懸念がある場合は、`run_via_job.sh`ラッパー経由で起動できる。Bash ツール経由なら Start-Job 二段構成は不要

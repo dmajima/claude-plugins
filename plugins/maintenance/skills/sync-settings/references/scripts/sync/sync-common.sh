@@ -171,7 +171,7 @@ test_file_excluded() {
 }
 
 # --- 再帰列挙 (reparse 追従抑制版 find) ---
-# 結果は NUL 区切りで stdout に列挙する。最大深さ 32 階層 (PowerShell 実装と同じ)。
+# 結果は NUL 区切りで stdout に列挙する。最大深さ 32 階層。
 get_non_reparse_file_items() {
   local root="${1:?root required}"
   local max_depth="${2:-32}"

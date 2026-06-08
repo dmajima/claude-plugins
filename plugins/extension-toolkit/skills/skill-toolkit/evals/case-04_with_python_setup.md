@@ -42,7 +42,7 @@
 - 通常チェックに加え、プラグイン直下 `references/scripts/setup/requirements.txt` に新規依存が追加されているか
 - スキル内に `requirements.txt` / `setup_venv.sh` / `teardown_venv.sh` が **配置されていない** こと（ADR-024 責務集約）
 - スキル直下に `scripts/` ディレクトリが **存在しない** こと（ADR-025、`references/scripts/{業務}/` のみ許可）
-- `references/setup.md` 内で `environment-setup-toolkit` または `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh` への委譲が明記されているか
+- `references/setup.md` 内で `environment-setup-toolkit` または `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh` への委譲が明記されているか
 - `procedures.md` 冒頭で `setup.md` を参照しているか
 
 ## 期待出力

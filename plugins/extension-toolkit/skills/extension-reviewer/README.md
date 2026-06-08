@@ -90,18 +90,18 @@ venv 構築・撤去スクリプトと依存パッケージはプラグイン直
 
 | ファイル | 配置 |
 |---------|------|
-| `setup_venv.sh` | `$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh` |
-| `teardown_venv.sh` | `$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh` |
-| `requirements.txt` | `$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt`（PyYAML 含む全スキルの依存統合） |
+| `setup_venv.sh` | `$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh` |
+| `teardown_venv.sh` | `$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh` |
+| `requirements.txt` | `$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt`（PyYAML 含む全スキルの依存統合） |
 
 ## 機械チェックの実行（手動実行例）
 
 ```bash
-New-Item -ItemType Directory -Force -Path "$SessionDir/workspace" | Out-Null
+mkdir -p "$SessionDir/workspace"
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
   -WorkDir "$SessionDir/workspace" \
   -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
-& "$SessionDir/workspace/.venv/Scripts/python" \
+"$SessionDir/workspace/.venv/Scripts/python" \
   "$CLAUDE_SKILL_DIR/references/scripts/checks/run_checks.py" \
   --target plugins/foo --scope-root . \
   --output "$SessionDir/workspace/checks.json"

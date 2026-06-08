@@ -40,7 +40,7 @@ target_dir=""
 if [[ -n "$home_dir" ]]; then
   home_dir_norm="${home_dir//\\/\/}"
   home_prefix="${home_dir_norm}/.claude/"
-  # case-insensitive prefix 比較（PowerShell の OrdinalIgnoreCase 相当）
+  # case-insensitive prefix 比較
   if [[ "${plugin_root_norm,,}" == "${home_prefix,,}"* ]]; then
     scope="user"
     target_dir="$home_dir/.claude/rules/security"

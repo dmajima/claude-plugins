@@ -2,10 +2,7 @@
 # verify_md.py を Bash 経由で起動するラッパー (Bash 版)
 #
 #
-# verify_md.py は内部で python-pptx を使うが、Bash ツール経由なら
-# Windows での python-pptx ハング事象は再現しないため、PowerShell 版のような
-# Start-Job 二段プロセス構成は不要。python.exe を直接呼び出す。
-# 設計と挙動は run_via_job.sh と対称。
+# Bash ツール経由で python.exe を直接呼び出す。設計と挙動は run_via_job.sh と対称。
 #
 # 使い方:
 #   bash run_verify_via_job.sh <input.pptx> <md.md> [--python-exe <path>] [extra args...]

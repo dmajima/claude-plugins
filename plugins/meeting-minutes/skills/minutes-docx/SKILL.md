@@ -34,7 +34,7 @@ trigger:
 ## 重要な制約
 
 - 議事録を Word 形式で配布・保管する業務要件に対応する。テンプレートベースでスタイルを統一する
-- python-pptx と同様、Windows + PowerShell 環境では Start-Job 経由ラッパーでの起動が必要な場合がある
+- python-docx ハング対策として `run_docx_via_job.sh` ラッパー経由で起動する
 
 ## 実行モード判定
 
@@ -85,13 +85,11 @@ trigger:
 ## Python スクリプト
 
 ```bash
-& chcp.com 65001 | Out-Null
-[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-
-& $venvPy "$CLAUDE_SKILL_DIR\scripts\output\generate_docx.py" \
-  --input "$SESSION_DIR\workspace\minutes.json" \
-  --template "$CLAUDE_SKILL_DIR\assets\template\minutes-template.docx" \
-  --output "$SESSION_DIR\minutes.docx"
+"$SESSION_DIR/workspace/.venv/Scripts/python" \
+  "$CLAUDE_SKILL_DIR/scripts/output/generate_docx.py" \
+  --input "$SESSION_DIR/workspace/minutes.json" \
+  --template "$CLAUDE_SKILL_DIR/assets/template/minutes-template.docx" \
+  --output "$SESSION_DIR/minutes.docx"
 ```
 ## 依存
 

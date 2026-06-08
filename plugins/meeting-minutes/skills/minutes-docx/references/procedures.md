@@ -9,18 +9,17 @@
 
 ## 手順
 
-### 1. docx 生成（Start-Job ラッパー経由）
+### 1. docx 生成（Bash ラッパー経由）
 
-Windows + PowerShell 環境では python-docx がハングする既知事象があるため、
 `run_docx_via_job.sh` 経由で起動する。
 
 ```bash
-bash "$CLAUDE_PLUGIN_ROOT\references\scripts\output\run_docx_via_job.sh" \
-  -PythonExe $venvPy \
-  -ScriptPath "$CLAUDE_SKILL_DIR\scripts\output\generate_docx.py" \
-  -InputJson "$SESSION_DIR\workspace\minutes.json" \
-  -OutputDocx "$SESSION_DIR\minutes.docx" \
-  -TemplatePath "$CLAUDE_SKILL_DIR\assets\template\minutes-template.docx"
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/output/run_docx_via_job.sh" \
+  -PythonExe "$venvPy" \
+  -ScriptPath "$CLAUDE_SKILL_DIR/scripts/output/generate_docx.py" \
+  -InputJson "$SESSION_DIR/workspace/minutes.json" \
+  -OutputDocx "$SESSION_DIR/minutes.docx" \
+  -TemplatePath "$CLAUDE_SKILL_DIR/assets/template/minutes-template.docx"
 ```
 ### 3. テンプレートの再生成（必要時のみ）
 

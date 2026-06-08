@@ -289,14 +289,6 @@ Windows では `<base>` が深いパスにあると、HuggingFace のモデル�
 }
 ```
 
-#### Windows での `--clear`
-
-`/router-embedding-cache --clear` は内部で POSIX `rm -f` 相当を呼びます。Windows 環境では同等の PowerShell コマンドを案内します。
-
-```bash
-Remove-Item -Force "$BASE\embeddings_cache\vectors.npz", "$BASE\embeddings_cache\manifest.json"
-```
-
 ### トラブルシュート
 
 | 症状 | 対処 |

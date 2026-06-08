@@ -94,7 +94,7 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \\
 \`\`\`
 
 
-`$env:CLAUDE_PLUGIN_ROOT` は **当該プラグイン由来のスキル/コマンド/フック実行時のみ** Claude Code が解決する。スタンドアロン配布のスキル（`<repo>/.claude/skills/{name}/` 等）からは未定義となるため `Skill` ツール経由を選ぶこと。
+`$CLAUDE_PLUGIN_ROOT` は **当該プラグイン由来のスキル/コマンド/フック実行時のみ** Claude Code が解決する。スタンドアロン配布のスキル（`<repo>/.claude/skills/{name}/` 等）からは未定義となるため `Skill` ツール経由を選ぶこと。
 ```
 
 ## requirements.txt の配置（ADR-024）

@@ -63,9 +63,7 @@ bash scripts/aggregate/aggregate.sh --as-object | jq .
 ## 既知の制限
 
 - Windows 専用（`Set-Clipboard` が前提）
-- PowerShell 7+ 必須（`#Requires -Version 7.0`）
-- Claude Code Bash 経由では `ReadKey` 等の対話キー入力ができないため、
-  対話は `AskUserQuestion` に集約
+- 対話は `AskUserQuestion` に集約
 
 ## ライセンス
 

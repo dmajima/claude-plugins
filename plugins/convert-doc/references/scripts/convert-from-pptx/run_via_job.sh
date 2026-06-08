@@ -2,11 +2,7 @@
 # convert_from_pptx.py を Bash 経由で起動するラッパー (Bash 版)
 #
 #
-# Bash ツール経由なら Windows + python-pptx の `Start-Process -NoNewWindow` ハング
-# 事象は再現しない（Cygwin の PTY 層が pwsh とは異なる挙動を取るため）。
-# したがって PowerShell 版のような Start-Job 二段プロセス構成は不要で、
-# python.exe を直接呼び出す。
-# 詳細: ~/.claude/rules/tools/python-subprocess-hang-windows.md
+# Bash ツール経由で python.exe を直接呼び出す。
 #
 # 使い方:
 #   bash run_via_job.sh <input.pptx> <output.md> [--python-exe <path>] [extra args...]
@@ -101,11 +97,11 @@ if [[ ! -f "$convert_script" ]]; then
   exit 2
 fi
 
-# Python の UTF-8 設定（PowerShell 版と等価）
+# Python の UTF-8 設定
 export PYTHONUTF8=1
 export PYTHONIOENCODING=utf-8
 
-# stderr を stdout にマージして実行（PowerShell 版の `2>&1` と等価）
+# stderr を stdout にマージして実行
 set +e
 if command -v timeout >/dev/null 2>&1; then
   timeout --foreground "$timeout_sec" \

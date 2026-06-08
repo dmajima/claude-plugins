@@ -116,7 +116,7 @@ resolve_project_path() {
       printf 'ProjectPath が無効です（解決失敗）: %s\n' "$path" >&2
       exit 1
     }
-    # Windows 形式 (バックスラッシュ) に変換 (PowerShell 版と等価)
+    # Windows 形式 (バックスラッシュ) に変換
     if command -v cygpath >/dev/null 2>&1; then
       cygpath -w -- "$abs" 2>/dev/null || printf '%s' "$abs"
     else

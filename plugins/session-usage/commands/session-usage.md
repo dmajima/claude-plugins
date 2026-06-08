@@ -15,7 +15,7 @@ allowed-tools: Bash(bash:*)
 
 | 引数 | 解釈 |
 |-----|------|
-| 空 | カレントセッション（`$env:CLAUDE_CODE_SESSION_ID` → 最新 mtime） |
+| 空 | カレントセッション（`$CLAUDE_CODE_SESSION_ID` → 最新 mtime） |
 | 36 文字 UUID 形式 | 該当セッションを集計対象とする |
 | その他 | 警告表示後、空扱いで進行 |
 

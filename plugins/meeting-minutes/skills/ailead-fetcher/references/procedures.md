@@ -28,12 +28,10 @@ buildId は Next.js のデプロイごとに変わるため、毎回 HTML から
 ### 4.1 Python スクリプト経由（推奨）
 
 ```bash
-& chcp.com 65001 | Out-Null
-[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-
-& $venvPy "$CLAUDE_SKILL_DIR\scripts\fetch\fetch_share.py" \
+"$SESSION_DIR/workspace/.venv/Scripts/python" \
+  "$CLAUDE_SKILL_DIR/scripts/fetch/fetch_share.py" \
   --url "https://dashboard.ailead.app/share/<key>" \
-  --output "$SESSION_DIR\workspace"
+  --output "$SESSION_DIR/workspace"
 ```
 スクリプトは以下を自動実行する:
 - share key の抽出
@@ -42,18 +40,6 @@ buildId は Next.js のデプロイごとに変わるため、毎回 HTML から
 - GraphQL クエリ実行
 - 結果の JSON 保存 + 文字起こしテキスト出力
 
-### 4.2 PowerShell 直接実行
-
-```bash
-operationName = 'externalShare'
-    variables = @{ key = $shareKey }
-    extensions = @{
-        operationHash = $hash
-        buildId = $buildId
-
-    -Method Post -Body $jsonBody \
-    -ContentType 'application/json; charset=utf-8' -UseBasicParsing
-```
 ## 5. レスポンスの処理
 
 ### 5.1 成果物の配置

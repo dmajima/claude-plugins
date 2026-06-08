@@ -13,7 +13,7 @@
 
 ### Phase 1: 委譲先スクリプトの解決
 
-`environment-setup-toolkit` は **自前で setup ロジックを保持しない**（ADR-024）。`$env:CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh` の存在を確認する。
+`environment-setup-toolkit` は **自前で setup ロジックを保持しない**（ADR-024）。`$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh` の存在を確認する。
 
 | 状況 | アクション |
 |-----|---------|
@@ -71,7 +71,7 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" -WorkDir "$
 ```
 | 観点 | 内容 |
 |-----|------|
-| 安全装置 | teardown_venv.sh 内 2 段ガード（`[System.IO.Path]::GetFullPath` 正規化 + `.claude/.local/` 限定）が常に動作 |
+| 安全装置 | teardown_venv.sh 内 3 段ガード（`realpath`/`readlink` 正規化 + `.claude/.local/` 限定 + システムパス二重チェック）が常に動作 |
 | 失敗時の振る舞い | 安全装置に引っかかった場合は exit 1 で fail-closed、venv は削除されない |
 | プラグイン直下スクリプト不在時 | setup と同じく ADR-024 雛形作成案内（Phase 4）を提示 |
 

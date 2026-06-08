@@ -19,7 +19,7 @@
 
 set -uo pipefail
 # 注: cleanup-config.json パース失敗時の jq の警告など、複数箇所で
-# 関数の戻り値を許容する設計のため `set -e` は使わない (PowerShell 版と等価)。
+# 関数の戻り値を許容する設計のため `set -e` は使わない。
 
 # --- 引数解析 ---
 days=""
@@ -50,7 +50,7 @@ if command -v cygpath >/dev/null 2>&1 && [[ "$home_dir" == *":"* ]]; then
 fi
 CONFIG_FILE="$home_dir/.claude/.local/plugins/maintenance/cleanup-config.json"
 
-# --- 設定読込 (PowerShell 版と等価) ---
+# --- 設定読込 ---
 default_days=30
 default_keep_recent=0
 default_scope='both'
@@ -349,7 +349,7 @@ if (( candidate_count > 0 )); then
     la="$(printf '%s' "$line" | awk -F'\t' '{print $4}')"
     sz="$(printf '%s' "$line" | awk -F'\t' '{print $5}')"
     mb="$(awk -v b="$sz" 'BEGIN { v = b / 1048576; r = sprintf("%.2f", v); sub(/0+$/, "", r); sub(/\.$/, "", r); if (r == "" || r == "-") r = "0"; print r }')"
-    # 表示用にローカルタイムへ変換 (PowerShell 版: ToLocalTime + yyyy-MM-dd HH:mm)
+    # 表示用にローカルタイムへ変換
     if mtime_local="$(date -d "@$la" '+%Y-%m-%d %H:%M' 2>/dev/null)"; then
       :
     elif mtime_local="$(date -r "$la" '+%Y-%m-%d %H:%M' 2>/dev/null)"; then
