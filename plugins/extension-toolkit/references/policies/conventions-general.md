@@ -40,7 +40,7 @@
 
 スキル固有派生は **横断テンプレートをコピーしてから差分** を加える（ADR-003）。
 
-## 9. パスポータビリティ
+## 10. パスポータビリティ
 
 詳細は [`path-portability.md`](path-portability.md) を参照。
 
@@ -52,13 +52,13 @@
 
 ローカル絶対パスのハードコード禁止。
 
-## 10. ファイル編集時のエンコーディング
+## 11. ファイル編集時のエンコーディング
 
 既存ファイル更新時は **元ファイルのエンコーディング・改行コードを維持** する（文字化け防止）。詳細は `~/.claude/rules/common/file-encoding.md` を参照。
 
 UTF-8 以外（Shift-JIS / CP932 等）のファイルは Edit / Write ツールを直接使用せず、Python 経由で書き戻す。
 
-## 11. README.md ポリシー
+## 12. README.md ポリシー
 
 詳細は [`../readme-policy.md`](../readme-policy.md) を参照。
 
@@ -68,20 +68,20 @@ UTF-8 以外（Shift-JIS / CP932 等）のファイルは Edit / Write ツール
 - 利用者向け導入手順を冒頭、技術スタック・アーキテクチャは後半
 - `SKILL.md` / `references/` は `README.md` を参照しない（一方向参照）
 
-## 12. 禁止事項（厳格・緩和を区別）
+## 13. 禁止事項（厳格・緩和を区別）
 
-### 12.1 厳格な禁止（配置）
+### 13.1 厳格な禁止（配置）
 
 - プラグイン直下のディレクトリで [`conventions-structure.md`](conventions-structure.md) 節 2.1 に列挙されていないものを追加（ADR で明示する場合のみ例外）
 - スキル直下に [`conventions-structure.md`](conventions-structure.md) 節 3.1 に列挙されていないディレクトリ・ファイルを置く（ADR で明示する場合のみ例外）
 
-### 12.2 厳格な禁止（命名）
+### 13.2 厳格な禁止（命名）
 
 - `scripts/` の代わりに `knowledge/` `lib/` `bin/` 等を使用
 - `references/` の代わりに `shared/` `common/` `docs/` 等を使用
 - 拡張子別のサブフォルダ（`scripts/py/` `scripts/sh/` 等）
 
-### 12.3 厳格な禁止（ファイル内容）
+### 13.3 厳格な禁止（ファイル内容）
 
 - `references/` 配下のファイルで 300 行超過（分割必須、節 8 参照）
 - `references/` 配下の単一ファイルにルール・ガイド・チェックリスト・手順・テンプレートを混在（節 8 参照）
@@ -93,19 +93,19 @@ UTF-8 以外（Shift-JIS / CP932 等）のファイルは Edit / Write ツール
 - `§` 記号の使用（代替: `1.` / `セクション1` / `第1節` 等）
 - 構造化データの Markdown 表での長期保存（[`state-files.md`](state-files.md) 参照）
 
-### 12.4 厳格な禁止（操作）
+### 13.4 厳格な禁止（操作）
 
 - 既存ファイル更新時のエンコーディング・改行コード変更
 - ユーザ選択を AskUserQuestion 以外の方法で求める（重要な選択肢の場合）
 - 作業完了報告前に [`../checklists/completion-checklist.md`](../checklists/completion-checklist.md) の自己検証を省略
 
-### 12.5 厳格な禁止（ドキュメント履歴記載）
+### 13.5 厳格な禁止（ドキュメント履歴記載）
 
 - プラグイン内ドキュメント（README / SKILL.md / references / evals 等）に自身の更新履歴を残すこと（[ADR-016](../architecture-decisions.md) 参照）
 - 「当初は」「改訂」「Round-N で」「リネーム時点で」のような時系列記述
 - 「## 変更履歴」「## Changelog」「## Release Notes」等のセクション
 - 例外: ユーザから明示指示があった場合のみ履歴記載を許容
 
-## 13. 検証
+## 14. 検証
 
 本規約のうち **[`conventions-structure.md`](conventions-structure.md) 節 2.1（プラグイン直下）と節 3.1（スキル直下）の許可リスト遵守** は [`../checklists/validation-rules.md`](../checklists/validation-rules.md) の機械チェックで自動検出する。`references/` 直下と `scripts/` 直下は推奨例のため機械チェック対象外（人間レビューで確認）。
