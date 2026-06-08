@@ -11,7 +11,7 @@
 | `references/` 直下 | 推奨例（緩い） | 推奨される命名・配置を例示。実情に応じて拡張可 |
 | `scripts/` 直下 | 推奨例（緩い） | 推奨される業務単位サブフォルダを例示。`knowledge/` 等の禁止項目のみ厳格 |
 
-本ファイルは命名・ファイル形式に特化した規約。構造規約は [`conventions-structure.md`](conventions-structure.md)、その他の共通規約・禁止事項は [`conventions-general.md`](conventions-general.md) を参照。
+本ファイルは命名・ファイル形式に特化した規約（旧 `conventions.md` 節 1・6・7 に対応）。構造規約（節 2〜5）は [`conventions-structure.md`](conventions-structure.md)、共通規約・禁止事項（節 8〜14）は [`conventions-general.md`](conventions-general.md) を参照。
 
 ## 1. 命名規約
 
