@@ -1,6 +1,6 @@
 ﻿# スクリプト記述・配置ポリシー（MANDATORY）
 
-`extension-toolkit` プラグインが管理するすべての拡張要素（スキル・コマンド・エージェント・フック・プラグイン本体）に適用される、スクリプト（Python・Bash・PowerShell・Node 等）の記述場所と配置ルール。本ポリシーは [`conventions.md`](conventions.md) の補足として、スクリプトに特化した詳細を定義する。
+`extension-toolkit` プラグインが管理するすべての拡張要素（スキル・コマンド・エージェント・フック・プラグイン本体）に適用される、スクリプト（Python・Bash・PowerShell・Node 等）の記述場所と配置ルール。本ポリシーは [`conventions.md`](conventions-structure.md) の補足として、スクリプトに特化した詳細を定義する。
 
 OK/NG 例は `../procedures/scripts-examples.md`、移行ガイドは `../procedures/scripts-examples.md` を参照。
 
@@ -173,7 +173,7 @@ Windows + PowerShell から Python スクリプトを `Start-Process -NoNewWindo
 
 | ルール | 関係 |
 |-------|------|
-| [`conventions.md`](conventions.md) | スクリプト配置の上位規約（本ポリシーで詳細化） |
+| [`conventions.md`](conventions-structure.md) | スクリプト配置の上位規約（本ポリシーで詳細化） |
 | [`../checklists/validation-rules.md`](../checklists/validation-rules.md) | 機械検証項目（本ポリシーの違反検出） |
 | `../architecture/decisions-021-033.md` | ADR-024（プラグイン単位 venv）・ADR-025（インラインスクリプト禁止 + `references/scripts/` 配置義務）・ADR-026（経由強制フック） |
 | [`../policies/path-portability.md`](../policies/path-portability.md) | スクリプト内のパス記述ルール |

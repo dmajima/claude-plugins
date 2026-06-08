@@ -60,7 +60,7 @@ UTF-8 以外（Shift-JIS / CP932 等）のファイルは Edit / Write ツール
 
 ## 12. README.md ポリシー
 
-詳細は [`../readme-policy.md`](../readme-policy.md) を参照。
+詳細は [`../readme-policy.md`](readme-policy.md) を参照。
 
 - **すべてのプラグイン・スキルに必須**
 - 人間向けリファレンス（Claude スキル動作では不参照）
@@ -101,7 +101,7 @@ UTF-8 以外（Shift-JIS / CP932 等）のファイルは Edit / Write ツール
 
 ### 13.5 厳格な禁止（ドキュメント履歴記載）
 
-- プラグイン内ドキュメント（README / SKILL.md / references / evals 等）に自身の更新履歴を残すこと（[ADR-016](../architecture-decisions.md) 参照）
+- プラグイン内ドキュメント（README / SKILL.md / references / evals 等）に自身の更新履歴を残すこと（[ADR-016](../architecture/decisions-011-020.md) 参照）
 - 「当初は」「改訂」「Round-N で」「リネーム時点で」のような時系列記述
 - 「## 変更履歴」「## Changelog」「## Release Notes」等のセクション
 - 例外: ユーザから明示指示があった場合のみ履歴記載を許容

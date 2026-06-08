@@ -47,7 +47,7 @@ plugins/{plugin-name}/
 | エントリ | 由来 | 必須/任意 |
 |---------|------|----------|
 | `.claude-plugin/plugin.json` | Claude Code 公式 | 必須 |
-| `README.md` | 独自ルール（[`../readme-policy.md`](../readme-policy.md)） | 必須 |
+| `README.md` | 独自ルール（[`../readme-policy.md`](readme-policy.md)） | 必須 |
 | `LICENSE` | 独自ルール（[`license-policy.md`](license-policy.md)、ADR-029） | 必須（MIT 標準文 + Copyright 行を `mit-license-toolkit` が生成） |
 | `commands/` | Claude Code 公式 | 任意 |
 | `skills/` | Claude Code 公式 | 任意 |
@@ -76,7 +76,7 @@ plugins/{plugin-name}/
 
 | 手順 | 内容 |
 |-----|------|
-| 1 | [`../architecture-decisions.md`](../architecture-decisions.md) に新 ADR を追加（決定 / 理由 / トレードオフ / 代替案を必須記載） |
+| 1 | [`../architecture-decisions.md`](../architecture/) に新 ADR を追加（決定 / 理由 / トレードオフ / 代替案を必須記載） |
 | 2 | 本ファイル節 2.1 の許可リストを更新 |
 | 3 | [`../checklists/validation-rules.md`](../checklists/validation-rules.md) の機械チェックを更新 |
 
@@ -103,7 +103,7 @@ plugins/{plugin-name}/skills/{skill-name}/
 | エントリ | 由来 | 必須/任意 |
 |---------|------|----------|
 | `SKILL.md` | Claude Code 公式 | 必須 |
-| `README.md` | 独自ルール（[`../readme-policy.md`](../readme-policy.md)） | 必須 |
+| `README.md` | 独自ルール（[`../readme-policy.md`](readme-policy.md)） | 必須 |
 | `references/` | 独自（スキル固有の詳細・スクリプト・テンプレート集約） | 任意 |
 | `agents/` | Claude Code 公式（プラグイン配布時のサブエージェント） | 任意 |
 | `assets/` | 独自（スキル固有の静的リソース、ADR-030） | 任意 |
