@@ -65,6 +65,10 @@
 | [case-50_wrapper_extra_args_passthrough.md](case-50_wrapper_extra_args_passthrough.md) | `run_via_job.sh` の ExtraArgs (`--no-mermaid` 等) 転送確認 |
 | [case-45_medium_pptx_flow.md](case-45_medium_pptx_flow.md) | 中規模 PPTX（30〜100 スライド）でのメイン逐次 Read フロー |
 | [case-46_section_cover_number_excluded.md](case-46_section_cover_number_excluded.md) | 章扉スライドでの装飾的章番号除外（`_is_decoration_number`） |
+| [case-51_trigger_pptx_to_md.md](case-51_trigger_pptx_to_md.md) | トリガー: PPTX→Markdown 変換の基本依頼（対話モード） |
+| [case-52_trigger_slide_to_text.md](case-52_trigger_slide_to_text.md) | トリガー: スライドテキスト化の自然言語依頼（対話モード） |
+| [case-53_trigger_design_doc_parse.md](case-53_trigger_design_doc_parse.md) | トリガー: 設計書 PPTX 解析の自然言語依頼（対話モード） |
+| [case-54_noninteractive_path.md](case-54_noninteractive_path.md) | パス指定による非対話モード（ファイル確認スキップ） |
 
 ## 実行確認方法
 

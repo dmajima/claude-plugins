@@ -10,6 +10,9 @@
 | case-02_no_corrections | 正確な議事録に対して修正なし通過する | 修正なし |
 | case-03_ailead_source_review | response.json の callSummary.topics の dateTime を起点に時刻ベースで突合検証を実施する | ailead ソース突合 |
 | case-04_missing_input | `workspace/minutes.json` 不在時に minutes-composer の起動を提案して中断する | 入力ファイル不在 → 対話 |
+| case-05_review_minutes | 作成済みの議事録を文字起こしと突合検証する | 非対話・自動検証 |
+| case-06_check_minutes | 議事録の正確性チェックを依頼する | 非対話・自動検証（別フレーズ） |
+| case-07_error_empty_minutes | 議事録データが空の状態でレビューを依頼する | 入力不在 → エラー |
 
 ## 実行確認方法
 

@@ -126,3 +126,4 @@ Agent({
 | 用途 | ファイル |
 |-----|---------|
 | 検証ルール詳細 | [`references/verification-rules.md`](references/verification-rules.md) |
+| 動作分岐検証 | [`evals/`](evals/) |

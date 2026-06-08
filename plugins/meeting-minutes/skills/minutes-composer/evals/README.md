@@ -9,6 +9,9 @@
 | case-01_ailead_flow | `workspace/response.json` あり時にトピック要約ベースで構造化する | ailead フロー |
 | case-02_generic_flow | `response.json` なし時にゼロから構造化する | 汎用フロー |
 | case-03_missing_input | `workspace/transcript.txt` 不在時にデータ取得スキルの起動を提案して中断する | 入力ファイル不在 → 対話 |
+| case-04_compose_minutes | 取得済みデータから議事録の構成を依頼する | 非対話・自動構造化 |
+| case-05_generic_text_minutes | テキストを直接提供して議事録を作成する | 汎用テキスト → 対話 |
+| case-06_error_no_input | 入力ファイルが存在しない状態で議事録作成を依頼する | 入力不在 → エラー |
 
 ## 実行確認方法
 

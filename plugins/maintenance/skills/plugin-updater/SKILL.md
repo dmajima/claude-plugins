@@ -90,6 +90,7 @@ Phase G の AskUserQuestion 確認で抑止される）。
 | 横断ルール XR-1〜XR-5（入力検証 / タイムアウト / サニタイズ / リトライ / Unknown 警告） | [`references/cross-cutting-rules.md`](references/cross-cutting-rules.md) |
 | Phase F のテーブル / 警告 / 質問文フォーマット集 | [`references/output-formats.md`](references/output-formats.md) |
 | 設計判断記録（ADR-PU-001〜008） | [`references/architecture-decisions.md`](references/architecture-decisions.md) |
+| 動作分岐検証 | [`evals/`](evals/) |
 
 ## 実行フロー（概要）
 

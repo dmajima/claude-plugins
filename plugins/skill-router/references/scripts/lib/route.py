@@ -326,7 +326,7 @@ def score_skill(
 def determine_tier(
     top1: float, top2: float, thresholds: dict[str, float]
 ) -> str:
-    ratio = top1 / max(top2, 0.1)
+    ratio = _calc_ratio(top1, top2)
     if top1 >= thresholds["high_score"] and ratio >= thresholds["high_ratio"]:
         return "high"
     if top1 >= thresholds["mid_score"]:
@@ -369,6 +369,8 @@ def _format_mid(rows: list[tuple[dict[str, Any], float, list[str]]], ratio: floa
 
 
 def _format_low(rows: list[tuple[dict[str, Any], float, list[str]]], ratio: float) -> str:
+    if not rows:
+        return ""
     lines = [
         "[skill-router] 参考: 関連の可能性があるスキル（低信頼度）\n",
     ]
@@ -378,7 +380,7 @@ def _format_low(rows: list[tuple[dict[str, Any], float, list[str]]], ratio: floa
     lines.append(
         "\nミスマッチの可能性があります。利用が適切かエージェント自身で判断してください。"
     )
-    if ratio < 1.10 and len(rows) >= 2:
+    if ratio < DEFAULT_CONFIG["thresholds"]["high_ratio"] and len(rows) >= 2:
         lines.append(
             "複数のスキルが該当する可能性があるため、AskUserQuestion でユーザーに確認してください。"
         )
@@ -398,12 +400,19 @@ def _emit(payload: dict[str, Any]) -> None:
 
 _MAX_PROMPT_CHARS = 65536  # 64 KiB; protects n-gram / tokenizer memory
 
+_FILTER_PREFIXES = ("<task-notification>", "<system-reminder>")
+
+
+def _calc_ratio(top1: float, top2: float) -> float:
+    return top1 / max(top2, 0.1)
+
 
 def route(stdin_payload: dict[str, Any]) -> dict[str, Any] | None:
     prompt = (stdin_payload.get("prompt") or "").strip()
+    prompt = prompt.lstrip("﻿​‌‍⁠")
     if not prompt or prompt.startswith("/"):
         return None
-    if prompt.startswith("<task-notification>") or prompt.startswith("<system-reminder>"):
+    if prompt.startswith(_FILTER_PREFIXES):
         return None
     # Multi-megabyte prompts could blow up the n-gram extraction in
     # ``_eval_similarity`` and the token scan in ``extract_5w1h``.  The
@@ -483,7 +492,7 @@ def route(stdin_payload: dict[str, Any]) -> dict[str, Any] | None:
     top1 = rows[0][1] if rows else 0.0
     top2 = rows[1][1] if len(rows) > 1 else 0.0
     tier = determine_tier(top1, top2, thresholds)
-    ratio = top1 / max(top2, 0.1)
+    ratio = _calc_ratio(top1, top2)
 
     decision = {
         "tier": tier,

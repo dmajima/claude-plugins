@@ -13,6 +13,9 @@
 | case-05_empty_transcripts | GraphQL 成功だが transcripts が空の場合に空ファイル出力と再試行を提案する | 文字起こし未完了 |
 | case-06_password_protected | パスワード保護リンクに対して未対応の旨をユーザーに報告する | パスワード保護 |
 | case-07_no_url_interactive | URL 未指定時にユーザーに ailead 共有 URL を AskUserQuestion で確認する | URL なし → 対話 |
+| case-08_fetch_share_link | ailead 共有リンク URL を指定してデータを取得する基本フロー | 正常取得（URL 指定） |
+| case-09_ailead_recording | ailead の録画・文字起こし取得依頼で URL 未指定のため対話モードに遷移する | URL なし → 対話 |
+| case-10_error_invalid_url | 不正な URL が提示された場合にエラーメッセージを提示する | URL 不正形式 → エラー |
 
 ## 実行確認方法
 

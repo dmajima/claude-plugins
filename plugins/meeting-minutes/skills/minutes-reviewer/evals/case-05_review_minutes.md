@@ -4,7 +4,7 @@
 
 ## 入力
 
-| 項目 | 内容 |
+| 項目 | 値 |
 |-----|------|
 | 起動フレーズ | "作成した議事録をレビューして" |
 | モード | 非対話 |
@@ -16,3 +16,18 @@
 - minutes.json と transcript.txt を突合検証する
 - 漏れ・誤り・発言者帰属の誤りを検出する
 - workspace/ に verification-log.md と review-result.json を出力する
+
+## 期待出力
+
+| 出力 | 内容 |
+|-----|------|
+| 成果物 | workspace/verification-log.md と workspace/review-result.json |
+
+## 分岐の根拠
+
+SKILL.md「実行モード判定」の「workspace/ に minutes.json + transcript.txt が存在 → 非対話」分岐。フレッシュなサブエージェントとして突合検証を自動実行する。
+
+## 関連ケース
+
+- case-01_with_corrections（修正提案ありの検証結果）
+- case-06_check_minutes（正確性チェック依頼の別フレーズ）

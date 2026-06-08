@@ -14,6 +14,10 @@
 | [case-06_input_not_found.md](case-06_input_not_found.md) | 入力 MD が存在しない |
 | [case-07_invalid_primary_color.md](case-07_invalid_primary_color.md) | 不正な --primary-color |
 | [case-08_ssrf_image_url.md](case-08_ssrf_image_url.md) | プライベート IP の画像 URL（SSRF 対策） |
+| [case-09_trigger_md_to_pptx.md](case-09_trigger_md_to_pptx.md) | トリガー: Markdown→PPTX 変換の基本依頼（対話モード） |
+| [case-10_trigger_slide_creation.md](case-10_trigger_slide_creation.md) | トリガー: スライド作成の自然言語依頼（対話モード） |
+| [case-11_trigger_design_doc_pptx.md](case-11_trigger_design_doc_pptx.md) | トリガー: 設計書 PPTX 出力の自然言語依頼（対話モード） |
+| [case-12_noninteractive_aspect.md](case-12_noninteractive_aspect.md) | 4:3 アスペクト比指定による非対話モード（`--aspect 4:3` 適用） |
 
 ## 実行確認方法
 
