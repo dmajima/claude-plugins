@@ -52,7 +52,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     },
     "thresholds": {
         "high_score": 8.0,
-        "high_ratio": 1.25,
+        "high_ratio": 1.10,
         "mid_score": 4.0,
     },
     "candidate_filter": {
@@ -326,10 +326,8 @@ def score_skill(
 def determine_tier(
     top1: float, top2: float, thresholds: dict[str, float]
 ) -> str:
-    if (
-        top1 >= thresholds["high_score"]
-        and top1 / max(top2, 0.1) >= thresholds["high_ratio"]
-    ):
+    ratio = _calc_ratio(top1, top2)
+    if top1 >= thresholds["high_score"] and ratio >= thresholds["high_ratio"]:
         return "high"
     if top1 >= thresholds["mid_score"]:
         return "mid"
@@ -338,20 +336,54 @@ def determine_tier(
 
 def _format_high(skill: dict[str, Any], score: float, ratio: float, reasons: Iterable[str]) -> str:
     reason_block = "\n".join(f"  - {r}" for r in list(reasons)[:3])
+    qn = skill["qualified_name"]
     return (
         f"[skill-router] 高適合スキルを検出（信頼度 {score:.1f}・上位差 {ratio:.2f}）\n"
-        f"\n推奨: {skill['qualified_name']}\n根拠:\n{reason_block}\n\n"
-        "skill-invocation-priority.md に従い、Skill ツール経由で起動してください。\n"
+        f"\n推奨: {qn}\n根拠:\n{reason_block}\n\n"
+        f'Skill(skill: "{qn}") で起動してください。\n'
         "SKIP 条件に該当する場合のみ起動を見送ってください。"
     )
 
 
-def _format_mid(rows: list[tuple[dict[str, Any], float, list[str]]]) -> str:
-    lines = ["[skill-router] 関連する可能性のあるスキル候補（参考情報）:\n"]
-    for skill, score, reasons in rows[:3]:
+def _format_mid(rows: list[tuple[dict[str, Any], float, list[str]]], ratio: float) -> str:
+    top = rows[0]
+    qn = top[0]["qualified_name"]
+    if ratio >= 1.15 or len(rows) < 2:
+        reason_short = top[2][0] if top[2] else "score signals only"
+        return (
+            f"[skill-router] 推奨スキル候補（信頼度 {top[1]:.1f}）\n\n"
+            f"推奨: {qn}\n根拠: {reason_short}\n\n"
+            f'該当する場合は Skill(skill: "{qn}") での起動を検討してください。\n'
+            "直接合致しなければ通常応答を継続して構いません。"
+        )
+    lines = [
+        "[skill-router] 複数のスキル候補を検出:\n",
+    ]
+    for i, (skill, score, reasons) in enumerate(rows[:3], 1):
         reason_short = reasons[0] if reasons else "score signals only"
-        lines.append(f"- {skill['qualified_name']}（信頼度 {score:.1f}）: {reason_short}")
-    lines.append("\n該当があれば検討してください。直接合致しなければ通常応答を継続して構いません。")
+        lines.append(f"{i}. {skill['qualified_name']}（信頼度 {score:.1f}）: {reason_short}")
+    lines.append(
+        "\n複数候補があるため、AskUserQuestion でユーザーにどのスキルを使用するか確認してください。"
+    )
+    return "\n".join(lines)
+
+
+def _format_low(rows: list[tuple[dict[str, Any], float, list[str]]], ratio: float) -> str:
+    if not rows:
+        return ""
+    lines = [
+        "[skill-router] 参考: 関連の可能性があるスキル（低信頼度）\n",
+    ]
+    for i, (skill, score, reasons) in enumerate(rows[:3], 1):
+        reason_short = reasons[0] if reasons else "score signals only"
+        lines.append(f"{i}. {skill['qualified_name']}（信頼度 {score:.1f}）: {reason_short}")
+    lines.append(
+        "\nミスマッチの可能性があります。利用が適切かエージェント自身で判断してください。"
+    )
+    if ratio < DEFAULT_CONFIG["thresholds"]["high_ratio"] and len(rows) >= 2:
+        lines.append(
+            "複数のスキルが該当する可能性があるため、AskUserQuestion でユーザーに確認してください。"
+        )
     return "\n".join(lines)
 
 
@@ -368,10 +400,19 @@ def _emit(payload: dict[str, Any]) -> None:
 
 _MAX_PROMPT_CHARS = 65536  # 64 KiB; protects n-gram / tokenizer memory
 
+_FILTER_PREFIXES = ("<task-notification>", "<system-reminder>")
+
+
+def _calc_ratio(top1: float, top2: float) -> float:
+    return top1 / max(top2, 0.1)
+
 
 def route(stdin_payload: dict[str, Any]) -> dict[str, Any] | None:
     prompt = (stdin_payload.get("prompt") or "").strip()
+    prompt = prompt.lstrip("﻿​‌‍⁠")
     if not prompt or prompt.startswith("/"):
+        return None
+    if prompt.startswith(_FILTER_PREFIXES):
         return None
     # Multi-megabyte prompts could blow up the n-gram extraction in
     # ``_eval_similarity`` and the token scan in ``extract_5w1h``.  The
@@ -451,7 +492,7 @@ def route(stdin_payload: dict[str, Any]) -> dict[str, Any] | None:
     top1 = rows[0][1] if rows else 0.0
     top2 = rows[1][1] if len(rows) > 1 else 0.0
     tier = determine_tier(top1, top2, thresholds)
-    ratio = top1 / max(top2, 0.1)
+    ratio = _calc_ratio(top1, top2)
 
     decision = {
         "tier": tier,
@@ -472,13 +513,12 @@ def route(stdin_payload: dict[str, Any]) -> dict[str, Any] | None:
         "on" if embedding_used else "off",
     )
 
-    if tier == "low":
-        return None
-
     if tier == "high":
         body = _format_high(rows[0][0], top1, ratio, rows[0][2])
+    elif tier == "mid":
+        body = _format_mid(rows, ratio)
     else:
-        body = _format_mid(rows)
+        body = _format_low(rows, ratio)
 
     return {
         "continue": True,

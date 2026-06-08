@@ -73,3 +73,4 @@ Python スクリプト: [`scripts/fetch/fetch_share.py`](scripts/fetch/fetch_sha
 | API 仕様 | [`references/api-spec.md`](references/api-spec.md) |
 | 取得手順 | [`references/procedures.md`](references/procedures.md) |
 | 環境構築 | [`references/setup.md`](references/setup.md) |
+| 動作分岐検証 | [`evals/`](evals/) |

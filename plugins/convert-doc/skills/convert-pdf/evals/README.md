@@ -12,6 +12,10 @@
 | [case-04_input_not_found.md](case-04_input_not_found.md) | 入力 MD が存在しない |
 | [case-05_playwright_not_installed.md](case-05_playwright_not_installed.md) | Playwright/Chromium 未インストール |
 | [case-06_convert_html_resolution_order.md](case-06_convert_html_resolution_order.md) | convert-html スクリプトの解決順序 |
+| [case-07_trigger_md_to_pdf.md](case-07_trigger_md_to_pdf.md) | トリガー: Markdown→PDF 変換の基本依頼（対話モード） |
+| [case-08_trigger_design_doc_pdf.md](case-08_trigger_design_doc_pdf.md) | トリガー: 設計書 PDF 化の自然言語依頼（対話モード） |
+| [case-09_trigger_report_pdf_output.md](case-09_trigger_report_pdf_output.md) | トリガー: 資料 PDF 出力の自然言語依頼（対話モード） |
+| [case-10_noninteractive_landscape.md](case-10_noninteractive_landscape.md) | 横向き指定による非対話モード（`--landscape` 適用） |
 
 ## 実行確認方法
 

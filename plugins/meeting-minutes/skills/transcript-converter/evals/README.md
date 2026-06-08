@@ -12,6 +12,9 @@
 | case-04_plain_fallback | パターン不一致時にプレーンテキストとしてフォールバック処理する | プレーンテキスト |
 | case-05_missing_metadata | メタデータ（タイトル・日時等）が推定不能な場合にユーザーに確認する | ユーザー確認 |
 | case-06_ailead_format | ailead 形式の `[HH:MM:SS - HH:MM:SS] 発話者: テキスト` 入力時に ailead パーサーで変換する | ailead パーサー |
+| case-07_convert_transcript | Teams の文字起こしコピペから標準形式に変換する | Teams パターン → 対話 |
+| case-08_srt_to_standard | SRT ファイルを標準形式に変換する | SRT パーサー（ファイル指定） |
+| case-09_error_format_fallback | 形式自動判定が失敗しプレーンテキストフォールバックで処理する | 判定失敗 → フォールバック |
 
 ## 実行確認方法
 

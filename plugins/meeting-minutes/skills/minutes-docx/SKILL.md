@@ -109,3 +109,4 @@ trigger:
 | 生成手順 | [`references/procedures.md`](references/procedures.md) |
 | docx テンプレート | [`assets/template/minutes-template.docx`](assets/template/minutes-template.docx) |
 | JSON スキーマ | `${CLAUDE_PLUGIN_ROOT}/skills/minutes-composer/references/schema/minutes-schema.md` |
+| 動作分岐検証 | [`evals/`](evals/) |

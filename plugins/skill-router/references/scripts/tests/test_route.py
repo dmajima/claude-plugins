@@ -24,7 +24,7 @@ sys.path.insert(0, str(_LIB))
 import route  # noqa: E402
 
 
-THRESHOLDS = route.DEFAULT_CONFIG["thresholds"]  # high=8.0, ratio=1.25, mid=4.0
+THRESHOLDS = route.DEFAULT_CONFIG["thresholds"]  # high=8.0, ratio=1.10, mid=4.0
 
 
 class DetermineTierTests(unittest.TestCase):
@@ -38,18 +38,19 @@ class DetermineTierTests(unittest.TestCase):
         self.assertEqual(route.determine_tier(2.0, 1.0, THRESHOLDS), "low")
 
     def test_top1_below_high_score_falls_to_mid_even_with_zero_top2(self) -> None:
-        # Critical regression guard: even though top1/max(top2,0.1) becomes
-        # very large when top2==0, the AND with top1 >= high_score (8.0)
-        # prevents accidental promotion to "high".
         self.assertEqual(route.determine_tier(5.0, 0.0, THRESHOLDS), "mid")
 
     def test_top1_above_high_with_zero_top2_promotes_to_high(self) -> None:
-        # top1 >= 8.0 AND ratio = top1/0.1 = 90.0 (>> 1.25) => high.
+        # top1 >= 8.0 AND ratio = top1/0.1 = 90.0 (>> 1.10) => high.
         self.assertEqual(route.determine_tier(9.0, 0.0, THRESHOLDS), "high")
 
-    def test_high_score_but_low_ratio_falls_to_mid(self) -> None:
-        # top1 >= 8.0 but ratio = 8.0/7.0 = 1.14 < 1.25 => mid.
-        self.assertEqual(route.determine_tier(8.0, 7.0, THRESHOLDS), "mid")
+    def test_high_score_with_ratio_above_threshold_is_high(self) -> None:
+        # top1 >= 8.0 and ratio = 8.0/7.0 = 1.14 >= 1.10 => high.
+        self.assertEqual(route.determine_tier(8.0, 7.0, THRESHOLDS), "high")
+
+    def test_high_score_but_ratio_below_threshold_falls_to_mid(self) -> None:
+        # top1 >= 8.0 but ratio = 8.0/7.5 = 1.067 < 1.10 => mid.
+        self.assertEqual(route.determine_tier(8.0, 7.5, THRESHOLDS), "mid")
 
     def test_exact_mid_threshold_hits_mid(self) -> None:
         self.assertEqual(route.determine_tier(4.0, 0.0, THRESHOLDS), "mid")

@@ -82,3 +82,4 @@ ailead-fetcher と同一の標準構造（`workspace/transcript.txt` + `workspac
 | 環境構築 | [`references/setup.md`](references/setup.md) |
 | 変換手順 | [`references/procedures.md`](references/procedures.md) |
 | 形式判定ロジック | [`references/format-detection.md`](references/format-detection.md) |
+| 動作分岐検証 | [`evals/`](evals/) |

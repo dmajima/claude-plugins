@@ -28,6 +28,8 @@
 | 19 | `case-19_installed_plugins_empty.md` | installed_plugins.json の plugins が空 → 全 Skipped（未インストール） |
 | 20 | `case-20_target_current_project_dry_run.md` | `target=current-project` + `--dry-run`（Phase B/C 省略の実行予定一覧） |
 | 21 | `case-21_target_all_no_repo.md` | `target=all` + git リポジトリ外（INFO 表示 + projectPath ベース更新） |
+| 22 | `case-22_plugin_update_request.md` | `/update` コマンド経由（`target=current-project` + `mode=normal`） |
+| 23 | `case-23_plugin_update_all.md` | `/update-all` コマンド経由（`target=all` + `mode=normal`） |
 
 ## 設計方針
 

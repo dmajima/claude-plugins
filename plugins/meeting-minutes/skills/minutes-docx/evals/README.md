@@ -8,6 +8,9 @@
 |--------|------|-------------|
 | case-01_normal | 正常な minutes.json から docx ファイルを生成する | 正常変換 |
 | case-02_missing_input | minutes.json が存在しない場合にエラーを報告する | 入力不在エラー |
+| case-03_generate_word | 構造化議事録データから Word ファイルを生成する基本フロー | 正常変換 |
+| case-04_docx_output | 議事録作成後に docx 変換を依頼する | 正常変換（別フレーズ） |
+| case-05_error_no_json | minutes.json 不在時に minutes-composer の実行を提案する | 入力不在 → エラー |
 
 ## 実行確認方法
 

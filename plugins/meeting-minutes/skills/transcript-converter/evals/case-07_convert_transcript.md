@@ -1,0 +1,32 @@
+# case-07 Teams の文字起こしを変換
+
+Teams の文字起こしコピーペーストから標準形式に変換するケース
+
+## 入力
+
+| 項目 | 値 |
+|-----|------|
+| 起動フレーズ | "Teams の文字起こしを議事録用に変換して" |
+| モード | 対話 |
+
+## 期待
+
+- transcript-converter スキルが起動される
+- 提供されたテキストの形式を自動判定する
+- 発話者・タイムスタンプ・テキストを抽出する
+- workspace/ に transcript.txt と metadata.json を標準形式で出力する
+
+## 期待出力
+
+| 出力 | 内容 |
+|-----|------|
+| 成果物 | workspace/transcript.txt と workspace/metadata.json（標準形式） |
+
+## 分岐の根拠
+
+SKILL.md「実行モード判定」の「テキストが直接貼り付けられた → 対話」分岐。Teams コピペ形式を自動判定し、メタデータ不足時にユーザーに確認する。
+
+## 関連ケース
+
+- case-03_teams_paste（Teams コピペの既存ケース）
+- case-08_srt_to_standard（ファイル指定の非対話フロー）

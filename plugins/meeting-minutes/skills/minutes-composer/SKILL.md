@@ -90,3 +90,4 @@ trigger:
 | 議事録 Markdown テンプレート（参考） | [`references/template/minutes-template.md`](references/template/minutes-template.md) |
 | ailead フロー手順 | [`references/steps/ailead-flow.md`](references/steps/ailead-flow.md) |
 | 汎用フロー手順 | [`references/steps/generic-flow.md`](references/steps/generic-flow.md) |
+| 動作分岐検証 | [`evals/`](evals/) |
