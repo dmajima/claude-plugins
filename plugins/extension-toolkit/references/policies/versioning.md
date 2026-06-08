@@ -1,4 +1,4 @@
-# バージョン管理ルール（SSOT）
+﻿# バージョン管理ルール（SSOT）
 
 プラグインの `plugin.json` の `version` フィールドを更新する際のルール。SemVer (`x.y.z`) ベース。
 
@@ -92,7 +92,7 @@ x.y.z
 
 ## 8. ユーザへの確認
 
-バージョン更新時は **AskUserQuestion でユーザに確認** する（[`user-interaction.md`](user-interaction.md) 参照）:
+バージョン更新時は **AskUserQuestion でユーザに確認** する（[`user-interaction.md`](../guides/user-interaction.md) 参照）:
 
 ```
 今回の変更内容:

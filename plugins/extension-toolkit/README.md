@@ -16,7 +16,7 @@ Claude Code の各種拡張要素（プラグイン・スキル・コマンド�
   - `document-skills@anthropic-agent-skills`
 - `marketplace.json` の `allowCrossMarketplaceDependenciesOn` で `anthropic-agent-skills` 由来プラグインの自動インストールを許可
 
-> **依存の役割**: これらは `skill-toolkit` がスキル雛形・ドキュメント生成系の参考実装を引用する際に利用します。**本プラグインの核機能（スキル/プラグイン/コマンド/エージェント/フック/環境構築/マーケットプレイス管理/レビュー/公開）はこれら依存なしでも動作します**が、利用体験を損なわないよう `dependencies` で宣言し自動解決します（[`references/dependencies-policy.md`](references/dependencies-policy.md) のセクション 4「設定する判断基準」参照）。自動インストールを避けたい場合は、利用者側でマーケットプレイスから個別アンインストールしてください。
+> **依存の役割**: これらは `skill-toolkit` がスキル雛形・ドキュメント生成系の参考実装を引用する際に利用します。**本プラグインの核機能（スキル/プラグイン/コマンド/エージェント/フック/環境構築/マーケットプレイス管理/レビュー/公開）はこれら依存なしでも動作します**が、利用体験を損なわないよう `dependencies` で宣言し自動解決します（[`references/policies/dependencies-policy.md`](references/policies/dependencies-policy.md) のセクション 4「設定する判断基準」参照）。自動インストールを避けたい場合は、利用者側でマーケットプレイスから個別アンインストールしてください。
 
 ### A. マーケットプレイス経由インストール（推奨）
 
@@ -217,7 +217,7 @@ Claude（要約）:
 | `references/scripts/hooks/check_version_bump.sh` | Stop: version 更新検証 |
 | 除外パス | `.claude/.local/` / `.git/` / `/tmp/` 配下、git 利用不可環境、リポジトリ外 |
 
-「軽微な編集（typo・1〜数行修正）は直接編集 OK / 新規・大規模変更時は toolkit 経由」という運用バランスを取り、コミット前に必ずバージョン更新が促される設計です。詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) ADR-026 を参照。
+「軽微な編集（typo・1〜数行修正）は直接編集 OK / 新規・大規模変更時は toolkit 経由」という運用バランスを取り、コミット前に必ずバージョン更新が促される設計です。詳細は [`references/architecture/decisions-001-010.md`](references/architecture/decisions-001-010.md) ADR-026 を参照。
 
 ## エージェント・チーム
 
@@ -242,25 +242,25 @@ Claude（要約）:
 
 | やりたいこと | 編集対象 |
 |------------|---------|
-| 命名・配置規約 | `references/conventions.md` |
-| AI 誤認回避ルール | `references/ai-readability.md` |
-| description 設計 | `references/description-guide.md` |
-| ポータブルパス規約 | `references/path-portability.md` |
-| evals 設計 | `references/eval-guide.md` |
-| 検証ルール | `references/validation-rules.md` |
-| バージョン管理 | `references/versioning.md` |
-| 完了チェックリスト | `references/completion-checklist.md` |
-| Claude UI 利用ルール | `references/user-interaction.md` |
-| 状態ファイル形式 | `references/state-files.md` |
-| README 規約（プラグイン・スキル・マーケットプレイス共通） | `references/readme-policy.md` |
-| ライセンスポリシー（MIT 必須化） | `references/license-policy.md` |
-| エージェント活用方針 | `references/agent-utilization.md` |
-| レビューフレッシュ起動原則（ADR-021） | `references/review-freshness.md` |
-| プラグイン自己完結性・利用者環境非依存（ADR-022） | `references/self-containment.md` |
-| 依存関係宣言ルール | `references/dependencies-policy.md` |
+| 命名・配置規約 | `references/policies/conventions-structure.md` |
+| AI 誤認回避ルール | `references/policies/ai-readability.md` |
+| description 設計 | `references/guides/description-guide.md` |
+| ポータブルパス規約 | `references/policies/path-portability.md` |
+| evals 設計 | `references/guides/eval-guide.md` |
+| 検証ルール | `references/checklists/validation-rules.md` |
+| バージョン管理 | `references/policies/versioning.md` |
+| 完了チェックリスト | `references/checklists/completion-checklist.md` |
+| Claude UI 利用ルール | `references/guides/user-interaction.md` |
+| 状態ファイル形式 | `references/policies/state-files.md` |
+| README 規約（プラグイン・スキル・マーケットプレイス共通） | `references/policies/readme-policy.md` |
+| ライセンスポリシー（MIT 必須化） | `references/policies/license-policy.md` |
+| エージェント活用方針 | `references/guides/agent-utilization.md` |
+| レビューフレッシュ起動原則（ADR-021） | `references/checklists/review-freshness.md` |
+| プラグイン自己完結性・利用者環境非依存（ADR-022） | `references/policies/self-containment.md` |
+| 依存関係宣言ルール | `references/policies/dependencies-policy.md` |
 | 推奨構成テンプレート | `references/templates/{種別}/` |
 | エージェントチーム定義 | `references/teams/{name}.md` |
-| 新拡張要素対応 | `skills/` 配下に新スキル追加、`references/conventions.md` 追記、`/extension` ルーティング追加 |
+| 新拡張要素対応 | `skills/` 配下に新スキル追加、`references/policies/conventions-structure.md` 追記、`/extension` ルーティング追加 |
 
 ## 関連リンク
 
@@ -350,7 +350,7 @@ plugins/extension-toolkit/
 
 ### アーキテクチャ判断
 
-詳細は [`references/architecture-decisions.md`](references/architecture-decisions.md) を参照（全 ADR）。
+詳細は [`references/architecture/decisions-001-010.md`](references/architecture/decisions-001-010.md) を参照（全 ADR）。
 
 ## ライセンス
 

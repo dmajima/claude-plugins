@@ -77,7 +77,7 @@ Claude Code のプラグインマーケットプレイス（`.claude-plugin/mark
 | プラグイン更新 | 該当エントリの `description` / `source` を更新 |
 | プラグイン削除 | 該当エントリを削除（ユーザ明示確認必須） |
 
-JSON 整合性は編集後に必ず検証（[`../../references/validation-rules.md`](../../references/validation-rules.md) 節 2.8）。
+JSON 整合性は編集後に必ず検証（[`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md) 節 2.8）。
 
 ### 4. マーケットプレイス README 同期（ADR-019 準拠）
 
@@ -98,12 +98,12 @@ JSON 整合性は編集後に必ず検証（[`../../references/validation-rules.
 - [ ] `name` がディレクトリ名と一致
 - [ ] `plugins[]` 各エントリの `source` パスが実在
 - [ ] README のプラグイン一覧テーブルが `marketplace.json` と完全一致（行数・名前・バージョン）
-- [ ] README 必須セクション（[`../../references/readme-policy.md`](../../references/readme-policy.md) 節 11.1）が揃う
-- [ ] [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証
+- [ ] README 必須セクション（[`../../references/policies/readme-policy.md`](../../references/policies/readme-policy.md) 節 11.1）が揃う
+- [ ] [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証
 
 ### 6. 引き渡し
 
-**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、`marketplace.json` JSON 妥当性確認 + 同期 README の到達性確認を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+**作業完了報告の前に必須**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、`marketplace.json` JSON 妥当性確認 + 同期 README の到達性確認を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
 
 | 結果 | 接続先 |
 |-----|-------|
@@ -119,21 +119,21 @@ JSON 整合性は編集後に必ず検証（[`../../references/validation-rules.
 - **ファイル本体削除（`--also-delete-files`）は `--confirm-destructive` との二段フラグでのみ受理**（非対話モードでも本制約は維持、対話モードでは追加で `AskUserQuestion` 二重確認）
 - 新規構築時の `<target-path>` はシステムパス・ホームディレクトリ等の拒否リストと照合（パストラバーサル対策、[references/operations.md](references/operations.md) の検証ロジック）
 - `marketplace.json` の `plugins[].source` は `./plugins/` プレフィックス必須（パストラバーサル対策）
-- パスポータビリティチェック必須（[`../../references/path-portability.md`](../../references/path-portability.md)）
+- パスポータビリティチェック必須（[`../../references/policies/path-portability.md`](../../references/policies/path-portability.md)）
 - エンコーディング・改行コード維持必須（`~/.claude/rules/common/file-encoding.md` 不在時は UTF-8 / 元の改行コードを既定維持）
-- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
-- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証を実施
+- 利用者環境非依存性の維持（[`../../references/policies/self-containment.md`](../../references/policies/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) + [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md)）
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| README 規約（マーケットプレイス節） | [`../../references/readme-policy.md`](../../references/readme-policy.md)（節 11.1） |
-| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.8） |
-| バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md)（`marketplace.json` 編集時のプラグインバージョン同期確認）|
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| README 規約（マーケットプレイス節） | [`../../references/policies/readme-policy.md`](../../references/policies/readme-policy.md)（節 11.1） |
+| 検証ルール | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（節 1 + 2.8） |
+| バージョン管理 | [`../../references/policies/versioning.md`](../../references/policies/versioning.md)（`marketplace.json` 編集時のプラグインバージョン同期確認）|
 | 操作詳細 | [`references/operations.md`](references/operations.md) |
 | README 同期詳細 | [`references/readme-sync.md`](references/readme-sync.md) |
 | テンプレート | [`../../references/templates/marketplace/`](../../references/templates/marketplace/) |

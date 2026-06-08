@@ -1,4 +1,4 @@
-# 外部プラグイン依存ルール（SSOT）
+﻿# 外部プラグイン依存ルール（SSOT）
 
 プラグインが他のプラグインに依存する場合の宣言・設定ルール。
 
@@ -59,7 +59,7 @@
 
 `marketplace` 必須。インストール時、依存先マーケットプレイスからの自動インストールには **`allowCrossMarketplaceDependenciesOn` の許可が必要**（次節）。
 さらに **利用者側で依存先マーケットプレイスが `/plugin marketplace add` 済みでない場合、Claude Code 公式仕様により依存は未解決のまま放置される**（自動マーケ追加機構なし）。
-このためクロスマーケットプレイス依存（`marketplace` フィールド値が自プラグインの所属マーケ名と異なる場合）があるプラグインは、README の「導入手順 D」に **依存マーケ追加コマンド + `extraKnownMarketplaces` 登録テンプレート + 依存プラグイン個別インストール** の 3 ブロックを必須記載すること（[ADR-028](architecture-decisions.md)、[`readme-policy.md`](readme-policy.md) セクション 5.1 D 参照）。
+このためクロスマーケットプレイス依存（`marketplace` フィールド値が自プラグインの所属マーケ名と異なる場合）があるプラグインは、README の「導入手順 D」に **依存マーケ追加コマンド + `extraKnownMarketplaces` 登録テンプレート + 依存プラグイン個別インストール** の 3 ブロックを必須記載すること（[ADR-028](../architecture/)、[`readme-policy.md`](readme-policy.md) セクション 5.1 D 参照）。
 
 ## 3. `marketplace.json` の `allowCrossMarketplaceDependenciesOn`
 

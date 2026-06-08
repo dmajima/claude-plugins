@@ -32,7 +32,7 @@
 入力: C:\Users\me\scripts\log.bat
 
 問題:
-- ローカル絶対パスのハードコード（[references/path-portability.md] 違反）
+- ローカル絶対パスのハードコード（[references/policies/path-portability.md] 違反）
 - 利用者環境では存在しないパスのため、フックが動作しない
 
 修正案:

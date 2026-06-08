@@ -17,7 +17,7 @@
 
 ### Phase 2: 既存内容のスキャン + 必須要素検査（ADR-018 準拠）
 
-[`../../../references/readme-policy.md`](../../../references/readme-policy.md) 節 5.1 の必須 4 要素を検査:
+[`../../../references/policies/readme-policy.md`](../../../references/policies/readme-policy.md) 節 5.1 の必須 4 要素を検査:
 
 | 要素 | 検出パターン | 状態 |
 |-----|------------|-----|

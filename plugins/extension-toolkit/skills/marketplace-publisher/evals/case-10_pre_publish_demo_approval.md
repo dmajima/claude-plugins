@@ -22,7 +22,7 @@
 
 ### Phase 6 直前: 公開対象プラグインの動作デモ（A-1 / ADR-032 必須）
 
-[`completion-checklist.md`](../../../references/completion-checklist.md) 節 2.4 + ADR-032 に従い、**公開モード選択の前に** 以下を実施する:
+[`completion-checklist.md`](../../../references/checklists/completion-checklist.md) 節 2.4 + ADR-032 に従い、**公開モード選択の前に** 以下を実施する:
 
 | ステップ | 内容 |
 |---------|------|

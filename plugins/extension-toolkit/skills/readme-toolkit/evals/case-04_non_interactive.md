@@ -35,7 +35,7 @@
 
 [`../../../references/templates/readme/`](../../../references/templates/readme/) のテンプレートを利用し、必須セクションを埋める。
 
-[`../../../references/readme-policy.md`](../../../references/readme-policy.md) に従い:
+[`../../../references/policies/readme-policy.md`](../../../references/policies/readme-policy.md) に従い:
 
 - 履歴記述は除外（ADR-016 準拠）
 - 「このドキュメントについて」の人間向け明記を必須挿入

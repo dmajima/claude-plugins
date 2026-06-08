@@ -92,7 +92,7 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 
 ### 6. description の検証
 
-[`../../references/description-guide.md`](../../references/description-guide.md) のコマンド向けルールに準拠:
+[`../../references/guides/description-guide.md`](../../references/guides/description-guide.md) のコマンド向けルールに準拠:
 
 - 60 文字以内
 - 体言止め可
@@ -101,7 +101,7 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 
 ### 6.5. argument-hint の必須化（ADR-023）
 
-引数を受け取るコマンド（本文に `$ARGUMENTS` を含む / ルーティング表を持つ）は frontmatter に `argument-hint` を **必ず記載** する。表記規則は [`../../references/description-guide.md`](../../references/description-guide.md) 節 4.1 を参照。
+引数を受け取るコマンド（本文に `$ARGUMENTS` を含む / ルーティング表を持つ）は frontmatter に `argument-hint` を **必ず記載** する。表記規則は [`../../references/guides/description-guide.md`](../../references/guides/description-guide.md) 節 4.1 を参照。
 
 | 区分 | 表記 |
 |------|------|
@@ -123,7 +123,7 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 
 ### 8. 引き渡し
 
-**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（コマンド起動・引数分岐・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+**作業完了報告の前に必須**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（コマンド起動・引数分岐・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
 
 - 生成ファイルパスを提示
 - プラグイン内配置の場合は `marketplace-publisher` への接続を提案
@@ -135,19 +135,19 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 - 引数仕様の description 記載禁止（本文に書く）
 - 既存ファイル更新時のエンコーディング維持
 - パスポータビリティチェック必須
-- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
-- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
-- コマンド引数仕様は [`../../references/argument-policy.md`](../../references/argument-policy.md) の「単純な 1 引数」原則に従う
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
+- 利用者環境非依存性の維持（[`../../references/policies/self-containment.md`](../../references/policies/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) + [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md)）
+- コマンド引数仕様は [`../../references/policies/argument-policy.md`](../../references/policies/argument-policy.md) の「単純な 1 引数」原則に従う
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| description 設計 | [`../../references/description-guide.md`](../../references/description-guide.md) |
-| ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
-| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.3） |
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| description 設計 | [`../../references/guides/description-guide.md`](../../references/guides/description-guide.md) |
+| ポータブルパス | [`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) |
+| 検証ルール | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（節 1 + 2.3） |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
 | 動作例 | [`evals/`](evals/) |

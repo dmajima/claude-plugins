@@ -99,11 +99,11 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 
 ### 6. パスポータビリティチェック
 
-[`../../references/path-portability.md`](../../references/path-portability.md) のルールで配置済み全ファイルを Grep し、NG パスがないか確認。検出時はユーザに修正方針を確認。
+[`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) のルールで配置済み全ファイルを Grep し、NG パスがないか確認。検出時はユーザに修正方針を確認。
 
 ### 7. ライセンス配備（必須・ADR-029）
 
-外形生成または既存追加が完了したら、`mit-license-toolkit` を Skill ツール経由で呼び出して MIT LICENSE を配備する。`mit-license-toolkit` が `plugins/{plugin-name}/LICENSE` を生成し、`plugin.json.license = "MIT"` を設定する。ライセンス情報は `<repo_root>/.claude/.local/plugins/extension-toolkit/license-info.json` から取得（複数あれば AskUserQuestion で選択、不在なら新規収集）。詳細は [`../../references/license-policy.md`](../../references/license-policy.md) を参照。
+外形生成または既存追加が完了したら、`mit-license-toolkit` を Skill ツール経由で呼び出して MIT LICENSE を配備する。`mit-license-toolkit` が `plugins/{plugin-name}/LICENSE` を生成し、`plugin.json.license = "MIT"` を設定する。ライセンス情報は `<repo_root>/.claude/.local/plugins/extension-toolkit/license-info.json` から取得（複数あれば AskUserQuestion で選択、不在なら新規収集）。詳細は [`../../references/policies/license-policy.md`](../../references/policies/license-policy.md) を参照。
 
 既存プラグインへの追加シナリオ（更新シナリオ）でも、対象プラグインに `LICENSE` が未配置 or `plugin.json.license != "MIT"` を検出した場合は `mit-license-toolkit` を呼び出す。
 
@@ -117,11 +117,11 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 - [ ] 移管シナリオで元ファイルが無傷
 - [ ] パスポータビリティチェック合格
 - [ ] 既存ファイルを誤って上書きしていない
-- [ ] **`dependencies` に `marketplace` フィールド付き（クロスマーケットプレイス依存）を含む場合**: README が `readme-policy.md` 5.1 D の D-1 / D-2 / D-3 ブロックを満たすことを `readme-toolkit` 連携時に確認（ADR-028 / [`../../references/dependencies-policy.md`](../../references/dependencies-policy.md) 節 2.3）
+- [ ] **`dependencies` に `marketplace` フィールド付き（クロスマーケットプレイス依存）を含む場合**: README が `readme-policy.md` 5.1 D の D-1 / D-2 / D-3 ブロックを満たすことを `readme-toolkit` 連携時に確認（ADR-028 / [`../../references/policies/dependencies-policy.md`](../../references/policies/dependencies-policy.md) 節 2.3）
 
 ### 9. 引き渡し
 
-**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（プラグイン読み込み確認・サンプルスキル起動・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+**作業完了報告の前に必須**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（プラグイン読み込み確認・サンプルスキル起動・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
 
 生成・配置したファイル一覧を提示。
 
@@ -146,25 +146,25 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 - スキルを勝手に分割しない（ユーザ指示なき限り原型を保つ）
 - スキル内 `agents/` は重複理由で削除しない（プラグイン配布のため）
 - パスポータビリティチェック必須
-- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
-- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
+- 利用者環境非依存性の維持（[`../../references/policies/self-containment.md`](../../references/policies/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021）
 - `git commit` 以降の操作は実行しない
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
-- コミットは [`../../references/commit-granularity.md`](../../references/commit-granularity.md) の作業単位ごと分割原則に従う
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) + [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md)）
+- コミットは [`../../references/policies/commit-granularity.md`](../../references/policies/commit-granularity.md) の作業単位ごと分割原則に従う
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| AI 誤認回避 | [`../../references/ai-readability.md`](../../references/ai-readability.md) |
-| ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
-| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.2） |
-| バージョン管理 | [`../../references/versioning.md`](../../references/versioning.md)（`plugin.json` 編集時必須）|
-| 依存関係宣言 | [`../../references/dependencies-policy.md`](../../references/dependencies-policy.md)（`dependencies` 設定 + クロスマーケ依存時の README 連携要件）|
-| README 規約（クロスマーケ依存時 D-1/D-2/D-3 必須）| [`../../references/readme-policy.md`](../../references/readme-policy.md) 節 5.1 D / ADR-028 |
-| ライセンス必須化（MIT）| [`../../references/license-policy.md`](../../references/license-policy.md) / ADR-029 |
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| AI 誤認回避 | [`../../references/policies/ai-readability.md`](../../references/policies/ai-readability.md) |
+| ポータブルパス | [`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) |
+| 検証ルール | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（節 1 + 2.2） |
+| バージョン管理 | [`../../references/policies/versioning.md`](../../references/policies/versioning.md)（`plugin.json` 編集時必須）|
+| 依存関係宣言 | [`../../references/policies/dependencies-policy.md`](../../references/policies/dependencies-policy.md)（`dependencies` 設定 + クロスマーケ依存時の README 連携要件）|
+| README 規約（クロスマーケ依存時 D-1/D-2/D-3 必須）| [`../../references/policies/readme-policy.md`](../../references/policies/readme-policy.md) 節 5.1 D / ADR-028 |
+| ライセンス必須化（MIT）| [`../../references/policies/license-policy.md`](../../references/policies/license-policy.md) / ADR-029 |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
 | 移管ルール | [`references/migration-rules.md`](references/migration-rules.md) |
 | 動作例 | [`evals/`](evals/) |

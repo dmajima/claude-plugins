@@ -64,7 +64,7 @@ Claude（要約）:
 | `test-engineer` | テスト・evals 充実度 | `evals-coverage-reviewer`（同梱）が部分代替 |
 | `project-leader` | 大規模プラグインの整合性 | `general-purpose` |
 
-詳細なフォールバック設計は [`../../references/self-containment.md`](../../references/self-containment.md) を参照。
+詳細なフォールバック設計は [`../../references/policies/self-containment.md`](../../references/policies/self-containment.md) を参照。
 
 ## 関連スキル
 

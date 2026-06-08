@@ -49,7 +49,7 @@ Skill(skill: "environment-setup-toolkit", args: "teardown --work-dir <work_dir>"
 
 | 用途 | ファイル（テンプレート配備後は相対パスで解決される） |
 |-----|---------|
-| スクリプト記述・配置ポリシー | `${CLAUDE_PLUGIN_ROOT}/references/scripts-policy.md`（プラグイン直下） |
+| スクリプト記述・配置ポリシー | `${CLAUDE_PLUGIN_ROOT}/references/policies/scripts-policy.md`（プラグイン直下） |
 | 環境構築スキル | `environment-setup-toolkit`（同一プラグイン内、配備後は `../../environment-setup-toolkit/`） |
 | Python venv 仕様 | `environment-setup-toolkit/references/python-venv.md`（配備後は `../../environment-setup-toolkit/references/python-venv.md`） |
 

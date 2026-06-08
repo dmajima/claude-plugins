@@ -36,8 +36,8 @@ bash evals/demo.sh --execute
 
 ## 自動実行 evals（B-2、オプトイン）
 
-`case-*.md` 冒頭にフロントマター `runnable: true` を付与すると、`run_evals.py` で並列自動実行・diff 検証の対象になる。詳細は [`../../../references/eval-guide.md`](../../../references/eval-guide.md) 節 10 を参照。
+`case-*.md` 冒頭にフロントマター `runnable: true` を付与すると、`run_evals.py` で並列自動実行・diff 検証の対象になる。詳細は [`../../../references/guides/eval-guide.md`](../../../references/guides/eval-guide.md) 節 10 を参照。
 
 ## ケース追加ルール
 
-新しい分岐ロジックを追加した時は、対応するケースファイルを必ず追加する。詳細は [`../../../references/eval-guide.md`](../../../references/eval-guide.md) を参照。
+新しい分岐ロジックを追加した時は、対応するケースファイルを必ず追加する。詳細は [`../../../references/guides/eval-guide.md`](../../../references/guides/eval-guide.md) を参照。

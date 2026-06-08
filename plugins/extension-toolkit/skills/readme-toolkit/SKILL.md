@@ -108,7 +108,7 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 
 ### 8. 引き渡し
 
-**作業完了報告の前に**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、生成 README のプレビュー表示・リンク到達性確認を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。README 単体の軽微変更（誤字修正等）は節 2.4.4 の免責ケースに該当する。
+**作業完了報告の前に**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、生成 README のプレビュー表示・リンク到達性確認を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。README 単体の軽微変更（誤字修正等）は節 2.4.4 の免責ケースに該当する。
 
 - 生成・更新ファイルパス提示
 - 関連する変更（提供機能変更等）が他に必要なら案内
@@ -117,21 +117,21 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 
 - **過去履歴・変更経緯・廃止機能の記載禁止**（Git で管理済み）
 - 常に最新の実構成と一致させる
-- AI 動作で参照されないため、人間可読性を優先（[`../../references/ai-readability.md`](../../references/ai-readability.md) の制約は適用外、ただし命名規則・絵文字禁止は守る）
+- AI 動作で参照されないため、人間可読性を優先（[`../../references/policies/ai-readability.md`](../../references/policies/ai-readability.md) の制約は適用外、ただし命名規則・絵文字禁止は守る）
 - 絵文字は使用しない（ユーザ指示なき限り）
 - パスポータビリティチェック必須（README 内のパス例も対象）
-- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
-- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
+- 利用者環境非依存性の維持（[`../../references/policies/self-containment.md`](../../references/policies/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) + [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md)）
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
-| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.7） |
-| README 規約 | [`../../references/readme-policy.md`](../../references/readme-policy.md) |
-| ライセンスポリシー（README ライセンスセクション必須化） | [`../../references/license-policy.md`](../../references/license-policy.md) / ADR-029 |
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| ポータブルパス | [`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) |
+| 検証ルール | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（節 1 + 2.7） |
+| README 規約 | [`../../references/policies/readme-policy.md`](../../references/policies/readme-policy.md) |
+| ライセンスポリシー（README ライセンスセクション必須化） | [`../../references/policies/license-policy.md`](../../references/policies/license-policy.md) / ADR-029 |
 | 動作例 | [`evals/`](evals/) |

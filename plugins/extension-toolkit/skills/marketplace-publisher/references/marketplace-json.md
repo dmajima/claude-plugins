@@ -65,4 +65,4 @@
 
 ## 検証ルール
 
-`marketplace.json` および関連 README の検証項目は [`../../../references/validation-rules.md`](../../../references/validation-rules.md) 節 2.8 を参照（`marketplace-toolkit` 出力検証として SSOT 化）。
+`marketplace.json` および関連 README の検証項目は [`../../../references/checklists/validation-rules.md`](../../../references/checklists/validation-rules.md) 節 2.8 を参照（`marketplace-toolkit` 出力検証として SSOT 化）。

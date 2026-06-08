@@ -78,7 +78,7 @@ evals/case-template.md       ← 動作分岐ありの時のみ
 
 ### 6. evals 作成（動作分岐ありの時）
 
-`evals/case-template.md` をベースに、各分岐ケースを 1 ファイル 1 ケースで作成する。詳細は [`../../../references/eval-guide.md`](../../../references/eval-guide.md) を参照。
+`evals/case-template.md` をベースに、各分岐ケースを 1 ファイル 1 ケースで作成する。詳細は [`../../../references/guides/eval-guide.md`](../../../references/guides/eval-guide.md) を参照。
 
 最低カバレッジ:
 

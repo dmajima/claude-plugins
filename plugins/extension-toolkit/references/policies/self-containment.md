@@ -1,4 +1,4 @@
-# プラグイン自己完結性・再現性ポリシー（SSOT）
+﻿# プラグイン自己完結性・再現性ポリシー（SSOT）
 
 `extension-toolkit` および本プラグインが生成するすべてのスキル・プラグインに適用される、**利用者環境非依存・再現性** の設計ルール（ADR-022 準拠）。
 
@@ -114,7 +114,7 @@
 - [ ] 利用者環境の事前セットアップを前提とする動作がない、または導入手順で明示される
 - [ ] プラグインインストール **直後** に最低限の動作が確認できる（`/extension --help` 等）
 
-詳細チェックリストは [`completion-checklist.md`](completion-checklist.md) を参照。
+詳細チェックリストは [`completion-checklist.md`](../checklists/completion-checklist.md) を参照。
 
 ---
 
@@ -174,6 +174,6 @@
 |-----|---------|
 | パス記法（自己完結性のサブセット） | [`path-portability.md`](path-portability.md) |
 | 依存関係宣言 | [`dependencies-policy.md`](dependencies-policy.md) |
-| 検証ルール | [`validation-rules.md`](validation-rules.md)（新節 1.x で本ポリシー検証） |
-| 完了チェック | [`completion-checklist.md`](completion-checklist.md) |
-| アーキテクチャ決定 | [`architecture-decisions.md`](architecture-decisions.md)（ADR-022） |
+| 検証ルール | [`validation-rules.md`](../checklists/validation-rules.md)（新節 1.x で本ポリシー検証） |
+| 完了チェック | [`completion-checklist.md`](../checklists/completion-checklist.md) |
+| アーキテクチャ決定 | [`architecture-decisions.md`](../architecture/)（ADR-022） |

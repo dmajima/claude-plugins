@@ -29,7 +29,7 @@
 
 ### Phase 3: チーム起動 + 機械チェック（フレッシュ起動・ADR-021 準拠）
 
-[`../../../references/teams/hook-security-team.md`](../../../references/teams/hook-security-team.md) のスポーンプロンプトに従い、**フレッシュ Agent インスタンス**（過去議論・修正履歴・他レビュアー結論を引き継がない）で 3 名を 1 メッセージ内で **並列 Agent 起動**。詳細は [`../../../references/review-freshness.md`](../../../references/review-freshness.md) を参照。command フィールドの危険コマンド検出を重点的に実施。
+[`../../../references/teams/hook-security-team.md`](../../../references/teams/hook-security-team.md) のスポーンプロンプトに従い、**フレッシュ Agent インスタンス**（過去議論・修正履歴・他レビュアー結論を引き継がない）で 3 名を 1 メッセージ内で **並列 Agent 起動**。詳細は [`../../../references/checklists/review-freshness.md`](../../../references/checklists/review-freshness.md) を参照。command フィールドの危険コマンド検出を重点的に実施。
 
 ### Phase 4: セキュリティ指摘の扱い
 

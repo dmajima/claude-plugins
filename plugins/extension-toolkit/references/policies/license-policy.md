@@ -1,4 +1,4 @@
-# ライセンスポリシー（SSOT）
+﻿# ライセンスポリシー（SSOT）
 
 `extension-toolkit` が生成・改修・公開する **すべてのプラグイン** に対するライセンス必須化ルール（ADR-029 準拠）。
 
@@ -135,7 +135,7 @@ ADR-003（テンプレートの 2 階層管理）は通常「横断 → スキ�
 | `licenses[]` に **複数** 存在 | `AskUserQuestion` で利用するエントリを選択（`label` を選択肢ラベル、`copyright_holder` + `copyright_year` を description）|
 | 利用者が「新規追加」を選択 | 新規エントリ収集 → 保存 → そのエントリを適用 |
 
-`AskUserQuestion` の利用は [`user-interaction.md`](user-interaction.md) に従う。**重要なライセンス選択** を伴うため、テキスト対話で行ってはならない。
+`AskUserQuestion` の利用は [`user-interaction.md`](../guides/user-interaction.md) に従う。**重要なライセンス選択** を伴うため、テキスト対話で行ってはならない。
 
 ## 4. 公開フローでの検証（fail-closed）
 
@@ -198,10 +198,10 @@ ADR-003（テンプレートの 2 階層管理）は通常「横断 → スキ�
 
 | 用途 | ファイル |
 |-----|---------|
-| ADR | [`architecture-decisions.md`](architecture-decisions.md) ADR-029 |
+| ADR | [`architecture-decisions.md`](../architecture/) ADR-029 |
 | README 規約（ライセンスセクション必須化） | [`readme-policy.md`](readme-policy.md) |
-| 検証ルール（プラグイン LICENSE 検証） | [`validation-rules.md`](validation-rules.md) 節 2.2 |
-| 命名・配置（`LICENSE` 許可リスト追加） | [`conventions.md`](conventions.md) 節 2.1 |
-| ユーザ対話（AskUserQuestion 優先） | [`user-interaction.md`](user-interaction.md) |
+| 検証ルール（プラグイン LICENSE 検証） | [`validation-rules.md`](../checklists/validation-rules.md) 節 2.2 |
+| 命名・配置（`LICENSE` 許可リスト追加） | [`conventions.md`](conventions-naming.md) 節 2.1 |
+| ユーザ対話（AskUserQuestion 優先） | [`user-interaction.md`](../guides/user-interaction.md) |
 | 担当スキル | [`../skills/mit-license-toolkit/SKILL.md`](../skills/mit-license-toolkit/SKILL.md) |
 | MIT 標準文の出典 | https://opensource.org/licenses/MIT / https://spdx.org/licenses/MIT.html |

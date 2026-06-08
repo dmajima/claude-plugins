@@ -26,7 +26,7 @@ Claude Code フックの設定テンプレート。`hooks/hooks.json` 1 ファ�
 ## command の制約
 
 - `${CLAUDE_PLUGIN_ROOT}` を活用してプラグイン内スクリプトを呼び出す
-- ローカル絶対パスのハードコード禁止（パスポータビリティ規約: `${CLAUDE_PLUGIN_ROOT}/references/path-portability.md`）
+- ローカル絶対パスのハードコード禁止（パスポータビリティ規約: `${CLAUDE_PLUGIN_ROOT}/references/policies/path-portability.md`）
 - timeout は秒単位、デフォルト 60 秒
 - `shell` フィールドで実行シェルを **明示的に指定** する（後述「shell 指定（MANDATORY）」参照）
 

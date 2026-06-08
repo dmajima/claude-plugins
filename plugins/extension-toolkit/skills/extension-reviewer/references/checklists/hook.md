@@ -6,15 +6,15 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-1-1 | High | フック設定ファイルが `hooks/hooks.json` または `settings.json` の `hooks` セクションに配置されている | [conventions.md](../../../references/conventions.md) 節 1 |
-| H-1-2 | High | フック実スクリプトが `references/scripts/hooks/` 配下に配置されている（ADR-025） | [scripts-policy.md](../../../references/scripts-policy.md) 節 9 |
+| H-1-1 | High | フック設定ファイルが `hooks/hooks.json` または `settings.json` の `hooks` セクションに配置されている | [conventions.md](../../../references/policies/conventions-structure.md) 節 1 |
+| H-1-2 | High | フック実スクリプトが `references/scripts/hooks/` 配下に配置されている（ADR-025） | [scripts-policy.md](../../../references/policies/scripts-policy.md) 節 9 |
 | H-1-3 | High | フック実スクリプトが `.sh` で実装されている | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
 
 ## H-2. JSON valid
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-2-1 | Critical | `hooks.json` が JSON valid（パース可能） | [validation-rules.md](../../../references/validation-rules.md) 節 2.6 |
+| H-2-1 | Critical | `hooks.json` が JSON valid（パース可能） | [validation-rules.md](../../../references/checklists/validation-rules.md) 節 2.6 |
 
 ## H-3. イベント名・matcher
 
@@ -32,14 +32,14 @@
 | H-4-2 | Critical | `$(...)` / バッククォート（コマンド置換）の使用が必要最小限である | 同上 |
 | H-4-3 | Critical | `eval` / `Invoke-Expression` を使っていない | 同上 |
 | H-4-4 | High | 動的データが必要な場合は外部スクリプトに委譲し、引数として安全に受け渡されている | 同上 |
-| H-4-5 | Critical | `command` にローカル絶対パスのハードコードがない（`${CLAUDE_PLUGIN_ROOT}` を使用） | [validation-rules.md](../../../references/validation-rules.md) 節 2.6 |
+| H-4-5 | Critical | `command` にローカル絶対パスのハードコードがない（`${CLAUDE_PLUGIN_ROOT}` を使用） | [validation-rules.md](../../../references/checklists/validation-rules.md) 節 2.6 |
 | H-4-6 | High | `command` は `bash "${CLAUDE_PLUGIN_ROOT}/.../*.sh"` 形式（`bash ...sh` は使わない） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
 
 ## H-5. PreToolUse 警告型フック（ADR-026）
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-5-1 | High | PreToolUse Edit/Write/MultiEdit フックは **exit 0**（fail-open、ブロックしない） | [architecture-decisions.md](../../../references/architecture-decisions.md) ADR-026 |
+| H-5-1 | High | PreToolUse Edit/Write/MultiEdit フックは **exit 0**（fail-open、ブロックしない） | [architecture-decisions.md](../../../references/architecture/decisions-001-010.md) ADR-026 |
 | H-5-2 | High | `plugins/{name}/` 配下への直接編集を検知して、対応する `*-toolkit` スキル名を stderr に提示する | 同上 |
 | H-5-3 | High | `.claude/.local/` `.git/` `/tmp/` 配下を無条件で通過する除外ロジックがある | 同上 |
 
@@ -55,7 +55,7 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-7-1 | High | `matcher: "Bash"` で `references/scripts/hooks/check_version_bump_on_commit.sh` が登録されている | [architecture-decisions.md](../../../references/architecture-decisions.md) ADR-027 / [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| H-7-1 | High | `matcher: "Bash"` で `references/scripts/hooks/check_version_bump_on_commit.sh` が登録されている | [architecture-decisions.md](../../../references/architecture/decisions-001-010.md) ADR-027 / [shell-preference.md](https://github.com/dmajima/claude-plugins) |
 | H-7-2 | High | tool_input.command に `git commit` を含む場合のみ `check_version_bump.sh` に委譲する | 同上 |
 | H-7-3 | Medium | 非対象は exit 0 で即離脱（重い処理は git commit 検出時のみ実行） | 同上 |
 
@@ -63,7 +63,7 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-8-1 | Critical | `settings.json` への追加は既存エントリをマージで書き戻している（既存設定を破壊していない） | [validation-rules.md](../../../references/validation-rules.md) 節 2.6 |
+| H-8-1 | Critical | `settings.json` への追加は既存エントリをマージで書き戻している（既存設定を破壊していない） | [validation-rules.md](../../../references/checklists/validation-rules.md) 節 2.6 |
 
 ## H-9. レビューエージェント並列起動（フックレビュー時）
 

@@ -41,7 +41,7 @@
 - 必須引き継ぎ事項（目的 / 役割 / ユーザー指摘 / 対象 / 観点 / 出力フォーマット）
 - 引き継ぎ禁止事項（過去レビュー結論・修正実装者の主観・「修正済み」等のメタ評価）
 
-詳細は [`../../../references/review-freshness.md`](../../../references/review-freshness.md) を参照。
+詳細は [`../../../references/checklists/review-freshness.md`](../../../references/checklists/review-freshness.md) を参照。
 
 並行して機械チェック:
 

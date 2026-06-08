@@ -156,8 +156,8 @@ Agent({ subagent_type: "security-engineer", prompt: "..." })
 
 | 観点 | 内容 |
 |------|------|
-| AskUserQuestion 利用妥当性 | [`../../../references/user-interaction.md`](../../../references/user-interaction.md) / [`askquestion-strategy.md`](../../../references/askquestion-strategy.md) の発火戦略との整合（分岐型 vs 非分岐型 / 利用不可ケースのフォールバック） |
-| コマンド引数仕様の妥当性 | [`../../../references/argument-policy.md`](../../../references/argument-policy.md) の「単純な 1 引数」原則 / `argument-hint` 60 文字以内 / フラグ数 |
+| AskUserQuestion 利用妥当性 | [`../../../references/guides/user-interaction.md`](../../../references/guides/user-interaction.md) / [`askquestion-strategy.md`](../../../references/guides/askquestion-strategy.md) の発火戦略との整合（分岐型 vs 非分岐型 / 利用不可ケースのフォールバック） |
+| コマンド引数仕様の妥当性 | [`../../../references/policies/argument-policy.md`](../../../references/policies/argument-policy.md) の「単純な 1 引数」原則 / `argument-hint` 60 文字以内 / フラグ数 |
 | エラーメッセージの UX | 原因・対処の明示性 / 専門用語の言い換え / 次にユーザが取るべきアクションの提示 |
 | 出力フォーマットの可読性 | 重要情報のハイライト / テーブル列の妥当性 / 大量出力時のサマリー化 |
 | アクセシビリティ | 色覚多様性 / コンソール幅対応 / 標準出力と標準エラー出力の使い分け |

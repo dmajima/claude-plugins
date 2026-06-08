@@ -1,4 +1,4 @@
-# 作業完了前チェックリスト（SSOT）
+﻿# 作業完了前チェックリスト（SSOT）
 
 各スキル・コマンドが **作業完了報告の前に必ず実施** する自己検証ルール。要件適合性 + ルール順守 + 結果不足の有無を 3 軸で確認する。
 
@@ -14,23 +14,23 @@
 
 | 軸 | 確認内容 | 参照 |
 |---|---------|------|
-| 命名・配置規約 | ファイル名・ディレクトリ構造・frontmatter | [`conventions.md`](conventions.md) |
-| AI 誤認回避 | 必須セクション・断定表現・条件表 | [`ai-readability.md`](ai-readability.md) |
-| description 設計 | フレーズ網羅・Use when・SKIP when | [`description-guide.md`](description-guide.md) |
-| ポータブルパス | ローカル絶対パス禁止・`${CLAUDE_*}` 利用 | [`path-portability.md`](path-portability.md) |
-| evals 設計 | 動作分岐ありなら必須・各ケースのフォーマット | [`eval-guide.md`](eval-guide.md) |
+| 命名・配置規約 | ファイル名・ディレクトリ構造・frontmatter | [`conventions.md`](../policies/conventions-naming.md) |
+| AI 誤認回避 | 必須セクション・断定表現・条件表 | [`ai-readability.md`](../policies/ai-readability.md) |
+| description 設計 | フレーズ網羅・Use when・SKIP when | [`description-guide.md`](../guides/description-guide.md) |
+| ポータブルパス | ローカル絶対パス禁止・`${CLAUDE_*}` 利用 | [`path-portability.md`](../policies/path-portability.md) |
+| evals 設計 | 動作分岐ありなら必須・各ケースのフォーマット | [`eval-guide.md`](../guides/eval-guide.md) |
 | 検証ルール | 種別別の検証項目 | [`validation-rules.md`](validation-rules.md) |
-| バージョン更新 | **必須**: 1 コミット 1 バージョン更新（マーケットプレイス自動更新検知のため）。スキル側で `plugin.json` の編集が発生した場合は必ず `version` を桁付きで更新する | [`versioning.md`](versioning.md) |
-| マーケットプレイス README 同期 | `marketplace.json` を編集した場合は **必ず同一コミット** でマーケットプレイス README を同期する（ADR-019 準拠） | [`readme-policy.md`](readme-policy.md) 節 11.1 |
-| ライセンス整備（プラグイン生成・改修・公開時） | プラグイン直下に `LICENSE`（MIT 標準文 + Copyright 行が埋まっている）+ `plugin.json.license == "MIT"` + README に「ライセンス」セクションが揃っているか（ADR-029 / `mit-license-toolkit` で管理）| [`license-policy.md`](license-policy.md) |
+| バージョン更新 | **必須**: 1 コミット 1 バージョン更新（マーケットプレイス自動更新検知のため）。スキル側で `plugin.json` の編集が発生した場合は必ず `version` を桁付きで更新する | [`versioning.md`](../policies/versioning.md) |
+| マーケットプレイス README 同期 | `marketplace.json` を編集した場合は **必ず同一コミット** でマーケットプレイス README を同期する（ADR-019 準拠） | [`readme-policy.md`](../policies/readme-policy.md) 節 11.1 |
+| ライセンス整備（プラグイン生成・改修・公開時） | プラグイン直下に `LICENSE`（MIT 標準文 + Copyright 行が埋まっている）+ `plugin.json.license == "MIT"` + README に「ライセンス」セクションが揃っているか（ADR-029 / `mit-license-toolkit` で管理）| [`license-policy.md`](../policies/license-policy.md) |
 | レビューフレッシュ起動 | 第三者レビューは **新規 Agent インスタンス** で起動し、修正実装と同一コンテキストで評価しない（ADR-021 準拠）。必須引き継ぎ事項を明記し、引き継ぎ禁止事項（過去レビュー結論等）は伝えない | [`review-freshness.md`](review-freshness.md) |
-| 利用者環境非依存性 | グローバルルール / グローバルエージェント / 外部ツール前提などの依存箇所を棚卸しし、明示・同梱・フォールバックのいずれかで対処（ADR-022 準拠） | [`self-containment.md`](self-containment.md) |
-| ユーザ対話 | 選択は AskUserQuestion 優先 | [`user-interaction.md`](user-interaction.md) |
-| 状態ファイル形式 | 構造化データは JSON/YAML | [`state-files.md`](state-files.md) |
-| README 規約 | 人間向け明記・導入手順優先 | [`readme-policy.md`](readme-policy.md) |
-| エージェント活用 | Explore 等の既存機能利用 | [`agent-utilization.md`](agent-utilization.md) |
+| 利用者環境非依存性 | グローバルルール / グローバルエージェント / 外部ツール前提などの依存箇所を棚卸しし、明示・同梱・フォールバックのいずれかで対処（ADR-022 準拠） | [`self-containment.md`](../policies/self-containment.md) |
+| ユーザ対話 | 選択は AskUserQuestion 優先 | [`user-interaction.md`](../guides/user-interaction.md) |
+| 状態ファイル形式 | 構造化データは JSON/YAML | [`state-files.md`](../policies/state-files.md) |
+| README 規約 | 人間向け明記・導入手順優先 | [`readme-policy.md`](../policies/readme-policy.md) |
+| エージェント活用 | Explore 等の既存機能利用 | [`agent-utilization.md`](../guides/agent-utilization.md) |
 | エンコーディング | 元ファイルの文字コード・改行コード保持。グローバルルール参照は ADR-022 例外（OS/Claude Code 共通ルール）として許容、不在時は UTF-8 / 元の改行コードを既定維持 | `~/.claude/rules/common/file-encoding.md`（任意参照） |
-| **Python 子プロセス起動のハング対策**（Python スクリプトを呼ぶ場合 **MANDATORY**）| Python スクリプト（特に `python-pptx` を使うもの）を呼ぶ場合、`Start-Process -NoNewWindow` / `&` + redirect での直起動は禁止。**`Start-Job` 経由ラッパースクリプト**を経由する。`procedures.md` の起動例にラッパー経由が記載されているか確認 | `~/.claude/rules/tools/python-subprocess-hang-windows.md` / [`powershell-pitfalls.md`](powershell-pitfalls.md) 節 7.3 |
+| **Python 子プロセス起動のハング対策**（Python スクリプトを呼ぶ場合 **MANDATORY**）| Python スクリプト（特に `python-pptx` を使うもの）を呼ぶ場合、`Start-Process -NoNewWindow` / `&` + redirect での直起動は禁止。**`Start-Job` 経由ラッパースクリプト**を経由する。`procedures.md` の起動例にラッパー経由が記載されているか確認 | `~/.claude/rules/tools/python-subprocess-hang-windows.md` / [`powershell-pitfalls.md`](../guides/powershell-pitfalls.md) 節 7.3 |
 
 ### 2.2 要件適合性チェック
 
@@ -49,6 +49,8 @@
 | 確認項目 | 実施方法 |
 |---------|---------|
 | 参照リンクが切れていない | 内部リンクを辿って到達可能か確認 |
+| 分割ファイルに相互参照があるか | ファイルを分割した場合、元ファイル・新ファイル双方に相互参照リンクが入っているか確認 |
+| references ファイルが 300 行以下か | 300 行超のファイルは分割必須（[`conventions-general.md`](../policies/conventions-general.md) 節 8） |
 | プレースホルダ（`{...}`）が残存していない | Grep で確認 |
 | 関連ファイルの整合（README + SKILL.md + evals） | 提供機能と実装の一致確認 |
 | 必須ファイルが揃っている | [`validation-rules.md`](validation-rules.md) の種別別必須項目 |

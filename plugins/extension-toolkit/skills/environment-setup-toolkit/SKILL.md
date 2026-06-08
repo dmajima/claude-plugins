@@ -127,11 +127,11 @@ ADR-024 準拠の雛形を作成するよう案内する:
 - [ ] venv ディレクトリが期待どおり存在 / 不在
 - [ ] 依存パッケージのインポート確認（setup 時）
 - [ ] 作業ログを進捗管理ファイルに反映
-- [ ] [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証
+- [ ] [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証
 
 ### 7. 引き渡し
 
-**作業完了報告の前に**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、setup/teardown/refresh/check のいずれも実コマンド実行で動作確認し、`AskUserQuestion` で承認を取得する（ADR-032）。venv 操作は副作用がディスクに残るためデモは特に重要。
+**作業完了報告の前に**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、setup/teardown/refresh/check のいずれも実コマンド実行で動作確認し、`AskUserQuestion` で承認を取得する（ADR-032）。venv 操作は副作用がディスクに残るためデモは特に重要。
 
 | 状況 | 提示内容 |
 |-----|---------|
@@ -146,21 +146,21 @@ ADR-024 準拠の雛形を作成するよう案内する:
 - システムインタープリタへのパッケージインストール禁止
 - スキル/プラグインのソースディレクトリ（`scripts/` 等）に venv を作らない
 - ユーザシェル環境の永続変数（`.bashrc` 等）への書き込み禁止
-- パスポータビリティチェック必須（[`../../references/path-portability.md`](../../references/path-portability.md)）
-- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
-- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
+- パスポータビリティチェック必須（[`../../references/policies/path-portability.md`](../../references/policies/path-portability.md)）
+- 利用者環境非依存性の維持（[`../../references/policies/self-containment.md`](../../references/policies/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) + [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md)）
 - 生成・改修するスクリプトは Bash 標準方針 (`~/.claude/rules/tools/shell-preference.md`) に従う。
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
-| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1） |
-| 完了チェックリスト | [`../../references/completion-checklist.md`](../../references/completion-checklist.md) |
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| ポータブルパス | [`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) |
+| 検証ルール | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（節 1） |
+| 完了チェックリスト | [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
 | Python venv 仕様 | [`references/python-venv.md`](references/python-venv.md) |
 | 動作例 | [`evals/`](evals/) |

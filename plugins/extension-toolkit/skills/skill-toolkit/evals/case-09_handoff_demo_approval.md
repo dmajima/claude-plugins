@@ -17,7 +17,7 @@
 
 ### Phase 4: 引き渡し前の動作デモ（A-1 必須）
 
-[`completion-checklist.md`](../../../references/completion-checklist.md) 節 2.4 に従い、以下を実施する:
+[`completion-checklist.md`](../../../references/checklists/completion-checklist.md) 節 2.4 に従い、以下を実施する:
 
 | ステップ | 内容 |
 |---------|------|

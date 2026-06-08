@@ -34,7 +34,7 @@
 
 ### Phase 3: チーム起動 + 機械チェック（フレッシュ起動・ADR-021 準拠）
 
-[`../../../references/teams/plugin-review-team.md`](../../../references/teams/plugin-review-team.md) のスポーンプロンプトに従い、**フレッシュ Agent インスタンス**（過去議論・修正履歴・他レビュアー結論を引き継がない）でメンバーを 1 メッセージ内で **並列 Agent 起動**。詳細は [`../../../references/review-freshness.md`](../../../references/review-freshness.md) を参照。各スキル/コマンド/フックを横断的に機械チェック。
+[`../../../references/teams/plugin-review-team.md`](../../../references/teams/plugin-review-team.md) のスポーンプロンプトに従い、**フレッシュ Agent インスタンス**（過去議論・修正履歴・他レビュアー結論を引き継がない）でメンバーを 1 メッセージ内で **並列 Agent 起動**。詳細は [`../../../references/checklists/review-freshness.md`](../../../references/checklists/review-freshness.md) を参照。各スキル/コマンド/フックを横断的に機械チェック。
 
 ### Phase 4: 結果統合
 

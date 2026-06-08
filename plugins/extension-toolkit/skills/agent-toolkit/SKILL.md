@@ -118,14 +118,14 @@ Claude Code のサブエージェント単体・エージェントチームを�
 ### 7. 検証
 
 - [ ] frontmatter `name` `description` `model` `tools` 全て指定
-- [ ] description が [`../../references/description-guide.md`](../../references/description-guide.md) のエージェント向けルール準拠
+- [ ] description が [`../../references/guides/description-guide.md`](../../references/guides/description-guide.md) のエージェント向けルール準拠
 - [ ] 評価観点が 3 つ以上
 - [ ] 出力フォーマットが定義されている
 - [ ] パスポータビリティ合格
 
 ### 8. 引き渡し
 
-**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（チーム編成時はチームメンバー実起動 1 回以上、単体エージェントは Agent ツールで実起動 1 回）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
+**作業完了報告の前に必須**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（チーム編成時はチームメンバー実起動 1 回以上、単体エージェントは Agent ツールで実起動 1 回）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
 
 - 生成ファイルパスを提示
 - チーム編成時はスポーンプロンプト例も提示
@@ -138,18 +138,18 @@ Claude Code のサブエージェント単体・エージェントチームを�
 - 既存エージェントとの重複は必ずユーザに提示
 - スキル内 `agents/` のグローバル重複削除禁止（プラグイン配布のため）
 - パスポータビリティチェック必須
-- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
-- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
+- 利用者環境非依存性の維持（[`../../references/policies/self-containment.md`](../../references/policies/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) + [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md)）
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| description 設計 | [`../../references/description-guide.md`](../../references/description-guide.md) |
-| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.4 / 2.5） |
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| description 設計 | [`../../references/guides/description-guide.md`](../../references/guides/description-guide.md) |
+| 検証ルール | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（節 1 + 2.4 / 2.5） |
 | 詳細手順 | [`references/procedures.md`](references/procedures.md) |
 | チーム設計ルール | [`references/team-design.md`](references/team-design.md) |
 | 動作例 | [`evals/`](evals/) |

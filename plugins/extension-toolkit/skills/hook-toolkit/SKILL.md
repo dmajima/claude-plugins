@@ -122,7 +122,7 @@ settings.json への追加の場合は既存 `hooks` を Read してマージ書
 
 ### 9. 引き渡し
 
-**作業完了報告の前に必須**: [`../../references/completion-checklist.md`](../../references/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（フックの実発火確認・該当イベント発生時の挙動確認）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。フックは登録のみでは検証不十分。
+**作業完了報告の前に必須**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（フックの実発火確認・該当イベント発生時の挙動確認）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。フックは登録のみでは検証不十分。
 
 - 生成・変更したファイルパス提示
 - プラグイン同梱なら `marketplace-publisher` への接続を提案
@@ -133,19 +133,19 @@ settings.json への追加の場合は既存 `hooks` を Read してマージ書
 - ローカル絶対パスのハードコード禁止
 - timeout を必ず指定する（デフォルト 60 秒、軽い処理は短く）
 - パスポータビリティチェック必須
-- 利用者環境非依存性の維持（[`../../references/self-containment.md`](../../references/self-containment.md)、ADR-022）
-- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/review-freshness.md`](../../references/review-freshness.md)、ADR-021）
+- 利用者環境非依存性の維持（[`../../references/policies/self-containment.md`](../../references/policies/self-containment.md)、ADR-022）
+- 第三者レビュー起動時はフレッシュ Agent インスタンスで起動（[`../../references/checklists/review-freshness.md`](../../references/checklists/review-freshness.md)、ADR-021）
 - エンコーディング維持必須
-- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/user-interaction.md`](../../references/user-interaction.md) + [`../../references/askquestion-strategy.md`](../../references/askquestion-strategy.md)）
+- ユーザに選択を求める場合は `AskUserQuestion`（[`../../references/guides/user-interaction.md`](../../references/guides/user-interaction.md) + [`../../references/guides/askquestion-strategy.md`](../../references/guides/askquestion-strategy.md)）
 - 生成する Bash スクリプトは Bash 標準方針 (`~/.claude/rules/tools/shell-preference.md`) に従う。
-- 作業完了報告前に [`../../references/completion-checklist.md`](../../references/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
+- 作業完了報告前に [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) に基づく自己検証（ルール順守 + 要件適合 + 結果完全性）を実施
 
 ## 参照
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`../../references/conventions.md`](../../references/conventions.md) |
-| ポータブルパス | [`../../references/path-portability.md`](../../references/path-portability.md) |
-| 検証ルール | [`../../references/validation-rules.md`](../../references/validation-rules.md)（節 1 + 2.6） |
+| 命名・配置規約 | [`../../references/policies/conventions-structure.md`](../../references/policies/conventions-structure.md) |
+| ポータブルパス | [`../../references/policies/path-portability.md`](../../references/policies/path-portability.md) |
+| 検証ルール | [`../../references/checklists/validation-rules.md`](../../references/checklists/validation-rules.md)（節 1 + 2.6） |
 | イベント詳細 | [`references/hook-events.md`](references/hook-events.md) |
 | 動作例 | [`evals/`](evals/) |

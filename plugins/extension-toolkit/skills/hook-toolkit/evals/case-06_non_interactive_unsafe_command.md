@@ -38,7 +38,7 @@ Non-interactive mode does not support interactive remediation. Either:
 2. Use ${HOME}/.claude/scripts/log-tool-use.sh (assumes the path exists in user environment)
 3. Run in interactive mode for AskUserQuestion-based remediation flow
 
-References: ../../references/path-portability.md
+References: ../../references/policies/path-portability.md
 ```
 
 `exit 1` で終了。**`hooks.json` は生成しない**（破損した設定ファイルを残さない）。
