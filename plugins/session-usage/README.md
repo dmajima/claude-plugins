@@ -127,7 +127,7 @@ Claude Code のカスタムコマンドは Bash ツール経由で実行され�
 
 ## ライセンス
 
-MIT License.
+[MIT License](LICENSE)
 
 ## 著者
 
