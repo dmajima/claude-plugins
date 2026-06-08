@@ -124,7 +124,7 @@ AskUserQuestion({
   操作選択は `AskUserQuestion` に集約する
 - **集計対象は `type=assistant` レコードのみ**
 - **Cache Read は累計で大きく見える**（同じトークンを毎リクエスト読み出すため）
-- **外部依存なし**: PowerShell 標準機能のみで実装
+- **外部依存なし**: Bash + Python 標準機能のみで実装
 
 ## 参照
 
