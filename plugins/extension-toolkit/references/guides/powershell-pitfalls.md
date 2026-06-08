@@ -216,6 +216,6 @@ Remove-Job $job -Force
 ## 9. 関連ドキュメント
 
 - `~/.claude/rules/tools/console-encoding.md` — PowerShell コンソール出力エンコーディングのグローバルルール
-- `~/.claude/rules/tools/shell-preference.md` — Git Bash 不具合のため PowerShell ツール優先
+- `~/.claude/rules/tools/shell-preference.md` — Bash 標準・PowerShell はフォールバック時のみ
 - [`automated-checks.md`](../skills/extension-reviewer/references/automated-checks.md) 節 14 — PSScriptAnalyzer 統合（B-1）
 - ADR-032 — 動作デモ + ユーザ承認フロー必須化（実機検証で本ファイルの落とし穴を検出する補完手段）
