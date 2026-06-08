@@ -1,5 +1,5 @@
 ---
-description: カレントセッションのトークン消費量を Claude UI に表示し、対話メニューでクリップボードコピー・再集計・終了を選択できる
+description: セッションのトークン消費量を表示し、コピー・再集計を対話メニューで操作
 argument-hint: "[session-uuid]"
 allowed-tools: Bash(bash:*)
 ---
