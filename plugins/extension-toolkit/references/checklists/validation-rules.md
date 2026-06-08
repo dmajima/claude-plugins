@@ -23,13 +23,13 @@
 
 ### 1.1 ディレクトリ構造の許可リスト機械チェック（厳格対象のみ）
 
-[`conventions.md`](../policies/conventions-structure.md) の許可リストを正典として、**厳格運用 2 階層** に対して機械チェックする。`references/` 直下と `scripts/` 直下は推奨例のため対象外（人間レビューで確認）。
+[`conventions-structure.md`](../policies/conventions-structure.md) の許可リストを正典として、**厳格運用 2 階層** に対して機械チェックする。`references/` 直下と `scripts/` 直下は推奨例のため対象外（人間レビューで確認）。
 
 | 階層 | 厳格度 | 許可リスト | 違反時の重大度 |
 |-----|-------|----------|------------|
 | プラグイン直下 | **厳格** | `.claude-plugin/` `README.md` `LICENSE` `commands/` `skills/` `agents/` `hooks/` `mcp/` `references/` | High |
 | スキル直下 | **厳格** | `SKILL.md` `README.md` `references/` `agents/` `evals/` | High |
-| `references/` 直下 | 推奨例 | （機械チェックなし、人間レビュー）。`scripts/` 配下は推奨業務単位サブフォルダ（[`conventions.md`](../policies/conventions-structure.md) 節 5）| - |
+| `references/` 直下 | 推奨例 | （機械チェックなし、人間レビュー）。`scripts/` 配下は推奨業務単位サブフォルダ（[`conventions-structure.md`](../policies/conventions-structure.md) 節 5）| - |
 | `references/scripts/` 直下 | 推奨例 + 一部禁止 | 禁止項目（`knowledge/` `lib/` `bin/`、拡張子別サブフォルダ）のみ機械検出 | Medium |
 | トップレベル `scripts/` 直下（プラグイン/スキル両方） | **厳格・存在禁止** | 配置自体が ADR-025 違反 | High |
 
@@ -245,7 +245,7 @@ done
 
 | 用途 | ファイル |
 |-----|---------|
-| 命名・配置規約 | [`conventions.md`](../policies/conventions-structure.md) |
+| 命名・配置規約 | [`conventions-structure.md`](../policies/conventions-structure.md) |
 | AI 誤認回避 | [`ai-readability.md`](../policies/ai-readability.md) |
 | description 設計 | [`description-guide.md`](../guides/description-guide.md) |
 | ポータブルパス | [`path-portability.md`](../policies/path-portability.md) |

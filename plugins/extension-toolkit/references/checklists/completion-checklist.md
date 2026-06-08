@@ -14,7 +14,7 @@
 
 | 軸 | 確認内容 | 参照 |
 |---|---------|------|
-| 命名・配置規約 | ファイル名・ディレクトリ構造・frontmatter | [`conventions.md`](../policies/conventions-naming.md) |
+| 命名・配置規約 | ファイル名・ディレクトリ構造・frontmatter | [`conventions-naming.md`](../policies/conventions-naming.md) |
 | AI 誤認回避 | 必須セクション・断定表現・条件表 | [`ai-readability.md`](../policies/ai-readability.md) |
 | description 設計 | フレーズ網羅・Use when・SKIP when | [`description-guide.md`](../guides/description-guide.md) |
 | ポータブルパス | ローカル絶対パス禁止・`${CLAUDE_*}` 利用 | [`path-portability.md`](../policies/path-portability.md) |
