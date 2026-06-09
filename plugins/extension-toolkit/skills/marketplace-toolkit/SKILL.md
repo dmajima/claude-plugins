@@ -1,11 +1,11 @@
 ---
 name: marketplace-toolkit
-description: Claude Code プラグインマーケットプレイス（.claude-plugin/marketplace.json）の新規構築・本体管理（manifest・README 同期）スキル。「マーケットプレイス foo を作って」「marketplace.json に bar を追加」「README を同期」等で起動する。Use when creating or updating a marketplace. SKIP when publishing (marketplace-publisher), building plugin body (plugin-toolkit), or MIT LICENSE setup (mit-license-toolkit).
+description: Claude Code プラグインマーケットプレイス（.claude-plugin/marketplace.json）の新規構築・本体管理（manifest・README 同期）スキル。「マーケットプレイス foo を作って」「marketplace.json に bar を追加」「README を同期」等で起動する。Use when creating or updating a marketplace. SKIP when publishing (marketplace-publish), building plugin body (plugin-toolkit), or MIT LICENSE setup (mit-license-toolkit).
 ---
 
 # Marketplace Toolkit
 
-Claude Code のプラグインマーケットプレイス（`.claude-plugin/marketplace.json` を持つリポジトリ）の **新規構築** および **本体管理**（`marketplace.json` 編集 + マーケットプレイス README 同期）を担当するスキル。プラグインの公開ワークフロー（git push / PR）は `marketplace-publisher` に委譲する（ADR-020 準拠）。
+Claude Code のプラグインマーケットプレイス（`.claude-plugin/marketplace.json` を持つリポジトリ）の **新規構築** および **本体管理**（`marketplace.json` 編集 + マーケットプレイス README 同期）を担当するスキル。プラグインの公開ワークフロー（git push / PR）は `marketplace-publish` に委譲する（ADR-020 準拠）。
 
 ## 責務
 
@@ -19,7 +19,7 @@ Claude Code のプラグインマーケットプレイス（`.claude-plugin/mark
 | 業務 | 担当スキル |
 |-----|----------|
 | プラグイン外形作成 | `plugin-toolkit` |
-| プラグイン公開（git push / PR） | `marketplace-publisher` |
+| プラグイン公開（git push / PR） | `marketplace-publish` |
 | 通常の README 生成（プラグイン・スキル単位） | `readme-toolkit` |
 | 環境構築 | `environment-setup-toolkit` |
 
@@ -31,7 +31,7 @@ Claude Code のプラグインマーケットプレイス（`.claude-plugin/mark
 
 このスキルを起動しないケース:
 
-- 「`{plugin}` プラグインを公開」（→ `marketplace-publisher`、内部で本スキルを呼ぶ）
+- 「`{plugin}` プラグインを公開」（→ `marketplace-publish`、内部で本スキルを呼ぶ）
 - 「`{plugin}` プラグインを作って」（→ `plugin-toolkit`）
 
 ## 前提
@@ -108,8 +108,8 @@ JSON 整合性は編集後に必ず検証（[`../../references/checklists/valida
 | 結果 | 接続先 |
 |-----|-------|
 | 新規構築完了 | `plugin-toolkit` への接続提案（最初のプラグイン作成） |
-| プラグイン追加・更新完了 | `marketplace-publisher` への接続提案（公開フロー） |
-| README 同期のみ完了 | コミット案内のみ（`marketplace-publisher` のフルオートを使う場合は連携可） |
+| プラグイン追加・更新完了 | `marketplace-publish` への接続提案（公開フロー） |
+| README 同期のみ完了 | コミット案内のみ（`marketplace-publish` のフルオートを使う場合は連携可） |
 
 ## 重要な制約
 

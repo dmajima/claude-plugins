@@ -53,7 +53,7 @@ dev-toolkit のエントリを更新し、README を同期しました。
 - description: "{古い説明}" → "新しい説明"
 
 次のステップ:
-- marketplace-publisher で git push + PR 作成
+- marketplace-publish で git push + PR 作成
 - ハンドオフ
 ```
 

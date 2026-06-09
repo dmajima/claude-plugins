@@ -56,7 +56,7 @@ case-01 と同じ手順で `dev-toolkit` 外形を作成。`skills/` サブデ�
 
 ### Phase 6: 引き渡し
 
-`marketplace-publisher` への接続を提案。
+`marketplace-publish` への接続を提案。
 
 ## 期待出力
 

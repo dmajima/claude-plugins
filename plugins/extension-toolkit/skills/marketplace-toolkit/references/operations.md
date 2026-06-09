@@ -161,7 +161,7 @@ flowchart TD
 | `--remove-plugin X --also-delete-files` のみ | エラー終了（`--confirm-destructive` 必須） |
 | `--remove-plugin X --also-delete-files --confirm-destructive` | ファイル本体含む完全削除（最も破壊的、対話モードでは AskUserQuestion 二重確認、非対話モードではログにのみ警告） |
 
-非対話モードでもファイル本体の完全削除は **二段フラグでガード** する。これにより上位スキル（`marketplace-publisher` のフルオート等）が誤って広範な削除を実行することを防ぐ（ADR の安全装置原則）。
+非対話モードでもファイル本体の完全削除は **二段フラグでガード** する。これにより上位スキル（`marketplace-publish` のフルオート等）が誤って広範な削除を実行することを防ぐ（ADR の安全装置原則）。
 
 ### `<target-path>` の検証（パストラバーサル対策）
 

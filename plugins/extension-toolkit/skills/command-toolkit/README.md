@@ -45,8 +45,8 @@ Claude（要約）:
 |-------|------|
 | `plugin-toolkit` | プラグイン内に配置する場合の外形作成 |
 | `skill-toolkit` | コマンドからルーティングするスキル本体作成 |
-| `extension-reviewer` | 完成後のレビュー |
-| `marketplace-publisher` | プラグイン化後の公開 |
+| `extension-review` | 完成後のレビュー |
+| `marketplace-publish` | プラグイン化後の公開 |
 
 ## 主要参照ファイル
 

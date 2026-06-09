@@ -85,7 +85,7 @@ cat >&2 <<EOF
   agents/*.md -> agent-toolkit / hooks/* -> hook-toolkit /
   README.md -> readme-toolkit / plugin.json -> plugin-toolkit /
   references/scripts/setup/ -> environment-setup-toolkit /
-  公開 -> marketplace-publisher / レビュー -> extension-reviewer
+  公開 -> marketplace-publish / レビュー -> extension-review
 
 なお、バージョン更新漏れは Stop フック (check_version_bump.sh) で
 セッション終了時に検出されます。

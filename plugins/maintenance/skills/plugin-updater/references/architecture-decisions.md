@@ -57,7 +57,7 @@
 
 - **責務分離（SRP）**: 更新メンテナンスは「マーケットプレイス本体管理」「公開ワークフロー」と
   独立した運用関心事である。エンドユーザーが日常的に呼び出す手動メンテナンスコマンドであり、
-  開発時のみ使う `marketplace-toolkit` / `marketplace-publisher` とライフサイクルが異なる。
+  開発時のみ使う `marketplace-toolkit` / `marketplace-publish` とライフサイクルが異なる。
 - **配布単位の独立性**: `extension-toolkit` をインストールしないユーザーでも、本プラグイン単独で
   インストール・利用可能にすることで、配布範囲を最大化できる。
 - **依存関係の最小化**: 他プラグインへの依存を持たず（`dependencies: []`）、Claude Code CLI のみを
@@ -81,7 +81,7 @@
 本プラグインを `maintenance-toolkit` 等の包括プラグインに発展させる選択肢を残す。
 
 `plugin.json` に **関連プラグイン宣言用フィールド**（例: `relatedPlugins` / `recommendedPlugins`）が
-公式に追加された場合、`extension-toolkit:marketplace-toolkit` / `marketplace-publisher` を機械可読な
+公式に追加された場合、`extension-toolkit:marketplace-toolkit` / `marketplace-publish` を機械可読な
 関連として宣言できるようになる。現状は人間可読な README リンクのみで対応している。
 
 #### 境界判断基準
@@ -89,7 +89,7 @@
 - **エンドユーザ運用コマンド** → 本プラグイン or 後継 `maintenance-toolkit` の責務
 - **プラグイン作者向け開発コマンド** → `extension-toolkit` の責務
 - **マーケットプレイス管理コマンド** → `extension-toolkit:marketplace-toolkit` の責務
-- **公開ワークフロー** → `extension-toolkit:marketplace-publisher` の責務
+- **公開ワークフロー** → `extension-toolkit:marketplace-publish` の責務
 
 その判断時点で本 ADR の Decision を見直す。
 

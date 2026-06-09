@@ -1,6 +1,6 @@
 ﻿# 検証ルール（SSOT）
 
-`extension-toolkit` の各 `*-toolkit` および `extension-reviewer` が共通で参照する検証チェックリスト。同じ検証ルールを複数箇所に書かないようにこのファイルに集約する。
+`extension-toolkit` の各 `*-toolkit` および `extension-review` が共通で参照する検証チェックリスト。同じ検証ルールを複数箇所に書かないようにこのファイルに集約する。
 
 ## 1. 共通検証項目（全拡張要素）
 
@@ -109,7 +109,7 @@ done
 | 移管シナリオで元ファイルが無傷 | Critical | git diff |
 | 移管後の `settings.json` が改変されていない | Critical | git diff |
 | 含まれるスキル/コマンド/エージェント/フックの種別別検証合格 | High | 本ファイルの該当節 |
-| シークレットファイル不在（`.env` / `*.pem` / `*.key` / `id_rsa` / `credentials.json` / `secrets.json` 等） | Critical | ファイル名パターン + 内容パターンスキャン（[`../skills/marketplace-publisher/references/secret-scan.md`](../skills/marketplace-publisher/references/secret-scan.md) 参照） |
+| シークレットファイル不在（`.env` / `*.pem` / `*.key` / `id_rsa` / `credentials.json` / `secrets.json` 等） | Critical | ファイル名パターン + 内容パターンスキャン（[`../skills/marketplace-publish/references/secret-scan.md`](../skills/marketplace-publish/references/secret-scan.md) 参照） |
 
 ### 2.3 コマンド（`command-toolkit` 出力）
 
@@ -203,8 +203,8 @@ done
 | タイミング | 実施者 |
 |----------|-------|
 | `*-toolkit` 実行直後 | 各 `*-toolkit` 自身（自己検証） |
-| プラグイン公開前 | `extension-reviewer`（並列エージェント + 機械チェック） |
-| マーケットプレイス登録前 | `marketplace-publisher`（プラグイン実体検証部分のみ） |
+| プラグイン公開前 | `extension-review`（並列エージェント + 機械チェック） |
+| マーケットプレイス登録前 | `marketplace-publish`（プラグイン実体検証部分のみ） |
 
 ## 4. 自動修正の可否
 
@@ -238,8 +238,8 @@ done
 | `readme-toolkit` | 1 + 2.7 |
 | `marketplace-toolkit` | 1 + 2.8（マーケットプレイス本体検証） |
 | `mit-license-toolkit` | 1 + 2.2（プラグイン直下の LICENSE 関連項目）|
-| `extension-reviewer` | 全節 + 自動チェック手順は [`../skills/extension-reviewer/references/automated-checks.md`](../skills/extension-reviewer/references/automated-checks.md) |
-| `marketplace-publisher` | 1 + 2.2（実体検証 + LICENSE fail-closed）+ 2.8（マーケットプレイス README 同期確認） |
+| `extension-review` | 全節 + 自動チェック手順は [`../skills/extension-review/references/automated-checks.md`](../skills/extension-review/references/automated-checks.md) |
+| `marketplace-publish` | 1 + 2.2（実体検証 + LICENSE fail-closed）+ 2.8（マーケットプレイス README 同期確認） |
 
 ## 7. 関連ファイル
 

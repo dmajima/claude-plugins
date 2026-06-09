@@ -22,7 +22,7 @@ description: Claude Code プラグインの Python venv・依存パッケージ�
 | スキル本体の生成 | `skill-toolkit` |
 | プラグイン外形 | `plugin-toolkit` |
 | コマンド・エージェント・フック・README 生成 | 各 `*-toolkit` |
-| マーケットプレイス公開 | `marketplace-publisher` |
+| マーケットプレイス公開 | `marketplace-publish` |
 
 ## トリガー条件
 

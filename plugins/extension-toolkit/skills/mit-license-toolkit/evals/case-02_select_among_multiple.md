@@ -30,7 +30,7 @@
 3. ユーザが「Acme 社プロジェクト用」を選択
 4. `plugins/acme-toolkit/LICENSE` を生成（`Copyright (c) 2026 Acme Corporation`）
 5. `plugin.json.license = "MIT"` 設定
-6. 検証 PASS、`readme-toolkit` / `marketplace-publisher` への接続案内
+6. 検証 PASS、`readme-toolkit` / `marketplace-publish` への接続案内
 
 ## 失敗条件
 

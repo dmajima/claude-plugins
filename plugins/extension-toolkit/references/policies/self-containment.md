@@ -38,7 +38,7 @@
 
 | 優先度 | 対象 | 理由 |
 |-------|------|------|
-| 高 | `extension-reviewer` のチームで頻繁に起動するエージェント（`architect` / `implementation-engineer` / `security-engineer` / `test-engineer` 等） | レビューの中核、不在で機能停止 |
+| 高 | `extension-review` のチームで頻繁に起動するエージェント（`architect` / `implementation-engineer` / `security-engineer` / `test-engineer` 等） | レビューの中核、不在で機能停止 |
 | 中 | プラグインのレビュー観点で必要なエージェント（`infrastructure-engineer` / `dba` / `legal-advisor` 等） | 一部のレビューで必要 |
 | 低 | 限定シーンのみのエージェント（`ux-designer` / `customer-support` 等） | 任意性が高い |
 
@@ -59,15 +59,15 @@
 | 別プラグイン提供のスキルを Skill ツール経由で呼び出す | 利用者環境にそのプラグインがあるか不明 | 不在時のフォールバック設計を SKILL.md / references に明示 |
 | グローバルスキル（`~/.claude/skills/`）への依存 | 利用者環境のセットアップに依存 | 不在時のフォールバック動作を必ず定義（OK） |
 
-**例**: `marketplace-publisher` は認証エラー時に `credentials-manager` グローバルスキルへの接続を提案する。`credentials-manager` 不在時のフォールバックは「ユーザに直接認証情報の確認を依頼」とする（[`../skills/marketplace-publisher/references/secret-scan.md`](../skills/marketplace-publisher/references/secret-scan.md) および [`../skills/marketplace-publisher/references/publish-workflow.md`](../skills/marketplace-publisher/references/publish-workflow.md) で明記）。
+**例**: `marketplace-publish` は認証エラー時に `credentials-manager` グローバルスキルへの接続を提案する。`credentials-manager` 不在時のフォールバックは「ユーザに直接認証情報の確認を依頼」とする（[`../skills/marketplace-publish/references/secret-scan.md`](../skills/marketplace-publish/references/secret-scan.md) および [`../skills/marketplace-publish/references/publish-workflow.md`](../skills/marketplace-publish/references/publish-workflow.md) で明記）。
 
 ### 2.5 外部ツール依存（git / python / gh 等）
 
 | ツール | 依存箇所 | 対処 |
 |-------|--------|------|
-| git | ローカル複製インストール、`marketplace-publisher` の git 操作 | README「動作要件」に明示。不在時はインストールガイド |
+| git | ローカル複製インストール、`marketplace-publish` の git 操作 | README「動作要件」に明示。不在時はインストールガイド |
 | python 3.10+ | `environment-setup-toolkit` の venv 構築 | 利用しないスキルは独立して動作。venv 利用時のみ前提 |
-| gh CLI | `marketplace-publisher` のフルオート PR 作成 | 不在時はハンドオフモードに切替 |
+| gh CLI | `marketplace-publish` のフルオート PR 作成 | 不在時はハンドオフモードに切替 |
 
 外部ツール前提はすべて README の「動作要件」または「依存関係」セクションに **明示** する（ADR-018 D 要素）。
 

@@ -33,6 +33,6 @@ argument-hint: {必須引数を <...>、省略可を [...]、フラグを [--fla
 
 - 作成・変更したファイル一覧
 - 推奨される次のコマンド
-- 関連するレビュー観点（必要なら `extension-reviewer` への接続を提案）
+- 関連するレビュー観点（必要なら `extension-review` への接続を提案）
 
-`git commit` 以降の操作はこのコマンドからは実行しない（フルオートが必要な場合は `marketplace-publisher` のフルオートモードを使う）。
+`git commit` 以降の操作はこのコマンドからは実行しない（フルオートが必要な場合は `marketplace-publish` のフルオートモードを使う）。

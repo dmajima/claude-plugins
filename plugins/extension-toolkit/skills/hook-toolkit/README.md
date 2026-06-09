@@ -45,8 +45,8 @@ Claude（要約）:
 | スキル | 関係 |
 |-------|------|
 | `plugin-toolkit` | `settings.json` からのフック抽出（移管シナリオ） |
-| `extension-reviewer` | 完成後のフック設定レビュー |
-| `marketplace-publisher` | プラグイン同梱フックの公開 |
+| `extension-review` | 完成後のフック設定レビュー |
+| `marketplace-publish` | プラグイン同梱フックの公開 |
 
 ## 主要参照ファイル
 

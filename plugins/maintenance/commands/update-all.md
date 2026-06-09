@@ -36,4 +36,4 @@ Skill(skill: "plugin-updater", args: "mode=<mode> target=all")
 - 設計判断記録: [`../skills/plugin-updater/references/architecture-decisions.md`](../skills/plugin-updater/references/architecture-decisions.md)
 - グローバルルール `~/.claude/rules/claude/plugin-auto-update.md`（自動更新ポリシー）
 - `extension-toolkit:marketplace-toolkit`（マーケットプレイス本体管理）
-- `extension-toolkit:marketplace-publisher`（マーケットプレイスへの公開）
+- `extension-toolkit:marketplace-publish`（マーケットプレイスへの公開）

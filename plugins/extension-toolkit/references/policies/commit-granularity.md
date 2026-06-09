@@ -149,7 +149,7 @@ docs(backlog): improvement-backlog DONE マーキング
 
 ## 7. 違反検出
 
-現状は `extension-reviewer` の **専門家レビュー（人間 / Agent）** で以下を確認する。
+現状は `extension-review` の **専門家レビュー（人間 / Agent）** で以下を確認する。
 **機械検出スクリプトは ADR-031 初版時点で未実装**（git log 解析を伴うため、`references/scripts/checks/run_checks.py` とは別系統の検査スクリプトが将来追加される予定）。
 
 | チェック | 検出対象 | 現状の実装 |
@@ -160,7 +160,7 @@ docs(backlog): improvement-backlog DONE マーキング
 
 違反が見つかった場合は **コミット分割を強く推奨** する（強制リバートはしない。利用者の git 履歴に対する裁量を尊重する）。
 
-将来実装する機械検出スクリプトは `extension-reviewer/references/scripts/checks/run_commit_granularity_check.py`（仮称）として追加し、`run_checks.py` の CHECKS リストに統合する設計を予定。
+将来実装する機械検出スクリプトは `extension-review/references/scripts/checks/run_commit_granularity_check.py`（仮称）として追加し、`run_checks.py` の CHECKS リストに統合する設計を予定。
 
 ---
 

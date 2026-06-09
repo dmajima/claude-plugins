@@ -47,7 +47,7 @@ Claude（要約）:
 | スキル | 関係 |
 |-------|------|
 | `plugin-toolkit` | 新規構築後に最初のプラグインを作る |
-| `marketplace-publisher` | プラグインの公開ワークフロー（git push / PR）を担当、本スキルを内部で呼び出す |
+| `marketplace-publish` | プラグインの公開ワークフロー（git push / PR）を担当、本スキルを内部で呼び出す |
 | `readme-toolkit` | プラグイン・スキル単位の README を担当（マーケットプレイス README は本スキル） |
 
 ## 主要参照ファイル

@@ -48,7 +48,7 @@ Claude（要約）:
 | `command-toolkit` | 外形作成後にコマンド本体を生成 |
 | `agent-toolkit` | 外形作成後にエージェント本体を生成 |
 | `hook-toolkit` | 外形作成後にフック設定を生成 |
-| `marketplace-publisher` | プラグイン完成後の公開 |
+| `marketplace-publish` | プラグイン完成後の公開 |
 
 ## 主要参照ファイル
 

@@ -20,7 +20,7 @@ Claude Code のフック設定（`hooks.json`）を作成・改修するスキ�
 |-----|----------|
 | `settings.json` からフック抽出 → プラグイン化 | `plugin-toolkit`（移管シナリオ） |
 | スキル/コマンド/エージェント生成 | 各 `*-toolkit` |
-| マーケットプレイス公開 | `marketplace-publisher` |
+| マーケットプレイス公開 | `marketplace-publish` |
 
 ## トリガー条件
 
@@ -125,7 +125,7 @@ settings.json への追加の場合は既存 `hooks` を Read してマージ書
 **作業完了報告の前に必須**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（フックの実発火確認・該当イベント発生時の挙動確認）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。フックは登録のみでは検証不十分。
 
 - 生成・変更したファイルパス提示
-- プラグイン同梱なら `marketplace-publisher` への接続を提案
+- プラグイン同梱なら `marketplace-publish` への接続を提案
 
 ## 重要な制約
 

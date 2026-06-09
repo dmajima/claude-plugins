@@ -25,7 +25,7 @@ Claude Code に有効化されたスキルを `UserPromptSubmit` フックで自
 | インデックス生成ロジックの改修 | `references/scripts/lib/build_index.py` を直接編集 |
 | フック設定の変更 | `extension-toolkit:hook-toolkit` |
 | 新スキル追加時のインデックス更新 | 何もしない（次の `SessionStart` で自動再構築） |
-| 公開・PR 作成 | `extension-toolkit:marketplace-publisher` |
+| 公開・PR 作成 | `extension-toolkit:marketplace-publish` |
 
 ## トリガー条件
 

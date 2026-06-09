@@ -139,7 +139,7 @@ ADR-003（テンプレートの 2 階層管理）は通常「横断 → スキ�
 
 ## 4. 公開フローでの検証（fail-closed）
 
-`marketplace-publisher` はプラグイン公開前に以下を **fail-closed**（不合格なら停止）で検証する。
+`marketplace-publish` はプラグイン公開前に以下を **fail-closed**（不合格なら停止）で検証する。
 
 | 検証項目 | 重大度 | 不合格時の動作 |
 |---------|-------|--------------|
@@ -167,8 +167,8 @@ ADR-003（テンプレートの 2 階層管理）は通常「横断 → スキ�
 |-------|--------|
 | `plugin-toolkit`（新規外形作成・既存追加） | プラグイン外形生成直前または直後に `mit-license-toolkit` を Skill ツール経由で呼び出し、`LICENSE` 配置 + `plugin.json.license` 設定 |
 | `readme-toolkit` | プラグイン README 生成時に「ライセンス」セクションを差し込み（本ポリシー節 5 の定型文）|
-| `marketplace-publisher` | 公開前検証で `LICENSE` / `plugin.json.license` を fail-closed 検証。不備時は `mit-license-toolkit` への接続を案内 |
-| `extension-reviewer` | レビュー対象プラグインの LICENSE 整備状況を機械チェック項目として確認 |
+| `marketplace-publish` | 公開前検証で `LICENSE` / `plugin.json.license` を fail-closed 検証。不備時は `mit-license-toolkit` への接続を案内 |
+| `extension-review` | レビュー対象プラグインの LICENSE 整備状況を機械チェック項目として確認 |
 
 `mit-license-toolkit` の起動方法・引数仕様・実行フロー詳細は [`../skills/mit-license-toolkit/SKILL.md`](../skills/mit-license-toolkit/SKILL.md) を参照。
 

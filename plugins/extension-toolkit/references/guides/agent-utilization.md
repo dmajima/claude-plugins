@@ -134,7 +134,7 @@ Agent({
 |------------|-------------------|
 | `description-trigger-reviewer` | description は AI 自動トリガー判定に直結する独立した評価軸であり、構造・実装の議論と混ぜないほうが評価が明瞭 |
 
-`extension-reviewer` がこれらを起動する際は、対象に応じて主たるチームと **同じメッセージ内で並列起動** する:
+`extension-review` がこれらを起動する際は、対象に応じて主たるチームと **同じメッセージ内で並列起動** する:
 
 ```text
 Agent({ subagent_type: "{lead}", prompt: "（チームスポーンプロンプト）" })       # 並列（チーム）
@@ -175,7 +175,7 @@ Agent({ subagent_type: "description-trigger-reviewer", prompt: "..." })     # �
 | 3 | スポーンプロンプトを Read してメンバー別観点を抽出 |
 | 4 | 各メンバーを `Agent` ツールで **並列起動**（同一メッセージ内に複数呼び出し） |
 | 5 | 各エージェントの結果をメインに集約（チームの議論ラウンドはメイン Claude が役割を兼ねる） |
-| 6 | 統合判定を [`../skills/extension-reviewer/references/review-perspectives.md`](../skills/extension-reviewer/references/review-perspectives.md) の「総合判定ルール」に従って算出 |
+| 6 | 統合判定を [`../skills/extension-review/references/review-perspectives.md`](../skills/extension-review/references/review-perspectives.md) の「総合判定ルール」に従って算出 |
 
 #### 6.1.3 並列起動の例
 
@@ -208,7 +208,7 @@ Agent({ subagent_type: "evals-coverage-reviewer",
 
 #### 6.1.6 適用先
 
-`extension-reviewer` のチーム起動を前提とするレビューケース全般に対し、本フォールバックを適用することで同じ観点をカバーできる。具体的なケースとフォールバック起動方法は [`../skills/extension-reviewer/references/team-selection.md`](../skills/extension-reviewer/references/team-selection.md) の「フォールバック起動」節を参照。
+`extension-review` のチーム起動を前提とするレビューケース全般に対し、本フォールバックを適用することで同じ観点をカバーできる。具体的なケースとフォールバック起動方法は [`../skills/extension-review/references/team-selection.md`](../skills/extension-review/references/team-selection.md) の「フォールバック起動」節を参照。
 
 ## 7. 並列起動と逐次起動の使い分け
 
@@ -242,7 +242,7 @@ Agent({ subagent_type: "evals-coverage-reviewer",
 | 用途 | ファイル |
 |-----|---------|
 | 専門家エージェント・チーム設計 | [`../skills/agent-toolkit/references/team-design.md`](../skills/agent-toolkit/references/team-design.md) |
-| レビュー観点 | [`../skills/extension-reviewer/references/review-perspectives.md`](../skills/extension-reviewer/references/review-perspectives.md) |
+| レビュー観点 | [`../skills/extension-review/references/review-perspectives.md`](../skills/extension-review/references/review-perspectives.md) |
 | レビューフレッシュ起動原則 | [`review-freshness.md`](../checklists/review-freshness.md)（ADR-021） |
 | 自己完結性ポリシー | [`self-containment.md`](../policies/self-containment.md)（ADR-022） |
 

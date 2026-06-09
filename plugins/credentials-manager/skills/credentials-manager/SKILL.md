@@ -24,7 +24,7 @@ Claude Code セッションの認証情報ストア（`credentials.json`）に�
 | 認証情報パターンのプロアクティブ検出 | [`credentials-reader`](../credentials-reader/SKILL.md) |
 | メニューUIによる対話的な管理操作の進行 | [`/credentials-manager:manage`](../../commands/manage.md) コマンド |
 | 秘密鍵生成・暗号化・KMS連携・本番秘匿情報運用 | スキル外（外部 secret manager） |
-| マーケットプレイス公開時のシークレットスキャン | `marketplace-publisher`（`extension-toolkit`） |
+| マーケットプレイス公開時のシークレットスキャン | `marketplace-publish`（`extension-toolkit`） |
 
 ## トリガー条件
 

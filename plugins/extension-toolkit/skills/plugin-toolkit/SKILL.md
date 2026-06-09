@@ -1,6 +1,6 @@
 ---
 name: plugin-toolkit
-description: Claude Code プラグイン外形（plugin.json・README）を新規作成し、既存スキル/コマンド/フック/エージェントを移管するスキル。「新しいプラグイン foo を作って」「既存スキル bar をプラグイン化」「スキルをプラグインに変換」等で起動する。Use when scaffolding a new plugin or migrating assets. SKIP when authoring skill/command/agent/hook bodies (skill/command/agent/hook-toolkit), editing marketplace.json (marketplace-toolkit), MIT LICENSE setup (mit-license-toolkit), or publishing (marketplace-publisher).
+description: Claude Code プラグイン外形（plugin.json・README）を新規作成し、既存スキル/コマンド/フック/エージェントを移管するスキル。「新しいプラグイン foo を作って」「既存スキル bar をプラグイン化」「スキルをプラグインに変換」等で起動する。Use when scaffolding a new plugin or migrating assets. SKIP when authoring skill/command/agent/hook bodies (skill/command/agent/hook-toolkit), editing marketplace.json (marketplace-toolkit), MIT LICENSE setup (mit-license-toolkit), or publishing (marketplace-publish).
 ---
 
 # Plugin Toolkit
@@ -27,8 +27,8 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 | **MIT LICENSE 配置・`plugin.json.license` 設定・`license-info.json` 管理** | `mit-license-toolkit`（ADR-029） |
 | マーケットプレイス新規構築 | `marketplace-toolkit` |
 | `.claude-plugin/marketplace.json` の編集（plugins[] 追加・更新・削除）+ マーケットプレイス README 同期 | `marketplace-toolkit` |
-| プラグイン公開（git push / PR） | `marketplace-publisher` |
-| 完成後のレビュー | `extension-reviewer` |
+| プラグイン公開（git push / PR） | `marketplace-publish` |
+| 完成後のレビュー | `extension-review` |
 
 ## トリガー条件
 
@@ -41,7 +41,7 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 
 - 「スキル本体を作って」（→ `skill-toolkit`）
 - 「コマンド本体を作って」（→ `command-toolkit`）
-- 「マーケットプレイスに登録」（→ `marketplace-publisher`）
+- 「マーケットプレイスに登録」（→ `marketplace-publish`）
 
 ## 前提
 
@@ -135,8 +135,8 @@ Claude Code のプラグイン **外形構築 + 既存資産の移管（コピ�
 | LICENSE / `plugin.json.license` 整備 | `mit-license-toolkit`（本フローで連携済みのため通常は不要、再調整時のみ） |
 | マーケットプレイス新規構築 | `marketplace-toolkit` |
 | `marketplace.json` への登録 + マーケットプレイス README 同期 | `marketplace-toolkit` |
-| プラグイン公開（git push / PR） | `marketplace-publisher` |
-| 全体レビュー | `extension-reviewer` |
+| プラグイン公開（git push / PR） | `marketplace-publish` |
+| 全体レビュー | `extension-review` |
 
 ## 重要な制約
 

@@ -21,7 +21,7 @@ Claude Code プラグインに MIT ライセンス（`LICENSE` ファイル + `p
 - 「MIT ライセンスを設定」
 - 「`license-info.json` を編集」
 
-または `/extension license {plugin-name}` 経由で起動できます。`plugin-toolkit` / `marketplace-publisher` / `readme-toolkit` から Skill ツール経由で自動的に呼び出されます。
+または `/extension license {plugin-name}` 経由で起動できます。`plugin-toolkit` / `marketplace-publish` / `readme-toolkit` から Skill ツール経由で自動的に呼び出されます。
 
 ## 利用方法
 
@@ -124,9 +124,9 @@ plugins/extension-toolkit/skills/mit-license-toolkit/
 | スキル | 関係 |
 |-------|------|
 | `plugin-toolkit` | プラグイン外形作成時に本スキルを呼び出す |
-| `marketplace-publisher` | 公開前に LICENSE / `plugin.json.license` を fail-closed 検証、不備時に本スキルへ接続 |
+| `marketplace-publish` | 公開前に LICENSE / `plugin.json.license` を fail-closed 検証、不備時に本スキルへ接続 |
 | `readme-toolkit` | プラグイン README に「ライセンス」セクションを挿入 |
-| `extension-reviewer` | レビュー対象プラグインの LICENSE 整備状況を確認 |
+| `extension-review` | レビュー対象プラグインの LICENSE 整備状況を確認 |
 
 ## 関連リンク
 

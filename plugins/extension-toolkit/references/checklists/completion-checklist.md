@@ -167,7 +167,7 @@
 | JSON valid | JSON パース |
 | frontmatter valid | YAML パース |
 
-詳細は [`../skills/extension-reviewer/references/automated-checks.md`](../skills/extension-reviewer/references/automated-checks.md) を参照。
+詳細は [`../skills/extension-review/references/automated-checks.md`](../skills/extension-review/references/automated-checks.md) を参照。
 
 ## 7. 禁止事項
 

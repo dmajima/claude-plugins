@@ -50,8 +50,8 @@
         "environment-setup-toolkit",
         "marketplace-toolkit",
         "mit-license-toolkit",
-        "extension-reviewer",
-        "marketplace-publisher",
+        "extension-review",
+        "marketplace-publish",
         "scaffolding"
       ]
     },
