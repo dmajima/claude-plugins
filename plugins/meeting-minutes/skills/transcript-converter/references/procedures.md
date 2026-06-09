@@ -18,12 +18,10 @@
 ### 2. Python スクリプトで変換
 
 ```bash
-& chcp.com 65001 | Out-Null
-[Console]::InputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-
-& $venvPy "$CLAUDE_SKILL_DIR\scripts\convert\convert_transcript.py" \
-  --input "$SESSION_DIR\inputs\transcript_raw.txt" \
-  --output "$SESSION_DIR\workspace" \
+"$SESSION_DIR/workspace/.venv/Scripts/python" \
+  "$CLAUDE_SKILL_DIR/scripts/convert/convert_transcript.py" \
+  --input "$SESSION_DIR/inputs/transcript_raw.txt" \
+  --output "$SESSION_DIR/workspace" \
   --title "会議タイトル"
 ```
 ### 3. 出力確認

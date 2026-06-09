@@ -26,8 +26,8 @@
 ### 1. ワークディレクトリ作成
 
 ```bash
-New-Item -ItemType Directory -Force -Path "$SessionDir/inputs" | Out-Null
-New-Item -ItemType Directory -Force -Path "$SessionDir/workspace" | Out-Null
+mkdir -p "$SessionDir/inputs"
+mkdir -p "$SessionDir/workspace"
 ```
 - 最終成果物（HTML）は `$SessionDir` 直下に出力する
 - 中間生成物・venv は `$SessionDir/workspace/` 配下に置く
@@ -36,7 +36,7 @@ New-Item -ItemType Directory -Force -Path "$SessionDir/workspace" | Out-Null
 ### 2. venv 構築
 
 venv は `workspace/` 配下に作成する（`workspace/.venv/`）。
-スキル自身のスクリプトは `$env:CLAUDE_SKILL_DIR` 経由で参照する（インストール形態に依存しないポータブルパス記法）。
+スキル自身のスクリプトは `$CLAUDE_SKILL_DIR` 経由で参照する（インストール形態に依存しないポータブルパス記法）。
 
 ```bash
 bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$SessionDir/workspace"

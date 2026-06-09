@@ -37,7 +37,7 @@ description: カレントセッション（または指定セッション）の�
 
 | 引数 | 解釈 |
 |-----|------|
-| 空 | カレントセッション（`$env:CLAUDE_CODE_SESSION_ID` → 最新 mtime の順で解決） |
+| 空 | カレントセッション（`$CLAUDE_CODE_SESSION_ID` → 最新 mtime の順で解決） |
 | 36 文字 UUID 形式 | 該当 JSONL を集計対象とする |
 | その他 | 警告後、空扱いで進行 |
 

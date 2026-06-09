@@ -14,7 +14,7 @@
 2. venv が構築済みであることを確認する（未構築の場合は `setup_venv.sh` で構築する）
 3. Python スクリプト `${CLAUDE_SKILL_DIR}/scripts/output/generate_md.py` を venv 経由で実行する:
    ```
-   & $venvPy generate_md.py --input workspace/minutes.json --output $SESSION_DIR/minutes.md
+   "$SESSION_DIR/workspace/.venv/Scripts/python" generate_md.py --input workspace/minutes.json --output "$SESSION_DIR/minutes.md"
    ```
 4. `minutes-composer/references/template/minutes-template.md` と同一のフォーマットで Markdown を生成する
 5. 生成された `minutes.md` をセッション直下（成果物領域）に配置する

@@ -25,22 +25,21 @@ venv 関連スクリプトはプラグイン直下の `.sh`を利用する（ADR
 
 ```bash
 # 1. venv 構築（初回のみ・プラグイン共通）
-bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" `
-  -WorkDir "$SessionDir/workspace" `
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
+  -WorkDir "$SessionDir/workspace" \
   -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 
 # 2. レビュー対象ごとに run_checks.py を実行（出力は JSON ファイル）
-& "$SessionDir/workspace/.venv/Scripts/python" `
-  "$CLAUDE_SKILL_DIR/references/scripts/checks/run_checks.py" `
-  --target "<レビュー対象パス>" `
-  --scope-root "<スコープルート (パストラバーサル防止)>" `
+"$SessionDir/workspace/.venv/Scripts/python" \
+  "$CLAUDE_SKILL_DIR/references/scripts/checks/run_checks.py" \
+  --target "<レビュー対象パス>" \
+  --scope-root "<スコープルート (パストラバーサル防止)>" \
   --output "$SessionDir/workspace/checks_<対象名>.json"
 
 # 3. 結果は JSON ファイルから Read ツールで読み取って統合する
-#    (標準出力には進捗ログのみ。日本語ログも UTF-8 で出力されるため mojibake は発生しない)
 
 # 4. 作業完了後の venv 削除（プラグイン共通）
-bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" `
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
   -WorkDir "$SessionDir/workspace"
 ```
 詳細な引数仕様は `references/scripts/checks/run_checks.py --help` を参照すること。

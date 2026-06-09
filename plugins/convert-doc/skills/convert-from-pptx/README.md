@@ -14,7 +14,7 @@ PowerPoint (PPTX) を Claude が読み込める Markdown に変換するスキ�
 /plugin install convert-doc@dmajima-claude-plugins
 ```
 
-依存パッケージ（python-pptx / Pillow / lxml）は初回実行時に `references/scripts/setup/setup_venv.sh`（Windows 11 推奨）または `setup_venv.sh`（POSIX 互換）が自動で venv を構築してインストールします。本スキルは外部ネットワークアクセスを行いません（オフライン環境でも動作）。
+依存パッケージ（python-pptx / Pillow / lxml）は初回実行時に `references/scripts/setup/setup_venv.sh` が自動で venv を構築してインストールします。本スキルは外部ネットワークアクセスを行いません（オフライン環境でも動作）。
 
 ## 仕組み
 
@@ -61,7 +61,7 @@ Claude（要約）:
 |------|------|
 | Python | 3.9 以上 |
 | 主要依存 | `python-pptx` (PPTX パース), `lxml` (SmartArt XML 解析・XXE 対策), `Pillow` (画像メタ取得) |
-| 依存リスト | `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt`（バージョン下限固定） |
+| 依存リスト | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt`（バージョン下限固定） |
 | シェル | PowerShell 7+（Windows 11 主動作環境）、`.sh` は POSIX 環境向けの互換版 |
 | 外部通信 | なし（オフライン動作） |
 | 出力エンコーディング | UTF-8 / LF / BOM なし |
@@ -73,10 +73,9 @@ plugins/convert-doc/
 ├── references/scripts/
 │   ├── setup/                       # 統合 venv 構築（プラグイン共通、ADR-024）
 │   │   ├── requirements.txt         # 全スキル分の依存をマージ（バージョン下限固定）
-│   │   ├── setup_venv.sh           # PowerShell 版（推奨・Windows 11）
-│   │   ├── teardown_venv.sh
-│   │   ├── setup_venv.sh            # POSIX 互換版
-│   │   └── teardown_venv.sh
+│   │   ├── setup_venv.sh           # Bash 版 venv 構築
+│   │   ├── teardown_venv.sh        # Bash 版 venv 削除
+│   │   └── requirements.txt        # 依存パッケージ定義
 │   └── convert-from-pptx/           # 本スキル業務スクリプト（ADR-025）
 │       ├── convert_from_pptx.py     # PPTX → Markdown / JSON 変換
 │       └── verify_md.py             # Phase 3 カバレッジ検証
@@ -104,7 +103,7 @@ plugins/convert-doc/
 
 ## カスタマイズ
 
-- Mermaid 変換のしきい値（コネクタ最小本数、対象シェイプ種別など）は `${env:CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py` 冒頭の定数を編集する
+- Mermaid 変換のしきい値（コネクタ最小本数、対象シェイプ種別など）は `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py` 冒頭の定数を編集する
 - モノスペース判定対象フォント名は `MONOSPACE_FONTS` 定数で管理する
 - 画像の最大サイズや出力ファイル名規則は `--max-image-size` および `_image_filename` を編集する
 - スピーカーノートのプレフィックス（`> [!NOTE]`）は `_format_notes` を編集する

@@ -33,10 +33,10 @@ basic_pattern='[Bb]asic[[:space:]]+[A-Za-z0-9+/=]{16,}'
 pem_pattern='-----BEGIN[[:space:]]+(RSA[[:space:]]+|DSA[[:space:]]+|EC[[:space:]]+|OPENSSH[[:space:]]+|ENCRYPTED[[:space:]]+|PGP[[:space:]]+)?PRIVATE[[:space:]]+KEY-----'
 
 reason=""
-# secret_pattern は case-sensitive (PowerShell の -cmatch 相当)
+# secret_pattern は case-sensitive
 if [[ "$prompt" =~ $secret_pattern ]]; then
   reason="ユーザープロンプトに認証情報パターンを検出"
-# 以降は case-insensitive (PowerShell の -match 相当)
+# 以降は case-insensitive
 elif printf '%s' "$prompt" | grep -qE "$bearer_pattern" 2>/dev/null; then
   reason="ユーザープロンプトに Bearer トークンを検出"
 elif printf '%s' "$prompt" | grep -qE "$basic_pattern" 2>/dev/null; then

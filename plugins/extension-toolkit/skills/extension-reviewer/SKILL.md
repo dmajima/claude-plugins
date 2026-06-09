@@ -119,7 +119,7 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" \
   -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"
 
 # 2. チェック実行（出力は JSON ファイル）
-& "$SessionDir/workspace/.venv/Scripts/python" \
+"$SessionDir/workspace/.venv/Scripts/python" \
   "$CLAUDE_SKILL_DIR/references/scripts/checks/run_checks.py" \
   --target "<対象パス>" --scope-root "<スコープルート>" \
   --output "$SessionDir/workspace/checks_result.json"

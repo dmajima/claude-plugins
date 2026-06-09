@@ -341,7 +341,7 @@ def resolve_jsonl(session_id: str, project_key: str) -> tuple[Path | None, str, 
 def derive_project_key(cwd: str | None = None) -> str:
     """カレントディレクトリからプロジェクトキーを導出."""
     p = cwd if cwd is not None else os.getcwd()
-    # PowerShell 版と同じ正規化: '\\', ':', '/' を '-' に置換
+    # パス区切り文字を '-' に正規化
     key = re.sub(r"[\\:/]", "-", p)
     return key
 

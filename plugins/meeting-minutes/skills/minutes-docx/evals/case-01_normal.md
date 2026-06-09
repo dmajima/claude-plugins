@@ -16,13 +16,13 @@
 3. 同梱テンプレート `assets/template/minutes-template.docx` の存在を確認する
 4. Python スクリプト `${CLAUDE_SKILL_DIR}/scripts/output/generate_docx.py` を venv 経由で実行する:
    ```
-   & $venvPy generate_docx.py --input workspace/minutes.json --template <template-path> --output $SESSION_DIR/minutes.docx
+   "$SESSION_DIR/workspace/.venv/Scripts/python" generate_docx.py --input workspace/minutes.json --template <template-path> --output "$SESSION_DIR/minutes.docx"
    ```
 5. テンプレートのスタイル定義（Title: Meiryo/18pt、Heading 1: Meiryo/14pt 等）に従って Word ファイルを生成する
 6. 生成された `minutes.docx` をセッション直下（成果物領域）に配置する
 7. ユーザーに生成完了を報告し、ファイルパスを提示する
 
-**python-docx ハング対策**: Windows + PowerShell 環境では `python-docx` の `Document` 相当の処理でハングする既知事象があるため、必要に応じて `Start-Job` 経由ラッパー（`references/scripts/output/run_docx_via_job.sh`）で起動する。
+**python-docx ハング対策**: 必要に応じて `run_docx_via_job.sh` ラッパー経由で起動する。
 
 ## 期待出力
 
