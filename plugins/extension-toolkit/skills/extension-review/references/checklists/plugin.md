@@ -81,9 +81,10 @@
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
 | P-8.5-1 | High | `references/` ディレクトリが存在する場合、`references/CLAUDE.md` が配置されている | [claude-md-policy.md](../../../references/policies/claude-md-policy.md) 節 2 |
-| P-8.5-2 | High | `CLAUDE.md` に「目的と範囲」「原則」「ナビゲーション」セクションが含まれる | 同 節 3 |
-| P-8.5-3 | High | `references/README.md` に「人間向け資料であり Claude エージェント動作では参照しない」旨の記載がある | 同 節 1 / [readme-policy.md](../../../references/policies/readme-policy.md) |
-| P-8.5-4 | Medium | `CLAUDE.md` が 200 行以下で、詳細ルールを直接記載せずポリシーファイルへの参照で構成されている | [claude-md-policy.md](../../../references/policies/claude-md-policy.md) 節 4 |
+| P-8.5-2 | High | `references/` の各サブフォルダに `CLAUDE.md` が配置されている（ファイル一覧・利用ルールを含む） | 同 節 2.1 |
+| P-8.5-3 | High | トップレベル `CLAUDE.md` に「目的と範囲」「原則」「ナビゲーション」セクションが含まれる | 同 節 3 |
+| P-8.5-4 | High | `references/README.md` に「人間向け資料であり Claude エージェント動作では参照しない」旨の記載がある | 同 節 1 / [readme-policy.md](../../../references/policies/readme-policy.md) |
+| P-8.5-5 | Medium | 各 `CLAUDE.md` が 200 行以下で、詳細ルールを直接記載せずポリシーファイルへの参照で構成されている | [claude-md-policy.md](../../../references/policies/claude-md-policy.md) 節 4 |
 
 ## P-9. SSOT 参照の正確性
 

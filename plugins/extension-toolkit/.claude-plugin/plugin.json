@@ -1,6 +1,6 @@
 {
   "name": "extension-toolkit",
-  "version": "1.11.0",
+  "version": "1.11.1",
   "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援",
   "license": "MIT",
   "author": {
