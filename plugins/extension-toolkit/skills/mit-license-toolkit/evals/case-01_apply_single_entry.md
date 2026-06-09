@@ -37,7 +37,7 @@
 3. `plugins/dev-toolkit/LICENSE` を生成（MIT 標準文 + `Copyright (c) 2026 Taro Yamada`）
 4. `plugins/dev-toolkit/.claude-plugin/plugin.json` に `"license": "MIT"` を追加
 5. 検証: `verify_license.py dev-toolkit` が PASS
-6. 引き渡し: `readme-toolkit`（README にライセンスセクション追加） / `marketplace-publisher` への接続案内
+6. 引き渡し: `readme-toolkit`（README にライセンスセクション追加） / `marketplace-publish` への接続案内
 
 ## 期待出力（要約）
 

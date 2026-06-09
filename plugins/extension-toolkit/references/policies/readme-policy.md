@@ -115,7 +115,7 @@ README 作成・更新後に以下を確認:
 
 ### 担当
 
-- 通常は **`marketplace-toolkit` が `marketplace.json` 編集と同期で本 README を更新する**（ADR-020 準拠、[`../skills/marketplace-toolkit/references/readme-sync.md`](../skills/marketplace-toolkit/references/readme-sync.md) のロジックに従う）。`marketplace-publisher` はプラグイン公開フロー内で `marketplace-toolkit` を Skill ツール経由で呼び出して同期させる（[`../skills/marketplace-publisher/references/publish-workflow.md`](../skills/marketplace-publisher/references/publish-workflow.md)）
+- 通常は **`marketplace-toolkit` が `marketplace.json` 編集と同期で本 README を更新する**（ADR-020 準拠、[`../skills/marketplace-toolkit/references/readme-sync.md`](../skills/marketplace-toolkit/references/readme-sync.md) のロジックに従う）。`marketplace-publish` はプラグイン公開フロー内で `marketplace-toolkit` を Skill ツール経由で呼び出して同期させる（[`../skills/marketplace-publish/references/publish-workflow.md`](../skills/marketplace-publish/references/publish-workflow.md)）
 - ハンドオフモードの場合は、ハンドオフ手順書に「マーケットプレイス README 更新」を **必ず含める**
 - `marketplace.json` のみを変更してマーケットプレイス README を放置するコミットは ADR-019 違反として禁止
 

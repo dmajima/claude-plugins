@@ -24,8 +24,8 @@ Claude Code のスキル一式（`SKILL.md` + `README.md` + `references/` + `eva
 | サブエージェント・チーム作成 | `agent-toolkit` |
 | フック作成 | `hook-toolkit` |
 | README 単体の生成・更新 | `readme-toolkit` |
-| マーケットプレイス公開 | `marketplace-publisher` |
-| 完成後のレビュー | `extension-reviewer` |
+| マーケットプレイス公開 | `marketplace-publish` |
+| 完成後のレビュー | `extension-review` |
 
 ## トリガー条件
 
@@ -102,8 +102,8 @@ Claude Code のスキル一式（`SKILL.md` + `README.md` + `references/` + `eva
 
 生成・変更したファイル一覧を提示する。
 
-- `extension-reviewer` への接続を提案（レビュー実施推奨時）
-- プラグイン内に配置した場合は `marketplace-publisher` への接続を提案
+- `extension-review` への接続を提案（レビュー実施推奨時）
+- プラグイン内に配置した場合は `marketplace-publish` への接続を提案
 
 ## 重要な制約
 

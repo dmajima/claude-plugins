@@ -63,7 +63,7 @@ JSON 整合性検証。
 dev-toolkit を marketplace.json に追加し、README を同期しました。
 
 次のステップ:
-1. marketplace-publisher で git push + PR 作成
+1. marketplace-publish で git push + PR 作成
 2. ハンドオフ（手動でコミット）
 
 どうしますか？

@@ -47,8 +47,8 @@ Claude（要約）:
 | `plugin-toolkit` | スキルをプラグイン内に配置する場合、外形作成を依頼 |
 | `command-toolkit` | スキルと一緒にコマンドも作る場合に併用 |
 | `agent-toolkit` | スキル内でサブエージェントを使う場合に併用 |
-| `extension-reviewer` | 完成後のレビュー |
-| `marketplace-publisher` | プラグイン化後の公開 |
+| `extension-review` | 完成後のレビュー |
+| `marketplace-publish` | プラグイン化後の公開 |
 
 ## 依存外部スキル（任意参照）
 

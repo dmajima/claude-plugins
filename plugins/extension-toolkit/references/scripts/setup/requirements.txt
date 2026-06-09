@@ -2,6 +2,6 @@
 # 各スキル個別の requirements.txt は禁止。本ファイルに依存をマージする。
 #
 # 現在の利用スクリプト:
-#   - skills/extension-reviewer/references/scripts/checks/run_checks.py: yaml (frontmatter パース)
+#   - skills/extension-review/references/scripts/checks/run_checks.py: yaml (frontmatter パース)
 #   - references/scripts/evals/run_evals.py: yaml (case フロントマターパース、B-2)
 PyYAML==6.0.2

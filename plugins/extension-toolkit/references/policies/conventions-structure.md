@@ -144,6 +144,8 @@ plugins/{plugin-name}/skills/{skill-name}/
 
 ```text
 references/
+├── README.md              # 必須（人間向けインデックス。エージェント動作では参照禁止）
+├── CLAUDE.md              # 必須（Claude エージェント向け原則・ナビゲーション。claude-md-policy.md 準拠）
 ├── policies/              # ポリシー・制約ルール
 ├── guides/                # ガイド・設計指針
 ├── checklists/            # チェックリスト・検証

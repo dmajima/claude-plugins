@@ -61,7 +61,7 @@ legacy-plugin を完全削除しました（非対話モード）。
 - plugins/legacy-plugin/: ディレクトリ完全削除
 
 次のステップ:
-- marketplace-publisher でコミット・push（推奨コミットメッセージ: Remove plugin: legacy-plugin）
+- marketplace-publish でコミット・push（推奨コミットメッセージ: Remove plugin: legacy-plugin）
 ```
 
 ## 期待出力
@@ -76,7 +76,7 @@ legacy-plugin を完全削除しました（非対話モード）。
 ## 分岐の根拠
 
 `--non-interactive` + `--remove-plugin` + 二段フラグ（`--also-delete-files` + `--confirm-destructive`）揃い → 完全削除を実行。
-二段フラグの揃いを **必須要件** とすることで、上位スキル（`marketplace-publisher` のフルオート等）が誤って広範な削除を実行することを防ぐ。
+二段フラグの揃いを **必須要件** とすることで、上位スキル（`marketplace-publish` のフルオート等）が誤って広範な削除を実行することを防ぐ。
 
 ## 関連ケース
 

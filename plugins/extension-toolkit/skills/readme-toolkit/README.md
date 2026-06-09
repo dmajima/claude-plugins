@@ -51,7 +51,7 @@ Claude（要約）:
 |-------|------|
 | `skill-toolkit` | スキル本体作成後に README 生成 |
 | `plugin-toolkit` | プラグイン外形作成後に README 生成 |
-| `extension-reviewer` | README の整合性レビュー |
+| `extension-review` | README の整合性レビュー |
 
 ## 主要参照ファイル
 

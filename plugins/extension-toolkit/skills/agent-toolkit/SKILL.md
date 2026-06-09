@@ -24,7 +24,7 @@ Claude Code のサブエージェント単体・エージェントチームを�
 | スラッシュコマンド生成 | `command-toolkit` |
 | フック設定の生成 | `hook-toolkit` |
 | README 単体の生成 | `readme-toolkit` |
-| マーケットプレイス公開 | `marketplace-publisher` |
+| マーケットプレイス公開 | `marketplace-publish` |
 
 ## トリガー条件
 
@@ -129,7 +129,7 @@ Claude Code のサブエージェント単体・エージェントチームを�
 
 - 生成ファイルパスを提示
 - チーム編成時はスポーンプロンプト例も提示
-- プラグイン内配置時は `marketplace-publisher` への接続を提案
+- プラグイン内配置時は `marketplace-publish` への接続を提案
 
 ## 重要な制約
 

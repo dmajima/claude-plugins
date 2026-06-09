@@ -1,6 +1,6 @@
 # 依存パッケージ（完全固定: pip install で同一バージョンを強制）
 #
-# 【CVE 監視ポリシー】L-11 / extension-reviewer security 指摘
+# 【CVE 監視ポリシー】L-11 / extension-review security 指摘
 # - 定期的に `pip-audit` または `osv-scanner` を実行し、各パッケージの CVE 公開状況を確認すること
 # - 特に lxml (CVE-2021-43818 / CVE-2022-2309 等の履歴あり) と Pillow (画像処理系で頻繁に CVE 公表) は要監視
 # - python-pptx 内部の lxml は直接ハードニングできないため、XML 攻撃対策は

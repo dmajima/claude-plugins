@@ -46,7 +46,7 @@ Claude（要約）:
 |-------|------|
 | `skill-toolkit` | エージェントを利用するスキル本体作成 |
 | `plugin-toolkit` | プラグイン内に配置する場合の外形作成 |
-| `extension-reviewer` | 完成後のエージェント定義レビュー |
+| `extension-review` | 完成後のエージェント定義レビュー |
 
 ## 主要参照ファイル
 

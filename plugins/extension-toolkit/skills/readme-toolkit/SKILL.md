@@ -21,7 +21,7 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 | `SKILL.md` の生成 | `skill-toolkit` |
 | `plugin.json` の生成 | `plugin-toolkit` |
 | マーケットプレイス直下 README の生成・同期 | `marketplace-toolkit` |
-| マーケットプレイス公開 | `marketplace-publisher` |
+| マーケットプレイス公開 | `marketplace-publish` |
 
 ## トリガー条件
 

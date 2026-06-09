@@ -62,7 +62,7 @@ AskUserQuestion({
 
 ### Phase 8: 引き渡し本体
 
-承認取得後、生成ファイル一覧を提示し、`extension-reviewer` 接続を提案する（標準の case-01 Phase 4 と同じ）。
+承認取得後、生成ファイル一覧を提示し、`extension-review` 接続を提案する（標準の case-01 Phase 4 と同じ）。
 
 ## 期待出力
 

@@ -4,7 +4,7 @@
 
 | 項目 | 値 |
 |-----|---|
-| 起動フレーズ | 他スキル（例: `extension-reviewer`）から `Skill(skill: "environment-setup-toolkit", args: "setup ...")` で呼ばれる |
+| 起動フレーズ | 他スキル（例: `extension-review`）から `Skill(skill: "environment-setup-toolkit", args: "setup ...")` で呼ばれる |
 | 引数 | `setup --work-dir .claude/.local/work/20260501_03_self_review/workspace --requirements ${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt` |
 | フラグ | なし |
 | 既存状態 | `extension-toolkit` プラグインがインストール済 / プラグイン直下 `references/scripts/setup/{setup_venv.sh,teardown_venv.sh,requirements.txt}` が配置済 |

@@ -19,7 +19,7 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 |-----|-----|
 | 引数（`--dry-run`）の解釈・バリデーション | `commands/update-all.md` / `commands/update.md`（呼び出し元コマンド） |
 | `marketplace.json` / マーケットプレイス README の編集 | `extension-toolkit:marketplace-toolkit` |
-| プラグインの新規公開 | `extension-toolkit:marketplace-publisher` |
+| プラグインの新規公開 | `extension-toolkit:marketplace-publish` |
 
 ## 導入手順
 
@@ -112,7 +112,7 @@ skills/plugin-updater/
 | 出力フォーマット | [`references/output-formats.md`](references/output-formats.md) |
 | 設計判断記録 | [`references/architecture-decisions.md`](references/architecture-decisions.md) |
 | マーケットプレイス本体編集 | `extension-toolkit:marketplace-toolkit` |
-| プラグイン公開 | `extension-toolkit:marketplace-publisher` |
+| プラグイン公開 | `extension-toolkit:marketplace-publish` |
 
 ## 設計上の特徴
 

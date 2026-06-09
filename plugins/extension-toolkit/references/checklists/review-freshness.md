@@ -1,6 +1,6 @@
 ﻿# レビューフレッシュ実行原則（SSOT）
 
-`extension-toolkit` プラグイン内のすべてのレビュー処理（`extension-reviewer` のチーム起動 / フォールバック並列起動 / 第三者レビュー全般）に適用される原則（ADR-021 準拠）。
+`extension-toolkit` プラグイン内のすべてのレビュー処理（`extension-review` のチーム起動 / フォールバック並列起動 / 第三者レビュー全般）に適用される原則（ADR-021 準拠）。
 
 このルールは **プラグイン内ルール** として配布される。利用者環境に依存しないため、誰がインストールしても同じレビュー品質を保証する。
 
@@ -62,7 +62,7 @@
 - **品質ゲート判定**
 - **要件適合性レビュー**
 - 多角レビュー（複数専門家による評価）の各メンバー
-- `extension-reviewer` の全チーム起動 / フォールバック並列起動
+- `extension-review` の全チーム起動 / フォールバック並列起動
 
 ### 4.2 適用外（自己検証）
 
@@ -178,5 +178,5 @@ Agent({ subagent_type: "security-engineer", prompt: "..." })                 # �
 |-----|---------|
 | エージェント全般の活用方針 | [`agent-utilization.md`](../guides/agent-utilization.md) |
 | アーキテクチャ決定 | [`architecture-decisions.md`](../architecture/)（ADR-021） |
-| `extension-reviewer` のチーム選定 | [`../skills/extension-reviewer/references/team-selection.md`](../skills/extension-reviewer/references/team-selection.md) |
+| `extension-review` のチーム選定 | [`../skills/extension-review/references/team-selection.md`](../skills/extension-review/references/team-selection.md) |
 | 完了前自己検証 | [`completion-checklist.md`](completion-checklist.md) |

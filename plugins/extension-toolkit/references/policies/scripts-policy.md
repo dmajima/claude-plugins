@@ -139,9 +139,9 @@ Windows + PowerShell から Python スクリプトを `Start-Process -NoNewWindo
 
 判断基準: **そのコードブロックを Claude が実行することが期待されているか**。実行されるなら `references/scripts/` に切り出す。表示専用なら md に残してよい。
 
-## 7. レビュー観点（extension-reviewer 連携）
+## 7. レビュー観点（extension-review 連携）
 
-`extension-reviewer` の `references/scripts/checks/run_checks.py` は本ポリシーの違反を以下の方法で検出する:
+`extension-review` の `references/scripts/checks/run_checks.py` は本ポリシーの違反を以下の方法で検出する:
 
 | 検出項目 | 重大度 | 検出方法 |
 |---------|-------|--------|
@@ -176,5 +176,5 @@ Windows + PowerShell から Python スクリプトを `Start-Process -NoNewWindo
 | [`../checklists/validation-rules.md`](../checklists/validation-rules.md) | 機械検証項目（本ポリシーの違反検出） |
 | `../architecture/decisions-021-033.md` | ADR-024（プラグイン単位 venv）・ADR-025（インラインスクリプト禁止 + `references/scripts/` 配置義務）・ADR-026（経由強制フック） |
 | [`../policies/path-portability.md`](../policies/path-portability.md) | スクリプト内のパス記述ルール |
-| 各スキルの `references/scripts/checks/run_checks.py`（extension-reviewer） | 本ポリシーの自動検出 |
+| 各スキルの `references/scripts/checks/run_checks.py`（extension-review） | 本ポリシーの自動検出 |
 | `hooks/hooks.json` + `references/scripts/hooks/enforce_toolkit_routing.sh` + `check_version_bump.sh`（本プラグイン同梱） | toolkit 経由の推奨提示（PreToolUse 警告型）+ バージョン更新漏れ検証（Stop）、ADR-026 |

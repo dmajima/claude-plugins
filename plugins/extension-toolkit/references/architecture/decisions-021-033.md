@@ -6,12 +6,12 @@ ADR-001〜010 は `decisions-001-010.md`、ADR-011〜020 は `decisions-011-020.
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | `extension-reviewer` のレビュー起動および各 `*-toolkit` の自己検証以外の **第三者レビュー** は、**フレッシュな Agent インスタンス**（過去の議論履歴・修正実装履歴を持たないインスタンス）で起動することを義務付ける。修正実装と同一セッション内のメインコンテキストでレビューを行ってはならない。レビュー時には目的 / 役割 / ユーザー指摘 / 対象ファイル / レビュー観点を **スポーンプロンプトで適切に引き継ぐ** ことで、コンテキスト不足を防ぎつつ先入観を排除する |
+| 決定 | `extension-review` のレビュー起動および各 `*-toolkit` の自己検証以外の **第三者レビュー** は、**フレッシュな Agent インスタンス**（過去の議論履歴・修正実装履歴を持たないインスタンス）で起動することを義務付ける。修正実装と同一セッション内のメインコンテキストでレビューを行ってはならない。レビュー時には目的 / 役割 / ユーザー指摘 / 対象ファイル / レビュー観点を **スポーンプロンプトで適切に引き継ぐ** ことで、コンテキスト不足を防ぎつつ先入観を排除する |
 | 理由 | (1) 修正実装者と同一インスタンスがレビューすると、自身の判断を肯定する確証バイアスが働き、客観的評価が成立しない。(2) 過去のレビュー結果や修正履歴を踏襲すると「前回 OK だった」という慣性で重大な指摘を見落とす。(3) フレッシュなインスタンスは仕様書・コードを白紙で読むため、指示書の曖昧性・整合性も同時に評価できる。(4) 必要情報をスポーンプロンプトで引き継げば、コンテキスト不足は回避できる |
 | トレードオフ | (1) スポーンプロンプトに引き継ぐべき情報の取捨選択が必要（過剰引き継ぎは先入観の温存、不足は誤評価を招く）。(2) 都度新規インスタンスのためトークン消費は増える。重要判断（公開前レビュー・セキュリティ審議）では許容コストとする |
 | 必須引き継ぎ事項 | (a) レビュー目的（何のためのレビューか）、(b) 役割（どの観点を担当するか）、(c) ユーザー指摘・要件（直近のユーザーからの明示要求）、(d) 対象ファイル/コミット範囲、(e) レビュー観点と出力フォーマット |
 | 引き継いではならない事項 | (i) 修正実装者の主観・自己評価、(ii) 過去レビューの結論（前回 APPROVE 等）、(iii) 「修正済み」「対応完了」等のメタ評価、(iv) 修正コミットメッセージ本文（要約のみ可）、(v) 「軽微」「重要でない」等の重大度予断 |
-| 適用範囲 | `extension-reviewer` の全チーム起動 / フォールバック並列起動 / 第三者レビュー全般。`*-toolkit` 内部の自己検証チェックリストは対象外（自分の生成物の自己点検は対象外） |
+| 適用範囲 | `extension-review` の全チーム起動 / フォールバック並列起動 / 第三者レビュー全般。`*-toolkit` 内部の自己検証チェックリストは対象外（自分の生成物の自己点検は対象外） |
 | プラグイン内ルールとして配布する理由 | 利用者環境（`~/.claude/rules/` の有無等）に依存させず、誰がインストールしても同じレビュー品質を保証するため、グローバル化せずプラグイン内 SSOT として配布する |
 | 詳細実装 | [`review-freshness.md`](../checklists/review-freshness.md) を参照（運用ガイドライン・スポーンプロンプト骨格・反復実行ルール） |
 | 代替案 | (1) 同一インスタンスでレビュー → 確証バイアスにより不合格、却下。(2) 完全白紙のレビュー（情報引き継ぎなし）→ 文脈不足で評価不能、却下。(3) 修正者と無関係な人間レビュアー → 自動化の意義が失われる、却下。(4) グローバルルールとして `~/.claude/rules/` に置く → 利用者環境に依存し動作が一貫しない、却下 |
@@ -36,7 +36,7 @@ ADR-001〜010 は `decisions-001-010.md`、ADR-011〜020 は `decisions-011-020.
 | 理由 | (1) Claude Code の `/` 補完 UI は `argument-hint` を表示する公式メカニズムであり、利用者は **`description` を見ても引数の与え方が分からない**。(2) `description` は 60 文字以内かつ「引数仕様を含めない」と規定しており（[`description-guide.md`](../guides/description-guide.md) 節 4）、引数仕様の置き場所は `argument-hint` が SSOT となる。(3) 本文に `$ARGUMENTS` を書いただけでは利用者には伝わらず、誤った引数で呼び出されるサポート負荷が発生する。(4) 既存の `convert-doc` プラグインの全コマンドは既に `argument-hint` を採用しており、整合性を取る |
 | トレードオフ | (1) `argument-hint` の文字列設計が必要になるが、本文の引数解釈と二重管理になる。SSOT は `argument-hint` 側とし、本文では参照のみとする。(2) 既存コマンドへの遡及適用が必要 |
 | 適用範囲 | 本プラグインおよび本プラグインが生成するすべてのスラッシュコマンド。`commands/{name}.md` 形式のファイル全般（プロジェクト用 / グローバル / プラグイン同梱を問わない） |
-| 必須項目 | (a) frontmatter `argument-hint` の有無を `command-toolkit` 生成時の検証項目に組み込む、(b) `references/templates/command/command.md` テンプレートに `argument-hint` プレースホルダを含める、(c) [`validation-rules.md`](../checklists/validation-rules.md) 節 2.3 に検証項目として追加、(d) `extension-reviewer` の `automated-checks.md` で機械チェック対象に含める |
+| 必須項目 | (a) frontmatter `argument-hint` の有無を `command-toolkit` 生成時の検証項目に組み込む、(b) `references/templates/command/command.md` テンプレートに `argument-hint` プレースホルダを含める、(c) [`validation-rules.md`](../checklists/validation-rules.md) 節 2.3 に検証項目として追加、(d) `extension-review` の `automated-checks.md` で機械チェック対象に含める |
 | 表記規則 | (i) 必須引数は `<...>`、省略可は `[...]`、フラグは `[--flag 値]` または `[--flag]`、(ii) 60 文字以内を目安、(iii) 改行禁止、(iv) `description` の文末で重複しない（引数仕様は `argument-hint` 側に集約） |
 | 代替案 | (1) 引数仕様を `description` 内に含める → `description` 60 文字制約で詰まる・SSOT 違反、却下。(2) 本文の `## 引数` セクションに任せる → `/` 補完 UI に表示されないため利用時に見えない、却下。(3) 任意項目に留める → 既存 `convert-doc` との整合が崩れ、利用者ごとの体験差異が発生、却下 |
 
@@ -57,13 +57,13 @@ ADR-001〜010 は `decisions-001-010.md`、ADR-011〜020 は `decisions-011-020.
 | 項目 | 内容 |
 |------|------|
 | 決定 | `references/`・`SKILL.md`・`README.md` 等の Markdown ファイルに、**実行を意図したスクリプト**（Python・Bash・PowerShell・Node 等）をコードブロックで直接記載することを禁止する。実行可能スクリプトは必ず `references/scripts/{業務単位}/{name}.{py,sh,ps1,js}` に切り出してファイル化し、md からはパス参照と呼び出し例（5 行以下）のみを記載する。単発のシェルコマンド（`mkdir` `git status` 等、5 行以下・1 責務・制御構造なし）は例外として md 直接記載を許可する。スクリプトの配置はプラグイン直下（`plugins/{name}/references/scripts/`）が共通リソース、スキル直下（`plugins/{name}/skills/{skill}/references/scripts/`）がスキル固有 |
-| 理由 | (1) インラインスクリプトは「Claude が毎回 workspace に書き出して実行」する運用になり、トークン消費・実行時間・再現性すべてに悪影響。(2) インラインだとレビュー対象（テスト・lint・型チェック）から外れ、品質保証ができない。(3) PowerShell + chcp 65001 + on-the-fly Python の組み合わせで文字化けが再発した（`extension-reviewer` の旧実装、ADR-024 と同じ文脈）。(4) スクリプトを `references/scripts/` 配下に集約することで「ナレッジとスクリプトを同階層で管理」「許可リストの簡素化（プラグイン/スキル直下のトップレベルディレクトリ最小化）」が実現できる。(5) 設定ファイル例・出力例・ディレクトリ構造図は表示専用で本ルールの対象外（誤解を防ぐため [`scripts-policy.md`](../policies/scripts-policy.md) に明記）|
+| 理由 | (1) インラインスクリプトは「Claude が毎回 workspace に書き出して実行」する運用になり、トークン消費・実行時間・再現性すべてに悪影響。(2) インラインだとレビュー対象（テスト・lint・型チェック）から外れ、品質保証ができない。(3) PowerShell + chcp 65001 + on-the-fly Python の組み合わせで文字化けが再発した（`extension-review` の旧実装、ADR-024 と同じ文脈）。(4) スクリプトを `references/scripts/` 配下に集約することで「ナレッジとスクリプトを同階層で管理」「許可リストの簡素化（プラグイン/スキル直下のトップレベルディレクトリ最小化）」が実現できる。(5) 設定ファイル例・出力例・ディレクトリ構造図は表示専用で本ルールの対象外（誤解を防ぐため [`scripts-policy.md`](../policies/scripts-policy.md) に明記）|
 | トレードオフ | (1) スクリプトファイル数が増え、ディレクトリ構造が複雑化する。これは業務単位サブフォルダ化（`references/scripts/setup/`・`references/scripts/checks/` 等）で吸収する。(2) インライン記載の方が「ドキュメントを読むだけで実装が分かる」という利点を失う。これは `references/scripts/` への明示的なリンク・呼び出し例で補う。(3) [`conventions-structure.md`](../policies/conventions-structure.md) 節 2.1 / 3.1 のプラグイン直下・スキル直下の許可リストから `scripts/` を削除する必要がある（互換性破壊）|
 | 適用範囲 | 本プラグインおよび本プラグインが生成・レビューするすべての拡張要素（スキル・コマンド・エージェント・フック）|
-| 必須項目 | (a) `references/` 配下の md は実行ロジックを直接持たない、(b) 実行スクリプトは `references/scripts/{業務単位}/` 配下にファイル化、(c) md には `references/scripts/` 内ファイルの呼び出し例（最大 5 行）のみ記載、(d) [`scripts-policy.md`](../policies/scripts-policy.md) の OK/NG 例に従う、(e) `extension-reviewer` の `run_checks.py` で違反を機械検出する、(f) トップレベル `scripts/`（プラグイン直下・スキル直下とも）に実スクリプトを置かない |
+| 必須項目 | (a) `references/` 配下の md は実行ロジックを直接持たない、(b) 実行スクリプトは `references/scripts/{業務単位}/` 配下にファイル化、(c) md には `references/scripts/` 内ファイルの呼び出し例（最大 5 行）のみ記載、(d) [`scripts-policy.md`](../policies/scripts-policy.md) の OK/NG 例に従う、(e) `extension-review` の `run_checks.py` で違反を機械検出する、(f) トップレベル `scripts/`（プラグイン直下・スキル直下とも）に実スクリプトを置かない |
 | 判定基準 | 行数 6 行以上 / 制御構造（if/for/while/function） / 引数を取る / 複数責務 / 例外処理を含む — のいずれかで NG。詳細は [`scripts-policy.md`](../policies/scripts-policy.md) 節 3 を参照 |
 | 例外 | (a) YAML / JSON 設定ファイルのサンプル（`description:` `name:` 等）、(b) エラーメッセージ・出力フォーマットの例、(c) 構造ツリー（ディレクトリ図）、(d) 動作の解説に必要な短い疑似コード（`# pseudocode:` 等の明示要） |
-| 既存プラグインの移行猶予 | 本 ADR 制定前から存在する既存プラグイン（`convert-doc` 等）に対しては、`extension-reviewer` の機械チェックは **検出のみ** を実施し（重大度 High で報告）、移行は別 PR として段階的に行う。本プラグイン（`extension-toolkit`）自身は本 ADR 制定と同時に完全準拠する。移行未完了プラグインの公開（マーケットプレイス更新）は、scripts-policy.md の指摘を解消した上で実施する |
+| 既存プラグインの移行猶予 | 本 ADR 制定前から存在する既存プラグイン（`convert-doc` 等）に対しては、`extension-review` の機械チェックは **検出のみ** を実施し（重大度 High で報告）、移行は別 PR として段階的に行う。本プラグイン（`extension-toolkit`）自身は本 ADR 制定と同時に完全準拠する。移行未完了プラグインの公開（マーケットプレイス更新）は、scripts-policy.md の指摘を解消した上で実施する |
 | 代替案 | (1) インラインを許可（旧運用）→ 文字化け再発・トークン消費増・レビュー対象外、却下。(2) 全コードブロック禁止 → 設定例・出力例まで失われ、ドキュメント機能が損なわれる、却下。(3) 言語別（python のみ禁止 / bash 許可）→ 同じ問題が bash でも発生する、却下。(4) スクリプトをプラグイン/スキル直下 `scripts/` に置く（旧 ADR-015 の許可リストに沿う） → トップレベル許可リストが肥大化し、references / scripts の責務が分散、却下 |
 
 ## ADR-026: 経由促進・バージョン更新検証の 2 段フック構成
@@ -72,10 +72,10 @@ ADR-001〜010 は `decisions-001-010.md`、ADR-011〜020 は `decisions-011-020.
 |------|------|
 | 決定 | `extension-toolkit` プラグイン同梱の `hooks/hooks.json` で 2 種類のフックを登録する。**(1) PreToolUse Edit/Write/MultiEdit フック（警告型）**: `plugins/{name}/` 配下への直接編集を検知して、対応する `*-toolkit` スキル名を stderr に提示する。**ブロックはせず exit 0 で通過** させ、Claude の自律判断に委ねる。**(2) Stop フック（バージョン更新検証）**: Claude のターン終了時に `plugins/{name}/` の未コミット変更を検知し、対応する `plugin.json` の `version` が main から更新されていない場合に stderr で警告する（fail-open、exit 0）。実スクリプトはいずれも ADR-025 に従い `references/scripts/hooks/` 配下に配置する |
 | 理由 | (1) ハードブロック型は **過剰制約** であり、(a) extension-toolkit 自身のセルフレビュー反復を阻害、(b) 軽微な編集（typo・1 行修正等）にも重い toolkit 起動を強制、(c) bypass フラグ運用が常態化して形骸化、というデメリットがある。(2) ハードブロックの本来の目的だった「バージョン更新漏れ防止」は **編集時ではなくコミット時の問題** であり、Stop フック / git pre-commit による事後検証の方が直接的に効く。(3) PreToolUse 警告でスキル候補を提示することで、Claude は編集規模に応じて自律的に toolkit 起動の要否を判断できる。(4) 軽微な編集を阻害しないことで、開発体験と AI 自動レビューサイクルの両立が可能 |
-| トレードオフ | (1) PreToolUse 警告型は「必ず toolkit を通す」という強制力を持たない。Claude が警告を無視して直接編集することがあり得る。これは (a) スキル description / 規約教育、(b) 開発者向けドキュメントでの周知、(c) extension-reviewer の事後レビュー、で補完する。(2) Stop フックは「すでに変更したあと」の検出のため、変更直後に修正が必要になる。これは「コミット直前」のタイミングで動くため、コミット作業の手戻りは最小限 |
+| トレードオフ | (1) PreToolUse 警告型は「必ず toolkit を通す」という強制力を持たない。Claude が警告を無視して直接編集することがあり得る。これは (a) スキル description / 規約教育、(b) 開発者向けドキュメントでの周知、(c) extension-review の事後レビュー、で補完する。(2) Stop フックは「すでに変更したあと」の検出のため、変更直後に修正が必要になる。これは「コミット直前」のタイミングで動くため、コミット作業の手戻りは最小限 |
 | 適用範囲 | 本プラグインがインストールされた環境全体。本プラグイン自体および本プラグインがレビュー対象とするすべてのプラグイン |
 | 必須項目 | (a) `hooks/hooks.json` で `PreToolUse Edit/Write/MultiEdit` と `Stop` をそれぞれルーティング、(b) 実スクリプトは `references/scripts/hooks/` 配下（ADR-025 配置義務）、(c) PreToolUse は **常に exit 0**（fail-open）、(d) Stop は git 利用不可・リポジトリ外で **無音 exit 0**、(e) `.claude/.local/` / `.git/` / `/tmp/` 配下は無条件に通過、(f) Stop フック検出ロジックは `plugin.json` の `version` フィールドを sed で抽出し main ブランチと比較 |
-| 推奨ルーティング | SKILL.md → `skill-toolkit` / commands/*.md → `command-toolkit` / agents/*.md → `agent-toolkit` / hooks/* → `hook-toolkit` / README.md → `readme-toolkit` / plugin.json → `plugin-toolkit` / references/scripts/setup/ → `environment-setup-toolkit` / 公開 → `marketplace-publisher` / レビュー → `extension-reviewer` |
+| 推奨ルーティング | SKILL.md → `skill-toolkit` / commands/*.md → `command-toolkit` / agents/*.md → `agent-toolkit` / hooks/* → `hook-toolkit` / README.md → `readme-toolkit` / plugin.json → `plugin-toolkit` / references/scripts/setup/ → `environment-setup-toolkit` / 公開 → `marketplace-publish` / レビュー → `extension-review` |
 | 代替案 | (1) PreToolUse ハードブロック型 → 過剰制約・bypass 常態化、却下（旧設計）。(2) PreToolUse フック完全廃止 + Stop のみ → 軽微編集には適合するが、新規大規模変更時のスキル誘導も失う、却下。(3) git pre-commit のみで検証 → Claude のターン中に気付けず、コミット時点で大きな手戻りになる、却下。(4) settings.json でユーザ環境ごとに登録 → プラグイン同梱の自己完結性（ADR-022）に反する、却下 |
 
 ## ADR-027: バージョン更新検証を Stop に加え PreToolUse Bash でも実施（ADR-026 の補強）
@@ -104,11 +104,11 @@ ADR-001〜010 は `decisions-001-010.md`、ADR-011〜020 は `decisions-011-020.
 
 | 項目 | 内容 |
 |------|------|
-| 決定 | `extension-toolkit` が生成・改修・公開する **すべてのプラグイン** に **MIT ライセンス（SPDX: `MIT`）** の付与を必須化する。具体的には (a) プラグイン直下に `LICENSE` ファイルを配置（許可リストに追加）、(b) `plugin.json` の `license` フィールドに `"MIT"` を設定、(c) `LICENSE` の copyright 行（`Copyright (c) <year> <holder>`）と本文末尾の MIT 標準文を [`license-policy.md`](../policies/license-policy.md) のテンプレートで生成、(d) 上記の管理（情報の保存・取得・選択・LICENSE 生成・plugin.json 更新）は専用スキル `mit-license-toolkit` が担当する。プラグイン公開フロー（`marketplace-publisher`）はライセンス未整備のプラグインの公開を **fail-closed** で停止し、`mit-license-toolkit` への接続を案内する |
+| 決定 | `extension-toolkit` が生成・改修・公開する **すべてのプラグイン** に **MIT ライセンス（SPDX: `MIT`）** の付与を必須化する。具体的には (a) プラグイン直下に `LICENSE` ファイルを配置（許可リストに追加）、(b) `plugin.json` の `license` フィールドに `"MIT"` を設定、(c) `LICENSE` の copyright 行（`Copyright (c) <year> <holder>`）と本文末尾の MIT 標準文を [`license-policy.md`](../policies/license-policy.md) のテンプレートで生成、(d) 上記の管理（情報の保存・取得・選択・LICENSE 生成・plugin.json 更新）は専用スキル `mit-license-toolkit` が担当する。プラグイン公開フロー（`marketplace-publish`）はライセンス未整備のプラグインの公開を **fail-closed** で停止し、`mit-license-toolkit` への接続を案内する |
 | 理由 | (1) マーケットプレイス公開を前提とするプラグインは、利用者が自由に複製・改変・再配布できる **明示的なライセンス宣言が必須**。ライセンス不在のコードはデフォルトで「全権利留保」となり、利用者は安全に利用できない。(2) Claude Code エコシステムの既存プラグイン（`anthropic-agent-skills` 等）は MIT を採用しており、MIT に統一することで再配布・派生作成時の互換性が最も高い。(3) GPL 等の copyleft 系を採用すると、本プラグインを依存に含む下流プラグインの選択肢を狭める。MIT は最も寛容で互換性が高い OSS ライセンスである。(4) ライセンス情報（著作権者・年・別名）はプロジェクトごとに異なるため、`plugin-toolkit` 等の既存スキルに混在させると責務が肥大化する。専用スキル `mit-license-toolkit` に切り出すことで SRP を維持する。(5) 同一リポジトリで複数の作者・組織のプラグインを管理する場合があるため、ライセンス情報は **複数登録可能** とし、利用時に `AskUserQuestion` で選択できるようにする（[`user-interaction.md`](../guides/user-interaction.md) 準拠） |
-| トレードオフ | (1) MIT 以外の OSS ライセンス（Apache-2.0 / BSD / GPL 等）を選びたい利用者には強制となる。本 ADR は **`extension-toolkit` が生成・公開を支援する範囲** に限定するため、利用者が手動で `LICENSE` を差し替えれば他ライセンスは利用可能（ただし `mit-license-toolkit` の自動生成・検証フローからは外れる）。(2) ライセンス情報を保持する `license-info.json` は機密情報ではないが、`.claude/.local/` 配下（`.gitignore` 対象）に保存されるため、リポジトリ複製時には別途の入力が必要。これは `credentials-manager` と同じ運用方針で許容する。(3) `plugin-toolkit` / `marketplace-publisher` / `readme-toolkit` / `extension-reviewer` への連携追加が必要（既存スキルの軽微な更新で対応） |
+| トレードオフ | (1) MIT 以外の OSS ライセンス（Apache-2.0 / BSD / GPL 等）を選びたい利用者には強制となる。本 ADR は **`extension-toolkit` が生成・公開を支援する範囲** に限定するため、利用者が手動で `LICENSE` を差し替えれば他ライセンスは利用可能（ただし `mit-license-toolkit` の自動生成・検証フローからは外れる）。(2) ライセンス情報を保持する `license-info.json` は機密情報ではないが、`.claude/.local/` 配下（`.gitignore` 対象）に保存されるため、リポジトリ複製時には別途の入力が必要。これは `credentials-manager` と同じ運用方針で許容する。(3) `plugin-toolkit` / `marketplace-publish` / `readme-toolkit` / `extension-review` への連携追加が必要（既存スキルの軽微な更新で対応） |
 | 適用範囲 | `extension-toolkit` が生成・改修・公開する **すべてのプラグイン**。本プラグイン（`extension-toolkit`）自身も対象 |
-| 必須項目 | (a) プラグイン直下に `LICENSE` ファイル（MIT 標準文 + `Copyright (c) <year> <holder>` 行）を必ず配置する、(b) `plugin.json` の `license` フィールドに `"MIT"` を必ず設定する、(c) `conventions-structure.md` 節 2.1 の許可リストに `LICENSE` を追加する、(d) [`validation-rules.md`](../checklists/validation-rules.md) 節 2.2（プラグイン）に `LICENSE` 存在 + `plugin.json.license == "MIT"` の機械チェック項目を追加する、(e) `plugin-toolkit` の実行フローに `mit-license-toolkit` の事前呼び出しを組み込む、(f) `marketplace-publisher` の公開前検証で `LICENSE` 不在・`license != "MIT"` を fail-closed で検出する、(g) `readme-toolkit` の README 検証に「ライセンス」セクションの存在チェックを追加する、(h) `references/templates/plugin/` の `LICENSE` テンプレートを追加する |
+| 必須項目 | (a) プラグイン直下に `LICENSE` ファイル（MIT 標準文 + `Copyright (c) <year> <holder>` 行）を必ず配置する、(b) `plugin.json` の `license` フィールドに `"MIT"` を必ず設定する、(c) `conventions-structure.md` 節 2.1 の許可リストに `LICENSE` を追加する、(d) [`validation-rules.md`](../checklists/validation-rules.md) 節 2.2（プラグイン）に `LICENSE` 存在 + `plugin.json.license == "MIT"` の機械チェック項目を追加する、(e) `plugin-toolkit` の実行フローに `mit-license-toolkit` の事前呼び出しを組み込む、(f) `marketplace-publish` の公開前検証で `LICENSE` 不在・`license != "MIT"` を fail-closed で検出する、(g) `readme-toolkit` の README 検証に「ライセンス」セクションの存在チェックを追加する、(h) `references/templates/plugin/` の `LICENSE` テンプレートを追加する |
 | ライセンス情報の保持 | (i) 保存先は `<repo_root>/.claude/.local/plugins/extension-toolkit/license-info.json` を優先、リポジトリ外なら `~/.claude/.local/plugins/extension-toolkit/license-info.json` にフォールバック（`local-data-directory.md` のグローバルルール `plugins/{name}/` カテゴリに準拠）、(ii) 形式は `{ "version": 1, "licenses": [ { "id": <unique-id>, "type": "MIT", "copyright_year": <year>, "copyright_holder": <name>, "author": <name>, "label": <人間可読の説明> } ] }`、(iii) 1 件のみ存在する場合は **自動適用**、複数存在する場合は `AskUserQuestion` で利用するエントリを選択させる、(iv) 不在の場合は `AskUserQuestion` で著作権者・年・別名を収集して新規エントリを保存する（重要なライセンス選択を伴うため Claude UI 優先、テキスト対話では行わない）|
 | 代替案 | (1) ライセンス選択を利用者の手動配置に任せる（自動化なし）→ 公開時に LICENSE 不在のままマーケットプレイスに配信される事故が発生する、却下。(2) `plugin-toolkit` 内部にライセンス処理を組み込む → SRP 違反、`plugin-toolkit` の責務が肥大化、却下。(3) ライセンス候補を複数選択可能にする（MIT / Apache-2.0 / BSD-3-Clause 等を切替可）→ 互換性問題が複雑化し下流影響が読めなくなる、却下（MIT に統一）。(4) ライセンス情報をリポジトリに直接コミット（`license-info.json` を `.gitignore` 外）→ 著作権者氏名等の個人情報が混入し得る、却下（`credentials-manager` と同じく `.local/` に保存）。(5) `readme-toolkit` を流用 → README は人間向け、LICENSE は法的文書で性質が異なるため、専用スキルが妥当 |
 
@@ -132,8 +132,8 @@ ADR-001〜010 は `decisions-001-010.md`、ADR-011〜020 は `decisions-011-020.
 | 理由 | (1) 2026-05-18 の maintenance プラグイン統合コミット（53 ファイル / +327/-625 行）で「改名」「統合」「ADR 追加」「README 更新」「移行手順記載」が単一コミットに混在し、レビュー困難・部分ロールバック困難の課題が顕在化した。(2) 改善バックログ A-3 で「スコープ・作業単位の細かいコミット分割ルール」を High 相当と判断するエントリとして登録された（経緯は git 履歴を参照）。(3) Conventional Commits は Claude Code エコシステム外でも標準として広く採用されており、prefix 統一により履歴のスキャナビリティが上がる。(4) `git bisect` で問題コミットを二分探索する際、混在コミットだと再現範囲を絞れないため、原因コミット特定の所要時間が増大する |
 | トレードオフ | (1) コミット数が増え、レビュー対象 PR でコミットチェーンが長くなる。これは「PR を機能単位に分割する」運用と組み合わせることで緩和される。(2) 大規模リファクタリング時に「ADR 追加 → 実装 → README 同期」を別々にコミットする手間が増えるが、レビュー容易性・部分ロールバック容易性とのトレードオフとして許容する。(3) 改名と相互参照更新を 1 コミットで行いたい場合があるが、コミットメッセージ上は同一コミットとして含めてよい（節 3「同梱可」）|
 | 適用範囲 | `extension-toolkit` が生成・改修・公開するすべてのプラグイン・スキル・コマンド・エージェント・フック・マーケットプレイス・ドキュメント・スクリプト変更。本プラグイン（`extension-toolkit`）自身の改修も対象 |
-| 必須項目 | (a) [`commit-granularity.md`](../policies/commit-granularity.md) を `references/policies/` 配下に配置、(b) 必須分割対象 10 項目（節 2 (a)〜(j)）を文書化、(c) Conventional Commits 8 種 prefix を文書化、(d) 同梱許可ケース 3 種（節 3）を限定列挙、(e) ADR 追加と実装の同梱可否（節 5）を 1 対 1 / 1 対 N で判別、(f) **当面は `extension-reviewer` の専門家レビュー（人間 / Agent）による検出に委ね、機械検出は将来実装する**（commit-granularity.md 節 7 参照、git log 解析を伴う検査スクリプト追加が前提のため、ADR-031 初版では実装スコープ外） |
-| 例外 | (a) 緊急セキュリティ修正、(b) 自動生成物の同期（marketplace.json 等）、(c) 利用者の明示的指示（「全部 1 コミットで」）の 3 ケースのみ免責される。これら以外で本ルールを破る場合は `extension-reviewer` のレビュー指摘対象 |
+| 必須項目 | (a) [`commit-granularity.md`](../policies/commit-granularity.md) を `references/policies/` 配下に配置、(b) 必須分割対象 10 項目（節 2 (a)〜(j)）を文書化、(c) Conventional Commits 8 種 prefix を文書化、(d) 同梱許可ケース 3 種（節 3）を限定列挙、(e) ADR 追加と実装の同梱可否（節 5）を 1 対 1 / 1 対 N で判別、(f) **当面は `extension-review` の専門家レビュー（人間 / Agent）による検出に委ね、機械検出は将来実装する**（commit-granularity.md 節 7 参照、git log 解析を伴う検査スクリプト追加が前提のため、ADR-031 初版では実装スコープ外） |
+| 例外 | (a) 緊急セキュリティ修正、(b) 自動生成物の同期（marketplace.json 等）、(c) 利用者の明示的指示（「全部 1 コミットで」）の 3 ケースのみ免責される。これら以外で本ルールを破る場合は `extension-review` のレビュー指摘対象 |
 | 代替案 | (1) 分割なし（現状維持）→ レビュー困難・部分ロールバック困難の課題が継続、却下。(2) 厳格な機械検出 + 違反時のコミット強制リバート → 利用者の git 履歴に対する裁量を侵害、却下。(3) 大規模変更時のみ分割を必須化（小規模は同梱可）→ 「大規模/小規模」の定義が曖昧で運用がぶれる、却下。本案は「常に分割」を既定としつつ、節 3「同梱可」を限定列挙する明示形式を採用 |
 
 ## ADR-032: 動作デモ + ユーザ承認フローの必須化（[`completion-checklist.md`](../checklists/completion-checklist.md) 節 2.4）
@@ -141,21 +141,23 @@ ADR-001〜010 は `decisions-001-010.md`、ADR-011〜020 は `decisions-011-020.
 | 項目 | 内容 |
 |------|------|
 | 決定 | `extension-toolkit` 配下のすべてのスキル・コマンドは、作業完了報告の前に **ユーザ向け動作デモ実施 + AskUserQuestion による承認取得** を必須とする。デモ最低要件は (a) 代表的な正常系 / (b) 主要分岐 1 件以上 / (c) AskUserQuestion 実発火 / (d) エラーパス 1 件 / (e) 副作用の事前提示 の 5 項目。免責ケースは (i) README/コメントのみ変更 / (ii) ADR/SSOT のみ変更 / (iii) 緊急セキュリティ修正 / (iv) 利用者の明示スキップ指示 の 4 ケースに限定 |
-| 理由 | (1) 2026-05-18 のセッションで maintenance プラグインに対し 6 サイクルの専門家レビュー（Critical/High 全解消）を経て push したが、その後のデモ実行で `sync-settings/sync.sh` の `TrimStart` char 変換 Critical バグが発見された。静的解析・自己検証では実行時バグを検出できないことが実証された。(2) `extension-reviewer` の機械チェック（行数 / description 文字数 / JSON valid 等）は PowerShell スクリプトの API シグネチャ齟齬を検出できない（B-1 で PSScriptAnalyzer 統合予定だが、それでも実機実行に勝る検証はない）。(3) ユーザ承認を取らないままリリースに到達すると、利用者全員に不具合が配信されるリスクがある |
+| 理由 | (1) 2026-05-18 のセッションで maintenance プラグインに対し 6 サイクルの専門家レビュー（Critical/High 全解消）を経て push したが、その後のデモ実行で `sync-settings/sync.sh` の `TrimStart` char 変換 Critical バグが発見された。静的解析・自己検証では実行時バグを検出できないことが実証された。(2) `extension-review` の機械チェック（行数 / description 文字数 / JSON valid 等）は PowerShell スクリプトの API シグネチャ齟齬を検出できない（B-1 で PSScriptAnalyzer 統合予定だが、それでも実機実行に勝る検証はない）。(3) ユーザ承認を取らないままリリースに到達すると、利用者全員に不具合が配信されるリスクがある |
 | トレードオフ | (1) デモ実施分の所要時間が増える（軽微変更でも数分）。(2) AskUserQuestion での承認ステップが対話往復を 1 回増やす。これらは免責ケース 4 種で緩和（純粋ドキュメント変更は対象外）。(3) デモシナリオ設計の手間が増えるが、B-3 の `evals/demo.sh` テンプレート化で再現性を担保 |
-| 適用範囲 | `extension-toolkit` 配下の 9 個の `*-toolkit` スキル + `extension-reviewer` + `marketplace-publisher` の計 11 スキル。各スキルの SKILL.md「引き渡し」セクションに本フローを参照する追記を実施 |
+| 適用範囲 | `extension-toolkit` 配下の 9 個の `*-toolkit` スキル + `extension-review` + `marketplace-publish` の計 11 スキル。各スキルの SKILL.md「引き渡し」セクションに本フローを参照する追記を実施 |
 | 必須項目 | (a) [`completion-checklist.md`](../checklists/completion-checklist.md) 節 2.4 にデモ実施・承認取得を必須項目として追加、(b) 各 SKILL.md の引き渡しセクションに節 2.4 への参照を追加、(c) デモシナリオ最低 5 要件を文書化、(d) 4 種の免責ケースを限定列挙、(e) `progress.md` にデモ実施記録（実行コマンド・結果・承認結果）を残す責務を明示 |
-| 例外 | 免責ケース 4 種のみ。それ以外で本フローを省略する場合は `extension-reviewer` の指摘対象（Critical 相当） |
+| 例外 | 免責ケース 4 種のみ。それ以外で本フローを省略する場合は `extension-review` の指摘対象（Critical 相当） |
 | 代替案 | (1) 自動テスト（evals 実行）のみで承認とする → AskUserQuestion 等の UI 系・実機固有挙動を検証できない、却下。(2) 承認なしのデモ通知のみ → ユーザが見落とすリスク、却下。(3) すべての変更にデモ必須（免責なし）→ ドキュメント変更でもデモを強いるのは過剰、却下。本案は「実コード変更には必須、純粋ドキュメントは免責」のバランスを採用 |
 
-## ~~ADR-033: PowerShell モジュールの端末グローバル汚染回避とプラグイン専用キャッシュ管理~~（Phase 9a で削除）
+## ADR-033: `references/` への CLAUDE.md 必須配置（README.md との責務分離）
 
-旧版では `extension-toolkit` が依存する PowerShell モジュール（PSScriptAnalyzer 等）を
-プラグイン専用キャッシュ (`<base>/.claude/.local/plugins/extension-toolkit/psmodules/`) に
-配置する仕組みを採用していたが、本リポジトリの Bash 標準化方針との整合のため、
-**Phase 9a で `setup_psmodule.sh` / `run_psscriptanalyzer.sh` / 関連機能をすべて削除した**。
-
-歴史的経緯は git ログ（Phase 9a コミット）を参照。再導入予定はない。
+| 項目 | 内容 |
+|------|------|
+| 決定 | `references/` ディレクトリが存在するプラグインでは `references/CLAUDE.md`（Claude エージェント向け原則・ナビゲーション文書）を必須配置し、`references/README.md`（人間向けインデックス）と責務を分離する。`README.md` は人間向け説明資料であり、Claude エージェントの動作時には参照禁止。`CLAUDE.md` は原則とナビゲーションのみを記載し、詳細ルールは `policies/` 等の分離済みファイルを参照させる |
+| 理由 | (1) `README.md` は人間向けに「利用方法・動作例・拡張手順」を網羅するが、エージェントには冗長で、かつトリガー判定・手順実行の指示としては不適切。(2) エージェントが `references/` 配下の多数のファイルを効率的にナビゲートするには、タスク駆動型の参照表が必要。(3) 既存の `SKILL.md` は個別スキルの定義に限定されるため、プラグイン横断の原則を記述する場所がなかった |
+| トレードオフ | (1) ファイル数が 1 つ増える。(2) README.md と CLAUDE.md の記載内容が部分的に重複する可能性があるが、CLAUDE.md はナビゲーション表と原則の箇条書きに限定し、詳細は分離ファイルを参照させることで重複を抑制。(3) 既存プラグインすべてに CLAUDE.md を追加する移行コストが発生する |
+| 適用範囲 | `extension-toolkit` プラグインの `references/`（必須）、各スキルの `references/`（推奨、3 ファイル以上時） |
+| 必須項目 | (a) [`claude-md-policy.md`](../policies/claude-md-policy.md) にポリシーを策定、(b) [`conventions-structure.md`](../policies/conventions-structure.md) 節 4.1 の推奨構造に `CLAUDE.md` を追加、(c) `extension-review` の [`checklists/plugin.md`](../../skills/extension-review/references/checklists/plugin.md) に P-8.5 確認項目を追加 |
+| 代替案 | (1) SKILL.md に references/ のナビゲーションを記載 → 200 行制約を圧迫、却下。(2) README.md 自体を AI 対応にする → 人間の可読性が低下、却下。(3) references/ 配下に index.md を置く → 既存の README.md と役割が曖昧になる、却下 |
 
 ## ADR の追加・更新
 

@@ -45,8 +45,8 @@
 | `agent <name>` | `agent-toolkit` |
 | `hook <name>` | `hook-toolkit` |
 | `readme <target>` | `readme-toolkit` |
-| `review <target>` | `extension-reviewer` |
-| `publish <plugin>` | `marketplace-publisher` |
+| `review <target>` | `extension-review` |
+| `publish <plugin>` | `marketplace-publish` |
 ```
 
 ## 単機能型コマンドの場合

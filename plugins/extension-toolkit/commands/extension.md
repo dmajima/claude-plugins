@@ -29,8 +29,8 @@ argument-hint: "[種別]"
 | `setup <work-dir>` または `setup ...` | `environment-setup-toolkit` | Python venv 構築・撤去 |
 | `marketplace <name>` または `marketplace ...` | `marketplace-toolkit` | マーケットプレイス新規構築・本体管理 |
 | `license <plugin>` または `license ...` | `mit-license-toolkit` | MIT LICENSE 配備・`plugin.json.license` 設定・`license-info.json` 管理 |
-| `review <target>` または `review ...` | `extension-reviewer` | 多角レビュー実施 |
-| `publish <plugin>` または `publish ...` | `marketplace-publisher` | プラグイン公開ワークフロー |
+| `review <target>` または `review ...` | `extension-review` | 多角レビュー実施 |
+| `publish <plugin>` または `publish ...` | `marketplace-publish` | プラグイン公開ワークフロー |
 
 ## 引数が空の場合
 
@@ -47,7 +47,7 @@ argument-hint: "[種別]"
 「○○を公開したい」のような **配置先未確定** な要望には:
 
 1. 既存マーケットプレイスのプラグインを `.claude-plugin/marketplace.json` から確認
-2. 重複チェックを `marketplace-publisher` で実施
+2. 重複チェックを `marketplace-publish` で実施
 3. 結果に応じて以下のいずれかを案内
    - 既存プラグインへの追加 → `plugin-toolkit`（追加シナリオ）
    - 新規プラグイン作成 → `plugin-toolkit` + 各 `*-toolkit`
@@ -88,10 +88,10 @@ argument-hint: "[種別]"
 
 | 動作した最後のスキル | 提示者 | 提示内容 |
 |--------------------|-------|---------|
-| `marketplace-publisher`（公開フロー実行時） | `marketplace-publisher` | 変更ファイル一覧 / marketplace.json 差分 / 推奨コミットメッセージ / 次のコマンド |
-| 上記以外（作成・改修系のみ） | 直前のスキル | 生成・変更ファイル一覧 / 後続スキル接続案内（`extension-reviewer` / `marketplace-publisher` 等） |
+| `marketplace-publish`（公開フロー実行時） | `marketplace-publish` | 変更ファイル一覧 / marketplace.json 差分 / 推奨コミットメッセージ / 次のコマンド |
+| 上記以外（作成・改修系のみ） | 直前のスキル | 生成・変更ファイル一覧 / 後続スキル接続案内（`extension-review` / `marketplace-publish` 等） |
 
-`git commit` 以降の操作はこのコマンドからは実行しません。フルオート公開を希望する場合は `marketplace-publisher` のフルオートモードを直接利用してください。
+`git commit` 以降の操作はこのコマンドからは実行しません。フルオート公開を希望する場合は `marketplace-publish` のフルオートモードを直接利用してください。
 
 ## 関連スキル一覧
 
@@ -106,5 +106,5 @@ argument-hint: "[種別]"
 | `environment-setup-toolkit` | Python venv 構築・撤去 |
 | `marketplace-toolkit` | マーケットプレイス新規構築・本体管理 |
 | `mit-license-toolkit` | MIT LICENSE 配備・`plugin.json.license` 設定・`license-info.json` 管理 |
-| `extension-reviewer` | 多角レビュー（チーム起動） |
-| `marketplace-publisher` | プラグイン公開ワークフロー（git push / PR） |
+| `extension-review` | 多角レビュー（チーム起動） |
+| `marketplace-publish` | プラグイン公開ワークフロー（git push / PR） |

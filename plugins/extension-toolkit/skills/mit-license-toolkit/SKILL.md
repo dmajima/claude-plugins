@@ -1,6 +1,6 @@
 ---
 name: mit-license-toolkit
-description: Claude Code プラグイン直下に MIT LICENSE と plugin.json の license を付与するスキル。「foo に LICENSE 追加」「MIT 設定」「license-info.json 編集」等で起動。Use when adding MIT LICENSE to a plugin dir. SKIP for readme section (readme-toolkit), verify only (marketplace-publisher), non-MIT, or plugin shell (plugin-toolkit).
+description: Claude Code プラグイン直下に MIT LICENSE と plugin.json の license を付与するスキル。「foo に LICENSE 追加」「MIT 設定」「license-info.json 編集」等で起動。Use when adding MIT LICENSE to a plugin dir. SKIP for readme section (readme-toolkit), verify only (marketplace-publish), non-MIT, or plugin shell (plugin-toolkit).
 ---
 
 # MIT License Toolkit
@@ -22,15 +22,15 @@ Claude Code プラグインに **MIT ライセンス** を付与・更新する�
 |-----|----------|
 | プラグイン外形生成（plugin.json 全体・README・ディレクトリ） | `plugin-toolkit`（本スキルを Skill ツール経由で呼ぶ） |
 | README の「ライセンス」セクション挿入・更新 | `readme-toolkit` |
-| 公開前のライセンス検証（fail-closed） | `marketplace-publisher` |
+| 公開前のライセンス検証（fail-closed） | `marketplace-publish` |
 | MIT 以外の OSS ライセンス（Apache-2.0 / BSD / GPL 等）対応 | **対応外**（手動配置に委ねる） |
-| ライセンス互換性レビュー（依存プラグインとの整合） | `extension-reviewer` |
+| ライセンス互換性レビュー（依存プラグインとの整合） | `extension-review` |
 
 ## トリガー条件
 
 - 「`{plugin}` プラグインに LICENSE を追加」「MIT ライセンスを設定」
 - 「ライセンス情報を登録 / 更新」「`license-info.json` を編集」
-- `plugin-toolkit` / `marketplace-publisher` / `readme-toolkit` からの Skill ツール経由呼び出し
+- `plugin-toolkit` / `marketplace-publish` / `readme-toolkit` からの Skill ツール経由呼び出し
 
 このスキルを起動しないケース:
 
@@ -127,8 +127,8 @@ Claude Code プラグインに **MIT ライセンス** を付与・更新する�
 | 次のアクション | 接続先 |
 |--------------|-------|
 | README に「ライセンス」セクション追加 | `readme-toolkit` |
-| プラグイン公開 | `marketplace-publisher` |
-| 全体レビュー | `extension-reviewer` |
+| プラグイン公開 | `marketplace-publish` |
+| 全体レビュー | `extension-review` |
 
 ## 重要な制約
 

@@ -60,7 +60,7 @@ legacy-toolkit を削除しました。
 - plugins/legacy-toolkit/: {ファイル本体削除選択時のみ}
 
 次のステップ:
-- marketplace-publisher でコミット・push
+- marketplace-publish でコミット・push
 ```
 
 ## 期待出力

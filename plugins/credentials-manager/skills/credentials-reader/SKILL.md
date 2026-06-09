@@ -25,7 +25,7 @@ description: Claude Code セッションをまたいで保存済み認証情報�
 | 認証情報ストアの初期化・スキーマ移行 | `credentials-manager` |
 | `/credentials-manager:manage` コマンド本体（メニューUI） | `commands/manage.md` |
 | 秘密鍵生成・暗号化・KMS連携・本番秘匿情報運用 | スキル外（外部 secret manager） |
-| マーケットプレイス公開時のシークレットスキャン | `marketplace-publisher`（`extension-toolkit`） |
+| マーケットプレイス公開時のシークレットスキャン | `marketplace-publish`（`extension-toolkit`） |
 
 ## トリガー条件
 

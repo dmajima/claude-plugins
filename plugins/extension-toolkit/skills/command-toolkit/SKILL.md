@@ -1,6 +1,6 @@
 ---
 name: command-toolkit
-description: Claude Code のスラッシュコマンド（commands/{name}.md）を新規作成・改修するスキル。「新しい /foo コマンドを作って」「foo コマンドを更新」「○○用のコマンドが欲しい」等で起動する。Use when creating or modifying a slash command file. SKIP when target is a skill (skill-toolkit), agent (agent-toolkit), hook (hook-toolkit), plugin shell (plugin-toolkit), MIT LICENSE setup (mit-license-toolkit), or review (extension-reviewer).
+description: Claude Code のスラッシュコマンド（commands/{name}.md）を新規作成・改修するスキル。「新しい /foo コマンドを作って」「foo コマンドを更新」「○○用のコマンドが欲しい」等で起動する。Use when creating or modifying a slash command file. SKIP when target is a skill (skill-toolkit), agent (agent-toolkit), hook (hook-toolkit), plugin shell (plugin-toolkit), MIT LICENSE setup (mit-license-toolkit), or review (extension-review).
 ---
 
 # Command Toolkit
@@ -23,8 +23,8 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 | エージェント・チームの生成 | `agent-toolkit` |
 | フック設定の生成 | `hook-toolkit` |
 | README 生成・更新 | `readme-toolkit` |
-| マーケットプレイス公開 | `marketplace-publisher` |
-| 完成後のレビュー | `extension-reviewer` |
+| マーケットプレイス公開 | `marketplace-publish` |
+| 完成後のレビュー | `extension-review` |
 
 ## トリガー条件
 
@@ -126,7 +126,7 @@ Claude Code のスラッシュコマンドファイル（`{plugin}/commands/{nam
 **作業完了報告の前に必須**: [`../../references/checklists/completion-checklist.md`](../../references/checklists/completion-checklist.md) 節 2.4 に従い、ユーザ向け動作デモ（コマンド起動・引数分岐・AskUserQuestion 実発火）を実施し、`AskUserQuestion` で承認を取得する（ADR-032）。
 
 - 生成ファイルパスを提示
-- プラグイン内配置の場合は `marketplace-publisher` への接続を提案
+- プラグイン内配置の場合は `marketplace-publish` への接続を提案
 - README 更新が必要な場合は `readme-toolkit` への接続を提案
 
 ## 重要な制約

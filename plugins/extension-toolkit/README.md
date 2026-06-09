@@ -147,8 +147,8 @@ git checkout v{x.y.z}   # 推奨: 特定リリースタグを指定（最新タ�
 | `setup <work-dir>` | `environment-setup-toolkit` | Python venv 構築 |
 | `marketplace <name>` | `marketplace-toolkit` | マーケットプレイス新規構築・本体管理 |
 | `license <plugin>` | `mit-license-toolkit` | MIT LICENSE 配備・`plugin.json.license` 設定（ADR-029） |
-| `review <target>` | `extension-reviewer` | 多角レビュー |
-| `publish <plugin>` | `marketplace-publisher` | プラグイン公開ワークフロー |
+| `review <target>` | `extension-review` | 多角レビュー |
+| `publish <plugin>` | `marketplace-publish` | プラグイン公開ワークフロー |
 
 ### 自然言語起動
 
@@ -163,8 +163,8 @@ git checkout v{x.y.z}   # 推奨: 特定リリースタグを指定（最新タ�
 | 「Python venv 作って」 | `environment-setup-toolkit` |
 | 「新しいマーケットプレイス `acme-claude-plugins` を作って」 | `marketplace-toolkit` |
 | 「`grault` プラグインに MIT ライセンスを追加」 | `mit-license-toolkit` |
-| 「`quux` プラグインをレビュー」 | `extension-reviewer` |
-| 「`corge` プラグインを公開」 | `marketplace-publisher` |
+| 「`quux` プラグインをレビュー」 | `extension-review` |
+| 「`corge` プラグインを公開」 | `marketplace-publish` |
 
 ### 最小例
 
@@ -173,7 +173,7 @@ git checkout v{x.y.z}   # 推奨: 特定リリースタグを指定（最新タ�
 
 Claude（要約）:
 > `plugin-toolkit` で外形作成 → `skill-toolkit` で `code-formatter` 雛形 →
-> `extension-reviewer` でレビュー → `marketplace-publisher` で公開ハンドオフ。
+> `extension-review` でレビュー → `marketplace-publish` で公開ハンドオフ。
 > 各ステップで AskUserQuestion による選択 UI で意思確認します。
 
 ## 動作要件
@@ -197,8 +197,8 @@ Claude（要約）:
 | `environment-setup-toolkit` | Python venv 等の環境構築・撤去 |
 | `marketplace-toolkit` | マーケットプレイス新規構築・本体管理（`marketplace.json` + マーケットプレイス README） |
 | `mit-license-toolkit` | MIT LICENSE 配備・`plugin.json.license` 設定・`license-info.json` 管理（ADR-029） |
-| `extension-reviewer` | 拡張要素の多角レビュー（チーム起動） |
-| `marketplace-publisher` | プラグイン公開ワークフロー（git push / PR、`marketplace.json` 編集は `marketplace-toolkit` に委譲） |
+| `extension-review` | 拡張要素の多角レビュー（チーム起動） |
+| `marketplace-publish` | プラグイン公開ワークフロー（git push / PR、`marketplace.json` 編集は `marketplace-toolkit` に委譲） |
 
 ## 同梱フック（v1.2.0+, ADR-026）
 
@@ -323,8 +323,8 @@ plugins/extension-toolkit/
     ├── environment-setup-toolkit/
     ├── marketplace-toolkit/
     ├── mit-license-toolkit/         # MIT LICENSE 配備・license-info.json 管理（ADR-029）
-    ├── extension-reviewer/
-    └── marketplace-publisher/
+    ├── extension-review/
+    └── marketplace-publish/
 ```
 
 ## 技術スタック・アーキテクチャ

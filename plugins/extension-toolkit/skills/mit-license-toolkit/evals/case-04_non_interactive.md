@@ -2,7 +2,7 @@
 
 ## シナリオ
 
-CI スクリプトや `marketplace-publisher` のフルオートフローから呼ばれ、対話なしで適用する。
+CI スクリプトや `marketplace-publish` のフルオートフローから呼ばれ、対話なしで適用する。
 
 ## 入力
 

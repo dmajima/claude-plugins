@@ -23,7 +23,7 @@ Claude Code 公式 CLI（`claude plugin marketplace update` / `claude plugin upd
 
 - 引数 (`--dry-run`) の解釈とバリデーション → コマンド側（`commands/update-all.md` / `commands/update.md`）
 - マーケットプレイス本体（`marketplace.json` / README）の編集 → `extension-toolkit:marketplace-toolkit`
-- プラグインの新規公開 → `extension-toolkit:marketplace-publisher`
+- プラグインの新規公開 → `extension-toolkit:marketplace-publish`
 
 ## トリガー条件
 

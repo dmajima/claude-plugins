@@ -34,7 +34,7 @@
 
 ### Phase 4: 引き渡し
 
-生成ファイル一覧を提示し、`extension-reviewer` への接続を提案。
+生成ファイル一覧を提示し、`extension-review` への接続を提案。
 
 ## 期待出力
 
