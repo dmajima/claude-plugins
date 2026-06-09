@@ -1269,6 +1269,119 @@ def check_python_start_job_wrapper(target: pathlib.Path, collector: IssueCollect
 
 
 # --------------------------------------------------------------------------- #
+# 16. バージョン更新漏れ検出（versioning.md V-2-1 機械チェック）
+# --------------------------------------------------------------------------- #
+
+
+def _git_run(args: list[str], timeout: int = 5) -> subprocess.CompletedProcess[str] | None:
+    try:
+        return subprocess.run(
+            args,
+            capture_output=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+
+
+def check_version_bump(target: pathlib.Path, collector: IssueCollector) -> None:
+    """16. バージョン更新漏れ検出。
+
+    plugins/ 配下で変更があるのに plugin.json の version が main と同一の
+    プラグインを検出する。git が利用不可またはリポジトリ外の場合はスキップ。
+    """
+    r = _git_run(["git", "rev-parse", "--is-inside-work-tree"])
+    if r is None or r.returncode != 0:
+        return
+
+    base: str | None = None
+    for ref in ("origin/main", "main"):
+        r = _git_run(["git", "rev-parse", "--verify", ref])
+        if r is not None and r.returncode == 0:
+            base = ref
+            break
+    if not base:
+        return
+
+    r = _git_run(["git", "rev-parse", "--show-toplevel"])
+    if r is None or r.returncode != 0:
+        return
+    repo_root = pathlib.Path(r.stdout.strip()).resolve()
+
+    for plugin_json in target.rglob("plugin.json"):
+        if is_excluded_dir(plugin_json, target):
+            continue
+        if plugin_json.parent.name != ".claude-plugin":
+            continue
+        if _is_under_template_dir(plugin_json, target):
+            continue
+
+        plugin_dir = plugin_json.parent.parent
+        plugin_name = plugin_dir.name
+
+        text = read_text_safe(plugin_json)
+        if text is None:
+            continue
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            continue
+        current_version = data.get("version")
+        if not current_version:
+            continue
+
+        try:
+            rel_pjson = plugin_json.resolve().relative_to(repo_root)
+        except ValueError:
+            continue
+
+        r = _git_run(["git", "show", f"{base}:{rel_pjson.as_posix()}"])
+        if r is None or r.returncode != 0:
+            continue
+        try:
+            main_version = json.loads(r.stdout).get("version")
+        except json.JSONDecodeError:
+            continue
+        if not main_version:
+            continue
+
+        if current_version != main_version:
+            continue
+
+        try:
+            rel_plugin = plugin_dir.resolve().relative_to(repo_root)
+        except ValueError:
+            continue
+
+        r_diff = _git_run(
+            ["git", "diff", "--name-only", f"{base}..HEAD", "--", rel_plugin.as_posix()],
+            timeout=10,
+        )
+        r_status = _git_run(
+            ["git", "status", "--porcelain", "--", rel_plugin.as_posix()],
+            timeout=10,
+        )
+
+        committed = [
+            line for line in (r_diff.stdout.strip().splitlines() if r_diff else []) if line.strip()
+        ]
+        uncommitted = [
+            line for line in (r_status.stdout.strip().splitlines() if r_status else []) if line.strip()
+        ]
+
+        change_count = len(committed) + len(uncommitted)
+        if change_count > 0:
+            collector.add(
+                "High",
+                f"バージョン更新漏れ: {plugin_name}",
+                plugin_json,
+                f"main からの version {main_version} が据え置きのまま {change_count} ファイルが変更されている (versioning.md V-2-1)",
+            )
+
+
+# --------------------------------------------------------------------------- #
 # メインフロー
 # --------------------------------------------------------------------------- #
 
@@ -1289,6 +1402,7 @@ CHECKS = [
     ("hook の shell フィールド明示（Bash 標準、shell-preference.md）", check_hook_shell_field),
     # PSScriptAnalyzer 静的解析（B-1）は extension-toolkit から削除済み (Bash 標準移行)
     ("Python 直起動禁止 / Start-Job ラッパー必須（automated-checks.md §15）", check_python_start_job_wrapper),
+    ("バージョン更新漏れ検出（versioning.md V-2-1）", check_version_bump),
 ]
 
 

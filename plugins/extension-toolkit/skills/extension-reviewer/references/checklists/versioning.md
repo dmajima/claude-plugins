@@ -50,4 +50,5 @@
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
 | V-7-1 | Medium | Stop フック（ADR-026）の警告が無視されていない（更新漏れがあれば修正済み） | [architecture-decisions.md](../../../references/architecture/decisions-001-010.md) ADR-026 |
-| V-7-2 | Medium | PreToolUse Bash（ADR-027）の `git commit` 直前検証で警告が出ていない | [architecture-decisions.md](../../../references/architecture/decisions-001-010.md) ADR-027 |
+| V-7-2 | Medium | PreToolUse Bash/PowerShell（ADR-027）の `git commit` 直前検証で警告が出ていない | [architecture-decisions.md](../../../references/architecture/decisions-001-010.md) ADR-027 |
+| V-7-3 | High | `run_checks.py` のバージョン更新漏れ検出（チェック #16）で指摘がない | [automated-checks.md](../automated-checks.md) チェック #16 |

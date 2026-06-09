@@ -70,6 +70,8 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
 | 12 | PowerShell ベタ起動の hook 検出（Bash 標準方針、shell-preference.md）| `hooks.json` / `*.md` | Medium | `check_no_bash_invocation` （実装は Bash 標準方針に反転済み） |
 | 13 | hook の `shell` フィールド明示| `hooks/hooks.json` | High | `check_hook_shell_field` |
 | ~~14~~ | ~~PSScriptAnalyzer 静的解析（B-1）~~ | — | — | Phase 9a で削除済み |
+| 15 | Python 直起動禁止 / Start-Job ラッパー必須 | `.py` を含むプラグイン | High / Medium | `check_python_start_job_wrapper` |
+| 16 | バージョン更新漏れ検出（V-2-1 機械チェック） | `plugin.json` を含むプラグイン | High | `check_version_bump` |
 
 `run_checks.py` の出力 JSON 構造:
 
@@ -257,6 +259,27 @@ Windows + PowerShell + python-pptx 等で Python 子プロセスがハングす�
 - プラグイン全体で Python を一切使用しない場合（`.py` ファイルが存在しない）
 
 実装関数: `check_python_start_job_wrapper`（実装は `B-?` バックログ。当面は手動レビューで担保）
+
+### 16. バージョン更新漏れ検出（V-2-1 機械チェック）
+
+`versioning.md` の「1 コミット 1 バージョン更新原則」（V-2-1）を機械的に検証する。
+`run_checks.py` が git を利用して main ブランチとの差分を比較し、プラグイン配下に
+ファイル変更があるのに `plugin.json` の `version` が据え置きのプラグインを検出する。
+
+| 検査項目 | 重大度 | 検出方法 |
+|---------|-------|---------|
+| `plugin.json` の `version` が main から変わっていないが、同プラグイン配下にコミット済み or 未コミットの変更がある | High | `git diff --name-only main..HEAD -- plugins/{name}/` + `git status --porcelain -- plugins/{name}/` でファイル変更を検出し、`git show main:plugins/{name}/.claude-plugin/plugin.json` とバージョンを比較 |
+
+前提条件:
+- git が利用可能で、リポジトリ内で実行されていること
+- `origin/main` または `main` ブランチが存在すること
+
+スキップ条件:
+- git が利用不可またはリポジトリ外 → チェック全体をスキップ
+- main にプラグインが存在しない（新規プラグイン追加中）→ 当該プラグインをスキップ
+- templates 配下のテンプレート plugin.json → 除外
+
+実装関数: `check_version_bump`
 
 ## 指摘出力フォーマット
 
