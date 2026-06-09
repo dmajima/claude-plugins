@@ -1365,10 +1365,14 @@ def check_version_bump(target: pathlib.Path, collector: IssueCollector) -> None:
         )
 
         committed = [
-            line for line in (r_diff.stdout.strip().splitlines() if r_diff else []) if line.strip()
+            line
+            for line in (r_diff.stdout.strip().splitlines() if r_diff and r_diff.returncode == 0 else [])
+            if line.strip()
         ]
         uncommitted = [
-            line for line in (r_status.stdout.strip().splitlines() if r_status else []) if line.strip()
+            line
+            for line in (r_status.stdout.strip().splitlines() if r_status and r_status.returncode == 0 else [])
+            if line.strip()
         ]
 
         change_count = len(committed) + len(uncommitted)

@@ -30,8 +30,9 @@ script_dir="$(cd "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 delegate="$script_dir/check_version_bump.sh"
 [[ ! -f "$delegate" ]] && exit 0
 
-# 委譲スクリプトの stderr を捕捉して additionalContext に変換
-warnings="$(printf '%s' '{}' | bash "$delegate" 2>&1)"
+# 委譲スクリプトの stderr のみを捕捉して additionalContext に変換
+# stdout は /dev/null に捨て、将来 delegate が stdout を使っても混入しない
+warnings="$(printf '%s' '{}' | bash "$delegate" 2>&1 1>/dev/null)"
 
 if [[ -n "${warnings//[[:space:]]/}" ]]; then
   # additionalContext として stdout に JSON 出力（Claude に警告を届ける）

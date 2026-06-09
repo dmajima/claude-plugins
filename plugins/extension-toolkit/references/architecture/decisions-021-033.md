@@ -148,14 +148,16 @@ ADR-001〜010 は `decisions-001-010.md`、ADR-011〜020 は `decisions-011-020.
 | 例外 | 免責ケース 4 種のみ。それ以外で本フローを省略する場合は `extension-review` の指摘対象（Critical 相当） |
 | 代替案 | (1) 自動テスト（evals 実行）のみで承認とする → AskUserQuestion 等の UI 系・実機固有挙動を検証できない、却下。(2) 承認なしのデモ通知のみ → ユーザが見落とすリスク、却下。(3) すべての変更にデモ必須（免責なし）→ ドキュメント変更でもデモを強いるのは過剰、却下。本案は「実コード変更には必須、純粋ドキュメントは免責」のバランスを採用 |
 
-## ~~ADR-033: PowerShell モジュールの端末グローバル汚染回避とプラグイン専用キャッシュ管理~~（Phase 9a で削除）
+## ADR-033: `references/` への CLAUDE.md 必須配置（README.md との責務分離）
 
-旧版では `extension-toolkit` が依存する PowerShell モジュール（PSScriptAnalyzer 等）を
-プラグイン専用キャッシュ (`<base>/.claude/.local/plugins/extension-toolkit/psmodules/`) に
-配置する仕組みを採用していたが、本リポジトリの Bash 標準化方針との整合のため、
-**Phase 9a で `setup_psmodule.sh` / `run_psscriptanalyzer.sh` / 関連機能をすべて削除した**。
-
-歴史的経緯は git ログ（Phase 9a コミット）を参照。再導入予定はない。
+| 項目 | 内容 |
+|------|------|
+| 決定 | `references/` ディレクトリが存在するプラグインでは `references/CLAUDE.md`（Claude エージェント向け原則・ナビゲーション文書）を必須配置し、`references/README.md`（人間向けインデックス）と責務を分離する。`README.md` は人間向け説明資料であり、Claude エージェントの動作時には参照禁止。`CLAUDE.md` は原則とナビゲーションのみを記載し、詳細ルールは `policies/` 等の分離済みファイルを参照させる |
+| 理由 | (1) `README.md` は人間向けに「利用方法・動作例・拡張手順」を網羅するが、エージェントには冗長で、かつトリガー判定・手順実行の指示としては不適切。(2) エージェントが `references/` 配下の多数のファイルを効率的にナビゲートするには、タスク駆動型の参照表が必要。(3) 既存の `SKILL.md` は個別スキルの定義に限定されるため、プラグイン横断の原則を記述する場所がなかった |
+| トレードオフ | (1) ファイル数が 1 つ増える。(2) README.md と CLAUDE.md の記載内容が部分的に重複する可能性があるが、CLAUDE.md はナビゲーション表と原則の箇条書きに限定し、詳細は分離ファイルを参照させることで重複を抑制。(3) 既存プラグインすべてに CLAUDE.md を追加する移行コストが発生する |
+| 適用範囲 | `extension-toolkit` プラグインの `references/`（必須）、各スキルの `references/`（推奨、3 ファイル以上時） |
+| 必須項目 | (a) [`claude-md-policy.md`](../policies/claude-md-policy.md) にポリシーを策定、(b) [`conventions-structure.md`](../policies/conventions-structure.md) 節 4.1 の推奨構造に `CLAUDE.md` を追加、(c) `extension-review` の [`checklists/plugin.md`](../../skills/extension-review/references/checklists/plugin.md) に P-8.5 確認項目を追加 |
+| 代替案 | (1) SKILL.md に references/ のナビゲーションを記載 → 200 行制約を圧迫、却下。(2) README.md 自体を AI 対応にする → 人間の可読性が低下、却下。(3) references/ 配下に index.md を置く → 既存の README.md と役割が曖昧になる、却下 |
 
 ## ADR の追加・更新
 
