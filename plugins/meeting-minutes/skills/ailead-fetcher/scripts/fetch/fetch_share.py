@@ -138,15 +138,15 @@ def build_summary_md(data: dict) -> str:
 
 
 def build_metadata(data: dict) -> dict:
-    share = data.get("data", {}).get("externalShare", {})
-    host = share.get("hostUser", {})
+    share = data.get("data", {}).get("externalShare", {}) or {}
+    host = share.get("hostUser") or {}
     participants = [
         {
             "name": p.get("participantName", ""),
             "talkRatio": p.get("participantTalkRatio", 0),
             "isHost": p.get("isHost", False),
         }
-        for p in share.get("participants", [])
+        for p in (share.get("participants") or [])
     ]
     return {
         "title": share.get("title", ""),
@@ -158,8 +158,8 @@ def build_metadata(data: dict) -> dict:
         "hostUser": f"{host.get('lastName', '')} {host.get('firstName', '')}".strip(),
         "hlsUrl": share.get("hlsUrl", ""),
         "participants": participants,
-        "transcriptCount": len(share.get("transcripts", [])),
-        "topicCount": len(share.get("callSummary", {}).get("topics", [])),
+        "transcriptCount": len(share.get("transcripts") or []),
+        "topicCount": len((share.get("callSummary") or {}).get("topics") or []),
     }
 
 

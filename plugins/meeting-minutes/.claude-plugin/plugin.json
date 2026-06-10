@@ -1,6 +1,6 @@
 {
   "name": "meeting-minutes",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "会議の文字起こし・録画データから構造化議事録を作成し Markdown / docx 出力",
   "author": {
     "name": "dmajima"
