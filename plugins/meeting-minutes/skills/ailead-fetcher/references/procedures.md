@@ -88,3 +88,4 @@ ffmpeg -i "https://dashboard.ailead.app/api/v1/share/media.m3u8?key=$shareKey" -
 | HTTP 404 on HTML | 共有リンクの期限切れ | `expirationDatetime` を確認 |
 | 空の `transcripts` | 文字起こし未完了 | `callTasks` の `TRANSCRIPT` ステータスを確認 |
 | パスワード要求 | パスワード保護リンク | ユーザーにパスワードを確認（未実装） |
+| `callSummary` が null（topicCount: 0） | AI 要約が未生成の会議 | 正常系として処理続行。下流の minutes-composer は generic-flow に切替える |

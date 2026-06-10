@@ -45,6 +45,11 @@ Skill(skill: "meeting-minutes:ailead-fetcher", args: "<ailead 共有リンク UR
 
 ### Step 3: トピック要約をベースに骨格を構成
 
+> **フォールバック**: `callSummary` が null または `topics` が空の場合、
+> トピック骨格は構成できないため [`generic-flow.md`](generic-flow.md) の
+> Step 2 以降（文字起こしからのゼロ構造化）に切替える。
+> メタデータの整理（Step 2）までは本フローの手順を使用してよい。
+
 `workspace/response.json` 内の `callSummary.topics` を読み込み、
 議事録の議題構造を構成する。
 
