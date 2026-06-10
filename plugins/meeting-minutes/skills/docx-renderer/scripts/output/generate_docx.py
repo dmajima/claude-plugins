@@ -112,15 +112,15 @@ def arrange_participants(participants: list) -> list:
     """出席者欄の表示行を組み立てる。
     並び順: 顧客（出現順）→ 組織不明（出現順）→ 自社（host組織）。bot は除外。
     敬称: 顧客のみ「 様」（半角スペース + 様）。組織不明・自社は様なし。"""
-    host_orgs = {p.get('organization', '')
+    host_orgs = {p.get('organization') or ''
                  for p in participants if p.get('role') == 'host'}
 
     customers, unknown, own = [], [], []
     for p in participants:
         if p.get('role') == 'bot':
             continue  # bot は出席者欄に載せない
-        org = p.get('organization', '')
-        name = p.get('name', '')
+        org = p.get('organization') or ''
+        name = p.get('name') or ''
         if not org:
             unknown.append(name)                       # 組織不明: 様なし
         elif org in host_orgs:
@@ -143,7 +143,7 @@ def add_meta_table(doc, metadata):
     created_by = metadata.get('createdBy', 'AI（文字起こし + Claude 構造化）')
 
     att_lines = arrange_participants(metadata.get('participants', []))
-    att_text = '\n'.join(att_lines) if att_lines else ''
+    att_text = '\n'.join(att_lines) if att_lines else '（参加者情報なし）'
 
     rows_data = [
         ('日時', time_display),
