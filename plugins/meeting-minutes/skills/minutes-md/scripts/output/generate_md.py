@@ -6,6 +6,7 @@ sys.stderr.reconfigure(encoding='utf-8')
 import argparse
 import json
 from pathlib import Path
+from typing import Optional
 
 
 def format_participants(participants: list) -> str:
@@ -85,7 +86,7 @@ def render_action_items(items: list) -> list[str]:
     return lines
 
 
-def render_next_meeting(next_meeting: dict | None) -> list[str]:
+def render_next_meeting(next_meeting: Optional[dict]) -> list[str]:
     lines = ['---', '', '## 次回予定', '']
     if not next_meeting:
         lines.append('未定')
