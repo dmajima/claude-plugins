@@ -97,18 +97,25 @@ def format_time(seconds: float) -> str:
 
 
 def build_transcript_text(data: dict) -> str:
-    share = data.get("data", {}).get("externalShare", {})
-    transcripts = share.get("transcripts", [])
+    share = data.get("data", {}).get("externalShare", {}) or {}
+    transcripts = share.get("transcripts") or []
     duration = share.get("duration", 0)
 
-    lines = []
+    segments = []
     for t in transcripts:
-        start_sec = t.get("startTime", 0) * duration
-        end_sec = t.get("endTime", 0) * duration
-        name = t.get("participantName", "Unknown")
-        text = t.get("text", "")
-        lines.append(f"[{format_time(start_sec)} - {format_time(end_sec)}] {name}: {text}")
-    return "\n".join(lines)
+        text = (t.get("text") or "").strip()
+        if not text:
+            continue  # 空セグメントは出力しない
+        start_sec = (t.get("startTime") or 0) * duration
+        end_sec = (t.get("endTime") or 0) * duration
+        name = t.get("participantName") or "Unknown"
+        segments.append((start_sec, end_sec, name, text))
+
+    segments.sort(key=lambda x: x[0])
+    return "\n".join(
+        f"[{format_time(s)} - {format_time(e)}] {n}: {tx}"
+        for s, e, n, tx in segments
+    )
 
 
 def build_summary_md(data: dict) -> str:
