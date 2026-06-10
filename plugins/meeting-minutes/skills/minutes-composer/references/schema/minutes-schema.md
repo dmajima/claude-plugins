@@ -28,7 +28,7 @@ minutes-composer が出力する `minutes.json` の構造定義。
   "participants": [
     {
       "name": "眞嶋大介",
-      "organization": "W2",
+      "organization": "Ｗ２株式会社",
       "role": "host",
       "talkRatio": 0.5787
     }
