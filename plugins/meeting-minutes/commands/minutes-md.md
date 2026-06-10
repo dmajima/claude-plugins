@@ -49,7 +49,7 @@ argument-hint: "[ailead共有URL or VTT/SRTファイルパス]"
 
 ### 4. Markdown 出力
 
-`meeting-minutes:minutes-md` を起動する。
+`meeting-minutes:md-renderer` を起動する。
 
 - 入力: `workspace/minutes.json`
 - 出力: `$SESSION_DIR/minutes.md`（セッション直下）

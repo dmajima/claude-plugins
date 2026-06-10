@@ -56,7 +56,7 @@ ailead の共有リンクから議事録を作成してください。
 https://dashboard.ailead.app/share/...
 ```
 
-処理フロー: `ailead-fetcher` → `minutes-composer` → `minutes-reviewer` → `minutes-md` or `minutes-docx`
+処理フロー: `ailead-fetcher` → `minutes-composer` → `minutes-reviewer` → `md-renderer` or `docx-renderer`
 
 ### VTT / SRT / テキストファイルから議事録を作成
 
@@ -65,7 +65,7 @@ https://dashboard.ailead.app/share/...
 （VTT ファイル / SRT ファイル / テキストを貼り付け or パスを指定）
 ```
 
-処理フロー: `transcript-converter` → `minutes-composer` → `minutes-reviewer` → `minutes-md` or `minutes-docx`
+処理フロー: `transcript-converter` → `minutes-composer` → `minutes-reviewer` → `md-renderer` or `docx-renderer`
 
 ### 出力形式を指定して作成
 
@@ -112,8 +112,8 @@ https://dashboard.ailead.app/share/...
 | `minutes-composer` | 文字起こしから構造化議事録データ（JSON）を作成 |
 | `ailead-fetcher` | ailead 外部共有リンクからデータを取得 |
 | `transcript-converter` | VTT / SRT / テキストを標準形式に変換 |
-| `minutes-md` | 構造化データを Markdown に変換 |
-| `minutes-docx` | 構造化データを docx（Word）に変換 |
+| `md-renderer` | 構造化データを Markdown に変換 |
+| `docx-renderer` | 構造化データを docx（Word）に変換 |
 | `minutes-reviewer` | 議事録と文字起こしの突合検証（フレッシュ起動） |
 
 ## コマンド

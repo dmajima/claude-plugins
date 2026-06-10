@@ -46,9 +46,9 @@ docx の出席者セルが以下の順・形式になる:
 
 ## 分岐の根拠
 
-`minutes-composer/references/schema/minutes-schema.md`「participants の role 設定」: 表示順・敬称・bot 除外はレンダラーが決定する。`minutes-md` の case-03 と同一観点（両レンダラーで仕様を揃える）。
+`minutes-composer/references/schema/minutes-schema.md`「participants の role 設定」: 表示順・敬称・bot 除外はレンダラーが決定する。`md-renderer` の case-03 と同一観点（両レンダラーで仕様を揃える）。
 
 ## 関連ケース
 
 - `case-01_normal.md`（正常生成の基本フロー）
-- `minutes-md/evals/case-03_participants_order.md`（md 側の同一観点ケース）
+- `md-renderer/evals/case-03_participants_order.md`（md 側の同一観点ケース）

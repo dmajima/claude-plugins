@@ -49,7 +49,7 @@ argument-hint: "[ailead共有URL or VTT/SRTファイルパス]"
 
 ### 4. Word 出力
 
-`meeting-minutes:minutes-docx` を起動する。
+`meeting-minutes:docx-renderer` を起動する。
 
 - 入力: `workspace/minutes.json`
 - 出力: `$SESSION_DIR/minutes.docx`（セッション直下）

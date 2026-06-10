@@ -1,6 +1,6 @@
-# Evals: minutes-md
+# Evals: md-renderer
 
-`minutes-md` の動作分岐の期待挙動を例示する。
+`md-renderer` の動作分岐の期待挙動を例示する。
 
 ## ケース一覧
 

@@ -1,6 +1,6 @@
-# Evals: minutes-docx
+# Evals: docx-renderer
 
-`minutes-docx` の動作分岐の期待挙動を例示する。
+`docx-renderer` の動作分岐の期待挙動を例示する。
 
 ## ケース一覧
 

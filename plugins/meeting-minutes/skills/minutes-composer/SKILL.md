@@ -21,7 +21,7 @@ trigger:
 ## 責務外
 
 - データソースからの取得（ailead-fetcher / transcript-converter が担当）
-- 最終出力形式への変換（minutes-docx / minutes-md が担当）
+- 最終出力形式への変換（docx-renderer / md-renderer が担当）
 - 突合レビュー（minutes-reviewer が担当）
 
 ## トリガー条件
@@ -36,7 +36,7 @@ trigger:
 
 ## 重要な制約
 
-- 議事録の中間表現を出力形式（docx/md/html）から分離する設計。最終出力は下流スキル（minutes-docx / minutes-md 等）が担当する
+- 議事録の中間表現を出力形式（docx/md/html）から分離する設計。最終出力は下流スキル（docx-renderer / md-renderer 等）が担当する
 - ailead フローと汎用フローで処理パスが異なる
 
 ## 実行モード判定
@@ -50,7 +50,7 @@ trigger:
 
 会議の文字起こしを分析し、議題・議論内容・決定事項・アクションアイテムを抽出して
 構造化 JSON 形式で出力する。出力形式に依存しない中間データとして設計されており、
-`minutes-docx` 等の下流スキルが最終出力を担当する。
+`docx-renderer` 等の下流スキルが最終出力を担当する。
 
 ## 入力パターン
 

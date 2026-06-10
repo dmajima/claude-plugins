@@ -99,4 +99,4 @@ Skill(skill: "meeting-minutes:ailead-fetcher", args: "<ailead 共有リンク UR
 ### Step 6: 出力
 
 構造化データを `workspace/minutes.json` として出力する。
-最終出力形式（Markdown / docx）への変換は下流スキル（`minutes-md` / `minutes-docx`）が担当する。
+最終出力形式（Markdown / docx）への変換は下流スキル（`md-renderer` / `docx-renderer`）が担当する。

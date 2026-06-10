@@ -1,5 +1,5 @@
 ---
-name: minutes-md
+name: md-renderer
 description: |
   minutes-composer が生成した構造化議事録データ（JSON）を Markdown ファイルに変換するスキル。
 trigger:
@@ -7,7 +7,7 @@ trigger:
   - 'minutes-composer の出力後に Markdown で出して 等の依頼'
 ---
 
-# Minutes Md
+# Md Renderer
 
 構造化議事録データ（JSON）を Markdown ファイルに変換するスキル。
 
@@ -32,7 +32,7 @@ trigger:
 
 ## 重要な制約
 
-- minutes-docx と同様、minutes.json を入力とした変換に特化する。議事録の構造化は行わない
+- docx-renderer と同様、minutes.json を入力とした変換に特化する。議事録の構造化は行わない
 
 ## 実行モード判定
 
