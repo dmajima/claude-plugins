@@ -108,6 +108,28 @@ def add_title_section(doc, metadata):
     doc.add_paragraph()
 
 
+def arrange_participants(participants: list) -> list:
+    """出席者欄の表示行を組み立てる。
+    並び順: 顧客（出現順）→ 組織不明（出現順）→ 自社（host組織）。bot は除外。
+    敬称: 顧客のみ「 様」（半角スペース + 様）。組織不明・自社は様なし。"""
+    host_orgs = {p.get('organization', '')
+                 for p in participants if p.get('role') == 'host'}
+
+    customers, unknown, own = [], [], []
+    for p in participants:
+        if p.get('role') == 'bot':
+            continue  # bot は出席者欄に載せない
+        org = p.get('organization', '')
+        name = p.get('name', '')
+        if not org:
+            unknown.append(name)                       # 組織不明: 様なし
+        elif org in host_orgs:
+            own.append(f"{org} / {name}")              # 自社: 様なし
+        else:
+            customers.append(f"{org} / {name} 様")     # 顧客: 様あり
+    return customers + unknown + own  # 顧客が先・自社が最後
+
+
 def add_meta_table(doc, metadata):
     date_str = metadata.get('date', '')
     start = metadata.get('startTime', '')
@@ -120,22 +142,7 @@ def add_meta_table(doc, metadata):
     location = metadata.get('location', 'オンライン会議')
     created_by = metadata.get('createdBy', 'AI（文字起こし + Claude 構造化）')
 
-    participants = metadata.get('participants', [])
-    host_orgs = {p.get('organization', '') for p in participants if p.get('role') == 'host'}
-    by_org = {}
-    for p in participants:
-        org = p.get('organization', '')
-        name = p.get('name', '')
-        if org not in by_org:
-            by_org[org] = []
-        by_org[org].append(name)
-
-    att_lines = []
-    for org, names in by_org.items():
-        prefix = f"{org} / " if org else ""
-        for n in names:
-            suffix = "様" if org and org not in host_orgs else ""
-            att_lines.append(f"{prefix}{n}{suffix}")
+    att_lines = arrange_participants(metadata.get('participants', []))
     att_text = '\n'.join(att_lines) if att_lines else ''
 
     rows_data = [

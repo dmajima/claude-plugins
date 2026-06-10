@@ -11,6 +11,7 @@
 | case-03_generate_word | 構造化議事録データから Word ファイルを生成する基本フロー | 正常変換 |
 | case-04_docx_output | 議事録作成後に docx 変換を依頼する | 正常変換（別フレーズ） |
 | case-05_error_no_json | minutes.json 不在時に minutes-composer の実行を提案する | 入力不在 → エラー |
+| case-06_participants_order | 出席者欄の並び順（顧客先・自社最後）・敬称（顧客のみ様）・bot 除外 | 出席者整形仕様 |
 
 ## 実行確認方法
 
