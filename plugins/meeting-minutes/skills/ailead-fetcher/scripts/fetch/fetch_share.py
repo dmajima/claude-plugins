@@ -119,8 +119,8 @@ def build_transcript_text(data: dict) -> str:
 
 
 def build_summary_md(data: dict) -> str:
-    share = data.get("data", {}).get("externalShare", {})
-    summary = share.get("callSummary", {})
+    share = data.get("data", {}).get("externalShare", {}) or {}
+    summary = share.get("callSummary") or {}
     if not summary:
         return "# 会議要約\n\n要約データなし\n"
 
