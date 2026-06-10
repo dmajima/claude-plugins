@@ -35,6 +35,14 @@ Skill(skill: "meeting-minutes:ailead-fetcher", args: "<ailead 共有リンク UR
 | `participants[].name` | 参加者一覧 |
 | `hostUser` | 主催者 |
 
+**組織名の正規化**:
+- `organization` は正式社名（例: 「日世株式会社」「Ｗ２株式会社」）に統一する。
+  発話・会議タイトル中の略称（「日世」「日世様」等）をそのまま使わない
+- 正式社名が文字起こしから特定できない場合は、会議タイトル・参加者表示名から
+  最も完全な表記を採用する
+- 主催者（議事録作成側）の参加者には必ず `role: "host"` を設定する
+  （レンダラーが自社判定・敬称制御に使用するため）
+
 ### Step 3: トピック要約をベースに骨格を構成
 
 `workspace/response.json` 内の `callSummary.topics` を読み込み、
