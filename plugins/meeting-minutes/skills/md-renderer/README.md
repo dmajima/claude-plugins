@@ -1,4 +1,4 @@
-# Minutes Md
+# md-renderer
 
 構造化議事録データ（JSON v2.0）を Markdown ファイルに変換するスキル。
 
@@ -54,7 +54,7 @@ Markdown テンプレートの定義は `minutes-composer` スキルに含まれ
 ## ファイル構成
 
 ```
-skills/minutes-md/
+skills/md-renderer/
 ├── SKILL.md                    # スキル定義
 ├── README.md                   # 本ファイル（人間向け）
 ├── references/

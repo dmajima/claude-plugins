@@ -34,7 +34,10 @@ argument-hint: "[ailead共有URL or VTT/SRTファイルパス]"
 
 ### 2. 議事録構造化
 
-`meeting-minutes:minutes-composer` を起動する。
+`meeting-minutes:minutes-composer` を **フレッシュなサブエージェント** として起動する。
+（transcript 全文の通読を伴うため、メインコンテキストでの直接実行は避ける。
+サブエージェントにはスキーマ・フロー手順・入出力パス（出力: `workspace/minutes.json`）を
+明示して委譲する）
 
 - 入力: `workspace/transcript.txt` + `workspace/metadata.json`（+ `workspace/response.json`（ailead の場合））
 - 出力: `workspace/minutes.json`
@@ -49,7 +52,7 @@ argument-hint: "[ailead共有URL or VTT/SRTファイルパス]"
 
 ### 4. Markdown 出力
 
-`meeting-minutes:minutes-md` を起動する。
+`meeting-minutes:md-renderer` を起動する。
 
 - 入力: `workspace/minutes.json`
 - 出力: `$SESSION_DIR/minutes.md`（セッション直下）

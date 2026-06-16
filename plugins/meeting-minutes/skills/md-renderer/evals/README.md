@@ -1,6 +1,6 @@
-# Evals: minutes-md
+# Evals: md-renderer
 
-`minutes-md` の動作分岐の期待挙動を例示する。
+`md-renderer` の動作分岐の期待挙動を例示する。
 
 ## ケース一覧
 
@@ -8,6 +8,7 @@
 |--------|------|-------------|
 | case-01_normal | 正常な minutes.json から Markdown ファイルを生成する | 正常変換 |
 | case-02_missing_input | minutes.json が存在しない場合にエラーを報告する | 入力不在エラー |
+| case-03_participants_order | 出席者欄の並び順（顧客先・自社最後）・敬称（顧客のみ様）・bot 除外 | 出席者整形仕様 |
 
 ## 実行確認方法
 

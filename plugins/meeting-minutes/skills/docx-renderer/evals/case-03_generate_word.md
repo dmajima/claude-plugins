@@ -11,7 +11,7 @@
 
 ## 期待
 
-- minutes-docx スキルが起動される
+- docx-renderer スキルが起動される
 - workspace/minutes.json を読み込む
 - python-docx で同梱テンプレートに流し込んで docx を生成する
 - セッション直下に minutes.docx を配置する

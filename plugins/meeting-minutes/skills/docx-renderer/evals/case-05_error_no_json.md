@@ -12,7 +12,7 @@ minutes.json が存在しない状態で docx 出力を依頼するエラーケ�
 
 ## 期待
 
-- minutes-docx スキルが起動される
+- docx-renderer スキルが起動される
 - workspace/minutes.json の不在を検出する
 - minutes-composer の実行を提案する
 - docx 生成は実行しない

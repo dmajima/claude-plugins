@@ -97,23 +97,30 @@ def format_time(seconds: float) -> str:
 
 
 def build_transcript_text(data: dict) -> str:
-    share = data.get("data", {}).get("externalShare", {})
-    transcripts = share.get("transcripts", [])
+    share = data.get("data", {}).get("externalShare", {}) or {}
+    transcripts = share.get("transcripts") or []
     duration = share.get("duration", 0)
 
-    lines = []
+    segments = []
     for t in transcripts:
-        start_sec = t.get("startTime", 0) * duration
-        end_sec = t.get("endTime", 0) * duration
-        name = t.get("participantName", "Unknown")
-        text = t.get("text", "")
-        lines.append(f"[{format_time(start_sec)} - {format_time(end_sec)}] {name}: {text}")
-    return "\n".join(lines)
+        text = (t.get("text") or "").strip()
+        if not text:
+            continue  # 空セグメントは出力しない
+        start_sec = (t.get("startTime") or 0) * duration
+        end_sec = (t.get("endTime") or 0) * duration
+        name = t.get("participantName") or "Unknown"
+        segments.append((start_sec, end_sec, name, text))
+
+    segments.sort(key=lambda x: x[0])
+    return "\n".join(
+        f"[{format_time(s)} - {format_time(e)}] {n}: {tx}"
+        for s, e, n, tx in segments
+    )
 
 
 def build_summary_md(data: dict) -> str:
-    share = data.get("data", {}).get("externalShare", {})
-    summary = share.get("callSummary", {})
+    share = data.get("data", {}).get("externalShare", {}) or {}
+    summary = share.get("callSummary") or {}
     if not summary:
         return "# 会議要約\n\n要約データなし\n"
 
@@ -138,15 +145,15 @@ def build_summary_md(data: dict) -> str:
 
 
 def build_metadata(data: dict) -> dict:
-    share = data.get("data", {}).get("externalShare", {})
-    host = share.get("hostUser", {})
+    share = data.get("data", {}).get("externalShare", {}) or {}
+    host = share.get("hostUser") or {}
     participants = [
         {
             "name": p.get("participantName", ""),
             "talkRatio": p.get("participantTalkRatio", 0),
             "isHost": p.get("isHost", False),
         }
-        for p in share.get("participants", [])
+        for p in (share.get("participants") or [])
     ]
     return {
         "title": share.get("title", ""),
@@ -158,8 +165,8 @@ def build_metadata(data: dict) -> dict:
         "hostUser": f"{host.get('lastName', '')} {host.get('firstName', '')}".strip(),
         "hlsUrl": share.get("hlsUrl", ""),
         "participants": participants,
-        "transcriptCount": len(share.get("transcripts", [])),
-        "topicCount": len(share.get("callSummary", {}).get("topics", [])),
+        "transcriptCount": len(share.get("transcripts") or []),
+        "topicCount": len((share.get("callSummary") or {}).get("topics") or []),
     }
 
 
