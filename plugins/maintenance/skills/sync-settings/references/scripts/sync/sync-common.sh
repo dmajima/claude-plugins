@@ -79,6 +79,16 @@ write_masked_output() {
   printf '  %s\n' "$(hide_secrets "$line")"
 }
 
+# run_git_masked: git コマンドを実行し、出力をマスクして表示する。
+# git の終了ステータスを戻り値として返す。
+# 用法: run_git_masked git clone --depth 1 ...
+run_git_masked() {
+  "$@" 2>&1 | while IFS= read -r line; do
+    write_masked_output "$line"
+  done
+  return "${PIPESTATUS[0]}"
+}
+
 # --- 再解析ポイント検査 (symlink / junction / mountpoint / 他 reparse tag を拒否) ---
 test_reparse_item() {
   local path="${1:-}"
