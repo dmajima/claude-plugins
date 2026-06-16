@@ -234,11 +234,8 @@ printf 'Repo:   %s\n' "$repo"
 printf 'Branch: %s\n' "$branch"
 
 invoke_fresh_clone() {
-  while IFS= read -r line; do
-    write_masked_output "$line"
-  done < <(git "${GIT_SAFE_OPTS[@]}" clone --depth 1 --branch "$branch" -- "$repo" "$REPO_DIR" 2>&1)
-  if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-    printf 'Git clone 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+  if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" clone --depth 1 --branch "$branch" -- "$repo" "$REPO_DIR"; then
+    printf 'Git clone 失敗\n' >&2
     exit 1
   fi
 }
@@ -255,18 +252,12 @@ else
     invoke_fresh_clone
   else
     pushd "$REPO_DIR" >/dev/null
-    while IFS= read -r line; do
-      write_masked_output "$line"
-    done < <(git "${GIT_SAFE_OPTS[@]}" fetch --depth 1 origin "$branch" 2>&1)
-    if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
+    if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" fetch --depth 1 origin "$branch"; then
       printf 'Git fetch 失敗\n' >&2
       popd >/dev/null
       exit 1
     fi
-    while IFS= read -r line; do
-      write_masked_output "$line"
-    done < <(git "${GIT_SAFE_OPTS[@]}" reset --hard "origin/$branch" 2>&1)
-    if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
+    if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" reset --hard "origin/$branch"; then
       printf 'Git reset 失敗\n' >&2
       popd >/dev/null
       exit 1

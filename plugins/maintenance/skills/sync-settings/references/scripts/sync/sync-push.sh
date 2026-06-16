@@ -173,11 +173,8 @@ printf '\n'
 printf '===== リポジトリ準備 =====\n'
 
 invoke_fresh_push_clone() {
-  while IFS= read -r line; do
-    write_masked_output "$line"
-  done < <(git "${GIT_SAFE_OPTS[@]}" clone --depth 1 --branch "$branch" -- "$repo" "$REPO_DIR" 2>&1)
-  if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-    printf 'Git clone 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+  if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" clone --depth 1 --branch "$branch" -- "$repo" "$REPO_DIR"; then
+    printf 'Git clone 失敗\n' >&2
     exit 1
   fi
 }
@@ -193,22 +190,16 @@ else
     invoke_fresh_push_clone
   else
     pushd "$REPO_DIR" >/dev/null
-    while IFS= read -r line; do write_masked_output "$line"; done \
-      < <(git "${GIT_SAFE_OPTS[@]}" fetch --depth 1 origin "$branch" 2>&1)
-    if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-      printf 'Git fetch 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+    if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" fetch --depth 1 origin "$branch"; then
+      printf 'Git fetch 失敗\n' >&2
       popd >/dev/null; exit 1
     fi
-    while IFS= read -r line; do write_masked_output "$line"; done \
-      < <(git "${GIT_SAFE_OPTS[@]}" checkout "$branch" 2>&1)
-    if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-      printf 'Git checkout 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+    if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" checkout "$branch"; then
+      printf 'Git checkout 失敗\n' >&2
       popd >/dev/null; exit 1
     fi
-    while IFS= read -r line; do write_masked_output "$line"; done \
-      < <(git "${GIT_SAFE_OPTS[@]}" reset --hard "origin/$branch" 2>&1)
-    if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-      printf 'Git reset 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+    if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" reset --hard "origin/$branch"; then
+      printf 'Git reset 失敗\n' >&2
       popd >/dev/null; exit 1
     fi
     git "${GIT_SAFE_OPTS[@]}" clean -fdx >/dev/null 2>&1 || true
@@ -305,10 +296,8 @@ printf '\n'
 printf '===== 新ブランチ作成 + commit + push =====\n'
 printf '新ブランチ: %s\n' "$new_branch"
 
-while IFS= read -r line; do write_masked_output "$line"; done \
-  < <(git "${GIT_SAFE_OPTS[@]}" checkout -b "$new_branch" 2>&1)
-if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-  printf '新ブランチ作成失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" checkout -b "$new_branch"; then
+  printf '新ブランチ作成失敗\n' >&2
   popd >/dev/null; exit 1
 fi
 
@@ -318,28 +307,22 @@ if [[ -z "$msg" ]]; then
   msg="sync from local ${ts_commit}"
 fi
 
-while IFS= read -r line; do write_masked_output "$line"; done \
-  < <(git "${GIT_SAFE_OPTS[@]}" add -A 2>&1)
-if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-  printf 'git add 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" add -A; then
+  printf 'git add 失敗\n' >&2
   git "${GIT_SAFE_OPTS[@]}" checkout "$branch" >/dev/null 2>&1 || true
   git "${GIT_SAFE_OPTS[@]}" branch -D "$new_branch" >/dev/null 2>&1 || true
   popd >/dev/null; exit 1
 fi
 
-while IFS= read -r line; do write_masked_output "$line"; done \
-  < <(git "${GIT_SAFE_OPTS[@]}" commit -m "$msg" 2>&1)
-if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-  printf 'git commit 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" commit -m "$msg"; then
+  printf 'git commit 失敗\n' >&2
   git "${GIT_SAFE_OPTS[@]}" checkout "$branch" >/dev/null 2>&1 || true
   git "${GIT_SAFE_OPTS[@]}" branch -D "$new_branch" >/dev/null 2>&1 || true
   popd >/dev/null; exit 1
 fi
 
-while IFS= read -r line; do write_masked_output "$line"; done \
-  < <(git "${GIT_SAFE_OPTS[@]}" push -u origin "$new_branch" 2>&1)
-if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
-  printf 'git push 失敗: exit %s\n' "${PIPESTATUS[0]}" >&2
+if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" push -u origin "$new_branch"; then
+  printf 'git push 失敗\n' >&2
   git "${GIT_SAFE_OPTS[@]}" checkout "$branch" >/dev/null 2>&1 || true
   popd >/dev/null; exit 1
 fi
@@ -347,9 +330,7 @@ fi
 # --- 規定ブランチに復帰 ---
 printf '\n'
 printf '===== 規定ブランチに復帰 =====\n'
-while IFS= read -r line; do write_masked_output "$line"; done \
-  < <(git "${GIT_SAFE_OPTS[@]}" checkout "$branch" 2>&1)
-if [[ "${PIPESTATUS[0]}" -ne 0 ]]; then
+if ! run_git_masked git "${GIT_SAFE_OPTS[@]}" checkout "$branch"; then
   printf '規定ブランチへの復帰失敗。手動で '\''git checkout %s'\'' を実行してください。\n' "$branch" >&2
 fi
 
