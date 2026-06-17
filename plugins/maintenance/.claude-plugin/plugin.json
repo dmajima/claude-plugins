@@ -1,6 +1,6 @@
 {
   "name": "maintenance",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "description": "Claude Code 環境のメンテナンス統合プラグイン（プラグイン一括更新 / 古い作業フォルダ整理 / Git 経由設定同期）",
   "author": {
     "name": "dmajima"

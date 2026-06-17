@@ -42,6 +42,15 @@ BRANCH_PREFIX_REGEX='^[A-Za-z0-9._\-]+$'
 # --- git CLI 安全オプション (CVE-2018-17456 系の対策) ---
 GIT_SAFE_OPTS=('-c' 'protocol.file.allow=never' '-c' 'protocol.ext.allow=never')
 
+# --- Windows jq.exe CRLF 対策 (GitHub issue #44) ---
+# Windows の jq.exe は CRLF を出力する。Bash の read -r は CR を除去しないため、
+# パス解決・文字列比較が失敗する。jq を関数でラップし CR を自動除去する。
+# tr -d '\r' は CR がなければ no-op のため非 Windows 環境にも影響しない。
+# pipefail 有効下でも PIPESTATUS で jq の終了コードを保持する。
+if command -v jq >/dev/null 2>&1; then
+  jq() { command jq "$@" | tr -d '\r'; return "${PIPESTATUS[0]}"; }
+fi
+
 # --- 認証情報の二次マスク ---
 SECRET_PATTERNS=(
   'sk-[A-Za-z0-9]{16,}'
