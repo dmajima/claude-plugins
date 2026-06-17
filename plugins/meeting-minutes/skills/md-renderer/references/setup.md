@@ -3,7 +3,7 @@
 ## 依存パッケージ
 
 プラグイン共有の `references/scripts/setup/requirements.txt` を使用する。
-minutes-md 固有の追加依存はない。
+md-renderer 固有の追加依存はない。
 
 ## venv 構築
 

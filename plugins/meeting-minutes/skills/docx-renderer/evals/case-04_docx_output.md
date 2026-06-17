@@ -11,7 +11,7 @@
 
 ## 期待
 
-- minutes-docx スキルが起動される
+- docx-renderer スキルが起動される
 - minutes.json から構造化データを読み込む
 - テンプレートのスタイル定義に従って Word ファイルを生成する
 - 生成された minutes.docx をユーザーに提示する

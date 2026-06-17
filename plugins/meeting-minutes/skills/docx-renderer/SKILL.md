@@ -1,5 +1,5 @@
 ---
-name: minutes-docx
+name: docx-renderer
 description: |
   minutes-composer が生成した構造化議事録データ（JSON）を python-docx で docx（Word）ファイルに変換するスキル。
 trigger:
@@ -7,7 +7,7 @@ trigger:
   - 'minutes-composer の出力後に Word で出して 等の依頼'
 ---
 
-# Minutes Docx
+# Docx Renderer
 
 構造化議事録データ（JSON）を docx（Word）ファイルに変換するスキル。
 

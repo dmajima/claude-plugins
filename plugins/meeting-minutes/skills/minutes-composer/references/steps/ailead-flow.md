@@ -35,7 +35,20 @@ Skill(skill: "meeting-minutes:ailead-fetcher", args: "<ailead 共有リンク UR
 | `participants[].name` | 参加者一覧 |
 | `hostUser` | 主催者 |
 
+**組織名の正規化**:
+- `organization` は正式社名（例: 「日世株式会社」「Ｗ２株式会社」）に統一する。
+  発話・会議タイトル中の略称（「日世」「日世様」等）をそのまま使わない
+- 正式社名が文字起こしから特定できない場合は、会議タイトル・参加者表示名から
+  最も完全な表記を採用する
+- 主催者（議事録作成側）の参加者には必ず `role: "host"` を設定する
+  （レンダラーが自社判定・敬称制御に使用するため）
+
 ### Step 3: トピック要約をベースに骨格を構成
+
+> **フォールバック**: `callSummary` が null または `topics` が空の場合、
+> トピック骨格は構成できないため [`generic-flow.md`](generic-flow.md) の
+> Step 2 以降（文字起こしからのゼロ構造化）に切替える。
+> メタデータの整理（Step 2）までは本フローの手順を使用してよい。
 
 `workspace/response.json` 内の `callSummary.topics` を読み込み、
 議事録の議題構造を構成する。
@@ -86,4 +99,4 @@ Skill(skill: "meeting-minutes:ailead-fetcher", args: "<ailead 共有リンク UR
 ### Step 6: 出力
 
 構造化データを `workspace/minutes.json` として出力する。
-最終出力形式（Markdown / docx）への変換は下流スキル（`minutes-md` / `minutes-docx`）が担当する。
+最終出力形式（Markdown / docx）への変換は下流スキル（`md-renderer` / `docx-renderer`）が担当する。

@@ -1,4 +1,4 @@
-# minutes-docx
+# docx-renderer
 
 構造化議事録データ（minutes.json）を python-docx で Word ファイルに変換するスキル。
 
@@ -28,7 +28,7 @@ minutes-composer で構造データ作成後、Word 出力を依頼する。
 ## ファイル構成
 
 ```
-minutes-docx/
+docx-renderer/
 ├── SKILL.md
 ├── README.md
 ├── assets/

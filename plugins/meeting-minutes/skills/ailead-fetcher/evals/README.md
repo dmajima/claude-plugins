@@ -16,6 +16,8 @@
 | case-08_fetch_share_link | ailead 共有リンク URL を指定してデータを取得する基本フロー | 正常取得（URL 指定） |
 | case-09_ailead_recording | ailead の録画・文字起こし取得依頼で URL 未指定のため対話モードに遷移する | URL なし → 対話 |
 | case-10_error_invalid_url | 不正な URL が提示された場合にエラーメッセージを提示する | URL 不正形式 → エラー |
+| case-11_null_call_summary | callSummary が null（AI 要約なし）でも metadata.json を含む 4 ファイルを正常出力する | AI 要約なし → 正常系続行 |
+| case-12_transcripts_unordered | transcripts が時刻順でないレスポンスを startTime 昇順にソートして出力する | 時刻順ソート + 空セグメント除去 |
 
 ## 実行確認方法
 

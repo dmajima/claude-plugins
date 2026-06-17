@@ -31,8 +31,8 @@
 
 ### 4. 最終出力
 
-11. `/minutes-md` の場合: `meeting-minutes:minutes-md` を起動し `$SESSION_DIR/minutes.md` を生成する
-12. `/minutes-docx` の場合: `meeting-minutes:minutes-docx` を起動し `$SESSION_DIR/minutes.docx` を生成する
+11. `/minutes-md` の場合: `meeting-minutes:md-renderer` を起動し `$SESSION_DIR/minutes.md` を生成する
+12. `/minutes-docx` の場合: `meeting-minutes:docx-renderer` を起動し `$SESSION_DIR/minutes.docx` を生成する
 
 ### 5. ユーザーへの提示
 

@@ -28,7 +28,7 @@ minutes-composer が出力する `minutes.json` の構造定義。
   "participants": [
     {
       "name": "眞嶋大介",
-      "organization": "W2",
+      "organization": "Ｗ２株式会社",
       "role": "host",
       "talkRatio": 0.5787
     }
@@ -39,6 +39,14 @@ minutes-composer が出力する `minutes.json` の構造定義。
   "createdBy": "AI（ailead + Claude）"
 }
 ```
+
+### participants の role 設定
+
+- 主催者（議事録作成側）の参加者には必ず `role: "host"` を設定する
+  （レンダラーが自社判定・敬称制御に使用するため）
+- 議事録 bot（例: Rimo議事録Bot）には `role: "bot"` を設定する
+  （レンダラーが出席者欄から除外する）
+- 表示順はレンダラーが決定する（顧客 → 自社の順に並び替える）ため、配列順は任意
 
 ## agendas
 
