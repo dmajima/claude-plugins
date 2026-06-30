@@ -167,6 +167,31 @@
         "graphql",
         "transcript-converter"
       ]
+    },
+    {
+      "name": "connector",
+      "source": "./plugins/connector",
+      "description": "7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き）",
+      "category": "integration",
+      "author": {
+        "name": "dmajima"
+      },
+      "keywords": [
+        "backlog",
+        "azure-devops",
+        "tfs",
+        "github",
+        "projectboard",
+        "ailead",
+        "slack",
+        "google-workspace",
+        "connector",
+        "integration",
+        "api",
+        "rendering-check",
+        "pull-request",
+        "mcp"
+      ]
     }
   ]
 }
