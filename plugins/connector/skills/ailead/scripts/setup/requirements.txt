@@ -1,0 +1,2 @@
+# ailead connector スキル 依存パッケージ
+requests>=2.31.0,<3.0.0
