@@ -45,5 +45,5 @@ Claude が `AskUserQuestion` でユーザーに確認する:
 ### 5. 下流スキルへの引き渡し
 
 変換完了後、`minutes-composer` に引き渡す。
-`workspace/transcript.txt` と `workspace/metadata.json` が ailead-fetcher と同一形式であるため、
+`workspace/transcript.txt` と `workspace/metadata.json` が connector:ailead と同一形式であるため、
 `minutes-composer` はデータソースを意識せずに処理できる。

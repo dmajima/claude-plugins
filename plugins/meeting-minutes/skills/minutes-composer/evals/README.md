@@ -12,6 +12,7 @@
 | case-04_compose_minutes | 取得済みデータから議事録の構成を依頼する | 非対話・自動構造化 |
 | case-05_generic_text_minutes | テキストを直接提供して議事録を作成する | 汎用テキスト → 対話 |
 | case-06_error_no_input | 入力ファイルが存在しない状態で議事録作成を依頼する | 入力不在 → エラー |
+| case-07_ailead_null_summary | ailead フロー判定後、callSummary が null のため generic flow にフォールバックする | ailead + callSummary null → generic flow |
 
 ## 実行確認方法
 

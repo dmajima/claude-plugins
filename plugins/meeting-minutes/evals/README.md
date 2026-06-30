@@ -9,7 +9,7 @@
 
 | ケース | 内容 | 主な分岐根拠 |
 |--------|------|-------------|
-| case-01_command_with_ailead_url | ailead 共有 URL を引数に渡した場合に ailead-fetcher を起動する | ailead URL 引数 |
+| case-01_command_with_ailead_url | ailead 共有 URL を引数に渡した場合に connector:ailead を起動する | ailead URL 引数 |
 | case-02_command_with_file | VTT/SRT ファイルパスを引数に渡した場合に transcript-converter を起動する | ファイルパス引数 |
 | case-03_command_no_args | 引数なしの場合にユーザーに入力方法を確認する | 引数なし |
 | case-04_command_text_paste | テキスト直接貼り付け時に transcript-converter に渡してフルパイプライン実行する | テキスト引数 |

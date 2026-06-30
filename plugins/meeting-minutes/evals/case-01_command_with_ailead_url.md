@@ -10,11 +10,11 @@
 
 ## 期待動作
 
-### 1. データ取得（引数判定 → ailead-fetcher）
+### 1. データ取得（引数判定 → connector:ailead）
 
 1. `$ARGUMENTS` に `dashboard.ailead.app/share/` を含む URL が含まれることを検出する
-2. `meeting-minutes:ailead-fetcher` スキルを起動する
-3. ailead-fetcher が `workspace/` に 4 ファイルを出力する（response.json, transcript.txt, summary.md, metadata.json）
+2. `connector:ailead` スキルを起動する
+3. connector:ailead が `workspace/` に 4 ファイルを出力する（response.json, transcript.txt, summary.md, metadata.json）
 
 ### 2. 議事録構造化
 
@@ -46,7 +46,7 @@
 
 ## 分岐の根拠
 
-`commands/minutes-md.md` および `commands/minutes-docx.md` の「1. データ取得」セクション: 「引数の内容を判定し、適切なスキルを起動する」表の「ailead 共有 URL → meeting-minutes:ailead-fetcher」行に該当。
+`commands/minutes-md.md` および `commands/minutes-docx.md` の「1. データ取得」セクション: 「引数の内容を判定し、適切なスキルを起動する」表の「ailead 共有 URL → connector:ailead」行に該当。
 
 ## 関連ケース
 

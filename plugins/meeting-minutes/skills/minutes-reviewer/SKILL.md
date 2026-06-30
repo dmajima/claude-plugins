@@ -20,7 +20,7 @@ trigger:
 ## 責務外
 
 - 議事録の構造化・修正（minutes-composer が担当）
-- データ取得（ailead-fetcher / transcript-converter が担当）
+- データ取得（connector:ailead / transcript-converter が担当）
 
 ## トリガー条件
 

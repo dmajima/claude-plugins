@@ -26,7 +26,7 @@ argument-hint: "[ailead共有URL or VTT/SRTファイルパス]"
 
 | 入力の種類 | 起動するスキル |
 |-----------|---------------|
-| ailead 共有 URL | `meeting-minutes:ailead-fetcher` |
+| ailead 共有 URL | `connector:ailead` |
 | VTT/SRT ファイルパス or テキスト | `meeting-minutes:transcript-converter` |
 | 空 | ユーザーに入力方法を確認 |
 

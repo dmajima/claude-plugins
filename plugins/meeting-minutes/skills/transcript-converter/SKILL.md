@@ -15,14 +15,14 @@ trigger:
 
 ## 責務
 
-- 多様な形式の文字起こしデータを読み取り、ailead-fetcher と同一の出力形式に正規化する
+- 多様な形式の文字起こしデータを読み取り、connector:ailead と同一の出力形式に正規化する
 - 入力形式を自動判定し、発話者・タイムスタンプ・テキストを抽出して標準形式に変換する
 - セッション作業領域の `workspace/` に transcript.txt と metadata.json を出力する
 
 ## 責務外
 
 - 音声ファイルからの文字起こし（STT）
-- ailead 共有リンクからの取得（ailead-fetcher が担当）
+- ailead 共有リンクからの取得（connector:ailead が担当）
 - 議事録の構造化（minutes-composer が担当）
 
 ## トリガー条件
@@ -34,7 +34,7 @@ trigger:
 ## 前提
 
 - データソースごとに minutes-composer を分岐させず、統一された中間形式を経由して処理する設計
-- ailead-fetcher と同一の出力形式にすることで、下流スキル（minutes-composer / minutes-reviewer）がソースに依存しない
+- connector:ailead と同一の出力形式にすることで、下流スキル（minutes-composer / minutes-reviewer）がソースに依存しない
 
 ## 重要な制約
 
@@ -51,7 +51,7 @@ trigger:
 ## 概要
 
 多様な形式の文字起こしデータ（VTT / SRT / プレーンテキスト / Teams コピペ等）を読み取り、
-`ailead-fetcher` と同一の出力形式（`transcript.txt` + `metadata.json`）に正規化する。
+`connector:ailead` と同一の出力形式（`transcript.txt` + `metadata.json`）に正規化する。
 これにより `minutes-composer` と `minutes-reviewer` がデータソースに依存せず動作できる。
 
 ## 対応入力形式
@@ -61,7 +61,7 @@ WebVTT / SRT / Teams コピペ / ailead 形式 / プレーンテキスト（フ�
 
 ## 出力形式
 
-ailead-fetcher と同一の標準構造（`workspace/transcript.txt` + `workspace/metadata.json`）で出力する。
+connector:ailead と同一の標準構造（`workspace/transcript.txt` + `workspace/metadata.json`）で出力する。
 
 ## 実行フロー
 

@@ -15,7 +15,7 @@
 - minutes-composer スキルが起動される
 - workspace/transcript.txt の不在を検出する
 - 入力ファイルのパスを再確認するようユーザーに促す
-- データ取得スキル（ailead-fetcher / transcript-converter）の起動を提案する
+- データ取得スキル（connector:ailead / transcript-converter）の起動を提案する
 
 ## 期待出力
 

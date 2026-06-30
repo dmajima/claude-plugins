@@ -16,7 +16,7 @@
    - VTT/SRT ファイルのパスを指定する
    - 文字起こしテキストを直接貼り付ける
 3. ユーザーの回答に応じて適切なスキルを起動する:
-   - ailead URL が提供された場合 → `meeting-minutes:ailead-fetcher` を起動する
+   - ailead URL が提供された場合 → `connector:ailead` を起動する
    - ファイルパスが提供された場合 → `meeting-minutes:transcript-converter` を起動する
    - テキストが直接貼り付けられた場合 → `meeting-minutes:transcript-converter` を起動する
 4. 以降は case-01 または case-02 と同じパイプラインを実行する
