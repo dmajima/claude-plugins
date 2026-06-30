@@ -1,6 +1,6 @@
 {
   "name": "connector",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き）",
   "license": "MIT",
   "author": {

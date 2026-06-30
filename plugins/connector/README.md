@@ -175,6 +175,20 @@ ProjectBoard の外部WBS を CSV にして      → projectboard（読み取り
 SAMPLE-67 の進捗を 50% にして             → projectboard（変更前後の提示 + 承認 → 更新 + 反映検証）
 ```
 
+## 他プラグインからの呼び出し
+
+### write 操作: Skill() 委譲
+
+コメント投稿・承認等の書き込み操作は `Skill()` ツール経由で呼び出す。フォーマットは [`references/delegation-interface.md`](references/delegation-interface.md) を参照。
+
+### read 操作（後続フローあり）: Agent() + ファイル受け渡し
+
+他プラグインが read 系操作を呼び出し、その結果を使って後続処理を行う場合は、`Skill()` ではなく `Agent()` で起動する。`Skill()` では connector の結果報告後に呼び出し元のフローが停止するため。
+
+サブエージェントが結果をファイルに書き出し、マニフェスト（ファイルパス + 概要）を返す。呼び出し元はマニフェストを受け取り、必要なファイルを Read して後続フローを続行する。
+
+詳細なプロトコル・テンプレートは [`references/subagent-protocol.md`](references/subagent-protocol.md) を参照。
+
 ## code-review プラグインとの関係
 
 | 観点 | connector（本プラグイン） | code-review |
@@ -202,7 +216,10 @@ plugins/connector/
 │   └── google-read.md / google-post.md
 ├── references/                          # プラグイン共通ナレッジ
 │   ├── credentials-precheck.md          # 認証情報の事前確認
+│   ├── delegation-interface.md          # 委譲インターフェース仕様（Skill() ベース・SSOT）
+│   ├── subagent-protocol.md             # サブエージェント呼び出しプロトコル（Agent() ベース・SSOT）
 │   ├── safe-api-access.md               # API アクセス安全原則（ホワイトリスト・エラー分岐・書き込みゲート）
+│   ├── signatures.md                    # 投稿署名
 │   └── rendering/                       # レンダリングルール（render-check が参照）
 │       ├── backlog-notation.md          # Backlog 記法
 │       ├── backlog-markdown.md          # Backlog Markdown
@@ -211,15 +228,15 @@ plugins/connector/
     ├── backlog/                         # Backlog 操作スキル
     │   ├── SKILL.md / README.md
     │   ├── references/                  # api-read.md / api-write.md
-    │   └── evals/                       # 8 ケース + demo.sh
+    │   └── evals/                       # 9 ケース + demo.sh
     ├── azure/                           # Azure DevOps 操作スキル（PR・作業項目・commit・Pipelines）
     │   ├── SKILL.md / README.md
     │   ├── references/                  # host-detection.md / pr-operations.md / workitem-operations.md
-    │   └── evals/                       # 9 ケース + demo.sh
+    │   └── evals/                       # 13 ケース + demo.sh
     ├── github/                          # GitHub PR 操作スキル
     │   ├── SKILL.md / README.md
     │   ├── references/                  # pr-operations.md
-    │   └── evals/                       # 3 ケース
+    │   └── evals/                       # 8 ケース
     ├── render-check/                    # 投稿前レンダリング検証スキル
     │   ├── SKILL.md / README.md
     │   ├── references/                  # check-procedures.md
@@ -233,15 +250,15 @@ plugins/connector/
     │   ├── SKILL.md / README.md
     │   ├── scripts/                     # fetch/fetch_share.py
     │   ├── references/                  # api-spec.md / procedures.md
-    │   └── evals/                       # 7 ケース
+    │   └── evals/                       # 11 ケース
     ├── slack/                           # Slack 操作スキル（MCP 経由）
     │   ├── SKILL.md / README.md
     │   ├── references/                  # mcp-fallback.md
-    │   └── evals/                       # 3 ケース
+    │   └── evals/                       # 8 ケース
     └── google-workspace/               # Google Workspace 操作スキル（MCP 経由）
         ├── SKILL.md / README.md
         ├── references/                  # mcp-fallback.md
-        └── evals/                       # 3 ケース
+        └── evals/                       # 6 ケース
 ```
 
 ## 依存システム（External Dependencies）

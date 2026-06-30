@@ -1,6 +1,6 @@
 ---
 name: google-workspace
-description: Google Drive のファイル検索・読取・作成・コピー・メタデータ取得・権限確認を MCP 経由で行うスキル。「Drive で〇〇を検索して」「Google ドキュメントを作成して」「スプレッドシートを読んで」等で起動。Use when searching, reading, or creating Google Drive files. SKIP when target is Backlog/Azure/ProjectBoard/ailead/Slack (use each connector).
+description: Google Drive のファイル検索・読取・作成・コピー・メタデータ取得・権限確認を MCP 経由で行うスキル。「Drive で議事録を検索して」「Google ドキュメントを作成して」「スプレッドシートを読んで」等で起動。Use when searching, reading, or creating Google Drive files. SKIP when target is Backlog (use backlog), Azure (use azure), ProjectBoard (use projectboard), ailead (use ailead), or Slack (use slack).
 ---
 
 # Google Workspace Connector
@@ -120,6 +120,17 @@ MCP ツール利用不可の場合は MCP 導入サポート or 直接 API の�
 - MCP 利用時は認証は MCP が自動管理。直接対応時は credentials-manager 経由で管理
 - render-check ゲートは Google Drive 操作では不要
 
+## サブエージェント呼び出し（他プラグイン向け）
+
+他プラグインが read 操作を **後続フローのある文脈で** 呼び出す場合は、`Skill()` ではなく `Agent()` を使用すること。`Skill()` では本スキルの結果報告後に呼び出し元のフローが停止する。
+
+詳細なプロトコル・テンプレート・パラメータは [../../references/subagent-protocol.md](../../references/subagent-protocol.md) セクション 5.6 を参照。
+
+| 操作 | 出力ファイル |
+|------|-------------|
+| ファイル内容取得 | `file-content.json` |
+| ファイル検索 | `search-results.json` |
+
 ## 参照
 
 | 用途 | ファイル |
@@ -127,4 +138,5 @@ MCP ツール利用不可の場合は MCP 導入サポート or 直接 API の�
 | MCP ツール詳細 | [`references/mcp-tools.md`](references/mcp-tools.md) |
 | MCP フォールバック | [`references/mcp-fallback.md`](references/mcp-fallback.md) |
 | API 安全原則 | [`../../references/safe-api-access.md`](../../references/safe-api-access.md) |
+| サブエージェント呼び出しプロトコル（SSOT） | [`../../references/subagent-protocol.md`](../../references/subagent-protocol.md) |
 | 動作分岐検証 | [`evals/`](evals/) |

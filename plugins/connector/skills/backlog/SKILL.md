@@ -85,6 +85,17 @@ Backlog REST API v2 で課題の検索・取得・コメント取得（読み取
 - API キーのフル値・`apiKey=` 付き URL を会話出力・ログに出さない（マスクする）
 - 別スペースの API キーを流用しない（domains 照合で一致するエントリのみ使用）
 
+## サブエージェント呼び出し（他プラグイン向け）
+
+他プラグインが read 操作を **後続フローのある文脈で** 呼び出す場合は、`Skill()` ではなく `Agent()` を使用すること。`Skill()` では本スキルの結果報告後に呼び出し元のフローが停止する。
+
+詳細なプロトコル・テンプレート・パラメータは [../../references/subagent-protocol.md](../../references/subagent-protocol.md) セクション 5.3 を参照。
+
+| 操作 | 出力ファイル |
+|------|-------------|
+| 課題取得 | `issue.json` |
+| 課題検索 | `search-results.json` |
+
 ## 参照
 
 | 用途 | ファイル |
@@ -94,7 +105,8 @@ Backlog REST API v2 で課題の検索・取得・コメント取得（読み取
 | 認証事前確認 | [../../references/credentials-precheck.md](../../references/credentials-precheck.md) |
 | API アクセス安全原則 | [../../references/safe-api-access.md](../../references/safe-api-access.md) |
 | 投稿署名（SSOT） | [../../references/signatures.md](../../references/signatures.md) |
-| 委譲インターフェース仕様 | [../../references/delegation-interface.md](../../references/delegation-interface.md) |
+| 委譲インターフェース仕様（SSOT） | [../../references/delegation-interface.md](../../references/delegation-interface.md) |
+| サブエージェント呼び出しプロトコル（SSOT） | [../../references/subagent-protocol.md](../../references/subagent-protocol.md) |
 | Backlog 記法ルール | [../../references/rendering/backlog-notation.md](../../references/rendering/backlog-notation.md) |
 | Backlog Markdown ルール | [../../references/rendering/backlog-markdown.md](../../references/rendering/backlog-markdown.md) |
 | 動作例 | [evals/](evals/) |

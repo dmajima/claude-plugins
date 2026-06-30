@@ -1,6 +1,6 @@
 ---
 name: azure
-description: Azure DevOps（クラウド / オンプレ TFS）の PR 作成・コメント投稿・PR 承認・作業項目コメントを行うスキル。書き込み前に承認必須。「PR を作成」「PR を承認」「作業項目にコメント」等で起動。Use when operating Azure DevOps / TFS PRs or work items. SKIP when Backlog (use backlog), GitHub (use github), or code-review logic.
+description: Azure DevOps（クラウド / オンプレ TFS）の PR 作成・コメント投稿・PR 承認・作業項目コメントを行うスキル。「PR を作成」「PR を承認」「作業項目にコメント」等で起動。Use when operating Azure DevOps / TFS PRs or work items. SKIP when Backlog (use backlog), GitHub (use github), or PR review analysis (use pr-review).
 ---
 
 # Azure
@@ -105,7 +105,7 @@ Azure DevOps（クラウド / オンプレ TFS・Azure DevOps Server）の PR �
    - PR 承認（vote）はパターン B でも vote 値の確認を推奨（ユーザー本人の意思表示の代行のため）
 3. **署名の自動付加**: 投稿本文の末尾に [../../references/signatures.md](../../references/signatures.md) の署名を自動付加する（既に署名が含まれている場合はスキップ）。呼び出し元が `marker:` を指定した場合は操作マーカーも挿入する。**投稿内容は署名付加と render-check の指摘による修正以外の理由で改変しない**
 4. **実行**: [references/pr-operations.md](references/pr-operations.md) / [references/workitem-operations.md](references/workitem-operations.md) の手順で API を呼び出す
-4. **結果検証**: レスポンスの ID・状態を確認し、対象 URL とともに報告する
+5. **結果検証**: レスポンスの ID・状態を確認し、対象 URL とともに報告する
 
 ### 5. 引き渡し
 
@@ -165,6 +165,20 @@ Skill(skill: "connector:azure", args: "<操作指示>")
 
 安全ゲートのスキップに疑義がある場合（args の文言が曖昧、操作内容が PR レビュー文脈から逸脱等）は、パターン A と同じ安全ゲートを適用する。
 
+## サブエージェント呼び出し（他プラグイン向け）
+
+他プラグインが read 操作を **後続フローのある文脈で** 呼び出す場合は、`Skill()` ではなく `Agent()` を使用すること。`Skill()` では本スキルの結果報告後に呼び出し元のフローが停止する。
+
+詳細なプロトコル・テンプレート・パラメータは [../../references/subagent-protocol.md](../../references/subagent-protocol.md) セクション 5.1 を参照。
+
+| 操作 | 出力ファイル |
+|------|-------------|
+| PR 情報取得 | `pr-meta.json` |
+| スレッド一覧 | `threads.json` |
+| commit 情報 | `commit.json` |
+| Pipelines ビルド結果 | `build-result.json` |
+| 認証ユーザー ID | `auth-user.json` |
+
 ## 参照
 
 | 用途 | ファイル |
@@ -176,5 +190,6 @@ Skill(skill: "connector:azure", args: "<操作指示>")
 | API アクセス安全原則 | [../../references/safe-api-access.md](../../references/safe-api-access.md) |
 | 投稿署名（SSOT） | [../../references/signatures.md](../../references/signatures.md) |
 | 委譲インターフェース仕様（SSOT） | [../../references/delegation-interface.md](../../references/delegation-interface.md) |
+| サブエージェント呼び出しプロトコル（SSOT） | [../../references/subagent-protocol.md](../../references/subagent-protocol.md) |
 | Azure DevOps レンダリングルール | [../../references/rendering/azure-devops-markdown.md](../../references/rendering/azure-devops-markdown.md) |
 | 動作例 | [evals/](evals/) |

@@ -1,6 +1,6 @@
 ---
 name: github
-description: GitHub PR の情報取得・インラインコメント・Pending Review・スレッド resolve を行うスキル（gh CLI / MCP 経由）。「GitHub PR にコメント」「diff を見せて」「スレッドを resolve」等で起動。Use when operating GitHub PRs. SKIP when Azure DevOps (use azure), Backlog (use backlog), or code-review logic.
+description: GitHub PR の情報取得・インラインコメント・Pending Review・スレッド resolve を行うスキル（gh CLI / MCP 経由）。「GitHub PR にコメント」「diff を見せて」「スレッドを resolve」等で起動。Use when operating GitHub PRs. SKIP when Azure DevOps (use azure), Backlog (use backlog), or PR review analysis (use pr-review).
 ---
 
 # GitHub Connector
@@ -87,7 +87,7 @@ gh auth status
    - **パターン B（委譲）**: 呼び出し元が `「承認済み」` と明示した場合はスキップ可能
 2. **署名の自動付加**: 投稿本文の末尾に [../../references/signatures.md](../../references/signatures.md) の署名を自動付加する（既に署名が含まれている場合はスキップ）。呼び出し元が `marker:` を指定した場合は操作マーカーも挿入する。**投稿内容は署名付加以外の理由で改変しない**
 3. **実行**: [references/pr-operations.md](references/pr-operations.md) の手順でコメント投稿 / スレッド操作を実行
-3. **結果検証**: API レスポンスの成功を確認し報告
+4. **結果検証**: API レスポンスの成功を確認し報告
 
 ### 5. 引き渡し
 
@@ -142,6 +142,18 @@ Skill(skill: "connector:github", args: "<操作指示>")
 
 安全ゲートのスキップに疑義がある場合は、パターン A と同じ安全ゲートを適用する。
 
+## サブエージェント呼び出し（他プラグイン向け）
+
+他プラグインが read 操作を **後続フローのある文脈で** 呼び出す場合は、`Skill()` ではなく `Agent()` を使用すること。`Skill()` では本スキルの結果報告後に呼び出し元のフローが停止する。
+
+詳細なプロトコル・テンプレート・パラメータは [../../references/subagent-protocol.md](../../references/subagent-protocol.md) セクション 5.2 を参照。
+
+| 操作 | 出力ファイル |
+|------|-------------|
+| PR 情報取得 | `pr-meta.json` |
+| PR diff 取得 | `diff.txt` |
+| スレッド一覧 | `threads.json` |
+
 ## 参照
 
 | 用途 | ファイル |
@@ -151,4 +163,5 @@ Skill(skill: "connector:github", args: "<操作指示>")
 | API アクセス安全原則 | [../../references/safe-api-access.md](../../references/safe-api-access.md) |
 | 投稿署名（SSOT） | [../../references/signatures.md](../../references/signatures.md) |
 | 委譲インターフェース仕様（SSOT） | [../../references/delegation-interface.md](../../references/delegation-interface.md) |
+| サブエージェント呼び出しプロトコル（SSOT） | [../../references/subagent-protocol.md](../../references/subagent-protocol.md) |
 | 動作例 | [evals/](evals/) |
