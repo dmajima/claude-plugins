@@ -119,6 +119,17 @@ REST API で操作するスキル。読み取り（タスク取得・CSV 化）�
 - 残存リスクの認識: `PB_PASSWORD` は 401 自動再ログインのため子プロセス環境に継承される（プロセス環境の
   可視性）。また解析レポート（pb_*.md）は個人名・スケジュールを含むため成果物の共有範囲に注意する
 
+## サブエージェント呼び出し（他プラグイン向け）
+
+他プラグインが read 操作を **後続フローのある文脈で** 呼び出す場合は、`Skill()` ではなく `Agent()` を使用すること。`Skill()` では本スキルの結果報告後に呼び出し元のフローが停止する。
+
+詳細なプロトコル・テンプレート・パラメータは [../../references/subagent-protocol.md](../../references/subagent-protocol.md) セクション 5.7 を参照。
+
+| 操作 | 出力ファイル |
+|------|-------------|
+| WBS 情報取得 | `wbs.json` |
+| シート情報取得 | `sheet.json` |
+
 ## 参照
 
 | 用途 | ファイル |
@@ -130,4 +141,5 @@ REST API で操作するスキル。読み取り（タスク取得・CSV 化）�
 | 既知の落とし穴 | [references/pitfalls.md](references/pitfalls.md) |
 | 認証事前確認 | [../../references/credentials-precheck.md](../../references/credentials-precheck.md) |
 | API アクセス安全原則 | [../../references/safe-api-access.md](../../references/safe-api-access.md) |
+| サブエージェント呼び出しプロトコル（SSOT） | [../../references/subagent-protocol.md](../../references/subagent-protocol.md) |
 | 動作例 | [evals/](evals/) |

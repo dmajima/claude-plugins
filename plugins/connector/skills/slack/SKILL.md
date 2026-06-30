@@ -1,6 +1,6 @@
 ---
 name: slack
-description: Slack のチャンネル・メッセージ・ユーザー・Canvas を MCP 経由で操作するスキル。「Slack の #general を読んで」「Slack でメッセージを送って」「Canvas を作成して」等で起動。Use when searching, reading, or sending Slack messages or managing Canvases. SKIP when target is Backlog/Azure/ProjectBoard/ailead/Google Drive (use each connector).
+description: Slack のチャンネル・メッセージ・ユーザー・Canvas を MCP 経由で操作するスキル。「Slack の #general を読んで」「Slack でメッセージを送って」「Canvas を作成して」等で起動。Use when searching, reading, or sending Slack messages or managing Canvases. SKIP when target is Backlog (use backlog), Azure (use azure), ProjectBoard (use projectboard), ailead (use ailead), or Google Drive (use google-workspace).
 ---
 
 # Slack Connector
@@ -143,6 +143,19 @@ MCP ツール利用不可の場合は MCP 導入サポート or 直接 API の�
 - MCP 利用時は認証情報の管理は MCP が自動的に行うため、credentials-manager は使用しない
 - 直接対応（フォールバック）時は credentials-manager 経由で API トークンを管理する
 
+## サブエージェント呼び出し（他プラグイン向け）
+
+他プラグインが read 操作を **後続フローのある文脈で** 呼び出す場合は、`Skill()` ではなく `Agent()` を使用すること。`Skill()` では本スキルの結果報告後に呼び出し元のフローが停止する。
+
+詳細なプロトコル・テンプレート・パラメータは [../../references/subagent-protocol.md](../../references/subagent-protocol.md) セクション 5.5 を参照。
+
+| 操作 | 出力ファイル |
+|------|-------------|
+| チャンネル読取 | `messages.json` |
+| メッセージ検索 | `search-results.json` |
+| スレッド読取 | `thread.json` |
+| ユーザー情報 | `user-profile.json` |
+
 ## 参照
 
 | 用途 | ファイル |
@@ -150,4 +163,5 @@ MCP ツール利用不可の場合は MCP 導入サポート or 直接 API の�
 | MCP ツール詳細 | [`references/mcp-tools.md`](references/mcp-tools.md) |
 | MCP フォールバック | [`references/mcp-fallback.md`](references/mcp-fallback.md) |
 | API 安全原則 | [`../../references/safe-api-access.md`](../../references/safe-api-access.md) |
+| サブエージェント呼び出しプロトコル（SSOT） | [`../../references/subagent-protocol.md`](../../references/subagent-protocol.md) |
 | 動作分岐検証 | [`evals/`](evals/) |
