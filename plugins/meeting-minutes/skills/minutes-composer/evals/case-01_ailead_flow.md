@@ -4,7 +4,7 @@
 
 | 項目 | 値 |
 |-----|---|
-| 起動条件 | `ailead-fetcher` の出力完了後に起動される |
+| 起動条件 | `connector:ailead` の出力完了後に起動される |
 | 前提ファイル | `workspace/transcript.txt`, `workspace/metadata.json`, `workspace/response.json`, `workspace/summary.md` がすべて存在する |
 | 判定根拠 | `workspace/response.json` の存在により ailead フローと判定される |
 
@@ -33,7 +33,7 @@
 
 ## 分岐の根拠
 
-SKILL.md「入力パターン」表: 「ailead-fetcher の出力（workspace/transcript.txt + workspace/response.json）→ トピック要約ベースの構造化」。SKILL.md「実行フロー」ステップ3: 「ailead の場合: トピック要約を骨格として議題構造を構成する」。詳細手順は `references/steps/ailead-flow.md` に記載。
+SKILL.md「入力パターン」表: 「connector:ailead の出力（workspace/transcript.txt + workspace/response.json）→ トピック要約ベースの構造化」。SKILL.md「実行フロー」ステップ3: 「ailead の場合: トピック要約を骨格として議題構造を構成する」。詳細手順は `references/steps/ailead-flow.md` に記載。
 
 ## 関連ケース
 

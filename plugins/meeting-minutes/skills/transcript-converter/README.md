@@ -29,7 +29,7 @@ C:\path\to\meeting.vtt から議事録を作成して
 | ailead transcript.txt | `[HH:MM:SS - HH:MM:SS] 名前: テキスト` | Yes |
 | プレーンテキスト | `.txt` / 直接入力 | Fallback |
 
-出力は ailead-fetcher と同一形式（transcript.txt + metadata.json）に正規化される。
+出力は connector:ailead と同一形式（transcript.txt + metadata.json）に正規化される。
 
 ## ファイル構成
 

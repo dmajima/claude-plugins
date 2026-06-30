@@ -8,10 +8,10 @@
 
 ## 使い方
 
-ailead-fetcher または transcript-converter でデータ取得・変換後に自動的に呼び出される。
+connector:ailead または transcript-converter でデータ取得・変換後に自動的に呼び出される。
 
 ```
-（ailead-fetcher 実行後）議事録を構成して
+（connector:ailead 実行後）議事録を構成して
 ```
 
 入力パターンにより処理フローが分岐する:

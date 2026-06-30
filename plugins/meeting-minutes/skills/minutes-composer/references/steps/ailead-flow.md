@@ -5,16 +5,16 @@ ailead の外部共有リンクが提示された場合の議事録作成手順�
 ## 前提
 
 - ailead 共有リンクが有効（期限内）であること
-- `meeting-minutes:ailead-fetcher` スキルが利用可能であること
+- `connector:ailead` スキルが利用可能であること（connector プラグインの依存）
 
 ## 手順
 
 ### Step 1: ailead データ取得
 
-`meeting-minutes:ailead-fetcher` スキルを起動してデータを取得する。
+`connector:ailead` スキルを起動してデータを取得する。
 
 ```
-Skill(skill: "meeting-minutes:ailead-fetcher", args: "<ailead 共有リンク URL>")
+Skill(skill: "connector:ailead", args: "<ailead 共有リンク URL>")
 ```
 
 取得されるデータ:

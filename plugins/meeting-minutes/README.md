@@ -40,7 +40,9 @@ git clone https://github.com/dmajima/claude-plugins <local-path>
 
 ### 依存関係
 
-外部プラグインへの依存はない。
+| プラグイン | 用途 | 必須 |
+|-----------|------|------|
+| connector | ailead データ取得（connector:ailead） | ailead ソース利用時 |
 
 | 外部ツール | 用途 | 必須 |
 |-----------|------|------|
@@ -56,7 +58,7 @@ ailead の共有リンクから議事録を作成してください。
 https://dashboard.ailead.app/share/...
 ```
 
-処理フロー: `ailead-fetcher` → `minutes-composer` → `minutes-reviewer` → `md-renderer` or `docx-renderer`
+処理フロー: `connector:ailead` → `minutes-composer` → `minutes-reviewer` → `md-renderer` or `docx-renderer`
 
 ### VTT / SRT / テキストファイルから議事録を作成
 
@@ -110,7 +112,6 @@ https://dashboard.ailead.app/share/...
 | スキル | 責務 |
 |-------|------|
 | `minutes-composer` | 文字起こしから構造化議事録データ（JSON）を作成 |
-| `ailead-fetcher` | ailead 外部共有リンクからデータを取得 |
 | `transcript-converter` | VTT / SRT / テキストを標準形式に変換 |
 | `md-renderer` | 構造化データを Markdown に変換 |
 | `docx-renderer` | 構造化データを docx（Word）に変換 |
@@ -127,7 +128,6 @@ https://dashboard.ailead.app/share/...
 
 | パッケージ | 用途 |
 |-----------|------|
-| `requests` | ailead API アクセス |
 | `python-docx` | Word ファイル生成 |
 
 ## ライセンス
