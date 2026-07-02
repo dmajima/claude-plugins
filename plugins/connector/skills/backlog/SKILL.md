@@ -1,16 +1,17 @@
 ---
 name: backlog
-description: Backlog の課題検索・課題/コメント取得・コメント投稿・ステータス等メタ情報更新を行うスキル。「Backlog で PROJ-123 を取得」「Backlog の課題を検索」「この課題にコメント投稿」「ステータスを処理中に」等で起動。書き込み前に render-check と承認必須。Use when operating Backlog issues. SKIP when target is Azure DevOps (use azure) or only verifying rendering without posting (use render-check).
+description: Backlog の課題検索・課題/コメント取得・コメント投稿・ステータス等メタ情報更新・共有ファイル一覧/メタデータ取得を行うスキル。「Backlog で PROJ-123 を取得」「Backlog の課題を検索」「この課題にコメント投稿」「ステータスを処理中に」「Backlog のファイルリンクの中身を見せて」等で起動。Backlog ファイル URL（/file/ や /alias/file/ を含む URL）が入力に含まれる場合も起動。書き込み前に render-check と承認必須。Use when operating Backlog issues or shared files. Trigger on Backlog file URLs containing /file/ or /alias/file/. SKIP when target is Azure DevOps (use azure) or only verifying rendering without posting (use render-check).
 ---
 
 # Backlog
 
-Backlog REST API v2 で課題の検索・取得・コメント取得（読み取り）と、コメント投稿・ステータス等メタ情報更新（書き込み）を行うスキル。書き込みは `render-check` ゲートとユーザー承認を必ず経由する。
+Backlog REST API v2 で課題の検索・取得・コメント取得（読み取り）、コメント投稿・ステータス等メタ情報更新（書き込み）、共有ファイルの一覧取得・メタデータ取得（読み取り）を行うスキル。書き込みは `render-check` ゲートとユーザー承認を必ず経由する。
 
 ## 責務
 
 - 課題検索・課題取得・コメント取得（読み取り系）
 - コメント投稿・課題メタ情報更新（ステータス・担当者・優先度・期限等。書き込み系）
+- 共有ファイルの一覧取得・メタデータ取得（読み取り系。ファイルダウンロードは対象外）
 - プロジェクトの記法設定（textFormattingRule）の取得と `render-check` への引き継ぎ
 
 ## 責務外（他スキルが担当）
@@ -27,12 +28,15 @@ Backlog REST API v2 で課題の検索・取得・コメント取得（読み取
 - 「Backlog で『ログイン』に関する課題を検索して」
 - 「PROJ-123 にこの調査結果をコメント投稿して」
 - 「PROJ-123 のステータスを処理中に変更して」「担当者を山田さんにして」
+- 「このファイルリンクの中身を見せて」（URL に `/file/` または `/alias/file/` を含む Backlog URL）
+- 「Backlog の共有ファイルを一覧表示して」
 - 他プラグイン（investigation 等）から Skill ツール経由で「読み取りのみ」と明示された受領目的の呼び出しを受けた場合（読み取り系のみ実行し、書き込み操作には進まない）
 
 このスキルを起動しないケース:
 
 - Azure DevOps の PR・作業項目の操作（→ `azure`）
 - 投稿せずレンダリング確認だけしたい（→ `render-check`）
+- Backlog のファイルをダウンロードしたい（本スキルではメタデータ取得のみ。ダウンロードは未サポート）
 
 ## 前提
 
@@ -54,7 +58,15 @@ Backlog REST API v2 で課題の検索・取得・コメント取得（読み取
 | 種別 | 操作 | 後続 |
 |-----|------|------|
 | 読み取り | 課題検索 / 課題取得 / コメント取得 / ステータス・ユーザー等の一覧取得 | Step 3 |
+| 読み取り | 共有ファイル一覧取得 / ファイルメタデータ取得 | Step 3 |
 | 書き込み | コメント投稿 / 課題メタ情報更新 | Step 4 |
+
+**ファイル URL の判定**: 入力に以下のパターンを含む URL がある場合、共有ファイル操作と判定する。
+
+- `https://{space-host}/file/{projectKey}/...` — ダイレクトパス URL
+- `https://{space-host}/alias/file/{id}` — エイリアス URL
+
+課題 URL（`/view/PROJ-123`）とは `/file/` または `/alias/file/` の有無で区別する。
 
 ### 3. 読み取り系の実行
 
@@ -95,6 +107,7 @@ Backlog REST API v2 で課題の検索・取得・コメント取得（読み取
 |------|-------------|
 | 課題取得 | `issue.json` |
 | 課題検索 | `search-results.json` |
+| ファイル一覧取得 | `file-list.json` |
 
 ## 参照
 

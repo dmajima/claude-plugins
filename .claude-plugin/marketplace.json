@@ -189,7 +189,8 @@
         "api",
         "rendering-check",
         "pull-request",
-        "mcp"
+        "mcp",
+        "shared-files"
       ]
     }
   ]

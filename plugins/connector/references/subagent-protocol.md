@@ -156,6 +156,7 @@ Skill の結果報告でターンを終了しないこと。`
 |------|-------------|------|-------------|
 | 課題取得 | `Backlog課題取得` | `読み取りのみ。{{issue-key-or-url}} の件名・本文・コメントを取得して` | `issue.json` |
 | 課題検索 | `Backlog課題検索` | `読み取りのみ。{{space}} で「{{keyword}}」に関する課題を検索して` | `search-results.json` |
+| ファイル一覧取得 | `Backlogファイル一覧取得` | `読み取りのみ。{{file-url}} のファイル一覧（またはファイル情報）を取得して` | `file-list.json` |
 
 ### 5.4 connector:ailead
 
