@@ -83,7 +83,7 @@ Claude（要約）:
 > このフォルダの中身を見せて https://example.backlog.jp/file/PROJ/docs/meeting/
 
 Claude（要約）:
-> credentials.json の認証情報を確認後、URL からプロジェクトキー `PROJ` とパス `docs/meeting/` を抽出し、`GET /api/v2/projects/PROJ/files/metadata/docs/meeting/` を呼び出します。フォルダ内のファイル・サブフォルダの一覧を名前・種別・サイズ・更新日時の表で報告します。エイリアス URL（`/alias/file/{id}`）の場合は、まずリダイレクト解決でダイレクトパスを取得してから同じ手順で API を呼び出します。
+> credentials.json の認証情報を確認後、URL からプロジェクトキー `PROJ` とパス `docs/meeting/` を抽出し、`GET /api/v2/projects/PROJ/files/metadata/docs/meeting/` を呼び出します。フォルダ内のファイル・サブフォルダの一覧を名前・種別・サイズ・更新日時の表で報告します。エイリアス URL（`/alias/file/{id}`）の場合は、プロジェクトキーを確認後、download API ヘッダ（ファイル）またはツリー内 ID 検索（フォルダ）でメタデータを取得します。
 
 ### 例 3: コメント投稿（書き込み）
 

@@ -5,7 +5,7 @@
 | 項目 | 値 |
 |-----|---|
 | 起動フレーズ | "このリンクのファイル情報を見せて https://example.backlog.jp/alias/file/9876543" |
-| 引数 | エイリアス URL（ファイルまたはフォルダ） |
+| 引数 | エイリアス URL（ファイル） |
 | フラグ | なし（対話モード） |
 | 既存状態 | `~/.claude/credentials.json` に `domains` に `example.backlog.jp` を含む API キーエントリが存在する。プロジェクトキー `PROJ` は会話文脈から既知 |
 

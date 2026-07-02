@@ -157,9 +157,11 @@ https://{space-host}/file/{projectKey}/{encoded-path}
 # URL からスペースホスト・プロジェクトキー・パスを抽出
 SPACE_HOST=$(echo "$URL" | sed -n 's|^https://\([^/]*\)/file/.*|\1|p')
 PROJECT_KEY=$(echo "$URL" | sed -n 's|^https://[^/]*/file/\([^/]*\)/.*|\1|p')
-# プロジェクトキー以降のパス部分（URL エンコード済みのまま取得）
-FILE_PATH=$(echo "$URL" | sed -n 's|^https://[^/]*/file/[^/]*/\(.*\)|\1|p')
+# プロジェクトキー以降のパス部分（URL エンコード済みのまま取得し、クエリ/フラグメントを除去）
+FILE_PATH=$(echo "$URL" | sed -n 's|^https://[^/]*/file/[^/]*/\(.*\)|\1|p' | sed 's|[?#].*||')
 ```
+
+**入力値の検証**: URL からパースした `SPACE_HOST` / `PROJECT_KEY` / `FILE_PATH` を `--config` に埋め込む前に、改行・制御文字を含まないことを確認する（[safe-api-access.md](../../../references/safe-api-access.md) のインジェクションガードと同水準）。
 
 **ディレクトリ URL（末尾 `/`）の場合:**
 
@@ -177,7 +179,12 @@ HTTP_CODE=$(curl -sS --max-time 30 -H "Accept: application/json" \
 
 ```bash
 # 親ディレクトリパスを取得（最後の / までの部分）
-PARENT_DIR=$(echo "$FILE_PATH" | sed 's|/[^/]*$|/|')
+# ルート直下ファイル（/ を含まない）の場合は空文字列（= ルートディレクトリ）にする
+if echo "$FILE_PATH" | grep -q '/'; then
+  PARENT_DIR=$(echo "$FILE_PATH" | sed 's|/[^/]*$|/|')
+else
+  PARENT_DIR=""
+fi
 printf 'url = "https://%s/api/v2/projects/%s/files/metadata/%s?apiKey=%s&count=100"\n' \
   "$SPACE_HOST" "$PROJECT_KEY" "$PARENT_DIR" "$APIKEY" > "$CURLCFG"
 HTTP_CODE=$(curl -sS --max-time 30 -H "Accept: application/json" \
@@ -196,15 +203,27 @@ https://{space-host}/alias/file/{sharedFileId}
 
 エイリアス URL は API エンドポイントではなく、Web 認証（ブラウザセッション）でのみ解決される。API キーでは解決できない（認証なしリダイレクトはログインページへ向かう）。
 
+パース手順:
+
+```bash
+# エイリアス URL からスペースホスト・ファイル ID を抽出
+SPACE_HOST=$(echo "$URL" | sed -n 's|^https://\([^/]*\)/alias/file/.*|\1|p')
+SHARED_FILE_ID=$(echo "$URL" | sed -n 's|^https://[^/]*/alias/file/\([0-9]*\).*|\1|p')
+```
+
 **エイリアス解決手順:**
 
 1. **プロジェクトキーの取得**: エイリアス URL にはプロジェクト情報が含まれないため、ユーザーにプロジェクトキーを `AskUserQuestion` で確認する（会話文脈やダイレクトパス URL からプロジェクトキーが既知の場合は省略可）
 
-2. **ファイル / フォルダの判別と情報取得**: プロジェクトキーが判明したら、以下の方法で情報を取得する
+2. **ファイル / フォルダの判別と情報取得**: プロジェクトキーが判明したら、まず download API でファイルとしてアクセスを試みる。404 ならフォルダとしてツリー走査する
 
 **ファイルエイリアスの場合** — download API でヘッダからメタデータを取得:
 
 ```bash
+# $HEADERS も mktemp + trap 対象にする（共通パターン準拠）
+HEADERS=$(mktemp); chmod 600 "$HEADERS"
+# cleanup() に $HEADERS を追加: cleanup() { rm -f "${CURLCFG:-}" "${RESP:-}" "${HEADERS:-}" ... }
+
 # GET /files/{id} でレスポンスヘッダからファイル名・サイズ・種別を取得
 # ボディは /dev/null に破棄（メタデータ取得目的）
 printf 'url = "https://%s/api/v2/projects/%s/files/%s?apiKey=%s"\n' \
