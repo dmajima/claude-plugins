@@ -104,11 +104,148 @@ GET /api/v2/priorities
 
 - 既定: 2=高 / 3=中 / 4=低（スペース共通）
 
+### 8. 共有ファイル一覧取得 / ファイル情報取得
+
+```text
+GET /api/v2/projects/{projectIdOrKey}/files/metadata/{path}
+```
+
+| パラメータ | 種別 | 内容 |
+|-----------|------|------|
+| `projectIdOrKey` | パス | プロジェクト ID（数値）またはプロジェクトキー |
+| `path` | パス | ファイルまたはディレクトリのパス（URL エンコード必須）。ルートディレクトリは空文字列 |
+| `order` | クエリ | `asc` / `desc`（既定: `desc`） |
+| `offset` | クエリ | ページネーションオフセット |
+| `count` | クエリ | 取得件数（1〜100、既定: 20） |
+
+- `{path}` には **ディレクトリパスのみ** を指定する。ファイルパスを直接指定すると 400 エラーになる（Backlog API の仕様）
+- ディレクトリを指定した場合: 直下のファイル・サブディレクトリの一覧を返す（子孫は含まない）
+- ファイルの情報を取得したい場合: **親ディレクトリ** のパスで呼び出し、レスポンス配列からファイル名で抽出する（後述「ファイル指定 URL の処理」参照）
+- 件数が多い場合は `count=100` + `offset` でページングする
+
+**レスポンス主要フィールド（各要素）:**
+
+| フィールド | 型 | 内容 |
+|-----------|---|------|
+| `id` | 数値 | 共有ファイル / フォルダの一意 ID |
+| `projectId` | 数値 | プロジェクト ID |
+| `type` | 文字列 | `"file"` または `"directory"` |
+| `dir` | 文字列 | 親ディレクトリのパス |
+| `name` | 文字列 | ファイル / フォルダ名 |
+| `size` | 数値 / null | ファイルサイズ（バイト）。ディレクトリは null |
+| `createdUser` | オブジェクト | 作成者（`id` / `name` 等） |
+| `created` | 文字列 | 作成日時（ISO 8601） |
+| `updatedUser` | オブジェクト / null | 更新者 |
+| `updated` | 文字列 | 更新日時（ISO 8601） |
+
+#### URL パターンとパース手順
+
+Backlog のファイル機能 URL は 2 パターンある。いずれもスペースホスト（`.backlog.jp` / `.backlog.com`）を含む。
+
+**パターン A: ダイレクトパス URL**
+
+```
+https://{space-host}/file/{projectKey}/{encoded-path}
+```
+
+- `{projectKey}`: プロジェクトキー（URL の `/file/` 直後のセグメント）
+- `{encoded-path}`: URL エンコード済みのパス。末尾 `/` はディレクトリ、末尾がファイル名ならファイル
+
+パース手順:
+
+```bash
+# URL からスペースホスト・プロジェクトキー・パスを抽出
+SPACE_HOST=$(echo "$URL" | sed -n 's|^https://\([^/]*\)/file/.*|\1|p')
+PROJECT_KEY=$(echo "$URL" | sed -n 's|^https://[^/]*/file/\([^/]*\)/.*|\1|p')
+# プロジェクトキー以降のパス部分（URL エンコード済みのまま取得）
+FILE_PATH=$(echo "$URL" | sed -n 's|^https://[^/]*/file/[^/]*/\(.*\)|\1|p')
+```
+
+**ディレクトリ URL（末尾 `/`）の場合:**
+
+```bash
+# パスをそのまま使用（末尾 / 付き）
+printf 'url = "https://%s/api/v2/projects/%s/files/metadata/%s?apiKey=%s&count=100"\n' \
+  "$SPACE_HOST" "$PROJECT_KEY" "$FILE_PATH" "$APIKEY" > "$CURLCFG"
+HTTP_CODE=$(curl -sS --max-time 30 -H "Accept: application/json" \
+  --config "$CURLCFG" -o "$RESP" -w '%{http_code}')
+```
+
+**ファイル URL（末尾がファイル名）の場合:**
+
+`files/metadata` はファイルパスを直接受け付けない（400 エラー）。親ディレクトリの一覧から該当ファイルを抽出する。
+
+```bash
+# 親ディレクトリパスを取得（最後の / までの部分）
+PARENT_DIR=$(echo "$FILE_PATH" | sed 's|/[^/]*$|/|')
+printf 'url = "https://%s/api/v2/projects/%s/files/metadata/%s?apiKey=%s&count=100"\n' \
+  "$SPACE_HOST" "$PROJECT_KEY" "$PARENT_DIR" "$APIKEY" > "$CURLCFG"
+HTTP_CODE=$(curl -sS --max-time 30 -H "Accept: application/json" \
+  --config "$CURLCFG" -o "$RESP" -w '%{http_code}')
+# レスポンス配列からファイル名で抽出（name フィールドはデコード済み）
+# jq '.[] | select(.name == "<デコード済みファイル名>")' "$RESP"
+```
+
+**パターン B: エイリアス URL**
+
+```
+https://{space-host}/alias/file/{sharedFileId}
+```
+
+- `{sharedFileId}`: 共有ファイル / フォルダの数値 ID
+
+エイリアス URL は API エンドポイントではなく、Web 認証（ブラウザセッション）でのみ解決される。API キーでは解決できない（認証なしリダイレクトはログインページへ向かう）。
+
+**エイリアス解決手順:**
+
+1. **プロジェクトキーの取得**: エイリアス URL にはプロジェクト情報が含まれないため、ユーザーにプロジェクトキーを `AskUserQuestion` で確認する（会話文脈やダイレクトパス URL からプロジェクトキーが既知の場合は省略可）
+
+2. **ファイル / フォルダの判別と情報取得**: プロジェクトキーが判明したら、以下の方法で情報を取得する
+
+**ファイルエイリアスの場合** — download API でヘッダからメタデータを取得:
+
+```bash
+# GET /files/{id} でレスポンスヘッダからファイル名・サイズ・種別を取得
+# ボディは /dev/null に破棄（メタデータ取得目的）
+printf 'url = "https://%s/api/v2/projects/%s/files/%s?apiKey=%s"\n' \
+  "$SPACE_HOST" "$PROJECT_KEY" "$SHARED_FILE_ID" "$APIKEY" > "$CURLCFG"
+HTTP_CODE=$(curl -sS --max-time 30 \
+  --config "$CURLCFG" -D "$HEADERS" -o /dev/null -w '%{http_code}')
+# Content-Disposition: attachment; filename*=UTF-8''<URL エンコード済みファイル名>
+# Content-Type: application/pdf 等
+# Content-Length: <バイト数>
+```
+
+- HTTP 200: ファイルとして存在。ヘッダからファイル名（`Content-Disposition`）・サイズ（`Content-Length`）・種別（`Content-Type`）を取得する
+- HTTP 404: 該当 ID のファイルが存在しない、またはアクセス権限なし
+- ボディは全量ダウンロードされるが `-o /dev/null` で破棄する（メタデータ取得が目的）
+- HEAD メソッドは Backlog API で 405 を返すため使用しない
+
+**フォルダエイリアスの場合** — ファイルツリー内の ID 検索:
+
+```bash
+# download API はフォルダに対しても 404 を返すため、ツリー走査で ID を探す
+# ルートから段階的に /files/metadata/ を呼び出し、レスポンスの id フィールドを照合
+# 一致する id が見つかったらそのディレクトリの一覧（またはメタデータ）を返す
+```
+
+- ルートから深さ優先でディレクトリを走査し、各階層の一覧で `id` が一致するエントリを探す
+- 一致したエントリが `type: "directory"` の場合: そのパスで `files/metadata` を呼び出して内容一覧を取得する
+- API 呼び出し回数を抑えるため、ユーザーにおおよそのパス（「議事録フォルダの中」等）がわかる場合はそこから探索を開始する
+- ツリー走査でも見つからない場合は、ダイレクトパス URL の提供を依頼する
+
+**エイリアス解決の注意事項:**
+
+- エイリアス Web URL に API キーを **付与してはならない**（リダイレクト先 URL にキーが露出する）
+- エイリアス URL が `/alias/file/{id}` 形式であることを確認してから解決を試みる
+- ファイルかフォルダかが不明な場合は、まず download API（ファイル向け）を試し、404 ならフォルダとしてツリー走査する
+
 ## 結果報告の整形
 
 - 課題: `課題キー / 件名 / ステータス / 担当者 / 期限 / 更新日時` + 本文要約 + 課題 URL（`https://{space-host}/view/{issueKey}`）
 - 検索結果: 上記を一覧表で提示し、件数と絞り込み条件を明記する
 - コメント: 投稿者 / 日時 / 本文（変更ログは変更内容を要約）
+- 共有ファイル一覧: 一覧表（`名前 / 種別 / サイズ / 更新日時`）で提示。`type` が `directory` の場合は `[フォルダ]` と表記し、サイズは `-`。ファイルサイズは KB/MB 単位に変換。ファイル URL（`https://{space-host}/file/{projectKey}/{path}`）を添える
 - レスポンスの生 JSON をそのまま貼らない（要点を整形する）
 
 ## エラー時の補足（Backlog 固有）

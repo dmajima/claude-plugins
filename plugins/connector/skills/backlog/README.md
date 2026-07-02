@@ -10,6 +10,7 @@ Backlog REST API v2 で課題の検索・取得・コメント取得（読み取
 
 - 課題検索・課題取得・コメント取得（読み取り系）
 - コメント投稿・課題メタ情報更新（ステータス・担当者・優先度・期限等。書き込み系）
+- 共有ファイルの一覧取得・メタデータ取得（読み取り系。ファイルダウンロードは対象外）
 - プロジェクトの記法設定（textFormattingRule）の取得と `render-check` への引き継ぎ
 
 Azure DevOps の操作は `azure` スキル、レンダリング検証ロジックは `render-check` スキル、認証情報の保存・管理は credentials-manager プラグインの担当（本スキルの責務外）。
@@ -53,12 +54,15 @@ Azure DevOps の操作は `azure` スキル、レンダリング検証ロジッ�
 - 「Backlog で『ログイン』に関する課題を検索して」
 - 「PROJ-123 にこの調査結果をコメント投稿して」
 - 「PROJ-123 のステータスを処理中に変更して」「担当者を山田さんにして」
+- 「このファイルリンクの中身を見せて https://example.backlog.jp/file/PROJ/docs/」（ファイル URL）
+- 「Backlog の共有ファイルを一覧表示して」
 
 ## 使い方（入出力の流れ）
 
 | 操作 | 入力 | 流れ | 出力 |
 |-----|------|------|------|
 | 読み取り（取得・検索） | 課題キー / プロジェクトキー + キーワード | 認証確認 → API 呼び出し → 整形報告 | 課題情報・コメント・検索結果一覧（課題 URL 付き） |
+| 読み取り（ファイル） | ファイル URL（ダイレクトパス or エイリアス） | 認証確認 → URL パース → [エイリアス解決] → API 呼び出し → 整形報告 | ファイル / フォルダ一覧（名前・種別・サイズ・更新日時） |
 | 書き込み（投稿・更新） | 課題キー + 本文 / 変更内容 | 認証確認 → 記法判定 → **render-check ゲート** → ID 解決 → **AskUserQuestion 承認** → API 実行 → 結果検証 | 投稿コメント URL / 更新後の値の報告 |
 
 書き込みは render-check 未通過・ユーザー未承認のままでは実行されません（非対話モードでも承認は省略されません）。
@@ -73,7 +77,15 @@ Azure DevOps の操作は `azure` スキル、レンダリング検証ロジッ�
 Claude（要約）:
 > credentials.json の認証情報を確認後、`GET /api/v2/issues/PROJ-123` と `GET /api/v2/issues/PROJ-123/comments` を呼び出し、課題キー / 件名 / ステータス / 担当者 / 期限 / 本文要約 / コメント一覧を整形して、課題 URL とともに報告します。
 
-### 例 2: コメント投稿（書き込み）
+### 例 2: 共有ファイル一覧取得（読み取り）
+
+ユーザ:
+> このフォルダの中身を見せて https://example.backlog.jp/file/PROJ/docs/meeting/
+
+Claude（要約）:
+> credentials.json の認証情報を確認後、URL からプロジェクトキー `PROJ` とパス `docs/meeting/` を抽出し、`GET /api/v2/projects/PROJ/files/metadata/docs/meeting/` を呼び出します。フォルダ内のファイル・サブフォルダの一覧を名前・種別・サイズ・更新日時の表で報告します。エイリアス URL（`/alias/file/{id}`）の場合は、まずリダイレクト解決でダイレクトパスを取得してから同じ手順で API を呼び出します。
+
+### 例 3: コメント投稿（書き込み）
 
 ユーザ:
 > PROJ-123 にこの調査結果をコメント投稿して
@@ -107,6 +119,9 @@ skills/backlog/
     ├── case-06_render_check_fail.md    # render-check FAIL → 修正 → 再チェック → 投稿
     ├── case-07_user_cancel_post.md     # 承認で「中止」選択（POST を発行せず終了）
     ├── case-08_http_401_error.md       # HTTP 401（リトライせず即停止）
+    ├── case-09_delegation_read.md      # 他プラグイン委譲による課題取得（パターン B）
+    ├── case-10_file_list.md            # ダイレクトパス URL によるフォルダ内ファイル一覧取得
+    ├── case-11_file_alias.md           # エイリアス URL からのファイル情報取得
     └── demo.sh                         # 構造検証スクリプト（外部 API 非依存・読み取り専用）
 ```
 
@@ -115,7 +130,7 @@ skills/backlog/
 | ファイル | 内容 |
 |---------|------|
 | `SKILL.md` | スキル定義とトリガー条件 |
-| `references/api-read.md` | 読み取り API（課題検索 / 取得 / コメント取得 / ステータス・ユーザー・優先度一覧） |
+| `references/api-read.md` | 読み取り API（課題検索 / 取得 / コメント取得 / ステータス・ユーザー・優先度一覧 / 共有ファイル一覧・メタデータ取得） |
 | `references/api-write.md` | 書き込み API（コメント投稿 / 課題メタ情報更新）と render-check 連携 |
 | `../../references/credentials-precheck.md` | 認証情報の事前確認（プラグイン共通） |
 | `../../references/safe-api-access.md` | 外部 API アクセスの安全原則（プラグイン共通） |

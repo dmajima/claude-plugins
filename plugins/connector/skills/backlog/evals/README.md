@@ -14,6 +14,9 @@
 | case-06 | render-check FAIL（Backlog 記法に Markdown 見出し混入）→ 修正採用 → 再チェック PASS → 投稿 | render-check 総合判定 = FAIL |
 | case-07 | コメント投稿の承認でユーザーが「中止」を選択（render-check PASS 済みでも POST を発行せず終了） | AskUserQuestion の選択 = 中止 |
 | case-08 | 課題取得で HTTP 401 を受領（リトライせず即停止し、API キーの有効性確認を案内） | HTTP ステータス = 401（リトライ厳禁・即停止） |
+| case-09 | 他プラグイン委譲による課題取得（パターン B・読み取りのみ・`Skill()` 経由） | 委譲パターン B（読み取り専用） |
+| case-10 | ダイレクトパス URL によるフォルダ内共有ファイル一覧取得 | URL `/file/` 検出 → 共有ファイル一覧取得（Step 3 経路） |
+| case-11 | エイリアス URL からのファイル情報取得（エイリアス解決成功パス） | URL `/alias/file/` 検出 → リダイレクト解決 → ダイレクトパスとして API 呼び出し |
 
 ## 実行確認方法
 

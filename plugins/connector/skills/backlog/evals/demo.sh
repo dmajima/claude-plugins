@@ -127,6 +127,8 @@ check_file "case-03 (コメント投稿)" "$SCRIPT_DIR/case-03_comment_post.md"
 check_file "case-04 (ステータス変更)" "$SCRIPT_DIR/case-04_status_update.md"
 check_file "case-05 (認証情報なし)" "$SCRIPT_DIR/case-05_credentials_missing.md"
 check_file "case-06 (render-check FAIL)" "$SCRIPT_DIR/case-06_render_check_fail.md"
+check_file "case-10 (ファイル一覧取得)" "$SCRIPT_DIR/case-10_file_list.md"
+check_file "case-11 (ファイルエイリアス)" "$SCRIPT_DIR/case-11_file_alias.md"
 
 # Step 5: 対話モード誘導 (実 API 動作は Claude Code セッションでのみ確認可能)
 write_section "Step 5: 対話モード誘導"

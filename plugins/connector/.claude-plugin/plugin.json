@@ -1,10 +1,10 @@
 {
   "name": "connector",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き）",
   "license": "MIT",
   "author": {
     "name": "dmajima"
   },
-  "keywords": ["backlog", "azure-devops", "tfs", "github", "projectboard", "hue", "wbs", "critical-path", "connector", "integration", "api", "rendering-check", "pull-request", "inline-comment", "work-item", "commit", "ailead", "meeting", "transcript", "slack", "google-drive", "google-workspace", "mcp"]
+  "keywords": ["backlog", "azure-devops", "tfs", "github", "projectboard", "hue", "wbs", "critical-path", "connector", "integration", "api", "rendering-check", "pull-request", "inline-comment", "work-item", "commit", "ailead", "meeting", "transcript", "slack", "google-drive", "google-workspace", "mcp", "shared-files"]
 }
