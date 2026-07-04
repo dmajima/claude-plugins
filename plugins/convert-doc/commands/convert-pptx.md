@@ -1,6 +1,6 @@
 ---
 description: Markdown を Wiki スタイルの PowerPoint (PPTX) に変換する
-argument-hint: <入力MDパス> [出力PPTXパス] [--title タイトル] [--subtitle 副題]
+argument-hint: <入力MDパス> [出力PPTXパス] [--title タイトル] [--subtitle 副題] [--theme default|executive]
 ---
 
 `convert-pptx` スキルを呼び出して Markdown を PowerPoint (PPTX) に変換してください。
@@ -19,8 +19,11 @@ argument-hint: <入力MDパス> [出力PPTXパス] [--title タイトル] [--sub
    | `--title <タイトル>` | タイトルスライドの主題 |
    | `--subtitle <副題>` | タイトルスライドの副題 |
    | `--aspect <比率>` | `16:9` または `4:3`（既定 `16:9`） |
-   | `--primary-color <色>` | タイトル帯・見出しの基調色（既定 `#003879`） |
+   | `--theme <テーマ>` | `default`（Wiki スタイル）または `executive`（経営者向けプレゼン。ネイビー×ゴールド・フッター付き） |
+   | `--primary-color <色>` | タイトル帯・見出しの基調色の上書き（既定はテーマの基調色） |
    | `--max-body-chars <数>` | 1 スライド当たりの本文最大文字数（既定 `2400`） |
+
+   「経営者向け」「役員向け」等の依頼では `--theme executive` を指定する。
 
 3. **Skill ツール経由で実行**
 

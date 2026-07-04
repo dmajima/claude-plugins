@@ -11,6 +11,12 @@
       "name": "ライトボックス",
       "description": "画像・Mermaid図をクリックでポップアップ表示（ズーム・パン対応）",
       "dom_prefix": "lb-"
+    },
+    {
+      "file": "scroll-reveal.js",
+      "name": "スクロールリビール",
+      "description": "スクロールに応じてセクションをフェードイン表示する（Web ページ型テンプレート用。対象要素がないドキュメント型では何もしない）",
+      "dom_prefix": "sr-"
     }
   ]
 }

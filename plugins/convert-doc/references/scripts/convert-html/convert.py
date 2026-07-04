@@ -2,6 +2,7 @@
 """
 convert.py - Markdown to self-contained HTML converter
 Usage: python convert.py <input.md> [output.html] [--title TITLE] [--css-template PATH]
+       [--html-template PATH] [--js-features LIST] [--split-sections]
 
 Dependencies: markdown, Pygments, rcssmin, rjsmin, Pillow
 """
@@ -483,6 +484,97 @@ def extract_title_from_md(md_text: str) -> str:
     return "Document"
 
 
+def _split_lead_paragraph(fragment: str) -> tuple:
+    """Return (first_paragraph_inner_html, remaining_html) from a lead fragment."""
+    m = re.match(r"\s*<p[^>]*>(.*?)</p>", fragment, re.DOTALL)
+    if m:
+        return m.group(1).strip(), fragment[m.end():].strip()
+    return "", fragment.strip()
+
+
+def split_body_into_sections(body_html: str, title: str) -> str:
+    """Split converted body HTML into LP-style full-width sections at each H2.
+
+    Page structure (mirrors convert_pptx.py's segmentation rules for the
+    title/subtitle/H2 boundaries, rendered as a corporate-web-page layout):
+    - Hero: page-header band with document title + subtitle
+      (= first paragraph before the first H2)
+    - Lead section: remaining content before the first H2 (if any)
+    - One full-width numbered section per H2; the heading becomes the
+      key-message headline with a gold chapter number ("01", "02", ...)
+    - Slim page footer carrying the document title
+
+    The table of contents is NOT generated here — it is provided by the
+    existing toc-toggle.js feature (right sidebar / mobile drawer), styled
+    by the web-page template's CSS.
+    """
+    parts = re.split(r"(?=<h2[\s>])", body_html)
+    lead_html = parts[0].strip()
+    chunks = parts[1:]
+
+    escaped_title = html_lib.escape(title)
+    subtitle_html, lead_rest = _split_lead_paragraph(lead_html)
+
+    # Section specs after the hero:
+    # (css_class, chapter_no, header_html, body_inner_html, aria_id)
+    specs = []
+
+    if lead_rest:
+        specs.append(("content-section section-lead", "", "", lead_rest, ""))
+
+    content_specs = []
+    for chunk in chunks:
+        m = re.match(r"<h2([^>]*)>(.*?)</h2>", chunk, re.DOTALL)
+        if m:
+            attrs = m.group(1)
+            id_m = re.search(r'id="([^"]+)"', attrs)
+            anchor_id = id_m.group(1) if id_m else ""
+            content_specs.append((m.group(0), chunk[m.end():].strip(), anchor_id))
+        else:
+            content_specs.append(("", chunk.strip(), ""))
+
+    specs.extend(
+        ("content-section", f"{i:02d}", h, b, aid)
+        for i, (h, b, aid) in enumerate(content_specs, start=1)
+    )
+
+    hero_sub = f'\n<p class="hero-subtitle">{subtitle_html}</p>' if subtitle_html else ""
+    sections = [
+        '<header class="hero">\n'
+        '<div class="hero-inner">\n'
+        '<div class="hero-rule"></div>\n'
+        f'<h1 class="hero-title">{escaped_title}</h1>'
+        f"{hero_sub}\n"
+        "</div>\n"
+        "</header>"
+    ]
+    for css_class, chapter_no, header_html, body_inner, aria_id in specs:
+        no_span = (
+            f'<span class="section-no" aria-hidden="true">{chapter_no}</span>\n'
+            if chapter_no else ""
+        )
+        header = (
+            f'<header class="section-header">\n{no_span}{header_html}\n</header>\n'
+            if header_html else ""
+        )
+        # 見出し id を section のアクセシブルネームに流用（ランドマーク移動対応）
+        aria = f' aria-labelledby="{html_lib.escape(aria_id)}"' if aria_id else ""
+        sections.append(
+            f'<section class="{css_class}"{aria}>\n'
+            '<div class="section-inner">\n'
+            f"{header}"
+            f'<div class="section-body">\n{body_inner}\n</div>\n'
+            "</div>\n"
+            "</section>"
+        )
+    sections.append(
+        '<footer class="page-footer">\n'
+        f'<div class="page-footer-inner">{escaped_title}</div>\n'
+        "</footer>"
+    )
+    return "\n".join(sections)
+
+
 def build_html(
     title: str,
     toc_html: str,
@@ -537,6 +629,16 @@ def main():
             "assets/html/template.html (shared)."
         ),
     )
+    parser.add_argument(
+        "--split-sections",
+        action="store_true",
+        help=(
+            "Split the body into LP-style full-width sections at each H2, "
+            "generating a hero header, numbered content sections and a slim "
+            "page footer. Use together with a web-page-style template pair "
+            "(e.g. executive.css + executive.html)."
+        ),
+    )
     args = parser.parse_args()
 
     input_path = Path(args.input)
@@ -546,10 +648,10 @@ def main():
 
     output_path = Path(args.output) if args.output else input_path.with_suffix(".html")
 
-    # Path(__file__) = references/scripts/convert-html/convert.py
+    # Path(__file__) = <plugin_root>/references/scripts/convert-html/convert.py
     script_dir = Path(__file__).resolve().parent
-    skill_root = script_dir.parent.parent            # skills/convert-html/
-    plugin_root = skill_root.parent.parent           # plugins/convert-doc/
+    plugin_root = script_dir.parent.parent.parent    # <plugin_root>/
+    skill_root = plugin_root / "skills" / "convert-html"
 
     def _resolve_asset(relative_path: str) -> Path:
         """Return the first existing path for ``relative_path``.
@@ -616,6 +718,12 @@ def main():
 
     # Step 8: タイトル決定（前処理前の元テキストから取得）
     title = args.title or extract_title_from_md(original_md)
+
+    # Step 8b: セクション分割（--split-sections 時）。ヒーロー・章番号付き
+    # セクション・ページフッターを自動生成する。目次は toc-toggle.js 機能
+    # （toc_html → TOC_SIDEBAR）に委ねるため、ここでは破棄しない
+    if args.split_sections:
+        body_html = split_body_into_sections(body_html, title)
 
     # Step 9: 目次処理（目次機能が無効な場合は出力しない。リンクは保持して該当箇所へジャンプ可能にする）
     if not toc_enabled:

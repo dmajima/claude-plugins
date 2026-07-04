@@ -43,7 +43,8 @@ Markdown ファイルを Wiki デザインの PowerPoint (PPTX) に変換する�
 | 入力 | モード | 動作 |
 |-----|-------|------|
 | `/convert-pptx` または自然言語依頼 | 通常 | 16:9 ワイドスクリーン・デフォルトデザインで処理 |
-| `--aspect 4:3` / `--primary-color` 等の指定 | カスタム | 指定されたアスペクト比・色で処理 |
+| `--aspect 4:3` / `--theme` / `--primary-color` 等の指定 | カスタム | 指定されたアスペクト比・テーマ・色で処理 |
+| 「経営者向け」「役員向け」「エグゼクティブ向け」等の依頼 | カスタム | `--theme executive` を適用 |
 
 ## 実行フロー
 
@@ -67,7 +68,7 @@ Markdown ファイルを Wiki デザインの PowerPoint (PPTX) に変換する�
 ## 出力の特徴
 
 - 16:9 ワイドスクリーン
-- タイトル帯にネイビー（#003879）を使用
+- デザインテーマを選択可能（`default`: ネイビー帯の Wiki スタイル / `executive`: ネイビー×ゴールドの経営者向けプレゼン。詳細は [`references/procedures.md`](references/procedures.md) のテーマ表を参照）
 - コードブロックはモノスペースフォントのテキストフレーム
 - 表は PowerPoint ネイティブの表（行/列選択・編集可能）
 - mermaid 図は PNG として取得してスライドに配置
@@ -84,7 +85,8 @@ Markdown ファイルを Wiki デザインの PowerPoint (PPTX) に変換する�
 | `--title` | MD 内の最初の H1 | タイトルスライドの主題 |
 | `--subtitle` | なし | タイトルスライドの副題 |
 | `--aspect` | `16:9` | スライドのアスペクト比（`16:9` または `4:3`） |
-| `--primary-color` | `#003879` | タイトル帯・見出しの基調色（`#RGB` または `#RRGGBB`） |
+| `--theme` | `default` | デザインテーマ（`default`: Wiki スタイル / `executive`: 経営者向けプレゼン） |
+| `--primary-color` | テーマの基調色 | タイトル帯・見出しの基調色の上書き（`#RGB` または `#RRGGBB`） |
 | `--max-body-chars` | `2400` | 1 スライドあたりの本文最大文字数（超過時は継続スライドに自動分割） |
 
 ## 重要な制約

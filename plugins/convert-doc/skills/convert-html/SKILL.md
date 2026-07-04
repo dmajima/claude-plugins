@@ -12,7 +12,8 @@ Markdown ファイルを Wiki デザインの自己完結型 HTML に変換す�
 - Markdown → 自己完結型 HTML への変換（外部参照なし、画像 base64・mermaid SVG インライン埋め込み）
 - CSS テンプレート（プラグイン共通 + スキル固有の合算）の選択と適用
 - JS 機能（features.json に登録されたもの）の選択と埋め込み
-- 自動目次生成（右スティッキーサイドバー）
+- 自動目次生成（`toc-toggle.js` によるサイドバー/ドロワー目次。両テンプレート形態で利用可能）
+- Web ページ型（LP 風）HTML の生成（`executive` テンプレート + `--split-sections`。ヒーローヘッダー・章番号付き全幅セクション・スリムフッターを自動生成）
 
 ## 責務外（他スキルが担当）
 
@@ -68,11 +69,16 @@ Markdown ファイルを Wiki デザインの自己完結型 HTML に変換す�
 | アセット | 既定の配置 | 分類 |
 |---------|-----------|------|
 | 変換スクリプト | `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-html/convert.py` | スキル固有 |
-| HTML テンプレート | `${CLAUDE_PLUGIN_ROOT}/assets/html/template.html` | プラグイン共通（PDF と共有） |
-| CSS テンプレート | `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css` | プラグイン共通（PDF と共有） |
+| HTML テンプレート（ドキュメント型） | `${CLAUDE_PLUGIN_ROOT}/assets/html/template.html` | プラグイン共通（PDF と共有） |
+| CSS テンプレート（ドキュメント型） | `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css` | プラグイン共通（PDF と共有） |
+| HTML テンプレート（Web ページ型・経営者向け） | `${CLAUDE_PLUGIN_ROOT}/assets/html/executive.html` | プラグイン共通（`--split-sections` 併用） |
+| CSS テンプレート（Web ページ型・経営者向け） | `${CLAUDE_PLUGIN_ROOT}/assets/css/executive.css` | プラグイン共通（`--split-sections` 併用） |
 | ライトボックス JS | `${CLAUDE_SKILL_DIR}/assets/js/lightbox.js` | スキル固有（HTML 専用） |
 | 目次トグル JS | `${CLAUDE_SKILL_DIR}/assets/js/toc-toggle.js` | スキル固有（HTML 専用） |
+| スクロールリビール JS | `${CLAUDE_SKILL_DIR}/assets/js/scroll-reveal.js` | スキル固有（Web ページ型で使用） |
 | JS 機能カタログ | `${CLAUDE_SKILL_DIR}/assets/js/features.json` | スキル固有（HTML 専用） |
+
+CSS と HTML 骨格のペアリング（`executive.css` 選択時は `executive.html` + `--split-sections` を必ず併用する等）は [`references/css-js-selection.md`](references/css-js-selection.md) の規則に従う。
 
 スキル固有にカスタマイズしたい場合は、対応する相対パスのファイルを `${CLAUDE_SKILL_DIR}/assets/...` に置けば上書きされる。
 

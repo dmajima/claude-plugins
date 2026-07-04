@@ -52,8 +52,9 @@ Markdown ファイルを Wiki スタイルのデザインが適用された自�
 | mermaid 図 | SVG 変換・インライン埋め込み（横スクロール・クリック拡大対応） |
 | 打ち消し線 | `~~テキスト~~` を `<del>` タグに変換（GFM 互換） |
 | シンタックスハイライト | Pygments によるコードブロック着色 |
-| 目次自動生成 | 右サイドバーに H2〜H6 の目次を自動表示 |
-| デザイン | Wiki トンマナ（ネイビー #003879 基調） |
+| 目次自動生成 | 右サイドバーに H2〜H6 の目次を自動表示（ドキュメント型のみ） |
+| テンプレート形態 | **ドキュメント型**（`template.css`: Wiki トンマナ・ネイビー #003879 基調・縦長資料）と **Web ページ型・経営者向け**（`executive.css`: ネイビー #0B2E59 ×ゴールド #B8933E・LP 風レイアウト）の 2 種類 |
+| Web ページ型の生成物 | `--split-sections` により h2 単位で全幅セクションに分割し、ネイビーのヒーローヘッダー・ゴールドの章番号付き交互背景セクション・スリムなページフッターを自動生成。目次は `toc-toggle.js`（サイドバー/ドロワー）、`scroll-reveal.js` でスクロール時のフェードイン演出 |
 
 ## 動作例
 
@@ -82,14 +83,20 @@ convert-html と convert-pdf が同じファイルを参照する。
 1. **全スキルに反映したい場合**: `plugins/convert-doc/assets/css/` に新しい `.css` ファイルを追加する
 2. **convert-html だけに反映したい場合**: `skills/convert-html/assets/css/` に新しい `.css` ファイルを追加する（スキル側の同名ファイルはプラグイン共通を上書きする）
 3. 複数 CSS が存在する場合は、スキル実行時に自動的に選択肢として提示される
+4. 対になる HTML 骨格・追加フラグが必要なテンプレート（例: `executive.css` → `executive.html` + `--split-sections`）は `references/css-js-selection.md` の「CSS と HTML 骨格のペアリング」表に登録する
 
 ```
 plugins/convert-doc/
 ├── assets/css/
-│   └── template.css          # 共通デフォルトテーマ（HTML と PDF 両方が使う）
+│   ├── template.css          # ドキュメント型デフォルトテーマ（HTML と PDF 両方が使う）
+│   └── executive.css         # Web ページ型・経営者向けテーマ（executive.html とペア）
 └── skills/convert-html/assets/css/
     └── dark-theme.css        # convert-html 限定の追加テーマ（例）
 ```
+
+経営者向け Web ページ型のトンマナ変更は `executive.css` 冒頭の CSS カスタムプロパティ
+（`--exec-primary` / `--exec-accent` 等）を編集する。同一トンマナの PPTX（スライド）版は
+`convert-pptx` スキルの `--theme executive`（`convert_pptx.py` の `THEMES` 辞書）が対応する。
 
 ### JS 機能を追加する
 
@@ -120,13 +127,13 @@ JS ファイルの作成ルールは `references/template/js-feature-template.js
 
 ### HTML テンプレートを変更する
 
-- 全スキル共通で変更する場合: `plugins/convert-doc/assets/html/template.html` を編集
+- 全スキル共通で変更する場合: `plugins/convert-doc/assets/html/template.html`（ドキュメント型）または `plugins/convert-doc/assets/html/executive.html`（Web ページ型）を編集
 - convert-html だけで上書きする場合: `skills/convert-html/assets/html/template.html` を作成（スキル側が優先される）
-- CSS も同様に `plugins/convert-doc/assets/css/template.css` か `skills/convert-html/assets/css/template.css` を編集
+- CSS も同様に `plugins/convert-doc/assets/css/` 側か `skills/convert-html/assets/css/` 側を編集
 
 ### 変換スクリプトを変更する
 
-- `references/scripts/convert-html/convert.py` を編集する
+- `references/scripts/convert-html/convert.py` を編集する（セクション分割は `split_body_into_sections()`）
 - 依存パッケージを追加する場合は `references/scripts/setup/requirements.txt` も更新する
 
 ## ファイル構成
@@ -139,21 +146,19 @@ convert-html/
 │   └── js/                           # スキル固有 assets（HTML 専用 JS）
 │       ├── features.json             # JS 機能の登録ファイル
 │       ├── lightbox.js               # ライトボックス機能
+│       ├── scroll-reveal.js          # スクロールリビール機能（Web ページ型用）
 │       └── toc-toggle.js             # 目次トグル機能
-├── scripts/
-│   ├── setup/                        # 環境構築
-│   │   ├── requirements.txt          # Python 依存パッケージ
-│   │   ├── setup_venv.sh            # venv 構築スクリプト
-│   │   └── teardown_venv.sh         # venv 削除スクリプト
-│   └── convert/                      # 変換処理
-│       └── convert.py                # Markdown → HTML 変換スクリプト
+├── evals/                            # 動作分岐の期待挙動ケース
 └── references/
     ├── setup.md                      # 環境構築手順（Claude 参照用）
     ├── procedures.md                 # 変換実行手順（Claude 参照用）
+    ├── css-js-selection.md           # CSS / JS の対話選択・ペアリング規則（Claude 参照用）
     ├── js-authoring.md               # JS 機能の作成ルール（Claude 参照用）
     └── template/
         └── js-feature-template.js    # JS 機能テンプレート
 ```
 
-CSS と HTML テンプレートは **プラグイン共通** のため `plugins/convert-doc/assets/` に配置されている。
-詳細は `plugins/convert-doc/README.md` の「assets の階層ポリシー」を参照。
+CSS と HTML テンプレート・変換スクリプト（`references/scripts/convert-html/convert.py`）・
+venv 構築スクリプト（`references/scripts/setup/`）は **プラグイン共通** のため
+`plugins/convert-doc/` 直下に配置されている。
+詳細は `plugins/convert-doc/README.md` の「ADR-001: プラグイン直下／スキル直下 `assets/` の採用」を参照。

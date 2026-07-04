@@ -5,6 +5,7 @@ convert_pptx.py - Markdown to PowerPoint (PPTX) converter
 Usage:
   python convert_pptx.py <input.md> [output.pptx]
     [--title TITLE] [--subtitle SUB] [--aspect 16:9|4:3]
+    [--theme default|executive]
     [--primary-color "#003879"] [--max-body-chars 2400]
 
 Dependencies: python-pptx, Pillow, requests
@@ -16,7 +17,7 @@ import io
 import json
 import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Iterable, List, Optional
 from urllib.parse import urlparse
@@ -62,6 +63,72 @@ _SYNTAX_PALETTE = {
     "comment":   RGBColor(0x80, 0x80, 0x80),   # Token.Comment*
     "error":     RGBColor(0xB7, 0x25, 0x25),
     "heading":   RGBColor(0x00, 0x4E, 0xB0),   # Token.Generic.Heading*
+}
+
+
+# ===================== Themes =====================
+# 「テーマ」= 色・フォント・スライド構図のセット。--theme で切り替える。
+#   default   : 従来の Wiki スタイル（ネイビー塗り帯・左縦バー表紙）
+#   executive : 経営者向けプレゼン（ディープネイビー×ゴールド・
+#               メッセージファースト構図・タイトル/ページ番号フッター付き）
+
+@dataclass(frozen=True)
+class Theme:
+    primary: RGBColor
+    accent: RGBColor
+    text: RGBColor
+    text_muted: RGBColor
+    code_bg: RGBColor
+    code_border: RGBColor
+    code_text: RGBColor
+    table_stripe: RGBColor
+    hairline: RGBColor
+    body_font: str
+    heading_font: str
+    code_font: str
+    title_band_height_in: float
+    title_slide_style: str      # "sidebar"（左縦バー） | "cover-rule"（ゴールドルール + 下部帯）
+    content_header_style: str   # "band"（塗り帯 + 白文字） | "message"（ネイビー文字 + ゴールド下線）
+    show_footer: bool           # 本文スライド下部にタイトル・ページ番号を表示
+
+
+THEMES = {
+    "default": Theme(
+        primary=RGBColor(0x00, 0x38, 0x79),
+        accent=ACCENT,
+        text=TEXT,
+        text_muted=RGBColor(0x66, 0x71, 0x7C),
+        code_bg=CODE_BG,
+        code_border=RGBColor(0xDD, 0xE1, 0xE8),
+        code_text=CODE_TEXT,
+        table_stripe=RGBColor(0xF5, 0xF6, 0xF8),
+        hairline=RGBColor(0xC9, 0xD0, 0xD8),
+        body_font=BODY_FONT,
+        heading_font=HEADING_FONT,
+        code_font=CODE_FONT,
+        title_band_height_in=TITLE_BAND_HEIGHT_IN,
+        title_slide_style="sidebar",
+        content_header_style="band",
+        show_footer=False,
+    ),
+    "executive": Theme(
+        primary=RGBColor(0x0B, 0x2E, 0x59),   # ディープネイビー
+        accent=RGBColor(0xB8, 0x93, 0x3E),    # シャンパンゴールド
+        text=RGBColor(0x1F, 0x2D, 0x3D),
+        text_muted=RGBColor(0x5F, 0x6B, 0x7A),
+        code_bg=RGBColor(0xF7, 0xF6, 0xF3),
+        code_border=RGBColor(0xD9, 0xD4, 0xCB),
+        code_text=RGBColor(0x1F, 0x2D, 0x3D),
+        table_stripe=RGBColor(0xF7, 0xF5, 0xF2),
+        hairline=RGBColor(0xD9, 0xD4, 0xCB),
+        body_font=BODY_FONT,
+        heading_font=HEADING_FONT,
+        code_font=CODE_FONT,
+        title_band_height_in=1.15,            # キーメッセージ 2 行分を確保
+        title_slide_style="cover-rule",
+        content_header_style="message",
+        show_footer=True,
+    ),
 }
 
 
@@ -459,7 +526,7 @@ def strip_inline_markdown(text: str) -> str:
 # ===================== PPTX builder =====================
 
 class Deck:
-    def __init__(self, *, aspect: str, primary: RGBColor):
+    def __init__(self, *, aspect: str, theme: Theme):
         self.prs = Presentation()
         if aspect == "4:3":
             self.prs.slide_width = Inches(10)
@@ -468,17 +535,25 @@ class Deck:
             self.prs.slide_width = Inches(13.333)
             self.prs.slide_height = Inches(7.5)
         self.blank = self.prs.slide_layouts[6]
-        self.primary = primary
+        self.theme = theme
+        self.primary = theme.primary
 
     def _new_slide(self):
         slide = self.prs.slides.add_slide(self.blank)
         return slide
 
+    def _add_content_header(self, slide, text: str):
+        """Render the slide's heading area according to the theme's header style."""
+        if self.theme.content_header_style == "message":
+            self._add_message_header(slide, text)
+        else:
+            self._add_title_band(slide, text)
+
     def _add_title_band(self, slide, text: str):
         band = slide.shapes.add_shape(
             MSO_SHAPE.RECTANGLE,
             Inches(0), Inches(0),
-            self.prs.slide_width, Inches(TITLE_BAND_HEIGHT_IN),
+            self.prs.slide_width, Inches(self.theme.title_band_height_in),
         )
         band.fill.solid()
         band.fill.fore_color.rgb = self.primary
@@ -489,12 +564,57 @@ class Deck:
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         tf.text = text
         p = tf.paragraphs[0]
-        p.font.name = HEADING_FONT
+        p.font.name = self.theme.heading_font
         p.font.size = Pt(24)
         p.font.bold = True
         p.font.color.rgb = WHITE
 
+    def _add_message_header(self, slide, text: str):
+        """Key-message header: primary bold text over a hairline with a gold accent.
+
+        メッセージファースト構図: 結論を言い切る 1〜2 行のキーメッセージを
+        ネイビー太字で置き、下に全幅の細線と左端のゴールドアクセントを敷く。
+        """
+        band_h = self.theme.title_band_height_in
+        tb = slide.shapes.add_textbox(
+            Inches(0.5), Inches(0.2),
+            self.prs.slide_width - Inches(1.0), Inches(band_h - 0.32),
+        )
+        tf = tb.text_frame
+        tf.word_wrap = True
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        p = tf.paragraphs[0]
+        p.text = text
+        p.font.name = self.theme.heading_font
+        p.font.size = Pt(20)
+        p.font.bold = True
+        p.font.color.rgb = self.primary
+
+        hair = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            Inches(0.5), Inches(band_h - 0.06),
+            self.prs.slide_width - Inches(1.0), Inches(0.012),
+        )
+        hair.fill.solid()
+        hair.fill.fore_color.rgb = self.theme.hairline
+        hair.line.fill.background()
+
+        accent = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            Inches(0.5), Inches(band_h - 0.075),
+            Inches(1.2), Inches(0.035),
+        )
+        accent.fill.solid()
+        accent.fill.fore_color.rgb = self.theme.accent
+        accent.line.fill.background()
+
     def add_title_slide(self, title: str, subtitle: Optional[str]):
+        if self.theme.title_slide_style == "cover-rule":
+            self._add_title_slide_cover_rule(title, subtitle)
+        else:
+            self._add_title_slide_sidebar(title, subtitle)
+
+    def _add_title_slide_sidebar(self, title: str, subtitle: Optional[str]):
         slide = self._new_slide()
         # Full-bleed primary block on the left
         bar = slide.shapes.add_shape(
@@ -513,7 +633,7 @@ class Deck:
         tf.word_wrap = True
         p = tf.paragraphs[0]
         p.text = title
-        p.font.name = HEADING_FONT
+        p.font.name = self.theme.heading_font
         p.font.size = Pt(40)
         p.font.bold = True
         p.font.color.rgb = self.primary
@@ -527,9 +647,110 @@ class Deck:
             tf.word_wrap = True
             p = tf.paragraphs[0]
             p.text = strip_inline_markdown(subtitle)
-            p.font.name = BODY_FONT
+            p.font.name = self.theme.body_font
             p.font.size = Pt(18)
-            p.font.color.rgb = TEXT
+            p.font.color.rgb = self.theme.text
+
+    def _add_title_slide_cover_rule(self, title: str, subtitle: Optional[str]):
+        """Executive cover: gold rule above the title + primary band along the bottom."""
+        slide = self._new_slide()
+        width = self.prs.slide_width
+        height = self.prs.slide_height
+
+        rule = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, Inches(1.0), Inches(2.15), Inches(1.3), Inches(0.045),
+        )
+        rule.fill.solid()
+        rule.fill.fore_color.rgb = self.theme.accent
+        rule.line.fill.background()
+
+        title_tb = slide.shapes.add_textbox(
+            Inches(1.0), Inches(2.45), width - Inches(2.0), Inches(1.9),
+        )
+        tf = title_tb.text_frame
+        tf.word_wrap = True
+        p = tf.paragraphs[0]
+        p.text = title
+        p.font.name = self.theme.heading_font
+        p.font.size = Pt(38)
+        p.font.bold = True
+        p.font.color.rgb = self.primary
+
+        if subtitle:
+            sub_tb = slide.shapes.add_textbox(
+                Inches(1.0), Inches(4.5), width - Inches(2.0), Inches(1.2),
+            )
+            tf = sub_tb.text_frame
+            tf.word_wrap = True
+            p = tf.paragraphs[0]
+            p.text = strip_inline_markdown(subtitle)
+            p.font.name = self.theme.body_font
+            p.font.size = Pt(16)
+            p.font.color.rgb = self.theme.text_muted
+
+        # 下部帯: ゴールドの細線 + ネイビー帯
+        gold = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, Inches(0), height - Inches(0.46), width, Inches(0.04),
+        )
+        gold.fill.solid()
+        gold.fill.fore_color.rgb = self.theme.accent
+        gold.line.fill.background()
+        band = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE, Inches(0), height - Inches(0.42), width, Inches(0.42),
+        )
+        band.fill.solid()
+        band.fill.fore_color.rgb = self.primary
+        band.line.fill.background()
+
+    def apply_footers(self, doc_title: str, skip_first: bool):
+        """Stamp footers (doc title + page number) after the deck is fully built.
+
+        Runs post-build so the page total is known. The first slide (cover) is
+        counted as page 1 but left unstamped when skip_first is True.
+        """
+        if not self.theme.show_footer:
+            return
+        slides = list(self.prs.slides)
+        total = len(slides)
+        for i, slide in enumerate(slides, start=1):
+            if skip_first and i == 1:
+                continue
+            self._add_footer(slide, doc_title, i, total)
+
+    def _add_footer(self, slide, doc_title: str, page_no: int, total: int):
+        width = self.prs.slide_width
+        height = self.prs.slide_height
+
+        hair = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            Inches(0.5), height - Inches(0.42), width - Inches(1.0), Inches(0.01),
+        )
+        hair.fill.solid()
+        hair.fill.fore_color.rgb = self.theme.hairline
+        hair.line.fill.background()
+
+        left_tb = slide.shapes.add_textbox(
+            Inches(0.5), height - Inches(0.38), width - Inches(2.6), Inches(0.3),
+        )
+        tf = left_tb.text_frame
+        tf.word_wrap = False
+        p = tf.paragraphs[0]
+        p.text = doc_title
+        p.font.name = self.theme.body_font
+        p.font.size = Pt(9)
+        p.font.color.rgb = self.theme.text_muted
+
+        right_tb = slide.shapes.add_textbox(
+            width - Inches(2.0), height - Inches(0.38), Inches(1.5), Inches(0.3),
+        )
+        tf = right_tb.text_frame
+        tf.word_wrap = False
+        p = tf.paragraphs[0]
+        p.text = f"{page_no} / {total}"
+        p.alignment = PP_ALIGN.RIGHT
+        p.font.name = self.theme.body_font
+        p.font.size = Pt(9)
+        p.font.color.rgb = self.theme.text_muted
 
     def add_content_slide(
         self,
@@ -554,8 +775,8 @@ class Deck:
             slide = self._new_slide()
             if spec.title:
                 title = spec.title if idx == 0 else f"{spec.title} ({idx + 1})"
-                self._add_title_band(slide, title)
-                top_cursor = Inches(TITLE_BAND_HEIGHT_IN + 0.2)
+                self._add_content_header(slide, title)
+                top_cursor = Inches(self.theme.title_band_height_in + 0.2)
             else:
                 top_cursor = Inches(0.3)
             self._render_blocks(slide, chunk, top_cursor, base_dir)
@@ -593,8 +814,7 @@ class Deck:
             return 0.15 + gap
         return 0.3 + gap
 
-    @classmethod
-    def _chunk_blocks(cls, blocks: List[Block], max_chars: int) -> List[List[Block]]:
+    def _chunk_blocks(self, blocks: List[Block], max_chars: int) -> List[List[Block]]:
         """Chunk the block list into slide-sized groups based on estimated height.
 
         The `max_chars` parameter is preserved for API compatibility but is now
@@ -609,7 +829,9 @@ class Deck:
         the tail of a slide while its content starts on the next one.
         """
         # Vertical budget per slide (inches). Assumes 7.5in slide height.
-        budget_in = 7.5 - TITLE_BAND_HEIGHT_IN - CONTENT_PADDING_IN - 0.6
+        # Footer-bearing themes reserve extra space at the bottom.
+        footer_in = 0.45 if self.theme.show_footer else 0.0
+        budget_in = 7.5 - self.theme.title_band_height_in - CONTENT_PADDING_IN - 0.6 - footer_in
 
         chunks: List[List[Block]] = []
         current: List[Block] = []
@@ -617,7 +839,7 @@ class Deck:
         chars_used = 0
 
         for b in blocks:
-            h = cls._estimate_block_height_in(b)
+            h = self._estimate_block_height_in(b)
             chars = max(1, len(b.text or "")) + sum(len(x[1] or "") + 4 for x in (b.rows or []))
 
             would_overflow_height = current and (height_used + h > budget_in)
@@ -637,13 +859,20 @@ class Deck:
 
         # Orphan-heading fix: a heading at the very end of a chunk (with its
         # actual content spilling into the next chunk) reads as a dangling
-        # title. Move it forward to sit with the content it introduces.
+        # title. Move it forward to sit with the content it introduces —
+        # unless the merged chunk would blow the height budget (e.g. the next
+        # chunk holds a single oversized block); overflowing into the footer
+        # is worse than a dangling heading, so the move is reverted then.
         for i in range(len(chunks) - 1):
             moved: List[Block] = []
             while chunks[i] and chunks[i][-1].kind == "heading":
                 moved.append(chunks[i].pop())
             if moved:
-                chunks[i + 1] = list(reversed(moved)) + chunks[i + 1]
+                candidate = list(reversed(moved)) + chunks[i + 1]
+                if sum(self._estimate_block_height_in(b) for b in candidate) <= budget_in:
+                    chunks[i + 1] = candidate
+                else:
+                    chunks[i].extend(reversed(moved))
 
         # Drop any chunks that became empty after the orphan migration.
         chunks = [c for c in chunks if c]
@@ -654,7 +883,8 @@ class Deck:
     def _render_blocks(self, slide, blocks: List[Block], start_top: Emu, base_dir: Path):
         left = Inches(CONTENT_PADDING_IN)
         width = self.prs.slide_width - Inches(CONTENT_PADDING_IN * 2)
-        bottom_limit = self.prs.slide_height - Inches(0.3)
+        bottom_margin = 0.55 if self.theme.show_footer else 0.3
+        bottom_limit = self.prs.slide_height - Inches(bottom_margin)
         cursor = start_top
 
         for b in blocks:
@@ -686,9 +916,9 @@ class Deck:
                     p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
                     bullet = "- " if b.kind == "ul" else f"{i + 1}. "
                     p.text = f"{'  ' * int(lvl_str)}{bullet}{strip_inline_markdown(txt)}"
-                    p.font.name = BODY_FONT
+                    p.font.name = self.theme.body_font
                     p.font.size = Pt(15)
-                    p.font.color.rgb = TEXT
+                    p.font.color.rgb = self.theme.text
                 cursor = cursor + tb.height + Inches(0.1)
 
             elif b.kind == "code":
@@ -696,11 +926,21 @@ class Deck:
                 cursor = cursor + height + Inches(0.1)
 
             elif b.kind == "mermaid":
-                height = self._render_mermaid(slide, left, cursor, width, b.text)
+                # 残り縦幅に収まるよう最大高さを動的にクランプ（フッター/下端への
+                # はみ出し防止。アスペクト比維持の縮小なので内容は欠けない）
+                remaining_in = Emu(int(bottom_limit - cursor)).inches
+                height = self._render_mermaid(
+                    slide, left, cursor, width, b.text,
+                    max_h_in=min(MERMAID_MAX_HEIGHT_IN, remaining_in),
+                )
                 cursor = cursor + height + Inches(0.1)
 
             elif b.kind == "image":
-                height = self._render_image(slide, left, cursor, width, b.src, b.alt, base_dir)
+                remaining_in = Emu(int(bottom_limit - cursor)).inches
+                height = self._render_image(
+                    slide, left, cursor, width, b.src, b.alt, base_dir,
+                    max_h_in=min(IMAGE_MAX_HEIGHT_IN, remaining_in),
+                )
                 cursor = cursor + height + Inches(0.1)
 
             elif b.kind == "table":
@@ -709,12 +949,15 @@ class Deck:
 
             elif b.kind == "hr":
                 ln = slide.shapes.add_connector(1, left, cursor, left + width, cursor)
-                ln.line.color.rgb = RGBColor(0xC9, 0xD0, 0xD8)
+                ln.line.color.rgb = self.theme.hairline
                 cursor = cursor + Inches(0.15)
 
     def _render_text(
-        self, slide, left, top, width, text, size: Pt, *, bold=False, color: RGBColor = TEXT
+        self, slide, left, top, width, text, size: Pt, *, bold=False,
+        color: Optional[RGBColor] = None,
     ):
+        if color is None:
+            color = self.theme.text
         # Rough height estimate based on char count
         approx_lines = max(1, int(len(text) / 60) + 1)
         height = Inches(0.35 * approx_lines)
@@ -723,7 +966,7 @@ class Deck:
         tf.word_wrap = True
         p = tf.paragraphs[0]
         p.text = text
-        p.font.name = BODY_FONT
+        p.font.name = self.theme.body_font
         p.font.size = size
         p.font.bold = bold
         p.font.color.rgb = color
@@ -744,8 +987,8 @@ class Deck:
         height = Inches(max(0.5, 0.28 * len(line_groups) + 0.2))
         box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
         box.fill.solid()
-        box.fill.fore_color.rgb = CODE_BG
-        box.line.color.rgb = RGBColor(0xDD, 0xE1, 0xE8)
+        box.fill.fore_color.rgb = self.theme.code_bg
+        box.line.color.rgb = self.theme.code_border
         tf = box.text_frame
         # Code should not reflow: it preserves the author's line breaks.
         tf.word_wrap = False
@@ -758,17 +1001,17 @@ class Deck:
             line_tokens = _normalize_leading(line_tokens)
             p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
             # Baseline paragraph formatting (applies if a run doesn't override).
-            p.font.name = CODE_FONT
+            p.font.name = self.theme.code_font
             p.font.size = Pt(11)
-            p.font.color.rgb = CODE_TEXT
+            p.font.color.rgb = self.theme.code_text
 
             if not line_tokens:
                 # Preserve blank lines with a NBSP run so the line height stays.
                 run = p.add_run()
                 run.text = NBSP
-                run.font.name = CODE_FONT
+                run.font.name = self.theme.code_font
                 run.font.size = Pt(11)
-                run.font.color.rgb = CODE_TEXT
+                run.font.color.rgb = self.theme.code_text
                 continue
 
             for tok, txt in line_tokens:
@@ -776,35 +1019,38 @@ class Deck:
                     continue
                 run = p.add_run()
                 run.text = txt
-                run.font.name = CODE_FONT
+                run.font.name = self.theme.code_font
                 run.font.size = Pt(11)
-                color = _token_color(tok) or CODE_TEXT
+                color = _token_color(tok) or self.theme.code_text
                 run.font.color.rgb = color
         return height
 
-    def _render_mermaid(self, slide, left, top, width, code: str):
+    def _render_mermaid(self, slide, left, top, width, code: str, max_h_in: float = MERMAID_MAX_HEIGHT_IN):
         png = fetch_mermaid_png(code)
         if not png:
             return self._render_code(slide, left, top, width, code)
+        max_h_in = max(0.5, max_h_in)  # 極端に狭い残余でも判読可能な最小サイズは確保
         try:
             w, h = measure_image_bytes(png)
-            img_w, img_h = fit_size_inches(w, h, MERMAID_MAX_WIDTH_IN, MERMAID_MAX_HEIGHT_IN)
+            img_w, img_h = fit_size_inches(w, h, MERMAID_MAX_WIDTH_IN, max_h_in)
         except Exception:
-            img_w, img_h = Inches(MERMAID_MAX_WIDTH_IN), Inches(MERMAID_MAX_HEIGHT_IN)
+            img_w, img_h = Inches(MERMAID_MAX_WIDTH_IN), Inches(max_h_in)
         slide.shapes.add_picture(io.BytesIO(png), left, top, width=img_w, height=img_h)
         return img_h
 
-    def _render_image(self, slide, left, top, width, src: str, alt: str, base_dir: Path):
+    def _render_image(self, slide, left, top, width, src: str, alt: str, base_dir: Path,
+                      max_h_in: float = IMAGE_MAX_HEIGHT_IN):
         data = self._load_image_bytes(src, base_dir)
         if data is None:
             return self._render_text(
                 slide, left, top, width, f"[画像が見つかりません: {alt or src}]", Pt(13)
             )
+        max_h_in = max(0.5, max_h_in)
         try:
             w, h = measure_image_bytes(data)
-            img_w, img_h = fit_size_inches(w, h, IMAGE_MAX_WIDTH_IN, IMAGE_MAX_HEIGHT_IN)
+            img_w, img_h = fit_size_inches(w, h, IMAGE_MAX_WIDTH_IN, max_h_in)
         except Exception:
-            img_w, img_h = Inches(IMAGE_MAX_WIDTH_IN), Inches(IMAGE_MAX_HEIGHT_IN)
+            img_w, img_h = Inches(IMAGE_MAX_WIDTH_IN), Inches(max_h_in)
         slide.shapes.add_picture(io.BytesIO(data), left, top, width=img_w, height=img_h)
         return img_h
 
@@ -872,19 +1118,19 @@ class Deck:
                 cell.text = strip_inline_markdown(row[c]) if c < len(row) else ""
                 for paragraph in cell.text_frame.paragraphs:
                     for run in paragraph.runs:
-                        run.font.name = BODY_FONT
+                        run.font.name = self.theme.body_font
                         run.font.size = Pt(12)
                         if r == 0:
                             run.font.bold = True
                             run.font.color.rgb = WHITE
                         else:
-                            run.font.color.rgb = TEXT
+                            run.font.color.rgb = self.theme.text
                 if r == 0:
                     cell.fill.solid()
                     cell.fill.fore_color.rgb = self.primary
                 else:
                     cell.fill.solid()
-                    cell.fill.fore_color.rgb = RGBColor(0xFF, 0xFF, 0xFF) if r % 2 == 1 else RGBColor(0xF5, 0xF6, 0xF8)
+                    cell.fill.fore_color.rgb = RGBColor(0xFF, 0xFF, 0xFF) if r % 2 == 1 else self.theme.table_stripe
         return height
 
     def save(self, path: Path):
@@ -900,7 +1146,15 @@ def main() -> None:
     parser.add_argument("--title", help="Title slide heading (default: first H1 in the Markdown)")
     parser.add_argument("--subtitle", help="Title slide subtitle")
     parser.add_argument("--aspect", default="16:9", choices=["16:9", "4:3"])
-    parser.add_argument("--primary-color", default=PRIMARY_DEFAULT, help="Primary color #RRGGBB")
+    parser.add_argument(
+        "--theme", default="default", choices=sorted(THEMES.keys()),
+        help="Design theme: 'default' = Wiki style, 'executive' = 経営者向けプレゼン"
+             "（ネイビー×ゴールド・メッセージファースト・フッター付き）",
+    )
+    parser.add_argument(
+        "--primary-color", default=None,
+        help=f"Primary color #RRGGBB (overrides the theme's primary; default theme uses {PRIMARY_DEFAULT})",
+    )
     parser.add_argument("--max-body-chars", type=int, default=2400,
                         help="Soft budget for a single slide's body text")
     args = parser.parse_args()
@@ -923,12 +1177,15 @@ def main() -> None:
     if args.subtitle:
         doc_subtitle = args.subtitle
 
-    primary = hex_to_rgb(args.primary_color)
-    deck = Deck(aspect=args.aspect, primary=primary)
+    theme = THEMES[args.theme]
+    if args.primary_color:
+        theme = replace(theme, primary=hex_to_rgb(args.primary_color))
+    deck = Deck(aspect=args.aspect, theme=theme)
     if doc_title:
         deck.add_title_slide(doc_title, doc_subtitle)
     for spec in slides:
         deck.add_content_slide(spec, base_dir=input_path.parent, max_body_chars=args.max_body_chars)
+    deck.apply_footers(doc_title or "", skip_first=bool(doc_title))
 
     deck.save(output_path)
     print(f"Generated: {output_path}")

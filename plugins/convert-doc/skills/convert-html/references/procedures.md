@@ -21,7 +21,36 @@
   - 例: `--js-features lightbox.js` （ライトボックスのみ）
   - 例: `--js-features lightbox.js,other.js` （複数指定、カンマ区切り）
   - 機能なし: `--js-features ""` （JSなし）
+- `--split-sections` は Web ページ型テンプレート用（h2 単位で LP 風の全幅セクションに分割し、ヒーローヘッダー・章番号付きセクション・スリムなページフッターを自動生成）
 - 出力先が未指定の場合、入力ファイルと同ディレクトリ・同名で `.html` 拡張子で出力
+
+### Web ページ型（経営者向け・LP 風）の実行例
+
+`executive.css` が選択された場合は、対の HTML 骨格と `--split-sections` を必ず併用する
+（ペアリング規則は [`css-js-selection.md`](css-js-selection.md) を参照）。
+
+```bash
+"$SESSION_DIR/workspace/.venv/Scripts/python" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-html/convert.py" \
+  "<入力MDファイルパス>" \
+  "<出力HTMLファイルパス>" \
+  --css-template "${CLAUDE_PLUGIN_ROOT}/assets/css/executive.css" \
+  --html-template "${CLAUDE_PLUGIN_ROOT}/assets/html/executive.html" \
+  --split-sections
+```
+
+生成されるページ構成: ネイビーのヒーローヘッダー（タイトル + サブタイトル）→
+h2 ごとの全幅セクション（ゴールドの章番号 01, 02, ... + キーメッセージ見出し。
+背景は白/オフホワイトの交互切替）→ スリムなページフッター。
+
+- 目次はプラグイン標準の `toc-toggle.js` 機能が担う（デスクトップ: ダークネイビーの
+  右サイドバーパネル + 開閉トグル / モバイル: 右上のフローティングボタン + ダークドロワー）。
+  executive.css が専用デザインを持つため、`--js-features` は省略（全機能）でよい
+- `scroll-reveal.js` によりスクロールに応じてセクションがフェードイン表示される
+  （JS 除外時も全内容は最初から表示される）
+- 印刷は通常のドキュメントフロー（A4。固定 UI は印刷に含まれない）
+
+同じトンマナの PPTX（スライド）版は `convert-pptx` スキルの `--theme executive` で生成できる。
 
 ## 出力先の決定ルール
 
@@ -75,8 +104,10 @@ convert.py は各アセットを以下の順序で解決する（先に見つか
 
 | ファイル | 既定の配置 | 分類 |
 |---|---|---|
-| HTMLテンプレート | `${CLAUDE_PLUGIN_ROOT}/assets/html/template.html` | プラグイン共通（PDF と共有） |
-| CSSテンプレート | `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css` | プラグイン共通（PDF と共有） |
+| HTMLテンプレート（ドキュメント型） | `${CLAUDE_PLUGIN_ROOT}/assets/html/template.html` | プラグイン共通（PDF と共有） |
+| CSSテンプレート（ドキュメント型） | `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css` | プラグイン共通（PDF と共有） |
+| HTMLテンプレート（Web ページ型・経営者向け） | `${CLAUDE_PLUGIN_ROOT}/assets/html/executive.html` | プラグイン共通（`--split-sections` 併用） |
+| CSSテンプレート（Web ページ型・経営者向け） | `${CLAUDE_PLUGIN_ROOT}/assets/css/executive.css` | プラグイン共通（`--split-sections` 併用） |
 | ライトボックス JS | `${CLAUDE_SKILL_DIR}/assets/js/lightbox.js` | スキル固有（HTML 専用） |
 | 目次トグル JS | `${CLAUDE_SKILL_DIR}/assets/js/toc-toggle.js` | スキル固有（HTML 専用） |
 | JS 機能カタログ | `${CLAUDE_SKILL_DIR}/assets/js/features.json` | スキル固有（HTML 専用） |

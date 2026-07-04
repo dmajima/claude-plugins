@@ -31,6 +31,7 @@ Markdown を Wiki デザインの PowerPoint (PPTX) に変換するスキル。`
 
 - 「この設計書を PowerPoint にして」
 - 「MD をスライドに変換」
+- 「経営者向けのスライドにして」（→ `executive` テーマが適用される）
 
 ### スクリプト直接実行
 
@@ -38,8 +39,16 @@ Markdown を Wiki デザインの PowerPoint (PPTX) に変換するスキル。`
 "$SESSION_DIR/workspace/.venv/Scripts/python" \
   "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py" \
   "<入力MD>" "<出力PPTX>" \
-  [--title "主題"] [--subtitle "副題"] [--aspect 16:9]
+  [--title "主題"] [--subtitle "副題"] [--aspect 16:9] \
+  [--theme default|executive] [--primary-color "#003879"] [--max-body-chars 2400]
 ```
+
+## デザインテーマ
+
+| テーマ | 特徴 |
+|-------|------|
+| `default` | ネイビー塗り帯タイトル・左縦バー表紙（従来デザイン・既定） |
+| `executive` | 経営者向けプレゼン。ディープネイビー×シャンパンゴールドのメッセージファースト構図、タイトル・ページ番号フッター付き。HTML の Web ページ型テンプレート（`convert-html` の `executive.css`）と同一トンマナ |
 
 ## ファイル構成
 
@@ -47,20 +56,17 @@ Markdown を Wiki デザインの PowerPoint (PPTX) に変換するスキル。`
 skills/convert-pptx/
 ├── SKILL.md
 ├── README.md
-├── references/
-│   ├── procedures.md
-│   └── setup.md
-└── scripts/
-    ├── convert/
-    │   └── convert_pptx.py
-    └── setup/
-        ├── requirements.txt
-        ├── setup_venv.sh
-        └── teardown_venv.sh
+├── evals/            # 動作分岐の期待挙動ケース
+└── references/
+    ├── procedures.md
+    └── setup.md
 ```
+
+変換スクリプト本体と venv 構築スクリプトはプラグイン共通の `plugins/convert-doc/references/scripts/`（`convert-pptx/convert_pptx.py`・`setup/`）に配置されている。
 
 ## カスタマイズ
 
-- 色・フォント・レイアウトの調整は `references/scripts/convert-pptx/convert_pptx.py` 冒頭の定数（`PRIMARY`, `BODY_FONT`, `CODE_FONT`, `SLIDE_WIDTH_IN`, `SLIDE_HEIGHT_IN` など）を編集する
+- テーマ別の色・フォント・構図の調整は `references/scripts/convert-pptx/convert_pptx.py` の `THEMES` 辞書（`Theme` dataclass）を編集する。default テーマの基調色既定値は同ファイル冒頭の `PRIMARY_DEFAULT`、フォントは `BODY_FONT` / `HEADING_FONT` / `CODE_FONT`
+- 新しいテーマの追加は `THEMES` 辞書へのエントリ追加で行う（`--theme` の choices に自動反映される）
 - スライド分割規則の変更（例: H3 でもスライド分割する）は `split_into_slides` を編集する
 - mermaid の PNG サイズは `MERMAID_MAX_WIDTH_IN` / `MERMAID_MAX_HEIGHT_IN` を変更する

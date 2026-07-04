@@ -21,6 +21,8 @@
 | [case-13_trigger_design_doc_html.md](case-13_trigger_design_doc_html.md) | トリガー: 設計書 HTML 出力の自然言語依頼 | 対話 |
 | [case-14_trigger_report_html.md](case-14_trigger_report_html.md) | トリガー: 資料 HTML 化の自然言語依頼 | 対話 |
 | [case-15_noninteractive_full.md](case-15_noninteractive_full.md) | `/convert-html-full` による非対話モード（全機能有効） | 非対話 |
+| [case-16_executive_web_template.md](case-16_executive_web_template.md) | executive.css 選択 → Web ページ型ペアリング（executive.html + `--split-sections`・全 JS 機能） | 対話 |
+| [case-17_split_sections_no_toc.md](case-17_split_sections_no_toc.md) | Web ページ型 + toc-toggle.js 除外 → 目次なしページ | 対話/非対話 共通 |
 
 ## 実行確認方法
 

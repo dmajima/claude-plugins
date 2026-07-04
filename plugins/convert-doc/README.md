@@ -136,8 +136,11 @@ Skill(skill: "convert-from-pptx", args: "<入力PPTX> <出力MD> [--include-note
 - HTML 1 ファイルで完結（外部ファイル参照なし）
 - 画像を base64 埋め込み・ライトボックス表示（ズーム・パン対応）
 - mermaid 図を SVG に変換してインライン埋め込み
-- 右スティッキーサイドバーに自動生成目次
+- 右スティッキーサイドバーに自動生成目次（ドキュメント型）
 - `~~打ち消し線~~` を `<del>` タグに変換（GFM 互換）
+- 2 種類のテンプレート形態を選択可能:
+  - **ドキュメント型**（`template.css` + `template.html`）: Wiki スタイルの縦長資料・サイドバー目次付き（既定）
+  - **Web ページ型・経営者向け**（`executive.css` + `executive.html` + `--split-sections`）: ネイビー×ゴールドの LP 風レイアウト。ネイビーのヒーローヘッダー・ゴールドの章番号付き全幅セクション（白/オフホワイトの交互背景）・スリムなページフッターを自動生成し、キーメッセージ（h2）をセクション見出しに置くメッセージファースト構成。目次は `toc-toggle.js`（サイドバー/ドロワー）、演出は `scroll-reveal.js`（スクロール時フェードイン）が担い、いずれも executive トンマナのスタイルが当たる
 
 ### PDF（`convert-pdf`）
 
@@ -151,7 +154,9 @@ Skill(skill: "convert-from-pptx", args: "<入力PPTX> <出力MD> [--include-note
 - mermaid 図は PNG で取得してスライドに配置
 - コードブロックはモノスペースフォントのテキストフレームとして配置
 - 表は PowerPoint ネイティブの表として配置
-- タイトル帯・装飾はネイビーカラーを使用
+- デザインテーマを `--theme` で選択可能:
+  - **`default`**: タイトル帯・装飾にネイビーカラーを使用（従来デザイン）
+  - **`executive`**: 経営者向けプレゼン。ディープネイビー×シャンパンゴールドのトンマナで、キーメッセージ + ゴールドアクセントラインのメッセージファースト構図。表紙はゴールドルール + 下部帯、全スライドにタイトル・ページ番号フッター付き（HTML の Web ページ型と同一トンマナ）
 
 ### PPTX → Markdown（`convert-from-pptx`）
 
@@ -180,9 +185,11 @@ plugins/convert-doc/
 │   └── convert-from-pptx.md
 ├── assets/                           # プラグイン共通 assets（extension-toolkit ADR-030）
 │   ├── css/
-│   │   └── template.css
+│   │   ├── template.css              # ドキュメント型（Wiki スタイル・既定）
+│   │   └── executive.css             # Web ページ型（経営者向け・LP 風）
 │   └── html/
-│       └── template.html
+│       ├── template.html             # ドキュメント型の骨格
+│       └── executive.html            # Web ページ型の骨格（--split-sections 併用）
 ├── references/                       # プラグイン共通リソース
 │   └── scripts/                      # プラグイン単位 venv + 業務スクリプト（ADR-024 / ADR-025）
 │       ├── setup/                    # 統合 venv 構築（4 スキル分の依存をマージ）
@@ -257,6 +264,16 @@ plugins/convert-doc/
 | 代替案 | スキルごとに個別 venv（ADR-024 違反・廃止）/ `environment-setup-toolkit` への委譲（外部依存増加）|
 | トレードオフ | venv が肥大化するが、複数スキル並行利用時の再構築コスト削減を優先する |
 
+### ADR-004: 経営者向けテンプレートを「CSS/HTML ペア + PPTX テーマ」の二系統で実装
+
+| 項目 | 内容 |
+|------|------|
+| 状態 | Accepted |
+| 決定 | 経営者向け資料のトンマナ（ディープネイビー #0B2E59 × シャンパンゴールド #B8933E・メッセージファースト構成）を、HTML 側は Web ページ型（LP 風）として `executive.css` + `executive.html` + `convert.py --split-sections`、PPTX 側はスライドとして `convert_pptx.py --theme executive`（`Theme` dataclass + `THEMES` 辞書）で実装する。メディアごとに自然な体裁（HTML = Web サイト、PPTX = スライド）を採り、デザイントークン（色・構成）は両実装に手動で同期する |
+| 文脈 | HTML は CSS で宣言的にスタイルを定義できるが、PPTX は python-pptx のコードでシェイプを組み立てるため、単一のテンプレートファイルを共有できない。CSS 選択機構（複数 CSS で選択 UI）と `--primary-color` 上書きという既存の拡張点に乗せることで、既定動作の完全後方互換を保つ。HTML をスライドの再現（16:9 枠の並び）にせず Web ページ体裁とするのは利用者要件による |
+| 代替案 | HTML もスライド型（16:9 枠の縦並び）にする（初期実装。Web 閲覧の自然さに欠けるため置換）/ テンプレート .pptx ファイル方式（レイアウト自由度は上がるが、mermaid/コード/表の動的配置ロジックと二重管理になる）/ 共通トークン定義ファイルからの生成（過剰な抽象化） |
+| トレードオフ | トンマナ変更時は CSS カスタムプロパティと `THEMES` 辞書の両方を更新する必要がある（各ファイル冒頭コメントで相互参照を明示） |
+
 ## 依存システム（External Dependencies）
 
 本プラグインの 4 スキルのうち、出力系 3 スキルは変換処理のために以下の外部サービスへアクセスする。`convert-from-pptx` は外部依存なしで動作する。
@@ -275,7 +292,8 @@ plugins/convert-doc/
 
 - HTML / PDF のデザイン変更（共通）: `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css` を編集するか、同ディレクトリに追加の `.css` ファイルを置く（2 ファイル以上ある場合はスキル実行時に選択プロンプトが表示される）
 - convert-html / convert-pdf だけで上書きしたい場合: `skills/{skill-name}/assets/css/` に同名ファイルを置く（スキル側がプラグイン共通を上書きする）
-- PPTX の色・フォント・レイアウト変更: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py` 冒頭の定数を編集
+- 経営者向け Web ページ型（HTML）のトンマナ変更: `${CLAUDE_PLUGIN_ROOT}/assets/css/executive.css` 冒頭の CSS カスタムプロパティ（`--exec-primary` / `--exec-accent` 等のデザイントークン）を編集
+- PPTX の色・フォント・レイアウト変更: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py` 冒頭の定数（default テーマ）または `THEMES` 辞書（テーマ別トークン）を編集。新テーマの追加も `THEMES` へのエントリ追加で行う
 - PPTX → Markdown の取り込みカスタマイズ: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py` 冒頭の `MONOSPACE_FONTS` / `ALLOWED_IMAGE_EXTS` 等の定数を編集
 - Python 依存パッケージの更新: `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt`（プラグイン統合）を編集
 

@@ -12,13 +12,33 @@
   [--title "主題"] \
   [--subtitle "副題"] \
   [--aspect 16:9] \
+  [--theme default] \
   [--primary-color "#003879"] \
   [--max-body-chars 2400]
 ```
 
 - 出力先が未指定の場合、入力ファイルと同ディレクトリ・同名で `.pptx` 拡張子
 - `--aspect` は `16:9` または `4:3`
-- `--primary-color` は CSS 色文字列（`#RRGGBB`）
+- `--theme` はデザインテーマ（下表）。省略時は `default`
+- `--primary-color` は CSS 色文字列（`#RRGGBB`）。テーマの基調色を上書きする
+
+## デザインテーマ
+
+| テーマ | 用途 | 特徴 |
+|-------|------|------|
+| `default` | 一般的な技術資料・Wiki スタイル | ネイビー塗り帯タイトル・左縦バー表紙（従来デザイン） |
+| `executive` | 経営者向けプレゼン・役員会資料 | ディープネイビー（#0B2E59）×シャンパンゴールド（#B8933E）。キーメッセージをネイビー太字 + ゴールド下線で表示するメッセージファースト構図。表紙はゴールドルール + 下部ネイビー帯。全スライドにタイトル・ページ番号フッター付き |
+
+経営者向けの利用例:
+
+```bash
+"$SESSION_DIR/workspace/.venv/Scripts/python" \
+  "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py" \
+  "<入力MDファイルパス>" "<出力PPTXファイルパス>" \
+  --theme executive
+```
+
+同じトンマナの HTML 版（Web ページ型・LP 風）は `convert-html` スキルの `executive.css` + `executive.html` + `--split-sections` で生成できる。
 
 ## スライド分割規則
 

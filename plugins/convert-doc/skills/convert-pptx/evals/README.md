@@ -18,6 +18,7 @@
 | [case-10_trigger_slide_creation.md](case-10_trigger_slide_creation.md) | トリガー: スライド作成の自然言語依頼（対話モード） |
 | [case-11_trigger_design_doc_pptx.md](case-11_trigger_design_doc_pptx.md) | トリガー: 設計書 PPTX 出力の自然言語依頼（対話モード） |
 | [case-12_noninteractive_aspect.md](case-12_noninteractive_aspect.md) | 4:3 アスペクト比指定による非対話モード（`--aspect 4:3` 適用） |
+| [case-13_theme_executive.md](case-13_theme_executive.md) | `--theme executive`（経営者向けテーマ・メッセージファースト構図・フッター付き） |
 
 ## 実行確認方法
 

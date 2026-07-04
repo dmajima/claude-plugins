@@ -1,0 +1,67 @@
+<!--
+  HTML テンプレート（Web ページ型・経営者向け） - convert-html スキル
+  ================================================================
+
+  LP（ランディングページ）のように全幅セクションが縦に続く
+  「Web サイト体裁」の資料用骨格です。
+  assets/css/executive.css とセットで使用し、convert.py には
+  --split-sections を指定してください（h2 単位でセクションに分割されます）。
+
+  実行例:
+    python convert.py input.md output.html \
+      --css-template <...>/assets/css/executive.css \
+      --html-template <...>/assets/html/executive.html \
+      --split-sections
+
+  【プレースホルダー記法】
+  プレースホルダーは {{PLACEHOLDER_NAME}} 形式で記述します。
+  テンプレートから削除したプレースホルダーは変換処理でも挿入されません。
+
+  【利用可能なプレースホルダー】
+
+  {{TITLE}}
+    ドキュメントタイトル。<title> タグに使用します。
+    ページ上のタイトルは --split-sections が BODY_HTML 内に
+    ヒーローセクションとして生成するため、このテンプレートには
+    .doc-title 要素はありません。
+
+  {{CSS}}
+    選択された CSS テンプレート（executive.css を想定）の内容。
+
+  {{PYGMENTS_CSS}}
+    Pygments が自動生成するシンタックスハイライト用 CSS。
+
+  {{TOC_SIDEBAR}}
+    自動生成された目次サイドバーHTML（<aside id="toc-sidebar">...</aside>）。
+    toc-toggle.js（JS フィーチャー）とペアで、デスクトップでは右サイドバー、
+    モバイルではドロワー形式の目次として機能します。
+    toc-toggle.js を除外した場合は空文字列になります。
+
+  {{BODY_HTML}}
+    --split-sections が生成したセクション群
+    （ヒーロー / リード / 章番号付き本文セクション / ページフッター）。
+
+  {{JS_BLOCK}}
+    選択された JS フィーチャーの <script> ブロック。
+-->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}}</title>
+<style>
+{{CSS}}
+
+/* Pygments syntax highlight */
+{{PYGMENTS_CSS}}
+</style>
+</head>
+<body>
+{{TOC_SIDEBAR}}
+<main id="page" class="article-body">
+{{BODY_HTML}}
+</main>
+{{JS_BLOCK}}
+</body>
+</html>

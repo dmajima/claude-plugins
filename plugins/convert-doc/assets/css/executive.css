@@ -1,0 +1,891 @@
+/*
+  executive.css - 経営者向け資料テンプレート（Web ページ型・LP 風）
+  ================================================================
+
+  ネイビー×ゴールドの格調あるトンマナで、コーポレートサイト /
+  アニュアルレポートサイトのような「Web サイト体裁」のリッチな
+  資料レイアウトを提供する。
+
+  【前提】
+  - assets/html/executive.html（Web ページ型 HTML 骨格）とセットで使用する
+  - convert.py に --split-sections を指定して生成した HTML 構造
+    （.hero / .content-section / .section-no / .section-header /
+      .section-body / .page-footer）を対象とする
+  - 既定の template.html（ドキュメント型骨格）には適用しないこと
+  - 目次はプラグイン標準の toc-toggle.js 機能（#toc-sidebar 等）が生成し、
+    本 CSS はそのトンマナ合わせのスタイルのみを持つ
+  - スクロールリビール演出は scroll-reveal.js（JS 機能）とペアで動作する。
+    JS 無効時は全要素が最初から表示される（プログレッシブエンハンスメント）
+
+  【デザイントークン】
+  - Primary : #0B2E59 ディープネイビー（ヒーロー背景・見出し・フッター）
+  - Accent  : #B8933E シャンパンゴールド（章番号・罫線等の差し色）
+  - Text    : #1F2D3D 本文 / #5F6B7A 補助テキスト
+  - 背景    : #FFFFFF 基調 / #F7F5F2 交互セクション背景
+
+  【レイアウト方針】
+  - 適度な高さのヒーロー（ページヘッダー）から始まり、h2 ごとの
+    全幅セクションが縦に続く LP 構成。ヘッダー/フッターは Web サイトの
+    体裁（表紙・締めスライドのような大型装飾は用いない）
+  - 各セクションはゴールドの章番号（01, 02, ...）+ 大きな見出し
+    （キーメッセージ）+ 行長を絞った本文で、雑誌・年次報告書の品格を出す
+  - 表は罫線ミニマルの金融レポート調、引用はゴールドラインのプルクオート調
+  - タイポグラフィは rem ベース（ルート 62.5% = 1rem 10px）+ clamp() の
+    レスポンシブ。OS/ブラウザの既定フォントサイズ設定にも追従する
+  - 印刷は通常のドキュメントフロー（背景色は維持、無理な改ページ制御はしない）
+*/
+
+/* ===== デザイントークン ===== */
+:root {
+    --exec-primary: #0B2E59;
+    --exec-primary-deep: #071F3E;
+    --exec-accent: #B8933E;
+    --exec-accent-soft: #D8C08A;
+    --exec-accent-ink: #8F7226;   /* テキスト用ゴールド（コントラスト確保） */
+    --exec-text: #1F2D3D;
+    --exec-text-muted: #5F6B7A;
+    --exec-surface: #FFFFFF;
+    --exec-surface-sub: #F7F5F2;
+    --exec-border: #D9D4CB;
+    --exec-code-bg: #F7F6F3;
+    --exec-code-inline: #9A3B4A;
+    --exec-content-width: 104rem;  /* セクションの最大幅 */
+    --exec-prose-width: 76rem;     /* 本文テキストの最大行長 */
+}
+
+/* ===== ベース ===== */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 62.5%;  /* 1rem = 10px */
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--exec-surface);
+    color: var(--exec-text);
+    font-family: "Yu Gothic UI", "Yu Gothic", YuGothic,
+        "Hiragino Kaku Gothic ProN", "Hiragino Sans",
+        "Noto Sans JP", Meiryo, sans-serif;
+    font-weight: 400;
+    font-size: 1.6rem;
+    line-height: 2;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+#page {
+    display: block;
+}
+
+/* ===== ヒーロー（ページヘッダー） ===== */
+/* Web ページのページヘッダーとして適度な高さに抑える
+   （フルスクリーン化するとプレゼンの表紙に見えるため行わない） */
+.hero {
+    padding: clamp(5.6rem, 9vw, 9.6rem) 2.4rem;
+    background:
+        radial-gradient(100rem 48rem at 90% -16%, rgba(184, 147, 62, 0.16), transparent 62%),
+        linear-gradient(150deg, var(--exec-primary) 0%, var(--exec-primary-deep) 100%);
+    color: #FFFFFF;
+    border-bottom: 3px solid var(--exec-accent);
+}
+
+.hero-inner {
+    width: 100%;
+    max-width: var(--exec-content-width);
+    margin: 0 auto;
+}
+
+.hero-rule {
+    width: 5.6rem;
+    height: 3px;
+    background: linear-gradient(90deg, var(--exec-accent), var(--exec-accent-soft));
+    margin-bottom: 2.4rem;
+}
+
+.hero-title {
+    margin: 0;
+    font-size: clamp(2.6rem, 4.2vw, 4.2rem);
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    color: #FFFFFF;
+}
+
+.hero-subtitle {
+    margin: 2rem 0 0 0;
+    max-width: 72rem;
+    font-size: clamp(1.4rem, 1.7vw, 1.7rem);
+    line-height: 2.05;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+/* ===== セクション共通 ===== */
+.content-section {
+    padding: clamp(6.4rem, 11vh, 11rem) 2.4rem;
+    background-color: var(--exec-surface);
+}
+
+/* LP らしい交互背景（白 → オフホワイト → 白 …） */
+.content-section:nth-of-type(even) {
+    background-color: var(--exec-surface-sub);
+}
+
+.section-inner {
+    max-width: var(--exec-content-width);
+    margin: 0 auto;
+}
+
+/* ===== 章番号 + セクション見出し（キーメッセージ） ===== */
+.section-header {
+    margin-bottom: clamp(3.2rem, 5vh, 4.8rem);
+}
+
+.section-no {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.4rem;
+    margin-bottom: 2rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    color: var(--exec-accent-ink);
+}
+
+.section-no::after {
+    content: "";
+    width: 4.8rem;
+    height: 1px;
+    background-color: var(--exec-accent);
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: clamp(2.4rem, 3.6vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    color: var(--exec-primary);
+    max-width: 88rem;
+    scroll-margin-top: 3.2rem;
+}
+
+/* ===== リードセクション（ヒーロー直後の導入文） ===== */
+.section-lead .section-body {
+    max-width: var(--exec-prose-width);
+    margin: 0 auto;
+}
+
+.section-lead .section-body p {
+    font-size: clamp(1.7rem, 2.1vw, 2.1rem);
+    line-height: 2.3;
+    color: var(--exec-text);
+}
+
+/* ===== セクション本文 ===== */
+.section-body {
+    font-size: 1.6rem;
+    line-height: 2.05;
+    overflow-wrap: break-word;
+}
+
+.section-body > :first-child {
+    margin-top: 0;
+}
+
+.section-body > :last-child {
+    margin-bottom: 0;
+}
+
+/* 本文テキスト系は行長を絞って読みやすく（表・図・コードは全幅を使う） */
+.section-body p,
+.section-body ul,
+.section-body ol,
+.section-body blockquote {
+    max-width: var(--exec-prose-width);
+}
+
+/* --- 小見出し --- */
+.section-body h3 {
+    margin: 4.8rem 0 1.8rem 0;
+    padding-left: 1.6rem;
+    font-size: clamp(1.9rem, 2.3vw, 2.3rem);
+    font-weight: 700;
+    line-height: 1.6;
+    color: var(--exec-primary);
+    border-left: 4px solid var(--exec-accent);
+}
+
+.section-body h4 {
+    margin: 3.6rem 0 1.4rem 0;
+    font-size: clamp(1.7rem, 2vw, 2rem);
+    font-weight: 700;
+    color: var(--exec-primary);
+}
+
+.section-body h5,
+.section-body h6 {
+    margin: 2.8rem 0 1rem 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--exec-text);
+}
+
+/* --- テキスト要素 --- */
+.section-body p {
+    margin: 1.8rem 0;
+}
+
+.section-body strong,
+.section-body b {
+    font-weight: 700;
+    color: var(--exec-primary);
+}
+
+.section-body del {
+    color: var(--exec-text-muted);
+}
+
+.section-body a {
+    color: var(--exec-primary);
+    text-decoration: underline;
+    text-decoration-color: var(--exec-accent);
+    text-underline-offset: 0.3em;
+}
+
+/* --- リスト --- */
+.section-body ul,
+.section-body ol {
+    margin: 1.8rem 0;
+    padding-left: 2.6rem;
+}
+
+.section-body li {
+    margin: 1rem 0;
+}
+
+/* ネストしたリストは外側リストの margin と重ならないよう詰める */
+.section-body li > ul,
+.section-body li > ol {
+    margin: 0.6rem 0 0 0;
+}
+
+/* マーカー色の使い分け: 弾（装飾）はゴールド、番号（読む情報）は
+   コントラスト確保済みの accent-ink を使う */
+.section-body ul > li::marker {
+    color: var(--exec-accent);
+}
+
+.section-body ol > li::marker {
+    color: var(--exec-accent-ink);
+    font-weight: 700;
+}
+
+/* GFM タスクリスト */
+.section-body li:has(> .task-list-item) {
+    list-style: none;
+    margin-left: -1.8rem;
+}
+
+.section-body .task-list-item input[type="checkbox"] {
+    accent-color: var(--exec-primary);
+    margin-right: 0.6rem;
+}
+
+/* --- 引用（プルクオート調） --- */
+.section-body blockquote {
+    margin: 3.2rem 0;
+    padding: 0.8rem 0 0.8rem 2.8rem;
+    background: none;
+    border-left: 2px solid var(--exec-accent);
+    color: var(--exec-text-muted);
+    font-size: 1.7rem;
+    line-height: 2.15;
+}
+
+.section-body blockquote p {
+    margin: 0.8rem 0;
+}
+
+.section-body blockquote > :first-child {
+    margin-top: 0;
+}
+
+.section-body blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+/* --- 表（罫線ミニマルの金融レポート調） --- */
+.section-body .table-scroll {
+    margin: 3.2rem 0;
+    overflow-x: auto;
+}
+
+.section-body table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.5rem;
+    line-height: 1.8;
+}
+
+.section-body th,
+.section-body td {
+    padding: 1.4rem 1.6rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.section-body th {
+    background: none;
+    color: var(--exec-primary);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border-bottom: 2px solid var(--exec-primary);
+}
+
+.section-body td {
+    border-bottom: 1px solid var(--exec-border);
+}
+
+.section-body tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.section-body tbody tr:hover {
+    background-color: rgba(184, 147, 62, 0.07);
+}
+
+/* --- コード --- */
+.section-body code {
+    padding: 0.2rem 0.6rem;
+    background-color: var(--exec-code-bg);
+    border: 1px solid var(--exec-border);
+    border-radius: 3px;
+    font-family: Consolas, "Courier New", "Lucida Console", monospace;
+    font-size: 0.9em;
+    color: var(--exec-code-inline);
+}
+
+.section-body .highlight {
+    margin: 3.2rem 0;
+    background-color: var(--exec-code-bg);
+    border: 1px solid var(--exec-border);
+    border-radius: 4px;
+}
+
+.section-body .highlight pre {
+    margin: 0;
+    padding: 1.8rem 2.2rem;
+    overflow-x: auto;
+    font-size: 1.4rem;
+    line-height: 1.7;
+}
+
+.section-body .highlight code {
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+    font-size: inherit;
+    color: inherit;
+}
+
+/* --- 画像・図 --- */
+.section-body img {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--exec-border);
+}
+
+.section-body .mermaid-figure {
+    margin: 3.2rem 0;
+    text-align: center;
+}
+
+.section-body .mermaid-figure svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.section-body .mermaid-error {
+    padding: 1.6rem 2rem;
+    background-color: #FBF3F3;
+    border: 1px solid #D9A6A6;
+    color: #8F3B3B;
+    font-size: 1.4rem;
+}
+
+.section-body hr {
+    margin: 4rem 0;
+    border: none;
+    border-top: 1px solid var(--exec-border);
+}
+
+/* ===== ページフッター =====
+   Web サイトの下端らしいスリムな 1 行フッター
+   （大きな帯 + 装飾ルールは「締めスライド」に見えるため行わない） */
+.page-footer {
+    background-color: var(--exec-primary-deep);
+    border-top: 1px solid rgba(184, 147, 62, 0.45);
+    padding: 2.2rem 2.4rem;
+}
+
+.page-footer-inner {
+    max-width: var(--exec-content-width);
+    margin: 0 auto;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 1.25rem;
+    letter-spacing: 0.06em;
+}
+
+/* ===== 目次（toc-toggle.js とペア） =====
+   目次の生成・開閉ロジックはプラグイン標準の toc-toggle.js 機能が担う。
+   ここではその DOM（#toc-sidebar / #toc-toggle-btn / モバイルヘッダー等）に
+   executive 専用のデザインを当てる（ドキュメント型の見た目は踏襲しない）。
+   デザイン: ネイビーのヒーロー上でも白背景セクション上でも調和する
+   ダークネイビーの半透明フローティングパネル */
+
+/* デスクトップ: 画面右端の縦長トグルボタン */
+#toc-toggle-btn {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2rem;
+    min-height: 8rem;
+    background: rgba(7, 31, 62, 0.92);
+    border-left: 2px solid var(--exec-accent);
+    border-radius: 4px 0 0 4px;
+    z-index: 101;
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    writing-mode: vertical-rl;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+#toc-toggle-btn:hover {
+    background: var(--exec-primary);
+}
+
+/* デスクトップ: 右上固定のサイドバー */
+#toc-sidebar {
+    position: fixed;
+    right: 2.4rem;
+    top: 2.4rem;
+    width: 26rem;
+    max-height: calc(100vh - 4.8rem);
+    overflow-y: auto;
+    z-index: 100;
+    transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+#toc-sidebar.toc-collapsed {
+    transform: translateX(calc(100% + 2.4rem));
+    opacity: 0;
+    pointer-events: none;
+}
+
+#toc-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+#toc-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#toc-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(184, 147, 62, 0.5);
+    border-radius: 2px;
+}
+
+/* 目次パネル（python-markdown の TOC 出力に対応）: ダークネイビーの栞 */
+#toc-sidebar div.toc {
+    padding: 2rem 2.2rem;
+    background: rgba(7, 31, 62, 0.93);
+    border: 1px solid rgba(184, 147, 62, 0.35);
+    border-top: 3px solid var(--exec-accent);
+    box-shadow: 0 0.8rem 2.8rem rgba(7, 31, 62, 0.35);
+    backdrop-filter: blur(4px);
+}
+
+#toc-sidebar div.toc::before {
+    content: 'INDEX';
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    margin-bottom: 1.4rem;
+    color: var(--exec-accent-soft);
+}
+
+#toc-sidebar div.toc ul {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 0;
+}
+
+#toc-sidebar div.toc ul li {
+    display: block;
+    padding-left: 1.4em;
+    font-size: 1.35rem;
+    line-height: 1.8;
+    position: relative;
+}
+
+#toc-sidebar div.toc ul li + li {
+    margin-top: 0.4em;
+}
+
+#toc-sidebar div.toc ul ul li {
+    font-size: 1.25rem;
+}
+
+/* 項目マーカー: ゴールドの短い水平ライン */
+#toc-sidebar div.toc ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 1em;
+    width: 0.7em;
+    height: 2px;
+    background: var(--exec-accent);
+}
+
+#toc-sidebar div.toc ul li a {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.78);
+    transition: color 0.2s ease;
+}
+
+#toc-sidebar div.toc ul li a:hover {
+    color: #FFFFFF;
+    text-decoration: underline;
+    text-decoration-color: var(--exec-accent);
+    text-underline-offset: 0.25em;
+}
+
+/* モバイル: toc-toggle.js が生成する固定バーは「バー」としては使わず、
+   ハンバーガーのみを右上の丸型フローティングボタンとして見せる。
+   バー内のタイトル表示はヒーローのタイトルと重複するため非表示にする */
+#toc-mobile-header {
+    display: none;  /* 既定非表示、1024px 以下で表示 */
+    position: fixed;
+    top: 1.4rem;
+    right: 1.4rem;
+    left: auto;
+    width: auto;
+    height: auto;
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    z-index: 200;
+}
+
+#toc-mobile-header-title {
+    display: none;  /* ヒーローのタイトルと重複するため出さない */
+}
+
+#toc-hamburger-btn {
+    width: 4.6rem;
+    height: 4.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(7, 31, 62, 0.92);
+    border: 1px solid rgba(184, 147, 62, 0.55);
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 0.3rem 1.4rem rgba(7, 31, 62, 0.35);
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+
+#toc-hamburger-btn:hover {
+    background: var(--exec-primary);
+}
+
+#toc-mobile-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 31, 62, 0.55);
+    z-index: 250;
+}
+
+#toc-mobile-overlay.active {
+    display: block;
+}
+
+/* ===== スクロールリビール（scroll-reveal.js とペア） =====
+   JS が <html> に sr-ready を付与した場合のみ初期非表示になる。
+   JS 無効環境では常に表示（プログレッシブエンハンスメント） */
+.sr-ready .content-section .section-inner {
+    opacity: 0;
+    transform: translateY(2.4rem);
+    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+
+.sr-ready .content-section .section-inner.sr-in {
+    opacity: 1;
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .sr-ready .content-section .section-inner {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+/* ===== ライトボックス（lightbox.js 用） ===== */
+#lb-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(7, 31, 62, 0.86);
+    justify-content: center;
+    align-items: center;
+}
+
+#lb-box {
+    cursor: grab;
+    max-width: 95vw;
+    max-height: 95vh;
+}
+
+#lb-close {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.6rem;
+    width: 4rem;
+    height: 4rem;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.14);
+    color: #FFFFFF;
+    font-size: 2.4rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#lb-close:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+#lb-hint {
+    position: absolute;
+    bottom: 1.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.5rem 1.2rem;
+    border-radius: 2rem;
+    background: rgba(0, 0, 0, 0.45);
+    color: #FFFFFF;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+/* ===== レスポンシブ ===== */
+@media screen and (max-width: 1024px) {
+    /* アンカー遷移時に見出しが画面上端に張り付かないようにする */
+    html {
+        scroll-padding-top: 2.4rem;
+    }
+
+    /* デスクトップのトグルボタンを非表示、フローティングボタンを表示 */
+    #toc-toggle-btn {
+        display: none;
+    }
+
+    #toc-mobile-header {
+        display: block;
+    }
+
+    /* 目次をドロワー形式に（右からスライドイン・ダークネイビー） */
+    #toc-sidebar {
+        right: 0;
+        top: 0;
+        width: min(80vw, 32rem);
+        height: 100dvh;
+        max-height: 100dvh;
+        z-index: 300;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        opacity: 1;
+        pointer-events: none;
+        padding: 2.8rem 2.4rem;
+        background: linear-gradient(160deg, var(--exec-primary) 0%, var(--exec-primary-deep) 100%);
+        border-left: 2px solid var(--exec-accent);
+        box-shadow: -4px 0 20px rgba(7, 31, 62, 0.4);
+    }
+
+    #toc-sidebar.toc-mobile-open {
+        transform: translateX(0);
+        pointer-events: auto;
+    }
+
+    /* デスクトップの collapsed 状態を無効化 */
+    #toc-sidebar.toc-collapsed {
+        transform: translateX(100%);
+        opacity: 1;
+    }
+
+    /* ドロワー自体に背景・枠を持たせるためパネル側は透明化 */
+    #toc-sidebar div.toc {
+        background: none;
+        border: none;
+        border-top: none;
+        box-shadow: none;
+        backdrop-filter: none;
+        padding: 0;
+    }
+
+    #toc-sidebar div.toc::before {
+        font-size: 1.3rem;
+    }
+
+    /* タップミス防止のため項目を大きく・間隔広く */
+    #toc-sidebar div.toc ul li,
+    #toc-sidebar div.toc ul ul li {
+        font-size: 1.6rem;
+        line-height: 1.7;
+    }
+
+    #toc-sidebar div.toc ul li + li {
+        margin-top: 0.6em;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+
+    .content-section {
+        padding: 5.6rem 2rem;
+    }
+
+    .section-body th,
+    .section-body td {
+        padding: 1rem 1.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero {
+        padding-left: 1.6rem;
+        padding-right: 1.6rem;
+    }
+
+    .content-section {
+        padding: 4.8rem 1.6rem;
+    }
+
+    .section-no {
+        letter-spacing: 0.16em;
+    }
+
+    .section-body blockquote {
+        padding-left: 1.8rem;
+        font-size: 1.6rem;
+    }
+}
+
+/* ===== 印刷（通常のドキュメントフロー） ===== */
+@media print {
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    /* モバイル用の padding-top 拡張（固定バー分）も印刷では不要のため上書き */
+    .hero {
+        padding: 4.8rem 2.4rem;
+    }
+
+    .content-section {
+        padding: 3.2rem 0;
+    }
+
+    /* リビール演出は印刷では常に表示状態にする */
+    .sr-ready .content-section .section-inner {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    /* 見出し直後での改ページを避ける。セクション全体の break-inside: avoid は
+       長いセクションが丸ごと次ページへ飛ぶ/クリップされるため指定しない
+       （template.css の印刷クリップ対策と同方針） */
+    .section-header {
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    /* 印刷ではスクロールが存在しないため、スクロールコンテナは開放して
+       全内容を紙面に出す */
+    .section-body .table-scroll {
+        overflow: visible;
+    }
+
+    .section-body .highlight pre {
+        overflow-x: hidden;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+
+    /* 背景色の印刷維持: body への継承指定だけでは要素・SVG 内部で
+       効かないブラウザがあるため、背景色を持つ要素へ個別に再指定する
+       （template.css の既知対策を踏襲） */
+    body,
+    .hero,
+    .content-section,
+    .page-footer,
+    .section-body pre,
+    .section-body code,
+    .section-body .highlight,
+    .section-body blockquote,
+    .section-body .task-list-item input,
+    .section-body .mermaid-figure svg,
+    .section-body .mermaid-figure svg rect {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* 画面上の固定 UI（目次・トグル・モバイルバー・ライトボックス）は
+       印刷に含めない */
+    #lb-overlay,
+    #toc-sidebar,
+    #toc-toggle-btn,
+    #toc-mobile-header,
+    #toc-mobile-overlay {
+        display: none !important;
+    }
+}
