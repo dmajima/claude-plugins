@@ -83,7 +83,7 @@ skills/add-design-pptx/
 └── evals/                          # 動作分岐の期待挙動ケース
     ├── README.md
     ├── demo.sh                     # デモ実行スクリプト
-    └── case-01 〜 case-13
+    └── case-01 〜 case-15
 ```
 
 関連スクリプト（プラグイン共通）:
