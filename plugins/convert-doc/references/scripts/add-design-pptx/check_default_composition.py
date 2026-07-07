@@ -25,6 +25,9 @@ from pathlib import Path
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
+# Resolve everything relative to this file so the trio (this script,
+# convert_pptx.py, theme-schema.md) keeps working wherever the plugin is
+# installed: add-design-pptx/ -> scripts/ -> references/ -> plugin root.
 _PLUGIN_ROOT = Path(__file__).resolve().parents[3]
 _CONVERT_PPTX_DIR = _PLUGIN_ROOT / "references" / "scripts" / "convert-pptx"
 _SCHEMA_MD = _PLUGIN_ROOT / "skills" / "add-design-pptx" / "references" / "theme-schema.md"

@@ -329,6 +329,17 @@ plugins/convert-doc/
 | 代替案 | 統合単一スキル `add-design`（分岐肥大・責務不明瞭）/ convert-* 各スキルへの内包（変換と作成の責務混在） |
 | トレードオフ | スキル数が増えるが、単一責務・独立した契約検証・明確なトリガー分離を優先する |
 
+### ADR-007: PPTX 構図（composition）の宣言的スキーマ化
+
+| 項目 | 内容 |
+|------|------|
+| 状態 | Accepted |
+| 決定 | 表紙・本文見出し部のレイアウト構造をテーマ JSON の `composition` セクション（矩形 `shapes[]` + 固定テキストスロット + `content_top`）として宣言的に定義可能にし、`convert_pptx.py` の描画は構図データ駆動とする。既定構図の SSOT は `build_default_composition()`（theme-schema.md のリファレンスは `check_default_composition.py` で機械照合）。色トークンは load 時に解決せず描画時に Theme から遅延解決する（`--primary-color` の適用順との整合のため） |
+| 文脈 | ADR-004 の「テーマ JSON = スカラー値の差し替え」の範囲ではレイアウト構造（例: executive 風の表紙・キーメッセージ型見出し）を表現できず、構図の変更のたびに本体スクリプト改修が必要だった |
+| 宣言で表現できる範囲 | 装飾矩形 + 既定テキストスロット（cover: title/subtitle、content_header: title）+ `content_top` まで。フッター等の新しい構造要素の追加は本体改修が必要（スロット固定は検証可能性と後方互換を優先した意図的な制約） |
+| 代替案 | プリセット enum（新構図のたびに本体改修が必要）/ テンプレート PPTX 流し込み（スライド分割の縦積算制御と相性が悪い） |
+| トレードオフ | shapes と `content_top` の位置整合はテーマ作成者責任（theme-schema.md の設計ガイドで補助）。convert_pptx.py は単一ファイル配布のため composition 対応で約 400 行増となった。将来さらに肥大化する機能追加を行う時点で、composition ロジック（dataclass 群・パーサ・描画ヘルパ）の別モジュール分離を検討する |
+
 ## 依存システム（External Dependencies）
 
 本プラグインの 6 スキルのうち、出力系 3 スキル（convert-html / convert-pdf / convert-pptx）と、サンプル変換でそれらを再利用する add-design 系 2 スキルは、変換処理のために以下の外部サービスへアクセスする。`convert-from-pptx` は外部依存なしで動作する。
@@ -346,7 +357,7 @@ plugins/convert-doc/
 ## カスタマイズ
 
 - **HTML / PDF の新デザイン追加（推奨）**: `add-design-html` スキル（`/add-design-html`）を使う。契約検証付きで CSS（必要時 HTML ペア）を生成・配置し、複数デザインは変換時の選択プロンプトに自動で現れる
-- **PPTX の新デザイン追加（推奨）**: `add-design-pptx` スキル（`/add-design-pptx`）を使う。テーマ JSON（色・フォント・サイズ・シンタックス配色）を検証付きで生成・配置する。既定値の一覧は `convert_pptx.py --dump-default-theme` で取得できる
+- **PPTX の新デザイン追加（推奨）**: `add-design-pptx` スキル（`/add-design-pptx`）を使う。テーマ JSON（色・フォント・サイズ・シンタックス配色・構図）を検証付きで生成・配置する。既定値の一覧は `convert_pptx.py --dump-default-theme` で取得できる（構図は動的追従のため含まれない。既定構図は `skills/add-design-pptx/references/theme-schema.md` を参照）
 - デフォルトデザイン自体の変更: `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css`（HTML / PDF）を直接編集する。PPTX の既定値は `convert_pptx.py` の `Theme` dataclass のフィールドデフォルトが SSOT
 - convert-html / convert-pdf だけで上書きしたい場合: `skills/<skill-name>/assets/css/` に同名ファイルを置く（スキル側がプラグイン共通を上書きする）
 - デザインの配置場所・探索順序の規約: `${CLAUDE_PLUGIN_ROOT}/references/design-locations.md`

@@ -200,7 +200,7 @@ class Theme:
     """
     # --- colors ---
     primary: RGBColor = RGBColor(0x00, 0x38, 0x79)          # primary navy
-    accent: RGBColor = RGBColor(0x1D, 0x6F, 0xD1)           # reserved for future use
+    accent: RGBColor = RGBColor(0x1D, 0x6F, 0xD1)           # composition color token; unused by the default design
     text: RGBColor = RGBColor(0x1F, 0x2D, 0x3D)
     on_primary: RGBColor = RGBColor(0xFF, 0xFF, 0xFF)       # text on primary fills
     code_bg: RGBColor = RGBColor(0xF5, 0xF6, 0xF8)
@@ -313,6 +313,9 @@ def _composition_to_dict(comp: Composition) -> dict:
             "bold": t.bold, "align": t.align, "anchor": t.anchor, "margin": t.margin,
         }
 
+    # Invariant: a Composition attached to a Theme always has at least one
+    # part set (_parse_composition rejects an empty object), so this never
+    # returns an empty dict -- which would fail to re-parse on round-trip.
     data = {}
     if comp.cover is not None:
         data["cover"] = {
@@ -469,7 +472,8 @@ def _parse_shape_spec(raw, path: str) -> ShapeSpec:
         "h": lambda v: _parse_comp_dim(v, tokens=("full",)),
         "color": _parse_comp_color,
     }
-    _require_comp_object(raw, path, allowed=parsers, required=parsers)
+    # Every shape key is required.
+    _require_comp_object(raw, path, allowed=parsers, required=tuple(parsers))
     values = {}
     for key, parse in parsers.items():
         try:
@@ -521,10 +525,11 @@ def _parse_composition(raw) -> Composition:
         raise ValueError(
             "theme: 'composition' must be an object (omit the key entirely to use the default layout)"
         )
+    known_parts = ("cover", "content_header")
     for key in raw:
-        if key not in ("cover", "content_header"):
+        if key not in known_parts:
             raise ValueError(
-                f"theme: unknown key 'composition.{key}' (allowed: content_header, cover)"
+                f"theme: unknown key 'composition.{key}' (allowed: {', '.join(sorted(known_parts))})"
             )
     if not raw:
         raise ValueError(
@@ -620,14 +625,17 @@ def load_theme(path: Path) -> Theme:
         theme = replace(theme, composition=comp)
         # A custom content_header replaces the default band wholesale, so
         # layout_in.title_band_height stops mattering; warn (not error) when
-        # both are spelled out to catch a likely misunderstanding. A
-        # cover-only override keeps using it via the default content header,
-        # so no warning in that case.
+        # a NON-DEFAULT value is spelled out alongside it, to catch a likely
+        # misunderstanding. A cover-only override keeps using it via the
+        # default content header, and a default-valued entry (e.g. a re-read
+        # theme_to_json dump, which always spells out layout_in) changes
+        # nothing, so neither warrants a warning.
         layout_raw = data.get("layout_in")
+        band_h_raw = layout_raw.get("title_band_height") if isinstance(layout_raw, dict) else None
         if (
             comp.content_header is not None
-            and isinstance(layout_raw, dict)
-            and "title_band_height" in layout_raw
+            and band_h_raw is not None
+            and float(band_h_raw) != Theme().title_band_height_in
         ):
             print(
                 "Warning: this theme overrides composition.content_header, so "
@@ -1063,6 +1071,11 @@ class Deck:
             cover=theme_comp.cover or default_comp.cover,
             content_header=theme_comp.content_header or default_comp.content_header,
         )
+        # Drawing code and _chunk_blocks dereference both parts without None
+        # checks; guard the invariant here in case build_default_composition
+        # ever stops returning both parts.
+        assert self.composition.cover is not None
+        assert self.composition.content_header is not None
 
     def _new_slide(self):
         slide = self.prs.slides.add_slide(self.blank)
@@ -1133,6 +1146,9 @@ class Deck:
             Inches(spec.x), Inches(spec.y), Inches(w_in), Inches(spec.h),
         )
         tf = tb.text_frame
+        # Explicit word_wrap=True: the legacy band drew text on the shape's
+        # own frame where the OOXML default (wrap="square") already wrapped,
+        # so this keeps the effective wrapping behavior identical.
         tf.word_wrap = True
         tf.margin_left = Inches(spec.margin)
         tf.margin_right = Inches(spec.margin)

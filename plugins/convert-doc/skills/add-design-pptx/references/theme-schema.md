@@ -89,9 +89,10 @@ convert-pptx のテーマ JSON（`convert_pptx.py --theme <path>` で適用）�
   `title_band_height + 0.2` に追従するため、`title_band_height` / `content_padding` を
   大きく変えるとスライド枚数が変わる。カスタム構図では `composition.content_header.content_top` が
   そのまま基準になる
-- `composition.content_header` を上書きしたテーマに `layout_in.title_band_height` を併記すると、
-  「参照されない」旨の警告が stderr に出る（エラーにはならない。`cover` のみの上書きでは
-  既定の見出し部が `title_band_height` を参照し続けるため警告されない）
+- `composition.content_header` を上書きしたテーマに、既定値（0.9）と異なる
+  `layout_in.title_band_height` を併記すると、「参照されない」旨の警告が stderr に出る
+  （エラーにはならない。`cover` のみの上書きでは既定の見出し部が `title_band_height` を
+  参照し続けるため警告されない。既定値と同値の併記も挙動差がないため警告されない）
 - **過大な値（例: `title_band_height` をスライド高 7.5in に近づける）は本文の縦領域を消し、
   収まらないブロックが描画されない**（その場合スクリプトが stderr に
   `Warning: N block(s) did not fit ...` を出力する）。デフォルトから大きく動かさないこと
@@ -180,12 +181,18 @@ convert-pptx のテーマ JSON（`convert_pptx.py --theme <path>` で適用）�
 - 既定構図リファレンス（次節）を種にして座標を調整し、検証（`validate_theme.py`）→
   サンプル変換 → 生成 PPTX の座標確認、の順で仕上げる
 - shapes と `content_top` の位置整合はテーマ作成者の責任（スクリプトは重なりを検出しない）
+- **宣言で表現できる範囲**: 装飾矩形（`shapes[]`）+ 既定テキストスロット（cover の
+  `title` / `subtitle`、content_header の `title`）+ `content_top` まで。
+  新しい構造要素（フッター・ページ番号・追加テキストスロット等）はテーマ JSON では
+  表現できず、`convert_pptx.py` 本体の改修が必要
 
 ### 既定構図リファレンス
 
 `composition` 省略時に内部生成される構図。**SSOT はコード側**
 （`convert_pptx.py` の `build_default_composition()`）であり、本節は参考リファレンス。
-同期は `check_default_composition.py`（`references/scripts/add-design-pptx/`）で機械照合される。
+同期は `check_default_composition.py`（`references/scripts/add-design-pptx/`）で機械照合される
+（このスクリプトはテーマ作成フローの一部ではなく、`convert_pptx.py` の構図関連コードや
+本節を変更した際に実行する開発者向けの整合性チェック）。
 
 以下は既定テーマ値（`title_band_height` 0.9）・16:9（幅 13.333in）で具現化した値。
 `cover.title` / `cover.subtitle` の `w` はスライド全幅 − 1.5、`content_header` の帯高さと

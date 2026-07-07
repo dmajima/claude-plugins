@@ -18,12 +18,20 @@
 | [case-10_existing_name_conflict.md](case-10_existing_name_conflict.md) | 既存テーマ名との重複（上書き確認） |
 | [case-11_env_failure_no_placement.md](case-11_env_failure_no_placement.md) | 環境起因の失敗時は配置しない |
 | [case-12_default_edit_refusal.md](case-12_default_edit_refusal.md) | デフォルトデザイン直接変更の依頼への対応 |
-| [case-13_composition_theme.md](case-13_composition_theme.md) | composition（構図）付きテーマの作成（検証 PASS + サンプル変換 + 既定構図との差分確認） |
+| [case-13_composition_theme.md](case-13_composition_theme.md) | composition（構図）付きテーマ作成の正常系 |
+| [case-14_composition_schema_errors.md](case-14_composition_schema_errors.md) | composition のスキーマ検証 FAIL → 修正リトライ |
+| [case-15_composition_warnings.md](case-15_composition_warnings.md) | composition の変換時警告（title_band_height 併記 / "sym" 負値解決） |
+
+case-13 のみ「検証観点（機械確認可能）」節を持つ。構図には独立した機械照合スクリプト
+（`check_default_composition.py`）があり、期待挙動をコマンドで再確認できるため
+（他ケースへの遡及追加はしない）。composition 系の自動チェックは `demo.sh` の
+セクション 4・5 に組込済み（同期照合・検証・変換・round-trip・エラー/警告）。
 
 ## デモ実行スクリプト
 
-[`demo.sh`](demo.sh) はテーマ検証の PASS / FAIL / usage エラーと、`--dump-default-theme` を
-種にした新テーマ作成 → サンプル変換の流れを通しで確認する再現スクリプト。
+[`demo.sh`](demo.sh) はテーマ検証の PASS / FAIL / usage エラー、`--dump-default-theme` を
+種にした新テーマ作成 → サンプル変換、composition（構図）の同期照合・検証・変換・
+round-trip・エラー/警告系を通しで確認する再現スクリプト。
 実行方法はスクリプト冒頭のコメントを参照。
 
 ## 実行確認方法

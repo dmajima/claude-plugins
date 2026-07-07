@@ -18,7 +18,7 @@
 | `add-design-html/validate_css.py` | デザイン CSS のセレクタ契約・JS 契約検証 |
 | `add-design-html/validate_html.py` | HTML テンプレートペアのプレースホルダ・骨格 DOM 検証 |
 | `add-design-pptx/validate_theme.py` | テーマ JSON 検証（convert_pptx.load_theme へ委譲。composition 含む） |
-| `add-design-pptx/check_default_composition.py` | theme-schema.md の既定構図リファレンスと `build_default_composition()` の同期照合 |
+| `add-design-pptx/check_default_composition.py` | theme-schema.md の既定構図リファレンスと `build_default_composition()` の同期照合（テーマ作成フローでは使わない。convert_pptx.py の構図関連コード変更時に実行する開発者向けチェック） |
 
 ## 利用ルール
 

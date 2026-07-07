@@ -1,6 +1,6 @@
 ---
 name: convert-pptx
-description: Markdown ファイルを Wiki スタイルの PowerPoint (PPTX) スライドに変換するスキル（入力 MD → 出力 PPTX）。「MD を PPTX に変換」「資料をスライドにして」「設計書を PPTX で出力」等で起動する。Use when converting Markdown into PPTX slides. SKIP when input is PPTX (use convert-from-pptx for PPTX→MD) or when output is HTML (convert-html) / PDF (convert-pdf).
+description: Markdown ファイルを Wiki スタイルの PowerPoint (PPTX) スライドに変換するスキル（入力 MD → 出力 PPTX）。「MD を PPTX に変換」「資料をスライドにして」「設計書を PPTX で出力」等で起動する。Use when converting Markdown into PPTX slides. SKIP when input is PPTX (convert-from-pptx), output is HTML/PDF (convert-html/convert-pdf), or a new theme (add-design-pptx).
 ---
 
 # convert-pptx スキル

@@ -1,6 +1,6 @@
 ---
 name: add-design-pptx
-description: convert-pptx 用の新しいデザインテーマ（テーマ JSON）を検証付きで作成・配置するスキル。「PPTX のデザインを追加」「スライドの配色テーマを作って」「PowerPoint のテーマ追加」等で起動する。Use when creating a new design theme for Markdown-to-PPTX conversion. SKIP when adding an HTML/PDF design (add-design-html) or when just converting a document (convert-pptx).
+description: convert-pptx 用の新しいデザインテーマ（テーマ JSON・構図含む）を検証付きで作成・配置するスキル。「PPTX のデザインを追加」「スライドの配色テーマを作って」「表紙のレイアウトを変えたテーマがほしい」等で起動する。Use when creating a new design theme for Markdown-to-PPTX conversion. SKIP when adding an HTML/PDF design (add-design-html) or when just converting a document (convert-pptx).
 ---
 
 # add-design-pptx スキル

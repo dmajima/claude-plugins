@@ -52,6 +52,69 @@ printf '{"colors": {"primaryy": "#112233"}}' > "$WORK/bad.json"
 "$PY" "$VTHEME" "$WORK/bad.json" > /dev/null; check "unknown key -> FAIL(1)" 1 $?
 "$PY" "$VTHEME" "$WORK/missing.json" 2>/dev/null; check "missing file -> exit 2" 2 $?
 
+echo "== 4) composition（構図）: 同期照合 / 検証 / 変換 / round-trip =="
+CHECK_COMP="$PLUGIN_ROOT/references/scripts/add-design-pptx/check_default_composition.py"
+"$PY" "$CHECK_COMP" > /dev/null; check "check_default_composition (doc<->code sync)" 0 $?
+
+"$PY" - "$WORK/demo-comp.json" <<'PYEOF'
+import json, sys
+sys.stdout.reconfigure(encoding="utf-8")
+theme = {
+    "name": "demo-comp",
+    "composition": {
+        "cover": {
+            "shapes": [{"x": 0, "y": 7.0, "w": "full", "h": 0.3, "color": "accent"}],
+            "title": {"x": 1.0, "y": 2.4, "w": "sym", "h": 1.8, "color": "primary"},
+            "subtitle": {"x": 1.0, "y": 4.4, "w": "sym", "h": 1.2, "color": "text"},
+        },
+        "content_header": {
+            "shapes": [{"x": 0.5, "y": 1.0, "w": "sym", "h": 0.02, "color": "hr"}],
+            "title": {"x": 0.5, "y": 0.2, "w": "sym", "h": 0.7, "color": "primary", "anchor": "middle"},
+            "content_top": 1.2,
+        },
+    },
+}
+with open(sys.argv[1], "w", encoding="utf-8") as f:
+    json.dump(theme, f, ensure_ascii=False, indent=2)
+print("composition theme written")
+PYEOF
+"$PY" "$VTHEME" "$WORK/demo-comp.json" > /dev/null; check "composition theme -> PASS" 0 $?
+"$PY" "$CONVERT" "$WORK/sample.md" "$WORK/sample-comp.pptx" --theme "$WORK/demo-comp.json"
+check "sample conversion with composition theme" 0 $?
+
+"$PY" - "$CONVERT" "$WORK/demo-comp.json" "$WORK/demo-comp-rt.json" <<'PYEOF'
+import sys
+from pathlib import Path
+sys.stdout.reconfigure(encoding="utf-8")
+sys.path.insert(0, str(Path(sys.argv[1]).resolve().parent))
+from convert_pptx import load_theme, theme_to_json
+theme1 = load_theme(Path(sys.argv[2]))
+Path(sys.argv[3]).write_text(theme_to_json(theme1), encoding="utf-8")
+theme2 = load_theme(Path(sys.argv[3]))
+assert theme2.composition == theme1.composition, "round-trip mismatch"
+print("round-trip OK")
+PYEOF
+check "composition round-trip (load -> dump -> load)" 0 $?
+
+echo "== 5) composition のエラー / 警告系 =="
+printf '{"composition": {}}' > "$WORK/bad-comp.json"
+"$PY" "$VTHEME" "$WORK/bad-comp.json" > /dev/null; check "empty composition -> FAIL(1)" 1 $?
+
+"$PY" - "$WORK/demo-comp.json" "$WORK/demo-comp-warn.json" <<'PYEOF'
+import json, sys
+sys.stdout.reconfigure(encoding="utf-8")
+with open(sys.argv[1], encoding="utf-8") as f:
+    theme = json.load(f)
+theme["name"] = "demo-comp-warn"
+theme["layout_in"] = {"title_band_height": 1.2}
+with open(sys.argv[2], "w", encoding="utf-8") as f:
+    json.dump(theme, f, ensure_ascii=False)
+print("warn theme written")
+PYEOF
+"$PY" "$VTHEME" "$WORK/demo-comp-warn.json" > /dev/null 2> "$WORK/warn.txt"
+grep -q "title_band_height is not used" "$WORK/warn.txt"
+check "content_header + title_band_height coexistence warning" 0 $?
+
 echo
 echo "RESULT: $pass passed, $fail failed"
 exit $((fail > 0))
