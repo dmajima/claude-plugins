@@ -4,8 +4,9 @@ convert-pptx（Markdown → PPTX 変換）で使える **新しいデザイン�
 
 ## 概要
 
-デフォルトデザインをベースに、色・フォント・フォントサイズ・レイアウト寸法・シンタックスハイライト配色を
-差し替えたテーマ JSON を生成し、スキーマ検証とサンプル変換で動作確認したうえで配置します。
+デフォルトデザインをベースに、色・フォント・フォントサイズ・レイアウト寸法・シンタックスハイライト配色に加え、
+**構図（表紙・本文見出し部のレイアウト構造。`composition` セクション）** を差し替えたテーマ JSON を生成し、
+スキーマ検証とサンプル変換で動作確認したうえで配置します。
 配置したテーマは `convert-pptx` 実行時の選択肢に自動的に現れます。
 
 変換パイプライン（`convert_pptx.py`）自体は共通のまま、テーマ JSON だけでデザインを切り替えるため、
@@ -62,10 +63,11 @@ python convert_pptx.py input.md output.pptx --theme "<テーマ JSON の絶対�
 
 ## カスタマイズ・拡張
 
-- テーマ JSON のスキーマ: `references/theme-schema.md`
-- デフォルト値の取得: `python convert_pptx.py --dump-default-theme`
+- テーマ JSON のスキーマ: `references/theme-schema.md`（構図 `composition` の仕様・既定構図リファレンス・executive 風の記述例を含む）
+- デフォルト値の取得: `python convert_pptx.py --dump-default-theme`（構図は動的追従のため含まれない。既定構図は `theme-schema.md` を参照）
 - 検証ロジック: `references/scripts/add-design-pptx/validate_theme.py`（プラグイン共通 scripts 配下）は
   `convert_pptx.py` の `load_theme` を直接使うため、スキーマ変更時の追従作業は不要
+- 既定構図リファレンスの同期照合: `references/scripts/add-design-pptx/check_default_composition.py`
 - 配置場所の規約: `references/design-locations.md`（プラグイン共通）
 
 ## ファイル構成
@@ -81,12 +83,13 @@ skills/add-design-pptx/
 └── evals/                          # 動作分岐の期待挙動ケース
     ├── README.md
     ├── demo.sh                     # デモ実行スクリプト
-    └── case-01 〜 case-12
+    └── case-01 〜 case-13
 ```
 
 関連スクリプト（プラグイン共通）:
 
 ```
-references/scripts/add-design-pptx/validate_theme.py   # テーマ検証
-references/scripts/convert-pptx/convert_pptx.py        # 変換本体（--theme / --dump-default-theme）
+references/scripts/add-design-pptx/validate_theme.py             # テーマ検証
+references/scripts/add-design-pptx/check_default_composition.py  # 既定構図リファレンス同期照合
+references/scripts/convert-pptx/convert_pptx.py                  # 変換本体（--theme / --dump-default-theme）
 ```

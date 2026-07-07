@@ -18,6 +18,7 @@
 | [case-10_existing_name_conflict.md](case-10_existing_name_conflict.md) | 既存テーマ名との重複（上書き確認） |
 | [case-11_env_failure_no_placement.md](case-11_env_failure_no_placement.md) | 環境起因の失敗時は配置しない |
 | [case-12_default_edit_refusal.md](case-12_default_edit_refusal.md) | デフォルトデザイン直接変更の依頼への対応 |
+| [case-13_composition_theme.md](case-13_composition_theme.md) | composition（構図）付きテーマの作成（検証 PASS + サンプル変換 + 既定構図との差分確認） |
 
 ## デモ実行スクリプト
 

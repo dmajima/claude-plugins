@@ -6,6 +6,8 @@ description: convert-pptx 用の新しいデザインテーマ（テーマ JSON�
 # add-design-pptx スキル
 
 convert-pptx が使う新しいデザインテーマ（テーマ JSON）を作成・検証・配置する。
+色・フォント・サイズに加えて **構図（表紙・本文見出し部のレイアウト構造）** も
+`composition` セクションで定義可能（`references/theme-schema.md` 参照）。
 
 ## 責務
 

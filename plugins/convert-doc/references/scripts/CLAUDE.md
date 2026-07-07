@@ -17,7 +17,8 @@
 | `convert-from-pptx/run_via_job.sh` / `run_verify_via_job.sh` | 同上の起動ラッパー |
 | `add-design-html/validate_css.py` | デザイン CSS のセレクタ契約・JS 契約検証 |
 | `add-design-html/validate_html.py` | HTML テンプレートペアのプレースホルダ・骨格 DOM 検証 |
-| `add-design-pptx/validate_theme.py` | テーマ JSON 検証（convert_pptx.load_theme へ委譲） |
+| `add-design-pptx/validate_theme.py` | テーマ JSON 検証（convert_pptx.load_theme へ委譲。composition 含む） |
+| `add-design-pptx/check_default_composition.py` | theme-schema.md の既定構図リファレンスと `build_default_composition()` の同期照合 |
 
 ## 利用ルール
 

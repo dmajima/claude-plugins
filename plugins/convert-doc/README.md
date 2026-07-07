@@ -164,7 +164,7 @@ Skill(skill: "convert-from-pptx", args: "<入力PPTX> <出力MD> [--include-note
 ### デザイン追加（`add-design-html` / `add-design-pptx`）
 
 - **HTML / PDF 用**: デフォルト `template.css` をベースに新デザイン CSS を生成。目次トグル・ライトボックス等の JS が依存する DOM ID・状態クラス・ブレークポイントを `validate_css.py` が機械検証するため、デザインを増やしても JS 機能が壊れない。CSS で表現できない構造変更は、JS 契約検証（`validate_html.py`）付きの同名 HTML テンプレートペアとして追加可能
-- **PPTX 用**: 色・フォント・サイズ・シンタックス配色を差し替えるテーマ JSON を生成。`validate_theme.py`（変換スクリプトと同じロードロジック）で検証
+- **PPTX 用**: 色・フォント・サイズ・シンタックス配色に加え、**構図（表紙・本文見出し部のレイアウト構造）** を差し替えるテーマ JSON を生成。構図は `composition` セクションに矩形シェイプ群 + テキスト配置 + コンテンツ開始位置として宣言的に記述でき、スクリプト改修なしで新レイアウト（例: executive 風）を追加できる。`validate_theme.py`（変換スクリプトと同じロードロジック）で検証し、既定構図のリファレンスは `check_default_composition.py` で実装と同期担保
 - 配置先は自動判定: convert-doc ソースリポジトリ内なら `plugins/convert-doc/assets/`（配布物化）、利用者環境なら `.claude/.local/plugins/convert-doc/designs/`（プラグイン更新で消えない位置）
 - 配置後は `convert-html` / `convert-pdf` / `convert-pptx` 実行時の選択肢に自動的に現れる（規約: `references/design-locations.md`。PDF は `--css-template` パススルーで HTML と同じデザインを適用）
 - 同梱サンプルデザイン: `warm-paper`（HTML / PDF 用・温かみのある紙面イメージ）、`dark-console`（PPTX 用・暗色コンソール風コードブロック）
@@ -216,7 +216,7 @@ plugins/convert-doc/
 │       ├── convert-pdf/
 │       │   └── convert_pdf.py
 │       ├── convert-pptx/
-│       │   └── convert_pptx.py       # Theme dataclass / --theme / --dump-default-theme
+│       │   └── convert_pptx.py       # Theme dataclass / composition / --theme / --dump-default-theme
 │       ├── convert-from-pptx/
 │       │   ├── convert_from_pptx.py
 │       │   ├── verify_md.py          # 変換結果の検証
@@ -226,7 +226,8 @@ plugins/convert-doc/
 │       │   ├── validate_css.py       # デザイン CSS の契約検証
 │       │   └── validate_html.py      # HTML ペアの JS 契約検証
 │       └── add-design-pptx/
-│           └── validate_theme.py     # テーマ JSON のスキーマ検証
+│           ├── validate_theme.py     # テーマ JSON のスキーマ検証
+│           └── check_default_composition.py  # 既定構図リファレンスの同期照合
 └── skills/
     ├── convert-html/
     │   ├── SKILL.md
