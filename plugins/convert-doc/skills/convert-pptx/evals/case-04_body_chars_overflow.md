@@ -9,7 +9,7 @@
 
 1. セクション内の本文文字数が `--max-body-chars` を超えた時点で **継続スライド** に分割
 2. 最初のスライドには H2 がタイトル帯として表示される
-3. 継続スライドはタイトル帯を共有（例: `セクション1 (続き)` または同じ見出し）
+3. 継続スライドのタイトル帯は **連番サフィックス付きの同じ見出し**（2 枚目 `セクション1 (2)`、3 枚目 `セクション1 (3)` …）
 4. レイアウトの完全性は保証しない（ベストエフォート）
 
 ## 期待出力
@@ -22,7 +22,9 @@
 `SKILL.md`「重要な制約」:
 > 1 スライドを超える長さのコンテンツは自動で継続スライドに分割するが、レイアウトの完全性は保証しない（ベストエフォート）
 
-`references/scripts/convert-pptx/convert_pptx.py` のパラメータ `MAX_BODY_CHARS_DEFAULT = 2400`
+`references/scripts/convert-pptx/convert_pptx.py` の `add_content_slide`
+（`title = spec.title if idx == 0 else f"{spec.title} ({idx + 1})"`）と
+argparse の `--max-body-chars`（デフォルト 2400）。
 
 ## 関連ケース
 

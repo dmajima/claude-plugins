@@ -36,10 +36,12 @@ mkdir -p "$SessionDir/workspace"
 ### 2. venv 構築
 
 venv は `workspace/` 配下に作成する（`workspace/.venv/`）。
-スキル自身のスクリプトは `$CLAUDE_SKILL_DIR` 経由で参照する（インストール形態に依存しないポータブルパス記法）。
+venv 構築・変換スクリプトはプラグイン共通のため `$CLAUDE_PLUGIN_ROOT` 経由で参照する
+（ADR-024 / ADR-025 によりプラグイン直下 `references/scripts/` に集約済み。
+インストール形態に依存しないポータブルパス記法）。
 
 ```bash
-bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$SessionDir/workspace"
+bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$SESSION_DIR/workspace"
 ```
 ### 3. venv 削除（スキル完了後）
 

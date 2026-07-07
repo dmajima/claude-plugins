@@ -59,12 +59,12 @@
 | [case-42d_max_image_count_exceeded.md](case-42d_max_image_count_exceeded.md) | 画像総量・枚数の上限超過時の拒否（DoS 防御） |
 | [case-43_large_pptx_subagent_flow.md](case-43_large_pptx_subagent_flow.md) | 大規模 PPTX（100 スライド超）でのサブエージェント並列分担フロー |
 | [case-44_xml_hardening_without_defusedxml.md](case-44_xml_hardening_without_defusedxml.md) | `defusedxml` 非依存での XML 攻撃保護（ZIP bomb 検査 + 上限定数）と起動成功 |
+| [case-45_medium_pptx_flow.md](case-45_medium_pptx_flow.md) | 中規模 PPTX（30〜100 スライド）でのメイン逐次 Read フロー |
+| [case-46_section_cover_number_excluded.md](case-46_section_cover_number_excluded.md) | 章扉スライドでの装飾的章番号除外（`_is_decoration_number`） |
 | [case-47_fail_close_stderr_flush.md](case-47_fail_close_stderr_flush.md) | fail-close 経路の stderr が `Start-Process` リダイレクトでも欠落しない（flush 強制） |
 | [case-48_wrapper_timeout_exit124.md](case-48_wrapper_timeout_exit124.md) | `run_via_job.sh` のタイムアウト発火と exit 124 返却 |
 | [case-49_wrapper_no_python_exe_exit2.md](case-49_wrapper_no_python_exe_exit2.md) | `run_via_job.sh` の PythonExe 引数エラー（未指定 / 不在 / .exe 拒否） |
 | [case-50_wrapper_extra_args_passthrough.md](case-50_wrapper_extra_args_passthrough.md) | `run_via_job.sh` の ExtraArgs (`--no-mermaid` 等) 転送確認 |
-| [case-45_medium_pptx_flow.md](case-45_medium_pptx_flow.md) | 中規模 PPTX（30〜100 スライド）でのメイン逐次 Read フロー |
-| [case-46_section_cover_number_excluded.md](case-46_section_cover_number_excluded.md) | 章扉スライドでの装飾的章番号除外（`_is_decoration_number`） |
 | [case-51_trigger_pptx_to_md.md](case-51_trigger_pptx_to_md.md) | トリガー: PPTX→Markdown 変換の基本依頼（対話モード） |
 | [case-52_trigger_slide_to_text.md](case-52_trigger_slide_to_text.md) | トリガー: スライドテキスト化の自然言語依頼（対話モード） |
 | [case-53_trigger_design_doc_parse.md](case-53_trigger_design_doc_parse.md) | トリガー: 設計書 PPTX 解析の自然言語依頼（対話モード） |
@@ -77,3 +77,8 @@
   "$CLAUDE_PLUGIN_ROOT/references/scripts/convert-from-pptx/convert_from_pptx.py" \
   "<入力PPTX>" "<出力MD>" [オプション]
 ```
+
+## デモ実行スクリプト
+
+[`demo.sh`](demo.sh) は主要経路（構造化 JSON 抽出・Markdown 変換・カバレッジ検証）を
+実 venv で通しで確認する再現スクリプト。実行方法はスクリプト冒頭のコメントを参照。

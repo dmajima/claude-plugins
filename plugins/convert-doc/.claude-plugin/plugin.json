@@ -1,7 +1,7 @@
 {
   "name": "convert-doc",
-  "version": "3.2.1",
-  "description": "Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX → Markdown 取り込みも対応）",
+  "version": "4.0.0",
+  "description": "Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX 取り込み・デザイン追加対応）",
   "author": {
     "name": "dmajima"
   },
@@ -15,9 +15,11 @@
     "conversion",
     "documentation",
     "mermaid",
-    "wiki",
+    "wiki-style",
     "pptx-import",
-    "convert-from-pptx"
+    "convert-from-pptx",
+    "design",
+    "theme"
   ],
   "license": "MIT"
 }

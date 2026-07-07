@@ -1,10 +1,17 @@
 # Case 01: CSS が合算 1 ファイル → 選択プロンプトなし
 
+> 前提の注意: v4.0.0 以降の配布状態ではサンプルデザイン `warm-paper.css` が
+> `${CLAUDE_PLUGIN_ROOT}/assets/css/` に同梱されるため、クリーンインストールの既定は
+> 合算 2 ファイル（→ [case-02](case-02_css_multi_interactive.md) の分岐）になる。
+> 本ケースは「合算 1 ファイル」分岐の仕様検証であり、サンプルを除去したカスタム構成や
+> ローカル・スキル側に追加が無い最小構成で成立する（README ADR-004 のトレードオフ参照）。
+
 ## 入力
 
 - 入力 MD: 任意（最小限の `# タイトル` のみで可）
 - `${CLAUDE_SKILL_DIR}/assets/css/`: 空、または `template.css` のみ
-- `${CLAUDE_PLUGIN_ROOT}/assets/css/`: `template.css` のみ
+- `${CLAUDE_PLUGIN_ROOT}/assets/css/`: `template.css` のみ（サンプルデザインを除去した構成）
+- ローカルデザインディレクトリ: `.css` なし
 - 合算後: 同名ファイルがある場合スキル側を優先 → 結果として 1 ファイル
 
 ## 期待動作

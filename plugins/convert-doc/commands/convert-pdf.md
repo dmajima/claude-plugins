@@ -21,6 +21,8 @@ argument-hint: <入力MD> [出力PDF] [--title タイトル] [--format A4] [--la
    | `--landscape` | 横向きに切り替え |
    | `--margin <値>` | 余白（既定 `20mm`） |
    | `--no-background` | 背景色を印刷しない |
+   | `--css-template <パス>` | デザイン CSS（省略時はデフォルト。追加デザインは `/add-design-html` で作成） |
+   | `--html-template <パス>` | HTML テンプレート（デザインの同名ペアがある場合に指定） |
 
 3. **Skill ツール経由で実行**
 

@@ -6,7 +6,7 @@
 
 ## 期待動作
 
-1. `Path(args.input).exists` が False
+1. `Path(args.input).exists()` が False
 2. stderr に `Error: Input file not found: <path>` を出力
 3. `sys.exit(1)` で終了
 
@@ -20,7 +20,7 @@
 
 `references/scripts/convert-pptx/convert_pptx.py:main`:
 ```python
-if not input_path.exists:
+if not input_path.exists():
     print(f"Error: Input file not found: {input_path}", file=sys.stderr)
     sys.exit(1)
 ```

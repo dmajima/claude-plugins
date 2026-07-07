@@ -4,8 +4,69 @@
     "name": "dmajima"
   },
   "description": "dmajima 個人用 Claude Code プラグインマーケットプレイス",
-  "allowCrossMarketplaceDependenciesOn": ["anthropic-agent-skills"],
+  "allowCrossMarketplaceDependenciesOn": [
+    "anthropic-agent-skills"
+  ],
   "plugins": [
+    {
+      "name": "connector",
+      "source": "./plugins/connector",
+      "description": "7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き）",
+      "category": "integration",
+      "author": {
+        "name": "dmajima"
+      },
+      "keywords": [
+        "backlog",
+        "azure-devops",
+        "tfs",
+        "github",
+        "projectboard",
+        "hue",
+        "wbs",
+        "critical-path",
+        "connector",
+        "integration",
+        "api",
+        "rendering-check",
+        "pull-request",
+        "inline-comment",
+        "work-item",
+        "commit",
+        "ailead",
+        "meeting",
+        "transcript",
+        "slack",
+        "google-drive",
+        "google-workspace",
+        "mcp",
+        "shared-files"
+      ]
+    },
+    {
+      "name": "convert-doc",
+      "source": "./plugins/convert-doc",
+      "description": "Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX 取り込み・デザイン追加対応）",
+      "author": {
+        "name": "dmajima"
+      },
+      "category": "documentation",
+      "keywords": [
+        "markdown",
+        "html",
+        "pdf",
+        "pptx",
+        "powerpoint",
+        "conversion",
+        "documentation",
+        "mermaid",
+        "wiki-style",
+        "pptx-import",
+        "convert-from-pptx",
+        "design",
+        "theme"
+      ]
+    },
     {
       "name": "credentials-manager",
       "description": "認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン",
@@ -56,71 +117,6 @@
       ]
     },
     {
-      "name": "convert-doc",
-      "source": "./plugins/convert-doc",
-      "description": "Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX → Markdown 取り込みも対応）",
-      "author": {
-        "name": "dmajima"
-      },
-      "category": "documentation",
-      "keywords": [
-        "markdown",
-        "html",
-        "pdf",
-        "pptx",
-        "powerpoint",
-        "conversion",
-        "documentation",
-        "mermaid",
-        "wiki",
-        "pptx-import",
-        "convert-from-pptx"
-      ],
-      "strict": false
-    },
-    {
-      "name": "skill-router",
-      "source": "./plugins/skill-router",
-      "description": "プロンプト送信時に available-skills を自動スコアリングしてフック注入で適合スキルを推奨。ロジック編集は対象外",
-      "author": {
-        "name": "dmajima"
-      },
-      "category": "productivity",
-      "keywords": [
-        "skill-router",
-        "router",
-        "user-prompt-submit",
-        "session-start",
-        "skill-invocation",
-        "additional-context",
-        "hooks",
-        "embedding",
-        "fastembed",
-        "offline"
-      ]
-    },
-    {
-      "name": "session-usage",
-      "source": "./plugins/session-usage",
-      "description": "カレントセッションのトークン消費量を JSONL から直接集計し、AskUserQuestion 対話メニュー（プレビュー表示・クリップボードコピー・再集計）で操作できる完全内製プラグイン",
-      "author": {
-        "name": "dmajima"
-      },
-      "category": "diagnostics",
-      "keywords": [
-        "session",
-        "usage",
-        "tokens",
-        "diagnostics",
-        "tui",
-        "clipboard",
-        "python",
-        "bash",
-        "interactive",
-        "doctor-like"
-      ]
-    },
-    {
       "name": "maintenance",
       "source": "./plugins/maintenance",
       "description": "Claude Code 環境のメンテナンス統合プラグイン（プラグイン一括更新 / 古い作業フォルダ整理 / Git 経由設定同期）",
@@ -168,29 +164,45 @@
       ]
     },
     {
-      "name": "connector",
-      "source": "./plugins/connector",
-      "description": "7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き）",
-      "category": "integration",
+      "name": "session-usage",
+      "source": "./plugins/session-usage",
+      "description": "セッションのトークン消費量をJSONLから集計し、AskUserQuestion対話メニューで操作する診断プラグイン",
       "author": {
         "name": "dmajima"
       },
+      "category": "diagnostics",
       "keywords": [
-        "backlog",
-        "azure-devops",
-        "tfs",
-        "github",
-        "projectboard",
-        "ailead",
-        "slack",
-        "google-workspace",
-        "connector",
-        "integration",
-        "api",
-        "rendering-check",
-        "pull-request",
-        "mcp",
-        "shared-files"
+        "session",
+        "usage",
+        "tokens",
+        "diagnostics",
+        "tui",
+        "clipboard",
+        "python",
+        "bash",
+        "interactive",
+        "doctor-like"
+      ]
+    },
+    {
+      "name": "skill-router",
+      "source": "./plugins/skill-router",
+      "description": "プロンプト送信時に available-skills を自動スコアリングしてフック注入で適合スキルを推奨。ロジック編集は対象外",
+      "author": {
+        "name": "dmajima"
+      },
+      "category": "productivity",
+      "keywords": [
+        "skill-router",
+        "router",
+        "user-prompt-submit",
+        "session-start",
+        "skill-invocation",
+        "additional-context",
+        "hooks",
+        "embedding",
+        "fastembed",
+        "offline"
       ]
     }
   ]

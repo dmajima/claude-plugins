@@ -1,6 +1,8 @@
 # convert-pdf 実行手順
 
 環境構築（venv・依存パッケージ・Chromium）は `setup.md` を参照すること。
+デザイン（CSS）の選択ルールは convert-html と共通の
+[`../../convert-html/references/css-js-selection.md`](../../convert-html/references/css-js-selection.md) を参照すること。
 
 ## 変換スクリプト実行
 
@@ -13,13 +15,17 @@
   [--format A4] \
   [--landscape] \
   [--margin 20mm] \
-  [--no-background]
+  [--no-background] \
+  [--css-template "<デザインCSSの絶対パス>"] \
+  [--html-template "<HTMLテンプレートの絶対パス>"]
 ```
 
 - 出力先が未指定の場合、入力ファイルと同ディレクトリ・同名で `.pdf` 拡張子
 - `--format` は Chromium がサポートする用紙名（`A4`, `A3`, `Letter`, `Legal` など）
 - `--margin` は `20mm` のような単一値（全辺同じ）、または `"20mm 15mm 25mm 15mm"` 形式（上右下左）
 - `--no-background` を指定すると背景色を印刷しない（モノクロ印刷向け）
+- `--css-template` / `--html-template` は convert-html の `convert.py` にそのまま渡される（省略時はデフォルトデザイン）。
+  対話モードで追加デザインを検出した場合は css-js-selection.md の選択結果をここに渡す
 
 ## 出力先の決定ルール
 

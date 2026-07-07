@@ -8,7 +8,7 @@ Markdown を Wiki デザインの PowerPoint (PPTX) に変換するスキル。`
 
 ## 導入手順
 
-本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法はリポジトリルートの [`README.md`](../../../../README.md) を参照してください。
+本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法（マーケットプレイス経由 / ローカル複製 / 自動更新 / 依存パッケージ）は [`plugins/convert-doc/README.md`](../../README.md) の「導入手順」を参照してください。
 
 ```text
 /plugin install convert-doc@dmajima-claude-plugins
@@ -38,7 +38,18 @@ Markdown を Wiki デザインの PowerPoint (PPTX) に変換するスキル。`
 "$SESSION_DIR/workspace/.venv/Scripts/python" \
   "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py" \
   "<入力MD>" "<出力PPTX>" \
-  [--title "主題"] [--subtitle "副題"] [--aspect 16:9]
+  [--title "主題"] [--subtitle "副題"] [--aspect 16:9] [--theme "<テーマJSONの絶対パス>"]
+```
+
+## 動作例
+
+```text
+ユーザ:
+> 提案資料.md をスライドにして
+
+Claude（要約）:
+> テーマ選択: デフォルト / dark-console → デフォルトを選択
+> 変換しました。出力: 提案資料.pptx（16:9・タイトルスライド + セクション別スライド）
 ```
 
 ## ファイル構成
@@ -47,20 +58,28 @@ Markdown を Wiki デザインの PowerPoint (PPTX) に変換するスキル。`
 skills/convert-pptx/
 ├── SKILL.md
 ├── README.md
-├── references/
-│   ├── procedures.md
-│   └── setup.md
-└── scripts/
-    ├── convert/
-    │   └── convert_pptx.py
-    └── setup/
-        ├── requirements.txt
-        ├── setup_venv.sh
-        └── teardown_venv.sh
+├── evals/                    # 動作分岐の期待挙動ケース
+└── references/
+    ├── procedures.md
+    ├── setup.md
+    └── theme-selection.md    # デザインテーマの対話選択ルール
+```
+
+変換スクリプト・venv スクリプトはプラグイン共通の `references/scripts/`（プラグインルート直下）に配置:
+
+```
+references/scripts/
+├── convert-pptx/
+│   └── convert_pptx.py
+└── setup/
+    ├── requirements.txt
+    ├── setup_venv.sh
+    └── teardown_venv.sh
 ```
 
 ## カスタマイズ
 
-- 色・フォント・レイアウトの調整は `references/scripts/convert-pptx/convert_pptx.py` 冒頭の定数（`PRIMARY`, `BODY_FONT`, `CODE_FONT`, `SLIDE_WIDTH_IN`, `SLIDE_HEIGHT_IN` など）を編集する
+- **色・フォント・サイズ・レイアウトの変更（推奨）**: `add-design-pptx` スキル（`/add-design-pptx`）でテーマ JSON を作成し `--theme` で適用する。既定値の一覧は `convert_pptx.py --dump-default-theme` で取得できる
+- デフォルトデザイン自体の変更: `references/scripts/convert-pptx/convert_pptx.py` の `Theme` dataclass のフィールドデフォルトを編集する
 - スライド分割規則の変更（例: H3 でもスライド分割する）は `split_into_slides` を編集する
-- mermaid の PNG サイズは `MERMAID_MAX_WIDTH_IN` / `MERMAID_MAX_HEIGHT_IN` を変更する
+- mermaid / 画像の最大サイズはテーマ JSON の `layout_in.mermaid_max_width` 等で変更できる

@@ -1,17 +1,17 @@
 # convert-html スキル
 
-## このドキュメントについて
-
-このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。スキル動作の本体は `SKILL.md` および `references/` 配下を参照してください。
-
 ## 概要
 
 Markdown ファイルを Wiki スタイルのデザインが適用された自己完結型 HTML ファイルに変換するスキル。
 変換後の HTML は外部ファイルへの依存なしに単体で機能し、要件定義資料・設計書・お客様向け提出物として使用できる。
 
+## このドキュメントについて
+
+このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。スキル動作の本体は `SKILL.md` および `references/` 配下を参照してください。
+
 ## 導入手順
 
-本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法はリポジトリルートの [`README.md`](../../../../README.md) を参照してください。
+本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法（マーケットプレイス経由 / ローカル複製 / 自動更新 / 依存パッケージ）は [`plugins/convert-doc/README.md`](../../README.md) の「導入手順」を参照してください。
 
 ```text
 /plugin install convert-doc@dmajima-claude-plugins
@@ -132,7 +132,7 @@ JS ファイルの作成ルールは `references/template/js-feature-template.js
 ## ファイル構成
 
 ```
-convert-html/
+skills/convert-html/
 ├── SKILL.md                          # Claude が実行時に読み込むスキル定義
 ├── README.md                         # 本ファイル（人間向けリファレンス）
 ├── assets/
@@ -140,19 +140,26 @@ convert-html/
 │       ├── features.json             # JS 機能の登録ファイル
 │       ├── lightbox.js               # ライトボックス機能
 │       └── toc-toggle.js             # 目次トグル機能
-├── scripts/
-│   ├── setup/                        # 環境構築
-│   │   ├── requirements.txt          # Python 依存パッケージ
-│   │   ├── setup_venv.sh            # venv 構築スクリプト
-│   │   └── teardown_venv.sh         # venv 削除スクリプト
-│   └── convert/                      # 変換処理
-│       └── convert.py                # Markdown → HTML 変換スクリプト
+├── evals/                            # 動作分岐の期待挙動ケース
 └── references/
     ├── setup.md                      # 環境構築手順（Claude 参照用）
     ├── procedures.md                 # 変換実行手順（Claude 参照用）
+    ├── css-js-selection.md           # CSS / JS 機能の対話選択ルール
     ├── js-authoring.md               # JS 機能の作成ルール（Claude 参照用）
     └── template/
         └── js-feature-template.js    # JS 機能テンプレート
+```
+
+変換スクリプト・venv スクリプトはプラグイン共通の `references/scripts/`（プラグインルート直下）に配置:
+
+```
+references/scripts/
+├── convert-html/
+│   └── convert.py                    # Markdown → HTML 変換スクリプト
+└── setup/
+    ├── requirements.txt
+    ├── setup_venv.sh
+    └── teardown_venv.sh
 ```
 
 CSS と HTML テンプレートは **プラグイン共通** のため `plugins/convert-doc/assets/` に配置されている。

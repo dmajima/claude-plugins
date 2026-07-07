@@ -9,6 +9,8 @@ Usage:
     [--landscape]
     [--margin 20mm]
     [--no-background]
+    [--css-template path/to/design.css]
+    [--html-template path/to/design.html]
 
 Dependencies: playwright (+ chromium), markdown, Pygments, rcssmin, rjsmin, Pillow
 """
@@ -20,6 +22,10 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Optional
+
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 
 
 def locate_convert_html_script() -> Path:
@@ -68,30 +74,47 @@ def parse_margin(value: str) -> dict:
     """
     parts = value.split()
     if len(parts) == 1:
-        t = r = b = l = parts[0]
+        top = right = bottom = left = parts[0]
     elif len(parts) == 2:
-        t = b = parts[0]
-        r = l = parts[1]
+        top = bottom = parts[0]
+        right = left = parts[1]
     elif len(parts) == 4:
-        t, r, b, l = parts
+        top, right, bottom, left = parts
     else:
         raise ValueError(
             "--margin must be 1, 2, or 4 whitespace-separated values (e.g. '20mm' or '20mm 15mm 25mm 15mm')"
         )
-    return {"top": t, "right": r, "bottom": b, "left": l}
+    return {"top": top, "right": right, "bottom": bottom, "left": left}
 
 
-def generate_html(input_md: Path, title: Optional[str], workspace_tmp: Path) -> Path:
+def generate_html(
+    input_md: Path,
+    title: Optional[str],
+    workspace_tmp: Path,
+    *,
+    css_template: Optional[str] = None,
+    html_template: Optional[str] = None,
+) -> Path:
     """Generate a self-contained HTML from Markdown using the sibling convert-html skill.
     The HTML is written into a temp directory and its path is returned.
+
+    ``css_template`` / ``html_template`` are forwarded verbatim to convert.py
+    so a design (see references/design-locations.md) applies to PDF output too.
     """
     convert_html = locate_convert_html_script()
     html_path = workspace_tmp / (input_md.stem + ".html")
     cmd = [sys.executable, str(convert_html), str(input_md), str(html_path)]
     if title:
         cmd.extend(["--title", title])
+    if css_template:
+        cmd.extend(["--css-template", css_template])
+    if html_template:
+        cmd.extend(["--html-template", html_template])
     print(f"[convert-pdf] generating HTML via convert-html: {html_path}")
-    subprocess.run(cmd, check=True)
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        print(f"Error: convert-html failed with exit code {result.returncode}", file=sys.stderr)
+        sys.exit(1)
     if not html_path.exists():
         print(f"Error: convert-html did not produce {html_path}", file=sys.stderr)
         sys.exit(1)
@@ -112,7 +135,7 @@ def render_pdf(
 
     url = html_path.resolve().as_uri()  # file:///... cross-platform
 
-    print(f"[convert-pdf] launching chromium")
+    print("[convert-pdf] launching chromium")
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
@@ -153,6 +176,14 @@ def main() -> None:
         action="store_true",
         help="Do not print background colors/images",
     )
+    parser.add_argument(
+        "--css-template",
+        help="Design CSS path forwarded to convert-html (default: built-in design)",
+    )
+    parser.add_argument(
+        "--html-template",
+        help="HTML template path forwarded to convert-html (default: shared template)",
+    )
     args = parser.parse_args()
 
     input_path = Path(args.input)
@@ -163,20 +194,32 @@ def main() -> None:
     output_path = Path(args.output) if args.output else input_path.with_suffix(".pdf")
     output_path = output_path.resolve()
 
-    margin = parse_margin(args.margin)
+    try:
+        margin = parse_margin(args.margin)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # Work in a temp directory for the intermediate HTML so we do not pollute the user's tree.
     with tempfile.TemporaryDirectory(prefix="convert-pdf-") as tmp_str:
         tmp_dir = Path(tmp_str)
-        html_path = generate_html(input_path, args.title, tmp_dir)
-        render_pdf(
-            html_path,
-            output_path,
-            paper_format=args.format,
-            landscape=args.landscape,
-            margin=margin,
-            print_background=not args.no_background,
+        html_path = generate_html(
+            input_path, args.title, tmp_dir,
+            css_template=args.css_template,
+            html_template=args.html_template,
         )
+        try:
+            render_pdf(
+                html_path,
+                output_path,
+                paper_format=args.format,
+                landscape=args.landscape,
+                margin=margin,
+                print_background=not args.no_background,
+            )
+        except Exception as e:
+            print(f"Error: PDF rendering failed: {e}", file=sys.stderr)
+            sys.exit(1)
 
     print(f"Generated: {output_path}")
 

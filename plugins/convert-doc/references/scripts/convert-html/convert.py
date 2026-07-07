@@ -21,6 +21,14 @@ import urllib.error
 from pathlib import Path
 from typing import Optional
 
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
+# Cap for remote fetches (mermaid SVG) to avoid memory-exhaustion from
+# oversized responses.
+MAX_REMOTE_BYTES = 20 * 1024 * 1024
+
 # 画像圧縮: このサイズを超えるローカル画像は埋め込み前に圧縮する
 IMAGE_COMPRESS_THRESHOLD = 200 * 1024  # 200 KB
 
@@ -50,7 +58,12 @@ def fetch_mermaid_svg(diagram_code: str, retries: int = 3, delay: float = 2.0) -
                 ctype = resp.headers.get("Content-Type", "")
                 if "image/svg+xml" not in ctype and "text/xml" not in ctype:
                     raise ValueError(f"unexpected Content-Type: {ctype}")
-                return resp.read().decode("utf-8")
+                data = resp.read(MAX_REMOTE_BYTES + 1)
+                if len(data) > MAX_REMOTE_BYTES:
+                    raise ValueError(
+                        f"response exceeds {MAX_REMOTE_BYTES // (1024 * 1024)}MB cap"
+                    )
+                return data.decode("utf-8")
         except Exception as e:
             last_err = e
             if attempt < retries - 1:
@@ -97,6 +110,24 @@ def _is_within(parent: Path, child: Path) -> bool:
     return child_r == parent_r or parent_r in child_r.parents
 
 
+def _is_external_path_ref(src: str) -> bool:
+    """True for absolute / UNC / drive-anchored paths that must never be joined
+    onto base_dir (they would escape it or trigger network filesystem lookups).
+    Mirrored in convert-pptx/convert_pptx.py — keep both copies in sync.
+    """
+    from pathlib import PurePosixPath, PureWindowsPath
+    return bool(
+        src.startswith(("\\\\", "//"))
+        or PureWindowsPath(src).drive
+        or PureWindowsPath(src).root
+        or PurePosixPath(src).root
+    )
+
+
+# mimetypes on Python 3.9 does not know these modern formats.
+_EXTRA_IMAGE_MIME = {".webp": "image/webp", ".avif": "image/avif"}
+
+
 def embed_image(src: str, base_dir: Path) -> str:
     """Embed a local image as base64 data URI.
     Images over IMAGE_COMPRESS_THRESHOLD bytes are compressed before encoding.
@@ -104,15 +135,18 @@ def embed_image(src: str, base_dir: Path) -> str:
     """
     if src.startswith("data:") or src.startswith("http://") or src.startswith("https://"):
         return src
+    if _is_external_path_ref(src):
+        # 絶対パス・UNC は base_dir 結合前に拒否（ファイルシステムに触れない）
+        return src
     candidate = base_dir / src
     if candidate.exists() and _is_within(base_dir, candidate):
         img_path = candidate
     else:
-        # `src` が絶対パス等で base_dir 外を指す場合は埋め込まずに元の src を返す
+        # `src` が base_dir 外を指す場合は埋め込まずに元の src を返す
         return src
     mime, _ = mimetypes.guess_type(str(img_path))
     if not mime:
-        mime = "image/png"
+        mime = _EXTRA_IMAGE_MIME.get(img_path.suffix.lower(), "image/png")
     with open(img_path, "rb") as f:
         raw = f.read()
     if len(raw) > IMAGE_COMPRESS_THRESHOLD:
@@ -120,6 +154,35 @@ def embed_image(src: str, base_dir: Path) -> str:
         if compressed:
             raw = compressed
     return f"data:{mime};base64,{base64.b64encode(raw).decode()}"
+
+
+_CODE_FENCE_RE = re.compile(r"^(```+|~~~+)[^\n]*\n.*?^\1[ \t]*$", re.MULTILINE | re.DOTALL)
+
+
+def shield_code_fences(md_text: str) -> tuple:
+    """Replace fenced code blocks (except ```mermaid) with placeholder tokens.
+
+    The raw-text preprocessors (strikethrough / task lists / inline-TOC removal /
+    title extraction) use regexes that must never rewrite code content — e.g.
+    `~~x~~` inside a shell sample, a `#` comment line, or a literal `## 目次`
+    in a Markdown-about-Markdown document. Shield the fences first, run the
+    preprocessors, then restore with restore_placeholders() before the real
+    markdown conversion. Mermaid fences stay in place so
+    process_mermaid_blocks() can find them afterwards.
+    Returns (shielded_md_text, {placeholder: original_block}).
+    """
+    placeholders = {}
+    counter = [0]
+
+    def _shield(m):
+        if m.group(0).startswith("```mermaid"):
+            return m.group(0)
+        counter[0] += 1
+        key = f"CODEFENCE_PLACEHOLDER_{counter[0]}_END"
+        placeholders[key] = m.group(0)
+        return key
+
+    return _CODE_FENCE_RE.sub(_shield, md_text), placeholders
 
 
 def preprocess_strikethrough(md_text: str) -> str:
@@ -546,10 +609,14 @@ def main():
 
     output_path = Path(args.output) if args.output else input_path.with_suffix(".html")
 
-    # Path(__file__) = references/scripts/convert-html/convert.py
+    # Path(__file__) = <plugin_root>/references/scripts/convert-html/convert.py
     script_dir = Path(__file__).resolve().parent
-    skill_root = script_dir.parent.parent            # skills/convert-html/
-    plugin_root = skill_root.parent.parent           # plugins/convert-doc/
+    env_plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if env_plugin_root:
+        plugin_root = Path(env_plugin_root)
+    else:
+        plugin_root = script_dir.parent.parent.parent    # plugins/convert-doc/
+    skill_root = plugin_root / "skills" / "convert-html"
 
     def _resolve_asset(relative_path: str) -> Path:
         """Return the first existing path for ``relative_path``.
@@ -588,13 +655,19 @@ def main():
         selected_js = [f["file"] for f in features]
     toc_enabled = "toc-toggle.js" in selected_js
 
-    # Step 1: 前処理（打ち消し線・GFM タスクリスト）
+    # Step 1: コードフェンスを退避（mermaid 以外。生テキスト前処理からコード内容を保護）
+    md_text, fence_map = shield_code_fences(md_text)
+
+    # Step 1b: 前処理（打ち消し線・GFM タスクリスト）
     md_text = preprocess_strikethrough(md_text)
     md_text = preprocess_task_lists(md_text)
 
     # Step 2: 手書き目次セクション（## 目次）を削除（目次機能が有効な場合のみ）
     if toc_enabled:
         md_text = remove_inline_toc(md_text)
+
+    # Step 2b: コードフェンスを復元（markdown 変換には元のフェンスを渡す）
+    md_text = restore_placeholders(md_text, fence_map)
 
     # Step 3: Mermaidブロックを先に処理（APIコール）
     md_text_processed, mermaid_map = process_mermaid_blocks(md_text)
@@ -614,8 +687,9 @@ def main():
     # Step 7: H1はdoc-titleで表示するためbodyから除去
     body_html = remove_first_h1(body_html)
 
-    # Step 8: タイトル決定（前処理前の元テキストから取得）
-    title = args.title or extract_title_from_md(original_md)
+    # Step 8: タイトル決定（前処理前の元テキストから取得。フェンス内の # 行は対象外）
+    shielded_original, _ = shield_code_fences(original_md)
+    title = args.title or extract_title_from_md(shielded_original)
 
     # Step 9: 目次処理（目次機能が無効な場合は出力しない。リンクは保持して該当箇所へジャンプ可能にする）
     if not toc_enabled:
@@ -624,7 +698,10 @@ def main():
     # Step 10: CSS読み込み
     css = read_css_template(css_template_path)
     if not css:
-        print(f"Warning: CSS template not found at {css_template_path}", file=sys.stderr)
+        # An unstyled page would be silently broken output; fail like the
+        # HTML-template case instead of continuing with an empty stylesheet.
+        print(f"Error: CSS template is empty or not found at {css_template_path}", file=sys.stderr)
+        sys.exit(1)
 
     # Step 11: Pygments CSS
     pygments_css = get_pygments_css()

@@ -1,0 +1,24 @@
+{
+  "name": "dark-console",
+  "description": "ダーク基調のエンジニア向けテーマ。コードブロックを暗色コンソール風に、タイトル帯を深いネイビーに調整",
+  "colors": {
+    "primary": "#0F3460",
+    "code_bg": "#16213E",
+    "code_text": "#E8E8E8",
+    "code_border": "#0F3460",
+    "table_row_even": "#EEF1F6"
+  },
+  "syntax_palette": {
+    "keyword": "#4FC3F7",
+    "builtin": "#CE93D8",
+    "func": "#82B1FF",
+    "tag": "#4FC3F7",
+    "attr": "#FFB74D",
+    "string": "#A5D6A7",
+    "number": "#FFB74D",
+    "operator": "#B0BEC5",
+    "comment": "#78909C",
+    "error": "#EF9A9A",
+    "heading": "#82B1FF"
+  }
+}

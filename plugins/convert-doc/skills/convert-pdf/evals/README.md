@@ -22,3 +22,9 @@
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pdf/convert_pdf.py" <ケースの入力> <出力> [オプション]
 ```
+
+## デモ実行スクリプト
+
+[`demo.sh`](demo.sh) は PDF 生成の主要経路（デフォルト / `--css-template` パススルー / エラー系）を
+Chromium 実機で確認する再現スクリプト（要 `playwright install chromium`）。
+実行方法はスクリプト冒頭のコメントを参照。

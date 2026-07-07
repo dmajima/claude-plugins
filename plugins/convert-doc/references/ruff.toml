@@ -1,0 +1,22 @@
+# convert-doc プラグインの Python スクリプト向け ruff 設定
+#
+# 対象: references/scripts/ 配下の全スクリプト
+#   convert-html/convert.py / convert-pdf/convert_pdf.py / convert-pptx/convert_pptx.py /
+#   convert-from-pptx/{convert_from_pptx.py, verify_md.py} /
+#   add-design-html/{validate_css.py, validate_html.py} / add-design-pptx/validate_theme.py
+# 完全な PEP 8 遵守よりも、可読性と既存コードベース整合を優先する。
+
+line-length = 120
+
+[lint]
+# 標準的な品質チェック (E=pycodestyle, F=pyflakes, W=warning, B=bugbear, UP=pyupgrade)
+select = ["E", "F", "W", "B", "UP"]
+
+# UP006 / UP035 / UP045 等の Python 3.10+ アップグレード推奨（typing.List / Optional →
+# 組み込み・PEP 604 化）は、Python 3.9 サポートを維持する間は警告レベルで残す
+# （新規コードは PEP 585 の組み込みジェネリクスを使用済み）。
+
+[format]
+# 既存コードのインデント・改行を尊重。format 適用は本設定では行わない.
+quote-style = "double"
+indent-style = "space"

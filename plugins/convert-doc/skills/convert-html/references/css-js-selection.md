@@ -1,36 +1,44 @@
 # CSS / JS の対話選択ルール
 
-`convert-html` スキル実行時の CSS テンプレート選択と JS 機能選択の詳細ルール。
+`convert-html` スキル実行時の CSS テンプレート（デザイン）選択と JS 機能選択の詳細ルール。
+デザインの配置場所・命名の共通規約は [`../../../references/design-locations.md`](../../../references/design-locations.md) を参照。
 
-## CSSファイルの選択
+## CSSファイル（デザイン）の選択
 
-スキル実行前に `${CLAUDE_SKILL_DIR}/assets/css/` とフォールバック先の `${CLAUDE_PLUGIN_ROOT}/assets/css/` の `.css` ファイルを合算して確認し、**2 つ以上存在する場合**は `AskUserQuestion` ツールで選択させる。同名ファイルはスキル側を優先する。
+スキル実行前に以下 3 箇所の `.css` ファイルを合算して確認し、**2 つ以上存在する場合**は `AskUserQuestion` ツールで選択させる。
+
+| 順序 | 場所 | 由来表示 |
+|-----|------|---------|
+| 1 | `${CLAUDE_SKILL_DIR}/assets/css/` | スキル |
+| 2 | `${CLAUDE_PLUGIN_ROOT}/assets/css/` | プラグイン共通 |
+| 3 | ローカルデザインディレクトリ `<designs>/css/`（`design-locations.md` 節 3: リポジトリ内なら `<repo_root>/.claude/.local/plugins/convert-doc/designs/`、無ければ `~/.claude/.local/plugins/convert-doc/designs/`） | ローカルデザイン |
 
 ### 呼び出し方針
 
 - `question`: `"適用するCSSを選択してください。"`
 - `header`: `"CSS"`
 - `multiSelect`: `false`（1つだけ選択）
-- `options`: 検出した `.css` ファイルを `{ label: ファイル名, description: "<由来> の <ファイル名> を使用" }` で列挙（由来は「スキル」または「プラグイン共通」）
+- `options`: 検出した `.css` ファイルを `{ label: ファイル名, description: "<由来> の <ファイル名> を使用" }` で列挙（由来は「スキル」「プラグイン共通」「ローカルデザイン」）
 
 ### 回答の処理
 
-- 選択されたファイルの **絶対パス** を `--css-template "<絶対パス>"` として渡す（由来に応じて `${CLAUDE_SKILL_DIR}/assets/css/...` または `${CLAUDE_PLUGIN_ROOT}/assets/css/...` を解決した結果）
+- 選択されたファイルの **絶対パス** を `--css-template "<絶対パス>"` として渡す（由来に応じて上表の各ディレクトリを解決した結果）
+- **同名 HTML テンプレートのペア解決**: 選択された CSS と同じベース名の `.html` が、同由来の `html/` ディレクトリ（`${CLAUDE_SKILL_DIR}/assets/html/` / `${CLAUDE_PLUGIN_ROOT}/assets/html/` / `<designs>/html/`）に存在する場合は、その絶対パスを `--html-template "<絶対パス>"` として併せて渡す。存在しない場合は `--html-template` を渡さない（デフォルト `template.html` が使われる）
 - 「Other」（カスタム指示）が入力された場合は、入力内容を指示として解釈して処理する
 - **回答受け取り後、確認なしでそのまま処理を続行する**
 
 ### 制約
 
 - `AskUserQuestion` の options は最大 4 件（「Other」は自動付与のため実質 3 件）。CSS ファイルが 4 件以上の場合はテキストベースの選択に切り替える
-- `${CLAUDE_SKILL_DIR}/assets/css/` と `${CLAUDE_PLUGIN_ROOT}/assets/css/` の合算で `.css` ファイルが 1 つだけの場合は選択肢を提示せずにそのまま使用する（同名ファイルがある場合はスキル側を優先）
+- 3 箇所の合算で `.css` ファイルが 1 つだけの場合は選択肢を提示せずにそのまま使用する（同名ファイルは上表の順で優先）
 
 ### 仕様の正規化（同名ファイル時）
 
 合算ロジックは以下の通り:
 
-1. プラグイン共通 (`${CLAUDE_PLUGIN_ROOT}/assets/css/`) と スキル固有 (`${CLAUDE_SKILL_DIR}/assets/css/`) を**和集合**として扱う
-2. 同名ファイルが両方に存在する場合は **スキル側を優先**（プラグイン共通側は選択肢から除外）
-3. ユーザーが選択しなかった経路（`--css-template` 未指定）でも、`convert.py` 内の `_resolve_asset` がスキル → プラグイン共通の順に first-existing 解決を行う
+1. スキル固有 (`${CLAUDE_SKILL_DIR}/assets/css/`)、プラグイン共通 (`${CLAUDE_PLUGIN_ROOT}/assets/css/`)、ローカルデザイン (`<designs>/css/`) を**和集合**として扱う
+2. 同名ファイルが複数箇所に存在する場合は **スキル > プラグイン共通 > ローカルデザイン** の順で優先（下位は選択肢から除外）
+3. ユーザーが選択しなかった経路（`--css-template` 未指定）でも、`convert.py` 内の `_resolve_asset` がスキル → プラグイン共通の順に first-existing 解決を行う（ローカルデザインは `--css-template` 明示指定でのみ使われる）
 
 ## JS機能の選択
 
@@ -55,7 +63,7 @@
 
 ### 制約
 
-- `AskUserQuestion` の options は最大 4 件（「全て不要」を含む）。features.json の機能が 3 件以上になる場合はテキストベースの選択に切り替える
+- `AskUserQuestion` の options は最大 4 件（「Other」は自動付与のため、「全て不要」を含めて実質 3 件）。features.json の機能が 3 件以上になる場合はテキストベースの選択に切り替える
 - **別スキルからの呼び出しなど対話が難しい場合は `--js-features` を省略して全機能を導入する**
 
 JS 機能ファイルの作成・追加ルールは [`js-authoring.md`](js-authoring.md) を参照。

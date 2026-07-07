@@ -8,7 +8,7 @@ Markdown を Wiki デザインの PDF に変換するスキル。`convert-doc` �
 
 ## 導入手順
 
-本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法はリポジトリルートの [`README.md`](../../../../README.md) を参照してください。
+本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法（マーケットプレイス経由 / ローカル複製 / 自動更新 / 依存パッケージ）は [`plugins/convert-doc/README.md`](../../README.md) の「導入手順」を参照してください。
 
 ```text
 /plugin install convert-doc@dmajima-claude-plugins
@@ -41,7 +41,20 @@ Markdown を Wiki デザインの PDF に変換するスキル。`convert-doc` �
 ```bash
 "$SESSION_DIR/workspace/.venv/Scripts/python" \
   "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pdf/convert_pdf.py" \
-  "<入力MD>" "<出力PDF>" [--title "タイトル"] [--format A4] [--landscape]
+  "<入力MD>" "<出力PDF>" [--title "タイトル"] [--format A4] [--landscape] \
+  [--css-template "<デザインCSSの絶対パス>"]
+```
+
+## 動作例
+
+```text
+ユーザ:
+> 設計書.md を PDF にして
+
+Claude（要約）:
+> convert-html 経由で中間 HTML を生成し、Chromium で PDF 化しました。
+> （追加デザインがある環境では、変換前にデザイン選択を確認します）
+> 出力: 設計書.pdf（A4 縦・背景色印刷あり）
 ```
 
 ## ファイル構成
@@ -50,20 +63,26 @@ Markdown を Wiki デザインの PDF に変換するスキル。`convert-doc` �
 skills/convert-pdf/
 ├── SKILL.md
 ├── README.md
-├── references/
-│   ├── procedures.md
-│   └── setup.md
-└── scripts/
-    ├── convert/
-    │   └── convert_pdf.py
-    └── setup/
-        ├── requirements.txt
-        ├── setup_venv.sh
-        └── teardown_venv.sh
+├── evals/                    # 動作分岐の期待挙動ケース
+└── references/
+    ├── procedures.md
+    └── setup.md
+```
+
+変換スクリプト・venv スクリプトはプラグイン共通の `references/scripts/`（プラグインルート直下）に配置:
+
+```
+references/scripts/
+├── convert-pdf/
+│   └── convert_pdf.py
+└── setup/
+    ├── requirements.txt
+    ├── setup_venv.sh
+    └── teardown_venv.sh
 ```
 
 ## カスタマイズ
 
-- デザイン変更はプラグイン共通の `plugins/convert-doc/assets/css/template.css` を編集する（convert-html と共有）
-  - convert-pdf だけに独自 CSS を適用したい場合は `skills/convert-pdf/assets/css/template.css` に上書きファイルを置くこともできるが、現在の `convert_pdf.py` は convert-html の convert.py を呼び出して HTML を生成するため、convert-html 側の解決ロジックに従う
+- **新しいデザインの追加（推奨）**: `add-design-html` スキル（`/add-design-html`）を使う。convert-html と共有の CSS 資産として追加され、`--css-template` パススルーで PDF にも適用できる
+- デフォルトデザイン自体の変更はプラグイン共通の `plugins/convert-doc/assets/css/template.css` を編集する（convert-html と共有）
 - Playwright の PDF オプション（ヘッダー/フッター、印刷オプション）は `references/scripts/convert-pdf/convert_pdf.py` の `page.pdf(...)` 呼び出し箇所を編集する
