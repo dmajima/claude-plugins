@@ -26,7 +26,7 @@ from urllib.parse import urlparse
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
-from pptx.enum.text import MSO_ANCHOR
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Emu, Inches, Pt
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -68,6 +68,107 @@ def _is_external_path_ref(src: str) -> bool:
         or PureWindowsPath(src).drive
         or PureWindowsPath(src).root
         or PurePosixPath(src).root
+    )
+
+
+# ===================== Composition (cover / content-header layout) =====================
+
+# Width / height tokens resolved at draw time against the actual slide size:
+#   "full" = slide width (w) / slide height (h)
+#   "sym"  = slide width - x * 2 (symmetric side margins; w only)
+# Slide width depends on the aspect ratio, so edge-reaching sizes must be
+# written as tokens rather than absolute numbers to stay portable.
+
+@dataclass(frozen=True)
+class ShapeSpec:
+    """A filled, borderless rectangle in a slide composition."""
+    x: float
+    y: float
+    w: "float | str"        # number | "full" | "sym"
+    h: "float | str"        # number | "full"
+    color: str              # color token name (a `colors` section key) or hex
+
+
+@dataclass(frozen=True)
+class TextSpec:
+    """Placement and text styling for a composition text box.
+
+    Font face and size intentionally do NOT live here: composition describes
+    geometry only, while `fonts` / `font_sizes_pt` keep describing the look
+    (cover title -> title_slide_title, cover subtitle -> title_slide_subtitle,
+    content-header title -> title_band).
+    """
+    x: float
+    y: float
+    w: "float | str"        # number | "sym" ("full" is used only internally)
+    h: float
+    color: str              # color token name or hex
+    bold: bool = False
+    align: str = "left"     # left | center | right
+    anchor: str = "top"     # top | middle
+    margin: float = 0.1     # text_frame left/right margin in inches (pptx default)
+
+
+@dataclass(frozen=True)
+class CoverComposition:
+    """Title-slide layout: decoration shapes plus title/subtitle placement."""
+    shapes: "tuple[ShapeSpec, ...]"
+    title: TextSpec
+    subtitle: TextSpec
+
+
+@dataclass(frozen=True)
+class ContentHeaderComposition:
+    """Content-slide header layout plus where the body blocks start."""
+    shapes: "tuple[ShapeSpec, ...]"
+    title: TextSpec
+    content_top: float      # body start Y (inches); also drives slide chunking
+
+
+@dataclass(frozen=True)
+class Composition:
+    """Declarative cover / content-header layout.
+
+    A part left as None falls back to the built-in default composition
+    (parts are replaced wholesale; no deep merge within a part).
+    """
+    cover: "CoverComposition | None" = None
+    content_header: "ContentHeaderComposition | None" = None
+
+
+def build_default_composition(theme: "Theme", slide_w_in: float, slide_h_in: float) -> Composition:
+    """Build the default composition (visually identical to the historical
+    hard-coded layout).
+
+    This function is the SSOT for the default composition; the reference
+    listing in add-design-pptx's theme-schema.md mirrors it and is kept in
+    sync by check_default_composition.py. It tracks theme values
+    (title_band_height) dynamically, which is why --dump-default-theme does
+    not include a `composition` section.
+    """
+    band_h = theme.title_band_height_in
+    return Composition(
+        cover=CoverComposition(
+            shapes=(ShapeSpec(x=0, y=0, w=0.4, h="full", color="primary"),),
+            title=TextSpec(
+                x=1.0, y=2.3, w=slide_w_in - 1.5, h=2.0, color="primary", bold=True,
+            ),
+            subtitle=TextSpec(
+                x=1.0, y=4.4, w=slide_w_in - 1.5, h=1.5, color="text",
+            ),
+        ),
+        content_header=ContentHeaderComposition(
+            shapes=(ShapeSpec(x=0, y=0, w="full", h=band_h, color="primary"),),
+            # x=0 / w="full" / margin=0.35 reproduces the historical band text
+            # exactly: the text frame spans the slide and the 0.35in margins
+            # give the same effective text start X (0.35) as the old
+            # text-on-band-shape implementation.
+            title=TextSpec(
+                x=0, y=0, w="full", h=band_h, color="on_primary",
+                bold=True, anchor="middle", margin=0.35,
+            ),
+            content_top=band_h + 0.2,
+        ),
     )
 
 
@@ -704,74 +805,130 @@ class Deck:
     def __init__(self, *, aspect: str, theme: Theme):
         self.theme = theme
         self.prs = Presentation()
+        # Keep the inch sizes as literals (not derived from EMU) so that
+        # composition math (e.g. "sym" widths) reproduces the historical
+        # EMU-exact geometry without float round-trip drift.
         if aspect == "4:3":
-            self.prs.slide_width = Inches(10)
-            self.prs.slide_height = Inches(7.5)
+            self.slide_w_in, self.slide_h_in = 10.0, 7.5
         else:  # 16:9
-            self.prs.slide_width = Inches(13.333)
-            self.prs.slide_height = Inches(7.5)
+            self.slide_w_in, self.slide_h_in = 13.333, 7.5
+        self.prs.slide_width = Inches(self.slide_w_in)
+        self.prs.slide_height = Inches(self.slide_h_in)
         self.blank = self.prs.slide_layouts[6]
+        # Effective composition (always the built-in default for now; theme
+        # JSON overrides are wired in by the composition-loading change).
+        self.composition = build_default_composition(theme, self.slide_w_in, self.slide_h_in)
 
     def _new_slide(self):
         slide = self.prs.slides.add_slide(self.blank)
         return slide
 
-    def _add_title_band(self, slide, text: str):
-        band = slide.shapes.add_shape(
+    # ----- composition-driven drawing -----
+
+    def _resolve_comp_w(self, x: float, w) -> float:
+        """Resolve a composition width (number | 'full' | 'sym') to inches."""
+        if w == "full":
+            return self.slide_w_in
+        if w == "sym":
+            return self.slide_w_in - x * 2
+        return float(w)
+
+    def _resolve_comp_h(self, h) -> float:
+        """Resolve a composition height (number | 'full') to inches."""
+        if h == "full":
+            return self.slide_h_in
+        return float(h)
+
+    def _resolve_comp_color(self, color: str) -> RGBColor:
+        """Resolve a composition color token / hex string to an RGBColor.
+
+        Resolution happens at draw time (not at theme load) on purpose:
+        --primary-color is applied to the Theme *after* load_theme(), so an
+        early resolution would not see CLI overrides in "primary" tokens.
+        """
+        field_name = _THEME_COLOR_KEYS.get(color)
+        if field_name is not None:
+            return getattr(self.theme, field_name)
+        return _parse_hex_color(color)
+
+    def _draw_comp_shape(self, slide, spec: ShapeSpec) -> None:
+        """Draw one composition rectangle (solid fill, no outline)."""
+        w_in = self._resolve_comp_w(spec.x, spec.w)
+        h_in = self._resolve_comp_h(spec.h)
+        if w_in <= 0 or h_in <= 0:
+            # "sym" can go negative for large x; the validator cannot know the
+            # slide width, so this draw-time skip is the safety net.
+            print(
+                f"Warning: composition shape at x={spec.x}, y={spec.y} resolves to a "
+                f"non-positive size ({w_in:.3g} x {h_in:.3g} in) and was skipped",
+                file=sys.stderr,
+            )
+            return
+        shape = slide.shapes.add_shape(
             MSO_SHAPE.RECTANGLE,
-            Inches(0), Inches(0),
-            self.prs.slide_width, Inches(self.theme.title_band_height_in),
+            Inches(spec.x), Inches(spec.y), Inches(w_in), Inches(h_in),
         )
-        band.fill.solid()
-        band.fill.fore_color.rgb = self.theme.primary
-        band.line.fill.background()
-        tf = band.text_frame
-        tf.margin_left = Inches(0.35)
-        tf.margin_right = Inches(0.35)
-        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        tf.text = text
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = self._resolve_comp_color(spec.color)
+        shape.line.fill.background()
+
+    def _draw_comp_text(
+        self, slide, spec: TextSpec, text: str, font_name: str, size_pt: float,
+    ) -> None:
+        """Draw one composition text box (title / subtitle / header title)."""
+        w_in = self._resolve_comp_w(spec.x, spec.w)
+        if w_in <= 0 or spec.h <= 0:
+            print(
+                f"Warning: composition text at x={spec.x}, y={spec.y} resolves to a "
+                f"non-positive size ({w_in:.3g} x {spec.h:.3g} in) and was skipped",
+                file=sys.stderr,
+            )
+            return
+        tb = slide.shapes.add_textbox(
+            Inches(spec.x), Inches(spec.y), Inches(w_in), Inches(spec.h),
+        )
+        tf = tb.text_frame
+        tf.word_wrap = True
+        tf.margin_left = Inches(spec.margin)
+        tf.margin_right = Inches(spec.margin)
+        if spec.anchor == "middle":
+            tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         p = tf.paragraphs[0]
-        p.font.name = self.theme.heading_font
-        p.font.size = Pt(self.theme.title_band_size_pt)
-        p.font.bold = True
-        p.font.color.rgb = self.theme.on_primary
+        p.text = text
+        if spec.align == "center":
+            p.alignment = PP_ALIGN.CENTER
+        elif spec.align == "right":
+            p.alignment = PP_ALIGN.RIGHT
+        p.font.name = font_name
+        p.font.size = Pt(size_pt)
+        p.font.bold = spec.bold
+        p.font.color.rgb = self._resolve_comp_color(spec.color)
+
+    def _add_content_header(self, slide, text: str):
+        """Draw the content-slide header: shapes in array order, then the
+        title text on top (z-order: decorations below, text frontmost)."""
+        header = self.composition.content_header
+        for spec in header.shapes:
+            self._draw_comp_shape(slide, spec)
+        self._draw_comp_text(
+            slide, header.title, text,
+            self.theme.heading_font, self.theme.title_band_size_pt,
+        )
 
     def add_title_slide(self, title: str, subtitle: Optional[str]):
         slide = self._new_slide()
-        # Full-bleed primary block on the left
-        bar = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE,
-            Inches(0), Inches(0), Inches(0.4), self.prs.slide_height,
+        cover = self.composition.cover
+        for spec in cover.shapes:
+            self._draw_comp_shape(slide, spec)
+        self._draw_comp_text(
+            slide, cover.title, title,
+            self.theme.heading_font, self.theme.title_slide_title_size_pt,
         )
-        bar.fill.solid()
-        bar.fill.fore_color.rgb = self.theme.primary
-        bar.line.fill.background()
-
-        title_tb = slide.shapes.add_textbox(
-            Inches(1.0), Inches(2.3),
-            self.prs.slide_width - Inches(1.5), Inches(2.0),
-        )
-        tf = title_tb.text_frame
-        tf.word_wrap = True
-        p = tf.paragraphs[0]
-        p.text = title
-        p.font.name = self.theme.heading_font
-        p.font.size = Pt(self.theme.title_slide_title_size_pt)
-        p.font.bold = True
-        p.font.color.rgb = self.theme.primary
-
         if subtitle:
-            sub_tb = slide.shapes.add_textbox(
-                Inches(1.0), Inches(4.4),
-                self.prs.slide_width - Inches(1.5), Inches(1.5),
+            self._draw_comp_text(
+                slide, cover.subtitle, strip_inline_markdown(subtitle),
+                self.theme.body_font, self.theme.title_slide_subtitle_size_pt,
             )
-            tf = sub_tb.text_frame
-            tf.word_wrap = True
-            p = tf.paragraphs[0]
-            p.text = strip_inline_markdown(subtitle)
-            p.font.name = self.theme.body_font
-            p.font.size = Pt(self.theme.title_slide_subtitle_size_pt)
-            p.font.color.rgb = self.theme.text
 
     def add_content_slide(
         self,
@@ -796,9 +953,11 @@ class Deck:
             slide = self._new_slide()
             if spec.title:
                 title = spec.title if idx == 0 else f"{spec.title} ({idx + 1})"
-                self._add_title_band(slide, title)
-                top_cursor = Inches(self.theme.title_band_height_in + 0.2)
+                self._add_content_header(slide, title)
+                top_cursor = Inches(self.composition.content_header.content_top)
             else:
+                # Physical slides without a title (e.g. H2-less continuation
+                # pages) keep the historical header-less layout.
                 top_cursor = Inches(0.3)
             self._render_blocks(slide, chunk, top_cursor, base_dir)
 
@@ -848,10 +1007,23 @@ class Deck:
         (e.g. `### 7.1 ...`) to the next chunk so a heading never sits alone at
         the tail of a slide while its content starts on the next one.
         """
-        # Vertical budget per slide (inches), derived from the actual slide height
-        # (both 16:9 and 4:3 use 7.5in today; derive anyway to avoid drift).
-        slide_height_in = self.prs.slide_height / 914400  # EMU per inch
-        budget_in = slide_height_in - self.theme.title_band_height_in - self.theme.content_padding_in - 0.6
+        # Vertical budget per slide (inches), anchored on the composition's
+        # content_top (where body blocks actually start). K derivation: the
+        # historical budget was
+        #   slide_height - title_band_height - content_padding - 0.6
+        # and content started at title_band_height + 0.2, so rewriting the
+        # budget in content_top terms gives
+        #   slide_height - (content_top - 0.2) - content_padding - 0.6
+        #     = slide_height - content_top - (content_padding + 0.4)
+        # i.e. K = content_padding + 0.4 (NOT a fixed 0.9: content_padding is
+        # documented to influence chunking, so it must keep scaling here).
+        # Defaults (content_top=1.1, content_padding=0.5) yield the historical
+        # 7.5 - 1.1 - 0.9 = 5.5in budget.
+        budget_in = (
+            self.slide_h_in
+            - self.composition.content_header.content_top
+            - (self.theme.content_padding_in + 0.4)
+        )
 
         chunks: List[List[Block]] = []
         current: List[Block] = []
