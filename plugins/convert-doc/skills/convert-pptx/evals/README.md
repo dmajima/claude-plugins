@@ -18,6 +18,27 @@
 | [case-10_trigger_slide_creation.md](case-10_trigger_slide_creation.md) | トリガー: スライド作成の自然言語依頼（対話モード） |
 | [case-11_trigger_design_doc_pptx.md](case-11_trigger_design_doc_pptx.md) | トリガー: 設計書 PPTX 出力の自然言語依頼（対話モード） |
 | [case-12_noninteractive_aspect.md](case-12_noninteractive_aspect.md) | 4:3 アスペクト比指定による非対話モード（`--aspect 4:3` 適用） |
+| [case-13_theme_selection.md](case-13_theme_selection.md) | テーマ選択 UI（対話・テーマ 1〜2 個） |
+| [case-14_local_image_traversal.md](case-14_local_image_traversal.md) | ローカル画像のパストラバーサル拒否 |
+| [case-15_theme_zero_default.md](case-15_theme_zero_default.md) | テーマ 0 個 → 選択 UI なしでデフォルト |
+| [case-16_theme_text_selection_over3.md](case-16_theme_text_selection_over3.md) | テーマ 3 個以上 → テキスト選択に切替 |
+| [case-17_theme_noninteractive.md](case-17_theme_noninteractive.md) | 非対話呼び出し時のテーマ扱い |
+| [case-18_theme_named_resolution.md](case-18_theme_named_resolution.md) | テーマ名の明示指定（一致 / 不一致） |
+| [case-19_theme_with_primary_override.md](case-19_theme_with_primary_override.md) | テーマと `--primary-color` の併用（優先順位） |
+| [case-20_mermaid_bad_response.md](case-20_mermaid_bad_response.md) | mermaid.ink の不正レスポンス（200 だが PNG でない） |
+| [case-21_invalid_theme_json.md](case-21_invalid_theme_json.md) | 変換時の不正テーマ JSON → exit 1 |
+| [case-22_trigger_negative.md](case-22_trigger_negative.md) | トリガー判定: 起動しないべき入力（負例） |
+| [case-23_theme_name_precedence.md](case-23_theme_name_precedence.md) | 同名テーマの優先解決（skill > plugin > local） |
+| [case-24_local_image_success.md](case-24_local_image_success.md) | ローカル画像の正常埋め込み（受理側） |
+| [case-25_mermaid_success.md](case-25_mermaid_success.md) | mermaid 図の正常埋め込み（受理側） |
+| [case-26_no_h1_no_title_slide.md](case-26_no_h1_no_title_slide.md) | H1 なし → タイトルスライドを生成しない |
+| [case-27_missing_input_arg.md](case-27_missing_input_arg.md) | input 引数省略 → exit 2（argparse 経路） |
+| [case-28_default_output_path.md](case-28_default_output_path.md) | output 省略時のデフォルト出力パス |
+
+## デモ実行スクリプト
+
+[`demo.sh`](demo.sh) は主要経路（デフォルト変換 / テーマ適用 / dump-default-theme / エラー系）を
+実 venv で通しで確認する再現スクリプト。実行方法はスクリプト冒頭のコメントを参照。
 
 ## 実行確認方法
 

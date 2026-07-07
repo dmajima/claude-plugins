@@ -12,14 +12,14 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 
 | プラグイン | 説明 | バージョン | インストール |
 |----------|------|----------|----------|
-| `credentials-manager` | 認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン | 2.1.1 | `/plugin install credentials-manager@dmajima-claude-plugins` |
-| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.10.0 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
-| `convert-doc` | Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX → Markdown 取り込みも対応） | 3.2.0 | `/plugin install convert-doc@dmajima-claude-plugins` |
-| `skill-router` | プロンプト送信時に available-skills を自動スコアリングしてフック注入で適合スキルを推奨。ロジック編集は対象外 | 0.5.1 | `/plugin install skill-router@dmajima-claude-plugins` |
-| `session-usage` | カレントセッションのトークン消費量を JSONL から直接集計し、AskUserQuestion 対話メニュー（プレビュー表示・クリップボードコピー・再集計）で操作できる完全内製プラグイン | 1.0.0 | `/plugin install session-usage@dmajima-claude-plugins` |
-| `maintenance` | Claude Code 環境のメンテナンス統合プラグイン（プラグイン一括更新 / 古い作業フォルダ整理 / Git 経由設定同期） | 0.2.0 | `/plugin install maintenance@dmajima-claude-plugins` |
-| `meeting-minutes` | 会議の文字起こし・録画データから構造化議事録を作成し Markdown / docx 出力 | 1.3.0 | `/plugin install meeting-minutes@dmajima-claude-plugins` |
 | `connector` | 7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き） | 2.4.0 | `/plugin install connector@dmajima-claude-plugins` |
+| `convert-doc` | Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX 取り込み・デザイン追加対応） | 4.0.0 | `/plugin install convert-doc@dmajima-claude-plugins` |
+| `credentials-manager` | 認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン | 2.1.2 | `/plugin install credentials-manager@dmajima-claude-plugins` |
+| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.11.1 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
+| `maintenance` | Claude Code 環境のメンテナンス統合プラグイン（プラグイン一括更新 / 古い作業フォルダ整理 / Git 経由設定同期） | 1.0.0 | `/plugin install maintenance@dmajima-claude-plugins` |
+| `meeting-minutes` | 会議の文字起こし・録画データから構造化議事録を作成し Markdown / docx 出力 | 1.3.0 | `/plugin install meeting-minutes@dmajima-claude-plugins` |
+| `session-usage` | セッションのトークン消費量をJSONLから集計し、AskUserQuestion対話メニューで操作する診断プラグイン | 1.0.1 | `/plugin install session-usage@dmajima-claude-plugins` |
+| `skill-router` | プロンプト送信時に available-skills を自動スコアリングしてフック注入で適合スキルを推奨。ロジック編集は対象外 | 0.6.1 | `/plugin install skill-router@dmajima-claude-plugins` |
 
 ## マーケットプレイスの追加方法
 
@@ -87,7 +87,7 @@ git checkout v{x.y.z}   # 推奨: 特定リリースタグを指定（最新タ�
 |------------------|-----|------------|----------------------|
 | `anthropic-agent-skills` | スキル雛形・ドキュメント生成系の参考実装 | `extension-toolkit`（`example-skills` / `document-skills` を依存宣言） | `/plugin marketplace add https://github.com/anthropics/skills` |
 
-依存マーケットプレイスは `allowCrossMarketplaceDependenciesOn` で許可されていても、**利用者が `/plugin marketplace add` 済みでなければ Claude Code 公式仕様により依存は未解決のまま放置されます**（自動マーケ追加機構なし）。詳細は ADR-028（[`plugins/extension-toolkit/references/architecture-decisions.md`](plugins/extension-toolkit/references/architecture-decisions.md)）参照。
+依存マーケットプレイスは `allowCrossMarketplaceDependenciesOn` で許可されていても、**利用者が `/plugin marketplace add` 済みでなければ Claude Code 公式仕様により依存は未解決のまま放置されます**（自動マーケ追加機構なし）。詳細は ADR-028（[`plugins/extension-toolkit/references/architecture/decisions-021-033.md`](plugins/extension-toolkit/references/architecture/decisions-021-033.md)）参照。
 
 ### 依存マーケットプレイスの自動更新有効化（推奨）
 

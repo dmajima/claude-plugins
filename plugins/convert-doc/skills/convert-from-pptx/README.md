@@ -8,7 +8,7 @@ PowerPoint (PPTX) を Claude が読み込める Markdown に変換するスキ�
 
 ## 導入手順
 
-本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法はリポジトリルートの [`README.md`](../../../../README.md) を参照してください。
+本スキルは `convert-doc` プラグインに同梱されています。プラグインのインストール方法（マーケットプレイス経由 / ローカル複製 / 自動更新 / 依存パッケージ）は [`plugins/convert-doc/README.md`](../../README.md) の「導入手順」を参照してください。
 
 ```text
 /plugin install convert-doc@dmajima-claude-plugins
@@ -74,11 +74,12 @@ plugins/convert-doc/
 │   ├── setup/                       # 統合 venv 構築（プラグイン共通、ADR-024）
 │   │   ├── requirements.txt         # 全スキル分の依存をマージ（バージョン下限固定）
 │   │   ├── setup_venv.sh           # Bash 版 venv 構築
-│   │   ├── teardown_venv.sh        # Bash 版 venv 削除
-│   │   └── requirements.txt        # 依存パッケージ定義
+│   │   └── teardown_venv.sh        # Bash 版 venv 削除
 │   └── convert-from-pptx/           # 本スキル業務スクリプト（ADR-025）
 │       ├── convert_from_pptx.py     # PPTX → Markdown / JSON 変換
-│       └── verify_md.py             # Phase 3 カバレッジ検証
+│       ├── verify_md.py             # Phase 3 カバレッジ検証
+│       ├── run_via_job.sh           # Start-Job 経由ラッパー（Windows ハング対策）
+│       └── run_verify_via_job.sh    # 検証用ラッパー
 └── skills/convert-from-pptx/
     ├── SKILL.md
     ├── README.md
@@ -91,14 +92,20 @@ plugins/convert-doc/
     │   ├── validation.md            # Phase 3 検証ガイド
     │   └── large-pptx-workflow.md   # 大規模 PPTX フロー
     └── evals/
-        ├── README.md
+        ├── README.md                # 全 63 ケースの索引（正確な一覧はこちらを参照）
+        ├── demo.sh                  # デモ実行スクリプト
         ├── case-01_normal_with_title.md 〜 case-22_image_extension_allowlist.md（基本ケース 22 件）
         ├── case-23a_structured_json_normal.md / case-23b_json_only_alone.md（Phase 1 JSON モード）
         ├── case-24a_per_slide_json.md / case-24b_compact_view.md（中〜大規模対応）
         ├── case-25a/25b/25c（Phase 3 検証）
         ├── case-26_interactive_mode.md / case-27_fallback_mode.md
         ├── case-28_lr_flowchart.md / case-29_content_types_missing.md / case-30_title_estimation_fallback.md
-        └── case-31〜case-40（境界値・--workspace-root traversal・JSON+MD 同時出力 等 10 件）
+        ├── case-31〜case-40（境界値・--workspace-root traversal・JSON+MD 同時出力 等 10 件）
+        ├── case-41a/41b（強制上書き・symlink 出力拒否）
+        ├── case-42a〜42d（スライド数・shape 数・グループ深度・画像数の DoS 上限）
+        ├── case-43〜case-50（大規模サブエージェントフロー・XML hardening・中規模フロー・
+        │                     セクション表紙・fail-close・ラッパー timeout / python 不在 / 引数透過）
+        └── case-51〜case-54（トリガー判定 3 件・非対話パス）
 ```
 
 ## カスタマイズ

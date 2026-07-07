@@ -32,3 +32,8 @@ python "${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-html/convert.py" <ケ�
 ```
 
 期待出力の差分を `diff` で確認することも可能。
+
+## デモ実行スクリプト
+
+[`demo.sh`](demo.sh) は主要経路（デフォルト解決 / `--css-template` 明示 / JS 選択分岐 / エラー系）を
+実 venv で通しで確認する再現スクリプト。実行方法はスクリプト冒頭のコメントを参照。

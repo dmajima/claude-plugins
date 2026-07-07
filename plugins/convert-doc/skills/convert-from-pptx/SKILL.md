@@ -1,6 +1,6 @@
 ---
 name: convert-from-pptx
-description: PowerPoint (PPTX) を Markdown に変換するスキル。入力 PPTX → 出力 MD。「PPTX を Markdown に変換」「スライドを MD にして」「PowerPoint を読める形に」「設計書 PPTX を解析」「.pptx をテキスト化」等で起動。Use when converting PowerPoint to Markdown. SKIP 入力が Markdown (convert-pptx) / 出力が HTML (convert-html) / PDF (convert-pdf)。
+description: PowerPoint (PPTX) を Markdown に変換するスキル。入力 PPTX → 出力 MD。「PPTX を Markdown に変換」「スライドを MD にして」「PowerPoint を読める形に」「設計書 PPTX を解析」「.pptx をテキスト化」等で起動。Use when converting PowerPoint to Markdown. SKIP when input is Markdown (use convert-pptx) or when output is HTML (convert-html) / PDF (convert-pdf).
 ---
 
 # convert-from-pptx スキル
@@ -95,7 +95,7 @@ Python で全 shape の構造データを完全抽出して JSON に dump し、
      --structured-json "<セッション>/structured.json" \
      --json-only \
      [--include-notes] [--include-hidden]
-   ``\
+   ```
 4. **Phase 2: Claude による意味解釈**
    - Claude メインコンテキストが `structured.json` を Read で読み込み
    - スライドごとに以下を判断:
@@ -115,11 +115,11 @@ Python で全 shape の構造データを完全抽出して JSON に dump し、
      "<生成 MD パス>" \
      --report "<セッション>/coverage_report.json" \
      --threshold 0.85
-   ``\
+   ```
    - Python が機械的にテキスト/テーブル/画像/コネクタのカバレッジを集計
    - PASSED の場合は完了、FAILED の場合は Claude が `missing_texts` / `suspicious_md_phrases` を文脈分類し MD を修正 → 再検証ループ
    - 詳細: [`references/validation.md`](references/validation.md)
-7. **venv 削除**（必要に応じて）
+7. **venv 削除**（同一セッション内で後続の Python タスクが無い場合に実施。ユーザーが保持を指示した場合は残す）
 
 詳細な実行手順は [`references/procedures.md`](references/procedures.md)、環境構築は [`references/setup.md`](references/setup.md) を参照。
 

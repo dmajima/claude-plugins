@@ -19,13 +19,23 @@
 
 ## 分岐の根拠
 
-`references/scripts/convert-pptx/convert_pptx.py:hex_to_rgb`:
+`references/scripts/convert-pptx/convert_pptx.py` の 2 関数構成
+（`_parse_hex_color` が `ValueError` を送出し、argparse type= ラッパー `hex_to_rgb` が
+`ArgumentTypeError` に変換して exit 2 を維持する）:
+
 ```python
 _HEX_COLOR_RE = re.compile(r"^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$")
 
-def hex_to_rgb(hex_str: str) -> RGBColor:
+def _parse_hex_color(hex_str) -> RGBColor:
     if not isinstance(hex_str, str) or not _HEX_COLOR_RE.match(hex_str):
-        raise argparse.ArgumentTypeError(...)
+        raise ValueError(...)
+    ...
+
+def hex_to_rgb(hex_str: str) -> RGBColor:
+    try:
+        return _parse_hex_color(hex_str)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e)) from e
 ```
 
 ## 関連ケース

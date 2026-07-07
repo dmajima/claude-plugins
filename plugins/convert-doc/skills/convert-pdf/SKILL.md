@@ -1,6 +1,6 @@
 ---
 name: convert-pdf
-description: Markdown を Wiki スタイル PDF に変換するスキル（入力 MD → 出力 PDF）。mermaid 図・表・画像・シンタックスハイライトを HTML 版と同一デザインで再現する。「MD を PDF に変換」「資料を PDF で出力」「設計書を PDF 化して」等で起動する。Use when converting a Markdown file into a styled PDF. SKIP when input is PPTX (use convert-from-pptx) or when output is HTML (convert-html) / PowerPoint (convert-pptx).
+description: Markdown を Wiki スタイル PDF に変換するスキル（入力 MD → 出力 PDF、HTML 版と同一デザイン）。「MD を PDF に変換」「資料を PDF で出力」「設計書を PDF 化して」等で起動する。Use when converting a Markdown file into a styled PDF. SKIP when input is PPTX (use convert-from-pptx) or when output is HTML (convert-html) / PowerPoint (convert-pptx).
 ---
 
 # convert-pdf スキル
@@ -20,6 +20,7 @@ Markdown ファイルを Wiki デザインの PDF に変換する。
 |-----|----------|
 | 自己完結型 HTML の生成本体 | `convert-html`（本スキルが内部で呼び出す） |
 | PPTX への変換 | `convert-pptx`（独立パイプライン） |
+| 新しいデザイン CSS の作成・追加 | `add-design-html`（本スキルは既存デザインの選択・適用のみ） |
 | Chromium バイナリの管理 | Playwright が自動管理（`playwright install chromium`） |
 
 ## トリガー条件
@@ -31,6 +32,7 @@ Markdown ファイルを Wiki デザインの PDF に変換する。
 このスキルを起動しないケース:
 
 - HTML / PPTX への変換依頼（`convert-html` / `convert-pptx` へルーティング）
+- 新しいデザイン・テーマの追加依頼（`add-design-html` へルーティング）
 
 ## 前提
 
@@ -43,18 +45,20 @@ Markdown ファイルを Wiki デザインの PDF に変換する。
 
 | 入力 | モード | 動作 |
 |-----|-------|------|
-| `/convert-pdf` または自然言語依頼 | 通常 | デフォルトオプション（A4 縦・背景印刷あり）で処理 |
-| `--landscape` / `--no-background` / `--format` 等のオプション指定 | カスタム | 指定されたオプションで Playwright `page.pdf` を呼び出し |
+| `/convert-pdf` または自然言語依頼 | 通常（対話） | デフォルトオプション（A4 縦・背景印刷あり）で処理。追加デザインが存在する場合はデザイン選択 UI を提示 |
+| `--landscape` / `--no-background` / `--format` / `--css-template` 等のオプション指定 | カスタム | 指定されたオプションで処理 |
+| 別スキルからの `Skill(...)` 呼び出し | 非対話 | デザイン選択 UI を出さずデフォルトデザイン（または引数指定デザイン）で処理 |
 
 ## 実行フロー
 
 1. **ワークディレクトリ作成**（`.claude/.local/work/yyyyMMdd_nn_convert_pdf/{inputs,workspace}`）
 2. **venv 構築**（`workspace/.venv` 配下）→ 依存パッケージをインストール
 3. **Chromium インストール**（初回のみ、`playwright install chromium`）
-4. **convert-html 経由で中間 HTML 生成**（一時ディレクトリに出力）
-5. **Playwright で HTML を読み込み、PDF として保存**
-6. **出力ファイルをユーザーに報告**（最終 PDF はセッションフォルダ直下）
-7. **venv 削除**
+4. **デザインの選択**（対話モード時のみ・追加デザインが存在する場合のみ。convert-html と共通の [`../convert-html/references/css-js-selection.md`](../convert-html/references/css-js-selection.md) に従い、選択結果を `--css-template`（ペア HTML があれば `--html-template` も）で渡す。本スキルはスキル固有 `assets/css/` を持たないため、実効的な探索対象はプラグイン共通とローカルデザインの 2 箇所）
+5. **convert-html 経由で中間 HTML 生成**（一時ディレクトリに出力。デザイン指定は convert-html へパススルー）
+6. **Playwright で HTML を読み込み、PDF として保存**
+7. **出力ファイルをユーザーに報告**（最終 PDF はセッションフォルダ直下）
+8. **venv 削除**
 
 詳細は [`references/procedures.md`](references/procedures.md)、環境構築は [`references/setup.md`](references/setup.md) を参照。
 
@@ -63,6 +67,7 @@ Markdown ファイルを Wiki デザインの PDF に変換する。
 - 変換スクリプト: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pdf/convert_pdf.py`
 - 内部依存: 同一プラグイン内の `convert-html` スキルを subprocess で呼び出す
 - HTML / CSS テンプレートは `convert-html` 経由で `${CLAUDE_PLUGIN_ROOT}/assets/` から解決される
+- 追加デザイン: convert-html と同じ CSS 資産を共有（`${CLAUDE_PLUGIN_ROOT}/references/design-locations.md`）。新規追加は `add-design-html` スキルが担当
 
 ## オプション
 
@@ -73,6 +78,8 @@ Markdown ファイルを Wiki デザインの PDF に変換する。
 | `--landscape` | なし | 横向きに切り替え |
 | `--margin` | `20mm` | 全辺の余白（`top right bottom left` 個別指定も可） |
 | `--no-background` | なし | 背景色を印刷しない（モノクロ印刷向け） |
+| `--css-template` | なし（デフォルトデザイン） | デザイン CSS のパス（convert-html へパススルー） |
+| `--html-template` | なし（共通テンプレート） | HTML テンプレートのパス（convert-html へパススルー。デザインの同名ペアがある場合に指定） |
 
 ## 重要な制約
 

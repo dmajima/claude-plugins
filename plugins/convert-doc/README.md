@@ -1,6 +1,6 @@
 # convert-doc
 
-Markdown と **HTML / PDF / PowerPoint（PPTX）** を相互変換できる、4 スキル + 5 コマンド同梱の配布用プラグイン。PPTX → Markdown の取り込み変換にも対応し、Claude が PowerPoint 資料を読み込める形に転記する。
+Markdown と **HTML / PDF / PowerPoint（PPTX）** を相互変換できる、6 スキル + 7 コマンド同梱の配布用プラグイン。PPTX → Markdown の取り込み変換、および出力デザインの追加（HTML 用 CSS / PPTX 用テーマ）にも対応する。
 
 ## このドキュメントについて
 
@@ -14,8 +14,10 @@ Markdown と **HTML / PDF / PowerPoint（PPTX）** を相互変換できる、4 
 | `convert-pdf` | Markdown → PDF（内部で HTML 経由） | 「MD を PDF に変換」「資料を PDF で出力」 |
 | `convert-pptx` | Markdown → PowerPoint スライド | 「MD を PowerPoint に変換」「設計書をスライドにして」 |
 | `convert-from-pptx` | PowerPoint (PPTX) → Markdown 取り込み | 「PPTX を Markdown に変換」「スライドを読める形にして」 |
+| `add-design-html` | HTML / PDF 用の新デザイン CSS を作成・検証・配置 | 「HTML のデザインを追加」「ドキュメントの新しいテーマを作って」 |
+| `add-design-pptx` | PPTX 用の新デザインテーマ（JSON）を作成・検証・配置 | 「PPTX のテーマを追加」「スライドの配色テーマを作って」 |
 
-出力系の 3 スキル（HTML / PDF / PPTX）は共通のデザイントーン（ネイビー #003879 基調）で出力する。取り込みスキル（`convert-from-pptx`）は構造を Markdown に転記し、フロー図や SmartArt は Mermaid に変換する。
+出力系の 3 スキル（HTML / PDF / PPTX）は既定で共通のデザイントーン（ネイビー #003879 基調）で出力する。デザインは追加可能で、HTML / PDF は CSS ファイル単位、PPTX はテーマ JSON 単位で切り替えられる（HTML 構造・変換処理・JS 機能は全デザイン共通のため、デザインを増やしても動作は変わらない）。取り込みスキル（`convert-from-pptx`）は構造を Markdown に転記し、フロー図や SmartArt は Mermaid に変換する。
 
 ## 導入手順
 
@@ -68,7 +70,7 @@ git clone https://github.com/dmajima/claude-plugins.git
 
 ### D. 依存関係のインストール
 
-4 スキルとも Python 仮想環境を利用します。スキル初回起動時に `references/scripts/setup/setup_venv.sh` が自動実行され、以下の依存パッケージがインストールされます。
+全スキル（6 スキル）とも Python 仮想環境を利用します。スキル初回起動時に `references/scripts/setup/setup_venv.sh` が自動実行され、以下の依存パッケージがインストールされます。
 
 | スキル | 主要パッケージ | 追加ダウンロード |
 |-------|--------------|----------------|
@@ -76,6 +78,8 @@ git clone https://github.com/dmajima/claude-plugins.git
 | convert-pdf | playwright / markdown / Pygments / rcssmin / rjsmin / Pillow | Chromium バイナリ（~120MB、初回のみ） |
 | convert-pptx | python-pptx / Pillow / requests / Pygments | なし |
 | convert-from-pptx | python-pptx / Pillow / lxml | なし（オフラインで動作） |
+| add-design-html | convert-html と同一（サンプル変換で再利用。検証スクリプト自体は標準ライブラリのみ） | なし |
+| add-design-pptx | convert-pptx と同一（サンプル変換・テーマ検証で再利用） | なし |
 
 すべてピン固定（`==`）バージョンで管理されています。バージョンは各スキルの `references/scripts/setup/requirements.txt` を参照してください。
 
@@ -100,8 +104,10 @@ git clone https://github.com/dmajima/claude-plugins.git
 | `/convert-html` | Markdown → 自己完結型 HTML（CSS / JS 機能を対話で選択） | 通常用途 |
 | `/convert-html-full` | Markdown → HTML（**全 JS 機能有効・対話プロンプトなし**） | 自動化・全機能必須の場合 |
 | `/convert-pdf` | Markdown → PDF（内部で HTML 経由） | A4 縦・背景色印刷ありが既定 |
-| `/convert-pptx` | Markdown → PowerPoint スライド | 16:9・タイトル帯ネイビー |
+| `/convert-pptx` | Markdown → PowerPoint スライド | 16:9・タイトル帯ネイビー（テーマで変更可） |
 | `/convert-from-pptx` | PowerPoint (PPTX) → Markdown 取り込み | 画像は別ファイルに抽出、フロー図は Mermaid 化 |
+| `/add-design-html` | HTML / PDF 用の新デザイン CSS を追加 | 契約検証（JS 動作保証）付き |
+| `/add-design-pptx` | PPTX 用の新デザインテーマを追加 | スキーマ検証 + サンプル変換付き |
 
 利用例:
 
@@ -111,6 +117,8 @@ git clone https://github.com/dmajima/claude-plugins.git
 /convert-pdf ./設計書.md --format A4 --landscape
 /convert-pptx ./提案資料.md --aspect 16:9 --subtitle "2026年4月版"
 /convert-from-pptx ./受領資料.pptx ./受領資料.md --include-notes
+/add-design-html warm-paper 温かみのある紙っぽいデザイン
+/add-design-pptx dark-console ダーク基調のエンジニア向けテーマ
 ```
 
 ### 他スキルからの呼び出し
@@ -151,7 +159,15 @@ Skill(skill: "convert-from-pptx", args: "<入力PPTX> <出力MD> [--include-note
 - mermaid 図は PNG で取得してスライドに配置
 - コードブロックはモノスペースフォントのテキストフレームとして配置
 - 表は PowerPoint ネイティブの表として配置
-- タイトル帯・装飾はネイビーカラーを使用
+- タイトル帯・装飾は既定でネイビーカラーを使用（`--theme` でデザインテーマ切替可、`--dump-default-theme` で既定値を JSON 取得可）
+
+### デザイン追加（`add-design-html` / `add-design-pptx`）
+
+- **HTML / PDF 用**: デフォルト `template.css` をベースに新デザイン CSS を生成。目次トグル・ライトボックス等の JS が依存する DOM ID・状態クラス・ブレークポイントを `validate_css.py` が機械検証するため、デザインを増やしても JS 機能が壊れない。CSS で表現できない構造変更は、JS 契約検証（`validate_html.py`）付きの同名 HTML テンプレートペアとして追加可能
+- **PPTX 用**: 色・フォント・サイズ・シンタックス配色を差し替えるテーマ JSON を生成。`validate_theme.py`（変換スクリプトと同じロードロジック）で検証
+- 配置先は自動判定: convert-doc ソースリポジトリ内なら `plugins/convert-doc/assets/`（配布物化）、利用者環境なら `.claude/.local/plugins/convert-doc/designs/`（プラグイン更新で消えない位置）
+- 配置後は `convert-html` / `convert-pdf` / `convert-pptx` 実行時の選択肢に自動的に現れる（規約: `references/design-locations.md`。PDF は `--css-template` パススルーで HTML と同じデザインを適用）
+- 同梱サンプルデザイン: `warm-paper`（HTML / PDF 用・温かみのある紙面イメージ）、`dark-console`（PPTX 用・暗色コンソール風コードブロック）
 
 ### PPTX → Markdown（`convert-from-pptx`）
 
@@ -177,15 +193,21 @@ plugins/convert-doc/
 │   ├── convert-html-full.md
 │   ├── convert-pdf.md
 │   ├── convert-pptx.md
-│   └── convert-from-pptx.md
+│   ├── convert-from-pptx.md
+│   ├── add-design-html.md
+│   └── add-design-pptx.md
 ├── assets/                           # プラグイン共通 assets（extension-toolkit ADR-030）
 │   ├── css/
-│   │   └── template.css
-│   └── html/
-│       └── template.html
+│   │   └── template.css              # デフォルトデザイン（追加デザイン CSS もここに並置）
+│   ├── html/
+│   │   └── template.html             # 共通 HTML テンプレート（デザイン固有ペアも並置可）
+│   └── pptx-themes/                  # PPTX 追加テーマ JSON（add-design-pptx が配置）
+├── ruff.toml                         # Python スクリプトの静的解析設定（ADR-005）
 ├── references/                       # プラグイン共通リソース
+│   ├── CLAUDE.md                     # references/ 配下の参照原則（エージェント向け）
+│   ├── design-locations.md           # デザイン配置・探索規約（SSOT）
 │   └── scripts/                      # プラグイン単位 venv + 業務スクリプト（ADR-024 / ADR-025）
-│       ├── setup/                    # 統合 venv 構築（4 スキル分の依存をマージ）
+│       ├── setup/                    # 統合 venv 構築（全スキル分の依存をマージ）
 │       │   ├── requirements.txt
 │       │   ├── setup_venv.sh
 │       │   └── teardown_venv.sh
@@ -194,9 +216,17 @@ plugins/convert-doc/
 │       ├── convert-pdf/
 │       │   └── convert_pdf.py
 │       ├── convert-pptx/
-│       │   └── convert_pptx.py
-│       └── convert-from-pptx/
-│           └── convert_from_pptx.py
+│       │   └── convert_pptx.py       # Theme dataclass / --theme / --dump-default-theme
+│       ├── convert-from-pptx/
+│       │   ├── convert_from_pptx.py
+│       │   ├── verify_md.py          # 変換結果の検証
+│       │   ├── run_via_job.sh        # Start-Job 経由ラッパー（Windows ハング対策）
+│       │   └── run_verify_via_job.sh
+│       ├── add-design-html/
+│       │   ├── validate_css.py       # デザイン CSS の契約検証
+│       │   └── validate_html.py      # HTML ペアの JS 契約検証
+│       └── add-design-pptx/
+│           └── validate_theme.py     # テーマ JSON のスキーマ検証
 └── skills/
     ├── convert-html/
     │   ├── SKILL.md
@@ -214,12 +244,22 @@ plugins/convert-doc/
     │   ├── SKILL.md
     │   ├── README.md
     │   ├── evals/
+    │   └── references/               # theme-selection.md を含む
+    ├── convert-from-pptx/                # PPTX → Markdown 取り込みスキル
+    │   ├── SKILL.md
+    │   ├── README.md
+    │   ├── evals/
     │   └── references/
-    └── convert-from-pptx/                # PPTX → Markdown 取り込みスキル
+    ├── add-design-html/                  # HTML / PDF 用デザイン追加スキル
+    │   ├── SKILL.md
+    │   ├── README.md
+    │   ├── evals/
+    │   └── references/               # css-contract.md を含む
+    └── add-design-pptx/                  # PPTX 用デザインテーマ追加スキル
         ├── SKILL.md
         ├── README.md
         ├── evals/
-        └── references/
+        └── references/               # theme-schema.md を含む
 ```
 
 ## 設計上の決定（ADR）
@@ -231,7 +271,7 @@ plugins/convert-doc/
 | 状態 | Accepted（extension-toolkit ADR-030 に統合・正規化済み）|
 | 決定 | プラグイン直下 `assets/` に HTML/PDF 共通の CSS / HTML テンプレートを格納し、スキル直下 `assets/` でスキル固有のリソース（JS 等）を保持する。同名ファイルがあればスキル直下が優先 |
 | 文脈 | `convert-html` と `convert-pdf` は同一の HTML 表現を共有するため CSS / HTML テンプレートを 2 箇所で重複保持すると DRY 違反になる。一方で `convert-html` 固有の対話 JS（`lightbox.js` 等）はプラグイン共通には属さない |
-| 上流 SSOT | [extension-toolkit ADR-030](../extension-toolkit/references/architecture-decisions.md)（プラグイン直下・スキル直下 `assets/` の許可リスト追加）|
+| 上流 SSOT | [extension-toolkit ADR-030](../extension-toolkit/references/architecture/decisions-021-033.md)（プラグイン直下・スキル直下 `assets/` の許可リスト追加）|
 | 代替案 | 各スキルに完全コピー（重複・同期保守コスト高）/ `references/template/` への配置（実行時参照と語義不一致） |
 | トレードオフ | プラグイン直下・スキル直下のトップレベルディレクトリが増えるが、共通リソースの SSOT 化と固有上書きの両立を優先 |
 
@@ -251,15 +291,46 @@ plugins/convert-doc/
 | 項目 | 内容 |
 |------|------|
 | 状態 | Accepted（extension-toolkit ADR-024 に準拠）|
-| 決定 | `plugins/convert-doc/references/scripts/setup/{setup_venv.sh, teardown_venv.sh, requirements.txt}` をプラグイン共通として 1 箇所に集約。requirements.txt は全 4 スキル分の依存をマージし、venv は `<work_dir>/.venv` にプラグイン単位で 1 つ作成して全スキルで共有 |
+| 決定 | `plugins/convert-doc/references/scripts/setup/{setup_venv.sh, teardown_venv.sh, requirements.txt}` をプラグイン共通として 1 箇所に集約。requirements.txt は全スキル分の依存をマージし、venv は `<work_dir>/.venv` にプラグイン単位で 1 つ作成して全スキルで共有 |
 | 文脈 | スキル単位 venv は同一プラグイン内で重複構築されコストが大きい。`environment-setup-toolkit` への委譲は extension-toolkit 環境に依存するが、本プラグインは ADR-024 のプラグイン単位 venv 採用で簡便性と単体配布性を両立する |
-| 上流 SSOT | [extension-toolkit ADR-024](../extension-toolkit/references/architecture-decisions.md)（プラグイン単位 venv と `references/scripts/setup/` 配置）|
+| 上流 SSOT | [extension-toolkit ADR-024](../extension-toolkit/references/architecture/decisions-021-033.md)（プラグイン単位 venv と `references/scripts/setup/` 配置）|
 | 代替案 | スキルごとに個別 venv（ADR-024 違反・廃止）/ `environment-setup-toolkit` への委譲（外部依存増加）|
 | トレードオフ | venv が肥大化するが、複数スキル並行利用時の再構築コスト削減を優先する |
 
+### ADR-004: デザインの外部化（CSS 単位 / テーマ JSON 単位）と配置規約
+
+| 項目 | 内容 |
+|------|------|
+| 状態 | Accepted |
+| 決定 | デザインの単位を HTML / PDF は「CSS ファイル（+ 任意の同名 HTML ペア）」、PPTX は「テーマ JSON」とし、変換パイプライン（HTML 構造・convert.py・JS・convert_pptx.py のレンダリング）は全デザイン共通に保つ。PPTX のデフォルト値は `Theme` dataclass のフィールドデフォルトを SSOT とし、テーマファイルとして二重管理しない（`--dump-default-theme` で参照可能）。利用者環境の追加デザインは `.claude/.local/plugins/convert-doc/designs/` に配置する |
+| 文脈 | デザインごとに HTML / JS / 変換処理が分岐すると、JS 機能導入のバグやデザイン固有の動作不良が発生しやすい。差し替え面を CSS / テーマ JSON に限定し、JS が依存する DOM 契約を `validate_css.py` / `validate_html.py` で機械検証することで抑制する |
+| 上流 SSOT | [`references/design-locations.md`](references/design-locations.md)（配置・探索規約）、[`skills/add-design-html/references/css-contract.md`](skills/add-design-html/references/css-contract.md)（セレクタ契約） |
+| 代替案 | テンプレート .pptx 方式（座標直書き構築と相性が悪い）/ デザインごとの HTML 複製（JS 契約の保守が発散）/ プラグインキャッシュへの直接追加（更新で消える） |
+| トレードオフ | CSS 1 ファイルが大きくなる（変数化しない）が、デザイン間の独立性と検証可能性を優先する。また、サンプルデザイン（warm-paper / dark-console）を選択スキャン対象の `assets/` に同梱するため、**クリーンインストールでも対話モードの変換で常にデザイン選択 UI が表示される**（「1 件なら無プロンプト」分岐はサンプルを除去したカスタム構成でのみ成立）。デザイン機能の発見性を優先した意図的な選択であり、選択 UI を出したくない場合は非対話経路（`Skill(...)` 呼び出し・`/convert-html-full`）を使う |
+
+### ADR-005: プラグイン直下 `ruff.toml` の配置
+
+| 項目 | 内容 |
+|------|------|
+| 状態 | Accepted |
+| 決定 | Python スクリプト（`references/scripts/` 配下）の静的解析設定 `ruff.toml` をプラグイン直下に置く |
+| 文脈 | 本プラグインは決定論的な Python 変換スクリプトを中核とするため、コード品質のベースライン（E/F/W/B/UP）を設定ファイルとして固定する。ruff は設定ファイルを対象ファイルの祖先ディレクトリから探索するため、スクリプト群のルートであるプラグイン直下が自然な配置となる |
+| 代替案 | リポジトリルートに集約（他プラグインの制約と混ざる）/ 設定なし（レビュー観点が暗黙化する） |
+| トレードオフ | プラグイン直下の非標準ファイルが 1 つ増えるが、スクリプト品質基準の明示を優先する |
+
+### ADR-006: デザイン追加スキルのフォーマット別分割（add-design-html / add-design-pptx）
+
+| 項目 | 内容 |
+|------|------|
+| 状態 | Accepted |
+| 決定 | デザイン追加機能を単一スキルではなく、出力フォーマット別の 2 スキル（`add-design-html` / `add-design-pptx`）に分割する |
+| 文脈 | デザインの単位（CSS ファイル vs テーマ JSON）・検証内容（セレクタ / JS 契約 vs スキーマ）・サンプル変換の依存（markdown 系 vs python-pptx）がフォーマット間で完全に異なり、単一スキルにすると SKILL.md の分岐が肥大化しトリガー判定も曖昧になる |
+| 代替案 | 統合単一スキル `add-design`（分岐肥大・責務不明瞭）/ convert-* 各スキルへの内包（変換と作成の責務混在） |
+| トレードオフ | スキル数が増えるが、単一責務・独立した契約検証・明確なトリガー分離を優先する |
+
 ## 依存システム（External Dependencies）
 
-本プラグインの 4 スキルのうち、出力系 3 スキルは変換処理のために以下の外部サービスへアクセスする。`convert-from-pptx` は外部依存なしで動作する。
+本プラグインの 6 スキルのうち、出力系 3 スキル（convert-html / convert-pdf / convert-pptx）と、サンプル変換でそれらを再利用する add-design 系 2 スキルは、変換処理のために以下の外部サービスへアクセスする。`convert-from-pptx` は外部依存なしで動作する。
 
 | 依存先 | 用途 | 影響するスキル | オフライン時の挙動 |
 |-------|------|-------------|------------------|
@@ -273,9 +344,11 @@ plugins/convert-doc/
 
 ## カスタマイズ
 
-- HTML / PDF のデザイン変更（共通）: `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css` を編集するか、同ディレクトリに追加の `.css` ファイルを置く（2 ファイル以上ある場合はスキル実行時に選択プロンプトが表示される）
-- convert-html / convert-pdf だけで上書きしたい場合: `skills/{skill-name}/assets/css/` に同名ファイルを置く（スキル側がプラグイン共通を上書きする）
-- PPTX の色・フォント・レイアウト変更: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-pptx/convert_pptx.py` 冒頭の定数を編集
+- **HTML / PDF の新デザイン追加（推奨）**: `add-design-html` スキル（`/add-design-html`）を使う。契約検証付きで CSS（必要時 HTML ペア）を生成・配置し、複数デザインは変換時の選択プロンプトに自動で現れる
+- **PPTX の新デザイン追加（推奨）**: `add-design-pptx` スキル（`/add-design-pptx`）を使う。テーマ JSON（色・フォント・サイズ・シンタックス配色）を検証付きで生成・配置する。既定値の一覧は `convert_pptx.py --dump-default-theme` で取得できる
+- デフォルトデザイン自体の変更: `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css`（HTML / PDF）を直接編集する。PPTX の既定値は `convert_pptx.py` の `Theme` dataclass のフィールドデフォルトが SSOT
+- convert-html / convert-pdf だけで上書きしたい場合: `skills/<skill-name>/assets/css/` に同名ファイルを置く（スキル側がプラグイン共通を上書きする）
+- デザインの配置場所・探索順序の規約: `${CLAUDE_PLUGIN_ROOT}/references/design-locations.md`
 - PPTX → Markdown の取り込みカスタマイズ: `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-from-pptx/convert_from_pptx.py` 冒頭の `MONOSPACE_FONTS` / `ALLOWED_IMAGE_EXTS` 等の定数を編集
 - Python 依存パッケージの更新: `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt`（プラグイン統合）を編集
 

@@ -20,6 +20,7 @@ Markdown ファイルを Wiki デザインの自己完結型 HTML に変換す�
 |-----|----------|
 | HTML → PDF への変換 | `convert-pdf`（内部で本スキルを呼び出す） |
 | HTML → PPTX への変換 | `convert-pptx`（独自パイプライン） |
+| 新しいデザイン CSS の作成・追加 | `add-design-html`（本スキルは既存デザインの選択・適用のみ） |
 | 画像生成・mermaid 描画基盤の構築 | 本スキル外（`mermaid.ink` 外部 API に依存） |
 
 ## トリガー条件
@@ -34,6 +35,7 @@ Markdown ファイルを Wiki デザインの自己完結型 HTML に変換す�
 
 - 既に HTML が指定されている場合（再変換不要）
 - PDF / PPTX への変換依頼（`convert-pdf` / `convert-pptx` へルーティング）
+- 新しいデザイン・テーマの追加依頼（`add-design-html` へルーティング）
 
 ## 前提
 
@@ -70,11 +72,13 @@ Markdown ファイルを Wiki デザインの自己完結型 HTML に変換す�
 | 変換スクリプト | `${CLAUDE_PLUGIN_ROOT}/references/scripts/convert-html/convert.py` | スキル固有 |
 | HTML テンプレート | `${CLAUDE_PLUGIN_ROOT}/assets/html/template.html` | プラグイン共通（PDF と共有） |
 | CSS テンプレート | `${CLAUDE_PLUGIN_ROOT}/assets/css/template.css` | プラグイン共通（PDF と共有） |
+| 追加デザイン CSS / HTML ペア | `${CLAUDE_PLUGIN_ROOT}/assets/{css,html}/<design>.{css,html}` およびローカルデザインディレクトリ（`${CLAUDE_PLUGIN_ROOT}/references/design-locations.md`） | プラグイン共通（PDF と共有） |
 | ライトボックス JS | `${CLAUDE_SKILL_DIR}/assets/js/lightbox.js` | スキル固有（HTML 専用） |
 | 目次トグル JS | `${CLAUDE_SKILL_DIR}/assets/js/toc-toggle.js` | スキル固有（HTML 専用） |
 | JS 機能カタログ | `${CLAUDE_SKILL_DIR}/assets/js/features.json` | スキル固有（HTML 専用） |
 
 スキル固有にカスタマイズしたい場合は、対応する相対パスのファイルを `${CLAUDE_SKILL_DIR}/assets/...` に置けば上書きされる。
+新しいデザインの追加は `add-design-html` スキルが担当する（契約検証付き）。
 
 ## 重要な制約
 

@@ -6,6 +6,7 @@ Usage:
   python convert_pptx.py <input.md> [output.pptx]
     [--title TITLE] [--subtitle SUB] [--aspect 16:9|4:3]
     [--primary-color "#003879"] [--max-body-chars 2400]
+    [--theme theme.json] [--dump-default-theme]
 
 Dependencies: python-pptx, Pillow, requests
 """
@@ -14,55 +15,288 @@ import argparse
 import base64
 import io
 import json
+import math
 import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, replace
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import List, Optional
 from urllib.parse import urlparse
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.text import MSO_ANCHOR
 from pptx.util import Emu, Inches, Pt
 
-
-# --- Design constants (edit here for a re-skinning) ---
-PRIMARY_DEFAULT = "#003879"   # primary navy
-ACCENT = RGBColor(0x1D, 0x6F, 0xD1)
-TEXT = RGBColor(0x1F, 0x2D, 0x3D)
-CODE_BG = RGBColor(0xF5, 0xF6, 0xF8)
-CODE_TEXT = RGBColor(0x1F, 0x2D, 0x3D)
-WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-
-BODY_FONT = "Yu Gothic UI"
-HEADING_FONT = "Yu Gothic UI"
-CODE_FONT = "Consolas"
-
-TITLE_BAND_HEIGHT_IN = 0.9
-CONTENT_PADDING_IN = 0.5
-MERMAID_MAX_WIDTH_IN = 11.5
-MERMAID_MAX_HEIGHT_IN = 5.5
-IMAGE_MAX_WIDTH_IN = 11.5
-IMAGE_MAX_HEIGHT_IN = 5.5
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 
 MERMAID_PNG_ENDPOINT = "https://mermaid.ink/img/{}?type=png"
 
-# ----- Pygments syntax highlight palette (aligned with the HTML friendly theme) -----
-_SYNTAX_PALETTE = {
-    "keyword":   RGBColor(0x00, 0x7B, 0x83),   # Token.Keyword*
-    "builtin":   RGBColor(0x5C, 0x35, 0x66),   # Token.Name.Builtin*
-    "func":      RGBColor(0x00, 0x4E, 0xB0),   # Token.Name.Function / Token.Name.Class
-    "tag":       RGBColor(0x00, 0x7B, 0x83),   # Token.Name.Tag
-    "attr":      RGBColor(0xAA, 0x55, 0x00),   # Token.Name.Attribute
-    "string":    RGBColor(0x4E, 0x95, 0x2A),   # Token.Literal.String*
-    "number":    RGBColor(0xAA, 0x55, 0x00),   # Token.Literal.Number*
-    "operator":  RGBColor(0x33, 0x33, 0x33),
-    "comment":   RGBColor(0x80, 0x80, 0x80),   # Token.Comment*
-    "error":     RGBColor(0xB7, 0x25, 0x25),
-    "heading":   RGBColor(0x00, 0x4E, 0xB0),   # Token.Generic.Heading*
+# Cap for remote fetches (mermaid PNG / linked images) to avoid memory-exhaustion
+# from slow or oversized responses.
+MAX_REMOTE_BYTES = 20 * 1024 * 1024
+
+
+def _read_capped(resp, label: str) -> Optional[bytes]:
+    """Read a streamed requests response up to MAX_REMOTE_BYTES; None if exceeded."""
+    chunks = []
+    total = 0
+    for chunk in resp.iter_content(chunk_size=65536):
+        total += len(chunk)
+        if total > MAX_REMOTE_BYTES:
+            print(
+                f"Warning: remote resource exceeds {MAX_REMOTE_BYTES // (1024 * 1024)}MB cap, "
+                f"skipped: {label}",
+                file=sys.stderr,
+            )
+            return None
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _is_external_path_ref(src: str) -> bool:
+    """True for absolute / UNC / drive-anchored paths that must never be joined
+    onto base_dir (they would escape it or trigger network filesystem lookups).
+    Mirrored in convert-html/convert.py — keep both copies in sync.
+    """
+    from pathlib import PurePosixPath, PureWindowsPath
+    return bool(
+        src.startswith(("\\\\", "//"))
+        or PureWindowsPath(src).drive
+        or PureWindowsPath(src).root
+        or PurePosixPath(src).root
+    )
+
+
+# ===================== Theme =====================
+
+def _default_syntax_palette() -> "dict[str, RGBColor]":
+    """Pygments syntax highlight palette (aligned with the HTML friendly theme)."""
+    return {
+        "keyword":   RGBColor(0x00, 0x7B, 0x83),   # Token.Keyword*
+        "builtin":   RGBColor(0x5C, 0x35, 0x66),   # Token.Name.Builtin*
+        "func":      RGBColor(0x00, 0x4E, 0xB0),   # Token.Name.Function / Token.Name.Class
+        "tag":       RGBColor(0x00, 0x7B, 0x83),   # Token.Name.Tag
+        "attr":      RGBColor(0xAA, 0x55, 0x00),   # Token.Name.Attribute
+        "string":    RGBColor(0x4E, 0x95, 0x2A),   # Token.Literal.String*
+        "number":    RGBColor(0xAA, 0x55, 0x00),   # Token.Literal.Number*
+        "operator":  RGBColor(0x33, 0x33, 0x33),
+        "comment":   RGBColor(0x80, 0x80, 0x80),   # Token.Comment*
+        "error":     RGBColor(0xB7, 0x25, 0x25),
+        "heading":   RGBColor(0x00, 0x4E, 0xB0),   # Token.Generic.Heading*
+    }
+
+
+@dataclass(frozen=True)
+class Theme:
+    """A complete visual design for the generated deck.
+
+    Field defaults ARE the default design; ``--theme`` JSON files override
+    them partially. Keep the defaults byte-compatible with historical output.
+    """
+    # --- colors ---
+    primary: RGBColor = RGBColor(0x00, 0x38, 0x79)          # primary navy
+    accent: RGBColor = RGBColor(0x1D, 0x6F, 0xD1)           # reserved for future use
+    text: RGBColor = RGBColor(0x1F, 0x2D, 0x3D)
+    on_primary: RGBColor = RGBColor(0xFF, 0xFF, 0xFF)       # text on primary fills
+    code_bg: RGBColor = RGBColor(0xF5, 0xF6, 0xF8)
+    code_text: RGBColor = RGBColor(0x1F, 0x2D, 0x3D)
+    code_border: RGBColor = RGBColor(0xDD, 0xE1, 0xE8)
+    hr_color: RGBColor = RGBColor(0xC9, 0xD0, 0xD8)
+    table_row_odd: RGBColor = RGBColor(0xFF, 0xFF, 0xFF)
+    table_row_even: RGBColor = RGBColor(0xF5, 0xF6, 0xF8)
+    # --- fonts ---
+    body_font: str = "Yu Gothic UI"
+    heading_font: str = "Yu Gothic UI"
+    code_font: str = "Consolas"
+    # --- font sizes (pt) ---
+    title_band_size_pt: float = 24
+    title_slide_title_size_pt: float = 40
+    title_slide_subtitle_size_pt: float = 18
+    body_size_pt: float = 16
+    heading_h3_size_pt: float = 22
+    list_size_pt: float = 15
+    code_size_pt: float = 11
+    table_size_pt: float = 12
+    # --- layout (inches) ---
+    title_band_height_in: float = 0.9
+    content_padding_in: float = 0.5
+    mermaid_max_width_in: float = 11.5
+    mermaid_max_height_in: float = 5.5
+    image_max_width_in: float = 11.5
+    image_max_height_in: float = 5.5
+    # --- syntax highlight palette ---
+    syntax_palette: "dict[str, RGBColor]" = field(default_factory=_default_syntax_palette)
+
+
+# JSON section -> (json_key, Theme field) mapping tables.
+_THEME_COLOR_KEYS = {
+    "primary": "primary",
+    "accent": "accent",
+    "text": "text",
+    "on_primary": "on_primary",
+    "code_bg": "code_bg",
+    "code_text": "code_text",
+    "code_border": "code_border",
+    "hr": "hr_color",
+    "table_row_odd": "table_row_odd",
+    "table_row_even": "table_row_even",
 }
+_THEME_FONT_KEYS = {
+    "body": "body_font",
+    "heading": "heading_font",
+    "code": "code_font",
+}
+_THEME_FONT_SIZE_KEYS = {
+    "title_band": "title_band_size_pt",
+    "title_slide_title": "title_slide_title_size_pt",
+    "title_slide_subtitle": "title_slide_subtitle_size_pt",
+    "body": "body_size_pt",
+    "heading_h3": "heading_h3_size_pt",
+    "list": "list_size_pt",
+    "code": "code_size_pt",
+    "table": "table_size_pt",
+}
+_THEME_LAYOUT_KEYS = {
+    "title_band_height": "title_band_height_in",
+    "content_padding": "content_padding_in",
+    "mermaid_max_width": "mermaid_max_width_in",
+    "mermaid_max_height": "mermaid_max_height_in",
+    "image_max_width": "image_max_width_in",
+    "image_max_height": "image_max_height_in",
+}
+_THEME_META_KEYS = ("name", "description")
+
+# Self-check: every Theme field must be reachable from exactly one mapping
+# table (plus syntax_palette, handled separately). Fails at import time if a
+# new Theme field is added without updating the tables, so the omission can
+# never silently ship (it would otherwise be invisible in --dump-default-theme
+# and impossible to override from a theme JSON).
+_MAPPED_THEME_FIELDS = (
+    set(_THEME_COLOR_KEYS.values()) | set(_THEME_FONT_KEYS.values())
+    | set(_THEME_FONT_SIZE_KEYS.values()) | set(_THEME_LAYOUT_KEYS.values())
+    | {"syntax_palette"}
+)
+assert _MAPPED_THEME_FIELDS == {f.name for f in fields(Theme)}, (
+    "theme mapping tables are out of sync with Theme fields: "
+    f"unmapped={sorted({f.name for f in fields(Theme)} - _MAPPED_THEME_FIELDS)} "
+    f"unknown={sorted(_MAPPED_THEME_FIELDS - {f.name for f in fields(Theme)})}"
+)
+
+
+def _rgb_to_hex(color: RGBColor) -> str:
+    return f"#{color}"
+
+
+def theme_to_json(theme: Theme) -> str:
+    """Serialize a Theme to the documented JSON format (used by --dump-default-theme)."""
+    data = {
+        "name": "default",
+        "description": "convert-pptx built-in default design",
+        "colors": {k: _rgb_to_hex(getattr(theme, f)) for k, f in _THEME_COLOR_KEYS.items()},
+        "fonts": {k: getattr(theme, f) for k, f in _THEME_FONT_KEYS.items()},
+        "font_sizes_pt": {k: getattr(theme, f) for k, f in _THEME_FONT_SIZE_KEYS.items()},
+        "layout_in": {k: getattr(theme, f) for k, f in _THEME_LAYOUT_KEYS.items()},
+        "syntax_palette": {k: _rgb_to_hex(v) for k, v in theme.syntax_palette.items()},
+    }
+    return json.dumps(data, ensure_ascii=False, indent=2)
+
+
+def _theme_section(data: dict, section: str, keys: dict, parse) -> dict:
+    """Extract one JSON section into Theme field overrides. Unknown keys are errors."""
+    overrides = {}
+    if section not in data:
+        return overrides
+    raw = data[section]
+    if not isinstance(raw, dict):
+        # An explicit null is almost certainly a typo; require omission instead.
+        raise ValueError(
+            f"theme: '{section}' must be an object (omit the key entirely to use defaults)"
+        )
+    for key, value in raw.items():
+        if key not in keys:
+            raise ValueError(
+                f"theme: unknown key '{section}.{key}' (allowed: {', '.join(sorted(keys))})"
+            )
+        try:
+            overrides[keys[key]] = parse(value)
+        except ValueError as e:
+            raise ValueError(f"theme: '{section}.{key}': {e}") from e
+    return overrides
+
+
+def _parse_font_name(value) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"expected a non-empty font name string, got {value!r}")
+    return value.strip()
+
+
+def _parse_positive_number(value) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"expected a positive finite number, got {value!r}")
+    try:
+        f = float(value)
+    except OverflowError as e:  # arbitrarily large JSON integers
+        raise ValueError(f"expected a positive finite number, got {value!r}") from e
+    if not math.isfinite(f) or f <= 0:
+        raise ValueError(f"expected a positive finite number, got {value!r}")
+    return f
+
+
+def load_theme(path: Path) -> Theme:
+    """Load a partial theme JSON and merge it over the default Theme.
+
+    Raises ValueError with a human-readable message on any problem.
+    """
+    try:
+        raw_text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as e:
+        raise ValueError(f"theme: cannot read file {path} as UTF-8: {e}") from e
+    try:
+        data = json.loads(raw_text)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"theme: invalid JSON in {path}: {e}") from e
+    if not isinstance(data, dict):
+        raise ValueError(f"theme: top level of {path} must be a JSON object")
+
+    known_sections = {"colors", "fonts", "font_sizes_pt", "layout_in", "syntax_palette"}
+    for key in data:
+        if key not in known_sections and key not in _THEME_META_KEYS:
+            raise ValueError(
+                f"theme: unknown top-level key '{key}' "
+                f"(allowed: {', '.join(sorted(known_sections | set(_THEME_META_KEYS)))})"
+            )
+
+    overrides = {}
+    overrides.update(_theme_section(data, "colors", _THEME_COLOR_KEYS, _parse_hex_color))
+    overrides.update(_theme_section(data, "fonts", _THEME_FONT_KEYS, _parse_font_name))
+    overrides.update(_theme_section(data, "font_sizes_pt", _THEME_FONT_SIZE_KEYS, _parse_positive_number))
+    overrides.update(_theme_section(data, "layout_in", _THEME_LAYOUT_KEYS, _parse_positive_number))
+
+    theme = Theme(**overrides)
+
+    if "syntax_palette" in data:
+        palette_raw = data["syntax_palette"]
+        if not isinstance(palette_raw, dict):
+            raise ValueError(
+                "theme: 'syntax_palette' must be an object (omit the key entirely to use defaults)"
+            )
+        palette = _default_syntax_palette()
+        for key, value in palette_raw.items():
+            if key not in palette:
+                raise ValueError(
+                    f"theme: unknown key 'syntax_palette.{key}' (allowed: {', '.join(sorted(palette))})"
+                )
+            try:
+                palette[key] = _parse_hex_color(value)
+            except ValueError as e:
+                raise ValueError(f"theme: 'syntax_palette.{key}': {e}") from e
+        theme = replace(theme, syntax_palette=palette)
+
+    return theme
 
 
 # ===================== Markdown parsing =====================
@@ -79,12 +313,12 @@ class Block:
     alt: str = ""
 
 
-HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$")
 IMAGE_RE = re.compile(r"^!\[([^\]]*)\]\(([^)]+)\)\s*$")
 UL_RE = re.compile(r"^(\s*)[-*+]\s+(.+)$")
 OL_RE = re.compile(r"^(\s*)\d+\.\s+(.+)$")
 HR_RE = re.compile(r"^\s*(-{3,}|\*{3,}|_{3,})\s*$")
-TABLE_DIVIDER_RE = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$")
+TABLE_DIVIDER_RE = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
 
 
 def parse_markdown(md_text: str) -> List[Block]:
@@ -274,15 +508,23 @@ def split_into_slides(blocks: List[Block]) -> (Optional[str], Optional[str], Lis
 _HEX_COLOR_RE = re.compile(r"^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$")
 
 
-def hex_to_rgb(hex_str: str) -> RGBColor:
+def _parse_hex_color(hex_str) -> RGBColor:
     if not isinstance(hex_str, str) or not _HEX_COLOR_RE.match(hex_str):
-        raise argparse.ArgumentTypeError(
+        raise ValueError(
             f"invalid hex color: {hex_str!r} (expected '#RGB' or '#RRGGBB')"
         )
     h = hex_str.lstrip("#")
     if len(h) == 3:
         h = "".join(c * 2 for c in h)
     return RGBColor(int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+
+def hex_to_rgb(hex_str: str) -> RGBColor:
+    """argparse type= wrapper: keeps the historical exit-code-2 behavior."""
+    try:
+        return _parse_hex_color(hex_str)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e)) from e
 
 
 def fetch_mermaid_png(code: str) -> Optional[bytes]:
@@ -295,14 +537,14 @@ def fetch_mermaid_png(code: str) -> Optional[bytes]:
         payload = {"code": code, "mermaid": {"theme": "default"}}
         encoded = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
         url = MERMAID_PNG_ENDPOINT.format(encoded)
-        resp = requests.get(url, timeout=20, headers={"User-Agent": "convert-pptx/1.0"})
+        resp = requests.get(
+            url, timeout=20, headers={"User-Agent": "convert-pptx/1.0"}, stream=True
+        )
         ctype = resp.headers.get("Content-Type", "")
-        if (
-            resp.status_code == 200
-            and resp.content.startswith(b"\x89PNG")
-            and "image/png" in ctype
-        ):
-            return resp.content
+        if resp.status_code == 200 and "image/png" in ctype:
+            content = _read_capped(resp, "mermaid.ink PNG")
+            if content is not None and content.startswith(b"\x89PNG"):
+                return content
         print(
             f"Warning: mermaid.ink returned status={resp.status_code} content-type={ctype!r}",
             file=sys.stderr,
@@ -343,7 +585,7 @@ def _lexer_for(lang: str):
     return TextLexer(stripnl=False, ensurenl=False)
 
 
-def _token_color(tok_type):
+def _token_color(tok_type, palette: "dict[str, RGBColor]"):
     """Resolve a pygments token to an RGB color by walking up the token hierarchy."""
     from pygments.token import Token
 
@@ -369,7 +611,7 @@ def _token_color(tok_type):
     while t is not None:
         for base, key in mapping:
             if t in base:
-                return _SYNTAX_PALETTE[key]
+                return palette[key]
         parent = getattr(t, "parent", None)
         if parent is None or parent is t:
             break
@@ -459,7 +701,8 @@ def strip_inline_markdown(text: str) -> str:
 # ===================== PPTX builder =====================
 
 class Deck:
-    def __init__(self, *, aspect: str, primary: RGBColor):
+    def __init__(self, *, aspect: str, theme: Theme):
+        self.theme = theme
         self.prs = Presentation()
         if aspect == "4:3":
             self.prs.slide_width = Inches(10)
@@ -468,7 +711,6 @@ class Deck:
             self.prs.slide_width = Inches(13.333)
             self.prs.slide_height = Inches(7.5)
         self.blank = self.prs.slide_layouts[6]
-        self.primary = primary
 
     def _new_slide(self):
         slide = self.prs.slides.add_slide(self.blank)
@@ -478,10 +720,10 @@ class Deck:
         band = slide.shapes.add_shape(
             MSO_SHAPE.RECTANGLE,
             Inches(0), Inches(0),
-            self.prs.slide_width, Inches(TITLE_BAND_HEIGHT_IN),
+            self.prs.slide_width, Inches(self.theme.title_band_height_in),
         )
         band.fill.solid()
-        band.fill.fore_color.rgb = self.primary
+        band.fill.fore_color.rgb = self.theme.primary
         band.line.fill.background()
         tf = band.text_frame
         tf.margin_left = Inches(0.35)
@@ -489,10 +731,10 @@ class Deck:
         tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         tf.text = text
         p = tf.paragraphs[0]
-        p.font.name = HEADING_FONT
-        p.font.size = Pt(24)
+        p.font.name = self.theme.heading_font
+        p.font.size = Pt(self.theme.title_band_size_pt)
         p.font.bold = True
-        p.font.color.rgb = WHITE
+        p.font.color.rgb = self.theme.on_primary
 
     def add_title_slide(self, title: str, subtitle: Optional[str]):
         slide = self._new_slide()
@@ -502,7 +744,7 @@ class Deck:
             Inches(0), Inches(0), Inches(0.4), self.prs.slide_height,
         )
         bar.fill.solid()
-        bar.fill.fore_color.rgb = self.primary
+        bar.fill.fore_color.rgb = self.theme.primary
         bar.line.fill.background()
 
         title_tb = slide.shapes.add_textbox(
@@ -513,10 +755,10 @@ class Deck:
         tf.word_wrap = True
         p = tf.paragraphs[0]
         p.text = title
-        p.font.name = HEADING_FONT
-        p.font.size = Pt(40)
+        p.font.name = self.theme.heading_font
+        p.font.size = Pt(self.theme.title_slide_title_size_pt)
         p.font.bold = True
-        p.font.color.rgb = self.primary
+        p.font.color.rgb = self.theme.primary
 
         if subtitle:
             sub_tb = slide.shapes.add_textbox(
@@ -527,9 +769,9 @@ class Deck:
             tf.word_wrap = True
             p = tf.paragraphs[0]
             p.text = strip_inline_markdown(subtitle)
-            p.font.name = BODY_FONT
-            p.font.size = Pt(18)
-            p.font.color.rgb = TEXT
+            p.font.name = self.theme.body_font
+            p.font.size = Pt(self.theme.title_slide_subtitle_size_pt)
+            p.font.color.rgb = self.theme.text
 
     def add_content_slide(
         self,
@@ -555,13 +797,12 @@ class Deck:
             if spec.title:
                 title = spec.title if idx == 0 else f"{spec.title} ({idx + 1})"
                 self._add_title_band(slide, title)
-                top_cursor = Inches(TITLE_BAND_HEIGHT_IN + 0.2)
+                top_cursor = Inches(self.theme.title_band_height_in + 0.2)
             else:
                 top_cursor = Inches(0.3)
             self._render_blocks(slide, chunk, top_cursor, base_dir)
 
-    @staticmethod
-    def _estimate_block_height_in(b: Block) -> float:
+    def _estimate_block_height_in(self, b: Block) -> float:
         """Estimate the rendered height of a block in inches.
 
         The numbers intentionally mirror the actual geometry used by the
@@ -586,15 +827,14 @@ class Deck:
             n_rows = max(1, len(b.rows))
             return 0.4 * n_rows + gap
         if b.kind == "mermaid":
-            return MERMAID_MAX_HEIGHT_IN + gap
+            return self.theme.mermaid_max_height_in + gap
         if b.kind == "image":
-            return IMAGE_MAX_HEIGHT_IN + gap
+            return self.theme.image_max_height_in + gap
         if b.kind == "hr":
             return 0.15 + gap
         return 0.3 + gap
 
-    @classmethod
-    def _chunk_blocks(cls, blocks: List[Block], max_chars: int) -> List[List[Block]]:
+    def _chunk_blocks(self, blocks: List[Block], max_chars: int) -> List[List[Block]]:
         """Chunk the block list into slide-sized groups based on estimated height.
 
         The `max_chars` parameter is preserved for API compatibility but is now
@@ -608,8 +848,10 @@ class Deck:
         (e.g. `### 7.1 ...`) to the next chunk so a heading never sits alone at
         the tail of a slide while its content starts on the next one.
         """
-        # Vertical budget per slide (inches). Assumes 7.5in slide height.
-        budget_in = 7.5 - TITLE_BAND_HEIGHT_IN - CONTENT_PADDING_IN - 0.6
+        # Vertical budget per slide (inches), derived from the actual slide height
+        # (both 16:9 and 4:3 use 7.5in today; derive anyway to avoid drift).
+        slide_height_in = self.prs.slide_height / 914400  # EMU per inch
+        budget_in = slide_height_in - self.theme.title_band_height_in - self.theme.content_padding_in - 0.6
 
         chunks: List[List[Block]] = []
         current: List[Block] = []
@@ -617,8 +859,22 @@ class Deck:
         chars_used = 0
 
         for b in blocks:
-            h = cls._estimate_block_height_in(b)
-            chars = max(1, len(b.text or "")) + sum(len(x[1] or "") + 4 for x in (b.rows or []))
+            h = self._estimate_block_height_in(b)
+            # rows are [level, text] pairs for lists and cell lists for tables;
+            # single-cell table rows have no x[1], fall back to the first cell.
+            chars = max(1, len(b.text or "")) + sum(
+                len((x[1] if len(x) > 1 else x[0]) or "") + 4 for x in (b.rows or [])
+            )
+
+            if h > budget_in:
+                # A single block taller than one slide cannot be split by the
+                # chunker; it will overflow past the slide edge when rendered.
+                print(
+                    f"Warning: a single '{b.kind}' block (estimated {h:.1f}in) exceeds "
+                    f"the slide budget ({budget_in:.1f}in) and will overflow; "
+                    "consider splitting it in the source Markdown",
+                    file=sys.stderr,
+                )
 
             would_overflow_height = current and (height_used + h > budget_in)
             would_overflow_chars = current and (chars_used + chars > max_chars)
@@ -652,28 +908,31 @@ class Deck:
         return chunks
 
     def _render_blocks(self, slide, blocks: List[Block], start_top: Emu, base_dir: Path):
-        left = Inches(CONTENT_PADDING_IN)
-        width = self.prs.slide_width - Inches(CONTENT_PADDING_IN * 2)
+        left = Inches(self.theme.content_padding_in)
+        width = self.prs.slide_width - Inches(self.theme.content_padding_in * 2)
         bottom_limit = self.prs.slide_height - Inches(0.3)
         cursor = start_top
+        skipped = 0
 
         for b in blocks:
             if cursor >= bottom_limit:
-                break
+                skipped += 1
+                continue
 
             if b.kind == "paragraph":
                 height = self._render_text(
-                    slide, left, cursor, width, strip_inline_markdown(b.text), Pt(16)
+                    slide, left, cursor, width, strip_inline_markdown(b.text),
+                    Pt(self.theme.body_size_pt),
                 )
                 cursor = cursor + height + Inches(0.1)
 
             elif b.kind == "heading":
                 # H3+ rendered as bold accent line
-                size = max(14, 22 - (b.level - 3) * 2)
+                size = max(14, self.theme.heading_h3_size_pt - (b.level - 3) * 2)
                 height = self._render_text(
                     slide, left, cursor, width,
                     strip_inline_markdown(b.text),
-                    Pt(size), bold=True, color=self.primary,
+                    Pt(size), bold=True, color=self.theme.primary,
                 )
                 cursor = cursor + height + Inches(0.1)
 
@@ -686,9 +945,9 @@ class Deck:
                     p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
                     bullet = "- " if b.kind == "ul" else f"{i + 1}. "
                     p.text = f"{'  ' * int(lvl_str)}{bullet}{strip_inline_markdown(txt)}"
-                    p.font.name = BODY_FONT
-                    p.font.size = Pt(15)
-                    p.font.color.rgb = TEXT
+                    p.font.name = self.theme.body_font
+                    p.font.size = Pt(self.theme.list_size_pt)
+                    p.font.color.rgb = self.theme.text
                 cursor = cursor + tb.height + Inches(0.1)
 
             elif b.kind == "code":
@@ -709,12 +968,22 @@ class Deck:
 
             elif b.kind == "hr":
                 ln = slide.shapes.add_connector(1, left, cursor, left + width, cursor)
-                ln.line.color.rgb = RGBColor(0xC9, 0xD0, 0xD8)
+                ln.line.color.rgb = self.theme.hr_color
                 cursor = cursor + Inches(0.15)
 
+        if skipped:
+            print(
+                f"Warning: {skipped} block(s) did not fit on a slide and were not rendered "
+                "(check layout_in / font_sizes_pt theme values)",
+                file=sys.stderr,
+            )
+
     def _render_text(
-        self, slide, left, top, width, text, size: Pt, *, bold=False, color: RGBColor = TEXT
+        self, slide, left, top, width, text, size: Pt, *, bold=False,
+        color: Optional[RGBColor] = None,
     ):
+        if color is None:
+            color = self.theme.text
         # Rough height estimate based on char count
         approx_lines = max(1, int(len(text) / 60) + 1)
         height = Inches(0.35 * approx_lines)
@@ -723,7 +992,7 @@ class Deck:
         tf.word_wrap = True
         p = tf.paragraphs[0]
         p.text = text
-        p.font.name = BODY_FONT
+        p.font.name = self.theme.body_font
         p.font.size = size
         p.font.bold = bold
         p.font.color.rgb = color
@@ -744,8 +1013,8 @@ class Deck:
         height = Inches(max(0.5, 0.28 * len(line_groups) + 0.2))
         box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
         box.fill.solid()
-        box.fill.fore_color.rgb = CODE_BG
-        box.line.color.rgb = RGBColor(0xDD, 0xE1, 0xE8)
+        box.fill.fore_color.rgb = self.theme.code_bg
+        box.line.color.rgb = self.theme.code_border
         tf = box.text_frame
         # Code should not reflow: it preserves the author's line breaks.
         tf.word_wrap = False
@@ -758,17 +1027,17 @@ class Deck:
             line_tokens = _normalize_leading(line_tokens)
             p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
             # Baseline paragraph formatting (applies if a run doesn't override).
-            p.font.name = CODE_FONT
-            p.font.size = Pt(11)
-            p.font.color.rgb = CODE_TEXT
+            p.font.name = self.theme.code_font
+            p.font.size = Pt(self.theme.code_size_pt)
+            p.font.color.rgb = self.theme.code_text
 
             if not line_tokens:
                 # Preserve blank lines with a NBSP run so the line height stays.
                 run = p.add_run()
                 run.text = NBSP
-                run.font.name = CODE_FONT
-                run.font.size = Pt(11)
-                run.font.color.rgb = CODE_TEXT
+                run.font.name = self.theme.code_font
+                run.font.size = Pt(self.theme.code_size_pt)
+                run.font.color.rgb = self.theme.code_text
                 continue
 
             for tok, txt in line_tokens:
@@ -776,9 +1045,9 @@ class Deck:
                     continue
                 run = p.add_run()
                 run.text = txt
-                run.font.name = CODE_FONT
-                run.font.size = Pt(11)
-                color = _token_color(tok) or CODE_TEXT
+                run.font.name = self.theme.code_font
+                run.font.size = Pt(self.theme.code_size_pt)
+                color = _token_color(tok, self.theme.syntax_palette) or self.theme.code_text
                 run.font.color.rgb = color
         return height
 
@@ -786,11 +1055,14 @@ class Deck:
         png = fetch_mermaid_png(code)
         if not png:
             return self._render_code(slide, left, top, width, code)
+        max_w = self.theme.mermaid_max_width_in
+        max_h = self.theme.mermaid_max_height_in
         try:
             w, h = measure_image_bytes(png)
-            img_w, img_h = fit_size_inches(w, h, MERMAID_MAX_WIDTH_IN, MERMAID_MAX_HEIGHT_IN)
-        except Exception:
-            img_w, img_h = Inches(MERMAID_MAX_WIDTH_IN), Inches(MERMAID_MAX_HEIGHT_IN)
+            img_w, img_h = fit_size_inches(w, h, max_w, max_h)
+        except Exception as e:
+            print(f"Warning: cannot measure mermaid PNG size ({e}); using max size", file=sys.stderr)
+            img_w, img_h = Inches(max_w), Inches(max_h)
         slide.shapes.add_picture(io.BytesIO(png), left, top, width=img_w, height=img_h)
         return img_h
 
@@ -800,11 +1072,14 @@ class Deck:
             return self._render_text(
                 slide, left, top, width, f"[画像が見つかりません: {alt or src}]", Pt(13)
             )
+        max_w = self.theme.image_max_width_in
+        max_h = self.theme.image_max_height_in
         try:
             w, h = measure_image_bytes(data)
-            img_w, img_h = fit_size_inches(w, h, IMAGE_MAX_WIDTH_IN, IMAGE_MAX_HEIGHT_IN)
-        except Exception:
-            img_w, img_h = Inches(IMAGE_MAX_WIDTH_IN), Inches(IMAGE_MAX_HEIGHT_IN)
+            img_w, img_h = fit_size_inches(w, h, max_w, max_h)
+        except Exception as e:
+            print(f"Warning: cannot measure image size for {src} ({e}); using max size", file=sys.stderr)
+            img_w, img_h = Inches(max_w), Inches(max_h)
         slide.shapes.add_picture(io.BytesIO(data), left, top, width=img_w, height=img_h)
         return img_h
 
@@ -819,17 +1094,40 @@ class Deck:
 
     @staticmethod
     def _is_public_host(host: str) -> bool:
-        """Reject loopback / link-local / private IPv4/IPv6 to mitigate SSRF."""
+        """Reject loopback / link-local / private hosts to mitigate SSRF.
+
+        IP literals are checked directly. Hostnames are resolved and every
+        resolved address must be public (fail-close on resolution failure).
+        A TOCTOU DNS-rebinding window remains because requests re-resolves;
+        full mitigation would require pinning the connection to the checked IP.
+        """
         import ipaddress
+        import socket
         if not host:
             return False
+
+        def _blocked(ip) -> bool:
+            return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
+
         try:
-            ip = ipaddress.ip_address(host)
+            return not _blocked(ipaddress.ip_address(host))
         except ValueError:
-            # Hostname (not IP literal): allow; DNS resolution is delegated to requests
-            # and follows whatever firewall/DNS policy the host environment provides.
-            return True
-        return not (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved)
+            pass
+        # Hostname (not an IP literal): resolve and check every address.
+        try:
+            infos = socket.getaddrinfo(host, None)
+        except OSError:
+            return False
+        addrs = {info[4][0].split("%")[0] for info in infos}
+        if not addrs:
+            return False
+        for addr in addrs:
+            try:
+                if _blocked(ipaddress.ip_address(addr)):
+                    return False
+            except ValueError:
+                return False
+        return True
 
     @classmethod
     def _load_image_bytes(cls, src: str, base_dir: Path) -> Optional[bytes]:
@@ -845,16 +1143,26 @@ class Deck:
                     timeout=20,
                     headers={"User-Agent": "convert-pptx/1.0"},
                     allow_redirects=False,
+                    stream=True,
                 )
                 if r.status_code == 200:
-                    return r.content
+                    return _read_capped(r, src)
             except Exception:
                 return None
             return None
-        # local path: must resolve inside base_dir to prevent traversal
+        # local path: reject absolute/UNC references BEFORE any filesystem access
+        # (a UNC src would otherwise trigger an SMB lookup during .is_file()).
+        if _is_external_path_ref(src):
+            print(f"Warning: absolute/UNC image path rejected: {src}", file=sys.stderr)
+            return None
+        # must resolve inside base_dir to prevent traversal
         candidate = base_dir / src
-        if candidate.exists() and cls._is_within(base_dir, candidate):
-            return candidate.read_bytes()
+        if candidate.is_file() and cls._is_within(base_dir, candidate):
+            try:
+                return candidate.read_bytes()
+            except OSError as e:
+                print(f"Warning: cannot read image {candidate}: {e}", file=sys.stderr)
+                return None
         return None
 
     def _render_table(self, slide, left, top, width, rows: List[List[str]]):
@@ -862,7 +1170,6 @@ class Deck:
             return Inches(0.3)
         n_rows = len(rows)
         n_cols = max(len(r) for r in rows)
-        row_h = Inches(0.4)
         height = Inches(0.4 * n_rows)
         table_shape = slide.shapes.add_table(n_rows, n_cols, left, top, width, height)
         table = table_shape.table
@@ -872,19 +1179,21 @@ class Deck:
                 cell.text = strip_inline_markdown(row[c]) if c < len(row) else ""
                 for paragraph in cell.text_frame.paragraphs:
                     for run in paragraph.runs:
-                        run.font.name = BODY_FONT
-                        run.font.size = Pt(12)
+                        run.font.name = self.theme.body_font
+                        run.font.size = Pt(self.theme.table_size_pt)
                         if r == 0:
                             run.font.bold = True
-                            run.font.color.rgb = WHITE
+                            run.font.color.rgb = self.theme.on_primary
                         else:
-                            run.font.color.rgb = TEXT
+                            run.font.color.rgb = self.theme.text
                 if r == 0:
                     cell.fill.solid()
-                    cell.fill.fore_color.rgb = self.primary
+                    cell.fill.fore_color.rgb = self.theme.primary
                 else:
                     cell.fill.solid()
-                    cell.fill.fore_color.rgb = RGBColor(0xFF, 0xFF, 0xFF) if r % 2 == 1 else RGBColor(0xF5, 0xF6, 0xF8)
+                    cell.fill.fore_color.rgb = (
+                        self.theme.table_row_odd if r % 2 == 1 else self.theme.table_row_even
+                    )
         return height
 
     def save(self, path: Path):
@@ -895,15 +1204,41 @@ class Deck:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Convert Markdown to PowerPoint (PPTX)")
-    parser.add_argument("input", help="Input .md file path")
+    parser.add_argument("input", nargs="?", help="Input .md file path")
     parser.add_argument("output", nargs="?", help="Output .pptx file path")
     parser.add_argument("--title", help="Title slide heading (default: first H1 in the Markdown)")
     parser.add_argument("--subtitle", help="Title slide subtitle")
     parser.add_argument("--aspect", default="16:9", choices=["16:9", "4:3"])
-    parser.add_argument("--primary-color", default=PRIMARY_DEFAULT, help="Primary color #RRGGBB")
-    parser.add_argument("--max-body-chars", type=int, default=2400,
+    parser.add_argument("--primary-color", type=hex_to_rgb, default=None,
+                        help="Primary color #RRGGBB (overrides the theme's primary)")
+    def _positive_int(value: str) -> int:
+        n = int(value)
+        if n <= 0:
+            raise argparse.ArgumentTypeError(f"expected a positive integer, got {value!r}")
+        return n
+
+    parser.add_argument("--max-body-chars", type=_positive_int, default=2400,
                         help="Soft budget for a single slide's body text")
+    parser.add_argument("--theme", default=None,
+                        help="Path to a theme JSON file (partial override of the default design)")
+    parser.add_argument("--dump-default-theme", action="store_true",
+                        help="Print the built-in default theme as JSON and exit")
     args = parser.parse_args()
+
+    if args.dump_default_theme:
+        print(theme_to_json(Theme()))
+        return
+
+    if not args.input:
+        parser.error("the following arguments are required: input")
+
+    try:
+        theme = load_theme(Path(args.theme)) if args.theme else Theme()
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    if args.primary_color is not None:
+        theme = replace(theme, primary=args.primary_color)
 
     input_path = Path(args.input)
     if not input_path.exists():
@@ -923,8 +1258,7 @@ def main() -> None:
     if args.subtitle:
         doc_subtitle = args.subtitle
 
-    primary = hex_to_rgb(args.primary_color)
-    deck = Deck(aspect=args.aspect, primary=primary)
+    deck = Deck(aspect=args.aspect, theme=theme)
     if doc_title:
         deck.add_title_slide(doc_title, doc_subtitle)
     for spec in slides:

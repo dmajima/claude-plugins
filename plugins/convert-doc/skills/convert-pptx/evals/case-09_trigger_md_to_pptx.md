@@ -1,4 +1,4 @@
-# case-09 Markdown を PPTX に変換
+# Case 09: トリガー確認 — Markdown を PPTX に変換
 
 ユーザーが Markdown ファイルを PowerPoint に変換するよう依頼した場合の基本トリガー。
 
