@@ -231,6 +231,9 @@ class Theme:
     image_max_height_in: float = 5.5
     # --- syntax highlight palette ---
     syntax_palette: "dict[str, RGBColor]" = field(default_factory=_default_syntax_palette)
+    # --- composition (cover / content-header layout structure) ---
+    # None = built-in default composition (which tracks title_band_height).
+    composition: "Composition | None" = None
 
 
 # JSON section -> (json_key, Theme field) mapping tables.
@@ -272,14 +275,14 @@ _THEME_LAYOUT_KEYS = {
 _THEME_META_KEYS = ("name", "description")
 
 # Self-check: every Theme field must be reachable from exactly one mapping
-# table (plus syntax_palette, handled separately). Fails at import time if a
-# new Theme field is added without updating the tables, so the omission can
-# never silently ship (it would otherwise be invisible in --dump-default-theme
-# and impossible to override from a theme JSON).
+# table (plus syntax_palette / composition, handled separately). Fails at
+# import time if a new Theme field is added without updating the tables, so
+# the omission can never silently ship (it would otherwise be invisible in
+# --dump-default-theme and impossible to override from a theme JSON).
 _MAPPED_THEME_FIELDS = (
     set(_THEME_COLOR_KEYS.values()) | set(_THEME_FONT_KEYS.values())
     | set(_THEME_FONT_SIZE_KEYS.values()) | set(_THEME_LAYOUT_KEYS.values())
-    | {"syntax_palette"}
+    | {"syntax_palette", "composition"}
 )
 assert _MAPPED_THEME_FIELDS == {f.name for f in fields(Theme)}, (
     "theme mapping tables are out of sync with Theme fields: "
@@ -290,6 +293,40 @@ assert _MAPPED_THEME_FIELDS == {f.name for f in fields(Theme)}, (
 
 def _rgb_to_hex(color: RGBColor) -> str:
     return f"#{color}"
+
+
+def _composition_to_dict(comp: Composition) -> dict:
+    """Serialize a Composition back to the documented JSON shape.
+
+    Used for round-trip completeness when a theme carries a custom
+    composition. The default theme never carries one (composition is None),
+    so --dump-default-theme stays composition-free: the default composition
+    tracks theme values such as title_band_height dynamically, and a dumped
+    static copy would silently desync from layout_in edits.
+    """
+    def shape_dict(s: ShapeSpec) -> dict:
+        return {"x": s.x, "y": s.y, "w": s.w, "h": s.h, "color": s.color}
+
+    def text_dict(t: TextSpec) -> dict:
+        return {
+            "x": t.x, "y": t.y, "w": t.w, "h": t.h, "color": t.color,
+            "bold": t.bold, "align": t.align, "anchor": t.anchor, "margin": t.margin,
+        }
+
+    data = {}
+    if comp.cover is not None:
+        data["cover"] = {
+            "shapes": [shape_dict(s) for s in comp.cover.shapes],
+            "title": text_dict(comp.cover.title),
+            "subtitle": text_dict(comp.cover.subtitle),
+        }
+    if comp.content_header is not None:
+        data["content_header"] = {
+            "shapes": [shape_dict(s) for s in comp.content_header.shapes],
+            "title": text_dict(comp.content_header.title),
+            "content_top": comp.content_header.content_top,
+        }
+    return data
 
 
 def theme_to_json(theme: Theme) -> str:
@@ -303,6 +340,8 @@ def theme_to_json(theme: Theme) -> str:
         "layout_in": {k: getattr(theme, f) for k, f in _THEME_LAYOUT_KEYS.items()},
         "syntax_palette": {k: _rgb_to_hex(v) for k, v in theme.syntax_palette.items()},
     }
+    if theme.composition is not None:
+        data["composition"] = _composition_to_dict(theme.composition)
     return json.dumps(data, ensure_ascii=False, indent=2)
 
 
@@ -347,6 +386,185 @@ def _parse_positive_number(value) -> float:
     return f
 
 
+# ----- composition parsing (theme JSON -> Composition) -----
+
+def _parse_nonneg_number(value) -> float:
+    """0-or-more finite number. Composition x / y / margin legitimately use 0
+    (bottom bands, left bars), so the positive-number parser must not be
+    reused for them.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"expected a non-negative finite number, got {value!r}")
+    try:
+        f = float(value)
+    except OverflowError as e:
+        raise ValueError(f"expected a non-negative finite number, got {value!r}") from e
+    if not math.isfinite(f) or f < 0:
+        raise ValueError(f"expected a non-negative finite number, got {value!r}")
+    return f
+
+
+def _parse_comp_dim(value, *, tokens) -> "float | str":
+    """A positive finite number or one of the allowed size tokens."""
+    if isinstance(value, str):
+        if value in tokens:
+            return value
+        raise ValueError(
+            f"expected a positive finite number or one of: {', '.join(tokens)}, got {value!r}"
+        )
+    return _parse_positive_number(value)
+
+
+def _parse_comp_color(value) -> str:
+    """Validate a composition color (token name or hex) WITHOUT resolving it.
+
+    Tokens stay symbolic in the Composition so they track the Theme's current
+    colors at draw time -- including --primary-color, which is applied to the
+    Theme after load_theme() returns. Resolving here would freeze the color
+    and silently ignore that CLI override.
+    """
+    if isinstance(value, str) and value in _THEME_COLOR_KEYS:
+        return value
+    try:
+        _parse_hex_color(value)
+    except ValueError as e:
+        raise ValueError(
+            f"expected a color token ({', '.join(sorted(_THEME_COLOR_KEYS))}) "
+            f"or a hex string like '#RRGGBB', got {value!r}"
+        ) from e
+    return value
+
+
+def _parse_comp_bool(value) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"expected true or false, got {value!r}")
+    return value
+
+
+def _parse_comp_enum(value, *, allowed) -> str:
+    if value not in allowed:
+        raise ValueError(f"expected one of: {', '.join(allowed)}, got {value!r}")
+    return value
+
+
+def _require_comp_object(raw, path: str, *, allowed, required) -> None:
+    """Shared object-shape validation: dict type, unknown keys, required keys."""
+    if not isinstance(raw, dict):
+        raise ValueError(f"theme: '{path}' must be an object")
+    for key in raw:
+        if key not in allowed:
+            raise ValueError(
+                f"theme: unknown key '{path}.{key}' (allowed: {', '.join(sorted(allowed))})"
+            )
+    for req in required:
+        if req not in raw:
+            raise ValueError(f"theme: '{path}' is missing required key '{req}'")
+
+
+def _parse_shape_spec(raw, path: str) -> ShapeSpec:
+    parsers = {
+        "x": _parse_nonneg_number,
+        "y": _parse_nonneg_number,
+        "w": lambda v: _parse_comp_dim(v, tokens=("full", "sym")),
+        "h": lambda v: _parse_comp_dim(v, tokens=("full",)),
+        "color": _parse_comp_color,
+    }
+    _require_comp_object(raw, path, allowed=parsers, required=parsers)
+    values = {}
+    for key, parse in parsers.items():
+        try:
+            values[key] = parse(raw[key])
+        except ValueError as e:
+            raise ValueError(f"theme: '{path}.{key}': {e}") from e
+    return ShapeSpec(**values)
+
+
+def _parse_shapes(raw, path: str) -> "tuple[ShapeSpec, ...]":
+    """Parse a shapes array. An empty array is accepted and means the same as
+    omitting the key: no decoration shapes."""
+    if not isinstance(raw, list):
+        raise ValueError(f"theme: '{path}' must be an array of rectangle objects")
+    return tuple(_parse_shape_spec(item, f"{path}[{i}]") for i, item in enumerate(raw))
+
+
+def _parse_text_spec(raw, path: str, *, default_bold: bool) -> TextSpec:
+    parsers = {
+        "x": _parse_nonneg_number,
+        "y": _parse_nonneg_number,
+        "w": lambda v: _parse_comp_dim(v, tokens=("sym",)),
+        "h": _parse_positive_number,
+        "color": _parse_comp_color,
+        "bold": _parse_comp_bool,
+        "align": lambda v: _parse_comp_enum(v, allowed=("left", "center", "right")),
+        "anchor": lambda v: _parse_comp_enum(v, allowed=("top", "middle")),
+        "margin": _parse_nonneg_number,
+    }
+    _require_comp_object(raw, path, allowed=parsers, required=("x", "y", "w", "h", "color"))
+    values = {}
+    for key, value in raw.items():
+        try:
+            values[key] = parsers[key](value)
+        except ValueError as e:
+            raise ValueError(f"theme: '{path}.{key}': {e}") from e
+    values.setdefault("bold", default_bold)
+    return TextSpec(**values)
+
+
+def _parse_composition(raw) -> Composition:
+    """Parse and validate the `composition` theme section.
+
+    Each part (cover / content_header) replaces the default wholesale; there
+    is no deep merge within a part. Colors are validated but kept symbolic
+    (see _parse_comp_color).
+    """
+    if not isinstance(raw, dict):
+        raise ValueError(
+            "theme: 'composition' must be an object (omit the key entirely to use the default layout)"
+        )
+    for key in raw:
+        if key not in ("cover", "content_header"):
+            raise ValueError(
+                f"theme: unknown key 'composition.{key}' (allowed: content_header, cover)"
+            )
+    if not raw:
+        raise ValueError(
+            "theme: 'composition' must define at least one of: cover, content_header "
+            "(omit the key entirely to use the default layout)"
+        )
+
+    cover = None
+    if "cover" in raw:
+        c = raw["cover"]
+        _require_comp_object(
+            c, "composition.cover",
+            allowed=("shapes", "title", "subtitle"), required=("title", "subtitle"),
+        )
+        cover = CoverComposition(
+            shapes=_parse_shapes(c.get("shapes", []), "composition.cover.shapes"),
+            title=_parse_text_spec(c["title"], "composition.cover.title", default_bold=True),
+            subtitle=_parse_text_spec(c["subtitle"], "composition.cover.subtitle", default_bold=False),
+        )
+
+    content_header = None
+    if "content_header" in raw:
+        h = raw["content_header"]
+        _require_comp_object(
+            h, "composition.content_header",
+            allowed=("shapes", "title", "content_top"), required=("title", "content_top"),
+        )
+        try:
+            content_top = _parse_positive_number(h["content_top"])
+        except ValueError as e:
+            raise ValueError(f"theme: 'composition.content_header.content_top': {e}") from e
+        content_header = ContentHeaderComposition(
+            shapes=_parse_shapes(h.get("shapes", []), "composition.content_header.shapes"),
+            title=_parse_text_spec(h["title"], "composition.content_header.title", default_bold=True),
+            content_top=content_top,
+        )
+
+    return Composition(cover=cover, content_header=content_header)
+
+
 def load_theme(path: Path) -> Theme:
     """Load a partial theme JSON and merge it over the default Theme.
 
@@ -363,7 +581,7 @@ def load_theme(path: Path) -> Theme:
     if not isinstance(data, dict):
         raise ValueError(f"theme: top level of {path} must be a JSON object")
 
-    known_sections = {"colors", "fonts", "font_sizes_pt", "layout_in", "syntax_palette"}
+    known_sections = {"colors", "fonts", "font_sizes_pt", "layout_in", "syntax_palette", "composition"}
     for key in data:
         if key not in known_sections and key not in _THEME_META_KEYS:
             raise ValueError(
@@ -396,6 +614,27 @@ def load_theme(path: Path) -> Theme:
             except ValueError as e:
                 raise ValueError(f"theme: 'syntax_palette.{key}': {e}") from e
         theme = replace(theme, syntax_palette=palette)
+
+    if "composition" in data:
+        comp = _parse_composition(data["composition"])
+        theme = replace(theme, composition=comp)
+        # A custom content_header replaces the default band wholesale, so
+        # layout_in.title_band_height stops mattering; warn (not error) when
+        # both are spelled out to catch a likely misunderstanding. A
+        # cover-only override keeps using it via the default content header,
+        # so no warning in that case.
+        layout_raw = data.get("layout_in")
+        if (
+            comp.content_header is not None
+            and isinstance(layout_raw, dict)
+            and "title_band_height" in layout_raw
+        ):
+            print(
+                "Warning: this theme overrides composition.content_header, so "
+                "layout_in.title_band_height is not used (it only affects the "
+                "default composition)",
+                file=sys.stderr,
+            )
 
     return theme
 
@@ -815,9 +1054,15 @@ class Deck:
         self.prs.slide_width = Inches(self.slide_w_in)
         self.prs.slide_height = Inches(self.slide_h_in)
         self.blank = self.prs.slide_layouts[6]
-        # Effective composition (always the built-in default for now; theme
-        # JSON overrides are wired in by the composition-loading change).
-        self.composition = build_default_composition(theme, self.slide_w_in, self.slide_h_in)
+        # Effective composition, resolved per part: a theme may override
+        # cover / content_header independently; a part left as None falls
+        # back to the built-in default composition.
+        default_comp = build_default_composition(theme, self.slide_w_in, self.slide_h_in)
+        theme_comp = theme.composition or Composition()
+        self.composition = Composition(
+            cover=theme_comp.cover or default_comp.cover,
+            content_header=theme_comp.content_header or default_comp.content_header,
+        )
 
     def _new_slide(self):
         slide = self.prs.slides.add_slide(self.blank)
