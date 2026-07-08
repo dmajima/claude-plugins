@@ -26,7 +26,7 @@ from urllib.parse import urlparse
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
-from pptx.enum.text import MSO_ANCHOR
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Emu, Inches, Pt
 
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -71,6 +71,107 @@ def _is_external_path_ref(src: str) -> bool:
     )
 
 
+# ===================== Composition (cover / content-header layout) =====================
+
+# Width / height tokens resolved at draw time against the actual slide size:
+#   "full" = slide width (w) / slide height (h)
+#   "sym"  = slide width - x * 2 (symmetric side margins; w only)
+# Slide width depends on the aspect ratio, so edge-reaching sizes must be
+# written as tokens rather than absolute numbers to stay portable.
+
+@dataclass(frozen=True)
+class ShapeSpec:
+    """A filled, borderless rectangle in a slide composition."""
+    x: float
+    y: float
+    w: "float | str"        # number | "full" | "sym"
+    h: "float | str"        # number | "full"
+    color: str              # color token name (a `colors` section key) or hex
+
+
+@dataclass(frozen=True)
+class TextSpec:
+    """Placement and text styling for a composition text box.
+
+    Font face and size intentionally do NOT live here: composition describes
+    geometry only, while `fonts` / `font_sizes_pt` keep describing the look
+    (cover title -> title_slide_title, cover subtitle -> title_slide_subtitle,
+    content-header title -> title_band).
+    """
+    x: float
+    y: float
+    w: "float | str"        # number | "sym" ("full" is used only internally)
+    h: float
+    color: str              # color token name or hex
+    bold: bool = False
+    align: str = "left"     # left | center | right
+    anchor: str = "top"     # top | middle
+    margin: float = 0.1     # text_frame left/right margin in inches (pptx default)
+
+
+@dataclass(frozen=True)
+class CoverComposition:
+    """Title-slide layout: decoration shapes plus title/subtitle placement."""
+    shapes: "tuple[ShapeSpec, ...]"
+    title: TextSpec
+    subtitle: TextSpec
+
+
+@dataclass(frozen=True)
+class ContentHeaderComposition:
+    """Content-slide header layout plus where the body blocks start."""
+    shapes: "tuple[ShapeSpec, ...]"
+    title: TextSpec
+    content_top: float      # body start Y (inches); also drives slide chunking
+
+
+@dataclass(frozen=True)
+class Composition:
+    """Declarative cover / content-header layout.
+
+    A part left as None falls back to the built-in default composition
+    (parts are replaced wholesale; no deep merge within a part).
+    """
+    cover: "CoverComposition | None" = None
+    content_header: "ContentHeaderComposition | None" = None
+
+
+def build_default_composition(theme: "Theme", slide_w_in: float, slide_h_in: float) -> Composition:
+    """Build the default composition (visually identical to the historical
+    hard-coded layout).
+
+    This function is the SSOT for the default composition; the reference
+    listing in add-design-pptx's theme-schema.md mirrors it and is kept in
+    sync by check_default_composition.py. It tracks theme values
+    (title_band_height) dynamically, which is why --dump-default-theme does
+    not include a `composition` section.
+    """
+    band_h = theme.title_band_height_in
+    return Composition(
+        cover=CoverComposition(
+            shapes=(ShapeSpec(x=0, y=0, w=0.4, h="full", color="primary"),),
+            title=TextSpec(
+                x=1.0, y=2.3, w=slide_w_in - 1.5, h=2.0, color="primary", bold=True,
+            ),
+            subtitle=TextSpec(
+                x=1.0, y=4.4, w=slide_w_in - 1.5, h=1.5, color="text",
+            ),
+        ),
+        content_header=ContentHeaderComposition(
+            shapes=(ShapeSpec(x=0, y=0, w="full", h=band_h, color="primary"),),
+            # x=0 / w="full" / margin=0.35 reproduces the historical band text
+            # exactly: the text frame spans the slide and the 0.35in margins
+            # give the same effective text start X (0.35) as the old
+            # text-on-band-shape implementation.
+            title=TextSpec(
+                x=0, y=0, w="full", h=band_h, color="on_primary",
+                bold=True, anchor="middle", margin=0.35,
+            ),
+            content_top=band_h + 0.2,
+        ),
+    )
+
+
 # ===================== Theme =====================
 
 def _default_syntax_palette() -> "dict[str, RGBColor]":
@@ -99,7 +200,7 @@ class Theme:
     """
     # --- colors ---
     primary: RGBColor = RGBColor(0x00, 0x38, 0x79)          # primary navy
-    accent: RGBColor = RGBColor(0x1D, 0x6F, 0xD1)           # reserved for future use
+    accent: RGBColor = RGBColor(0x1D, 0x6F, 0xD1)           # composition color token; unused by the default design
     text: RGBColor = RGBColor(0x1F, 0x2D, 0x3D)
     on_primary: RGBColor = RGBColor(0xFF, 0xFF, 0xFF)       # text on primary fills
     code_bg: RGBColor = RGBColor(0xF5, 0xF6, 0xF8)
@@ -130,6 +231,9 @@ class Theme:
     image_max_height_in: float = 5.5
     # --- syntax highlight palette ---
     syntax_palette: "dict[str, RGBColor]" = field(default_factory=_default_syntax_palette)
+    # --- composition (cover / content-header layout structure) ---
+    # None = built-in default composition (which tracks title_band_height).
+    composition: "Composition | None" = None
 
 
 # JSON section -> (json_key, Theme field) mapping tables.
@@ -171,14 +275,14 @@ _THEME_LAYOUT_KEYS = {
 _THEME_META_KEYS = ("name", "description")
 
 # Self-check: every Theme field must be reachable from exactly one mapping
-# table (plus syntax_palette, handled separately). Fails at import time if a
-# new Theme field is added without updating the tables, so the omission can
-# never silently ship (it would otherwise be invisible in --dump-default-theme
-# and impossible to override from a theme JSON).
+# table (plus syntax_palette / composition, handled separately). Fails at
+# import time if a new Theme field is added without updating the tables, so
+# the omission can never silently ship (it would otherwise be invisible in
+# --dump-default-theme and impossible to override from a theme JSON).
 _MAPPED_THEME_FIELDS = (
     set(_THEME_COLOR_KEYS.values()) | set(_THEME_FONT_KEYS.values())
     | set(_THEME_FONT_SIZE_KEYS.values()) | set(_THEME_LAYOUT_KEYS.values())
-    | {"syntax_palette"}
+    | {"syntax_palette", "composition"}
 )
 assert _MAPPED_THEME_FIELDS == {f.name for f in fields(Theme)}, (
     "theme mapping tables are out of sync with Theme fields: "
@@ -189,6 +293,43 @@ assert _MAPPED_THEME_FIELDS == {f.name for f in fields(Theme)}, (
 
 def _rgb_to_hex(color: RGBColor) -> str:
     return f"#{color}"
+
+
+def _composition_to_dict(comp: Composition) -> dict:
+    """Serialize a Composition back to the documented JSON shape.
+
+    Used for round-trip completeness when a theme carries a custom
+    composition. The default theme never carries one (composition is None),
+    so --dump-default-theme stays composition-free: the default composition
+    tracks theme values such as title_band_height dynamically, and a dumped
+    static copy would silently desync from layout_in edits.
+    """
+    def shape_dict(s: ShapeSpec) -> dict:
+        return {"x": s.x, "y": s.y, "w": s.w, "h": s.h, "color": s.color}
+
+    def text_dict(t: TextSpec) -> dict:
+        return {
+            "x": t.x, "y": t.y, "w": t.w, "h": t.h, "color": t.color,
+            "bold": t.bold, "align": t.align, "anchor": t.anchor, "margin": t.margin,
+        }
+
+    # Invariant: a Composition attached to a Theme always has at least one
+    # part set (_parse_composition rejects an empty object), so this never
+    # returns an empty dict -- which would fail to re-parse on round-trip.
+    data = {}
+    if comp.cover is not None:
+        data["cover"] = {
+            "shapes": [shape_dict(s) for s in comp.cover.shapes],
+            "title": text_dict(comp.cover.title),
+            "subtitle": text_dict(comp.cover.subtitle),
+        }
+    if comp.content_header is not None:
+        data["content_header"] = {
+            "shapes": [shape_dict(s) for s in comp.content_header.shapes],
+            "title": text_dict(comp.content_header.title),
+            "content_top": comp.content_header.content_top,
+        }
+    return data
 
 
 def theme_to_json(theme: Theme) -> str:
@@ -202,6 +343,8 @@ def theme_to_json(theme: Theme) -> str:
         "layout_in": {k: getattr(theme, f) for k, f in _THEME_LAYOUT_KEYS.items()},
         "syntax_palette": {k: _rgb_to_hex(v) for k, v in theme.syntax_palette.items()},
     }
+    if theme.composition is not None:
+        data["composition"] = _composition_to_dict(theme.composition)
     return json.dumps(data, ensure_ascii=False, indent=2)
 
 
@@ -246,6 +389,187 @@ def _parse_positive_number(value) -> float:
     return f
 
 
+# ----- composition parsing (theme JSON -> Composition) -----
+
+def _parse_nonneg_number(value) -> float:
+    """0-or-more finite number. Composition x / y / margin legitimately use 0
+    (bottom bands, left bars), so the positive-number parser must not be
+    reused for them.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"expected a non-negative finite number, got {value!r}")
+    try:
+        f = float(value)
+    except OverflowError as e:
+        raise ValueError(f"expected a non-negative finite number, got {value!r}") from e
+    if not math.isfinite(f) or f < 0:
+        raise ValueError(f"expected a non-negative finite number, got {value!r}")
+    return f
+
+
+def _parse_comp_dim(value, *, tokens) -> "float | str":
+    """A positive finite number or one of the allowed size tokens."""
+    if isinstance(value, str):
+        if value in tokens:
+            return value
+        raise ValueError(
+            f"expected a positive finite number or one of: {', '.join(tokens)}, got {value!r}"
+        )
+    return _parse_positive_number(value)
+
+
+def _parse_comp_color(value) -> str:
+    """Validate a composition color (token name or hex) WITHOUT resolving it.
+
+    Tokens stay symbolic in the Composition so they track the Theme's current
+    colors at draw time -- including --primary-color, which is applied to the
+    Theme after load_theme() returns. Resolving here would freeze the color
+    and silently ignore that CLI override.
+    """
+    if isinstance(value, str) and value in _THEME_COLOR_KEYS:
+        return value
+    try:
+        _parse_hex_color(value)
+    except ValueError as e:
+        raise ValueError(
+            f"expected a color token ({', '.join(sorted(_THEME_COLOR_KEYS))}) "
+            f"or a hex string like '#RRGGBB', got {value!r}"
+        ) from e
+    return value
+
+
+def _parse_comp_bool(value) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"expected true or false, got {value!r}")
+    return value
+
+
+def _parse_comp_enum(value, *, allowed) -> str:
+    if value not in allowed:
+        raise ValueError(f"expected one of: {', '.join(allowed)}, got {value!r}")
+    return value
+
+
+def _require_comp_object(raw, path: str, *, allowed, required) -> None:
+    """Shared object-shape validation: dict type, unknown keys, required keys."""
+    if not isinstance(raw, dict):
+        raise ValueError(f"theme: '{path}' must be an object")
+    for key in raw:
+        if key not in allowed:
+            raise ValueError(
+                f"theme: unknown key '{path}.{key}' (allowed: {', '.join(sorted(allowed))})"
+            )
+    for req in required:
+        if req not in raw:
+            raise ValueError(f"theme: '{path}' is missing required key '{req}'")
+
+
+def _parse_shape_spec(raw, path: str) -> ShapeSpec:
+    parsers = {
+        "x": _parse_nonneg_number,
+        "y": _parse_nonneg_number,
+        "w": lambda v: _parse_comp_dim(v, tokens=("full", "sym")),
+        "h": lambda v: _parse_comp_dim(v, tokens=("full",)),
+        "color": _parse_comp_color,
+    }
+    # Every shape key is required.
+    _require_comp_object(raw, path, allowed=parsers, required=tuple(parsers))
+    values = {}
+    for key, parse in parsers.items():
+        try:
+            values[key] = parse(raw[key])
+        except ValueError as e:
+            raise ValueError(f"theme: '{path}.{key}': {e}") from e
+    return ShapeSpec(**values)
+
+
+def _parse_shapes(raw, path: str) -> "tuple[ShapeSpec, ...]":
+    """Parse a shapes array. An empty array is accepted and means the same as
+    omitting the key: no decoration shapes."""
+    if not isinstance(raw, list):
+        raise ValueError(f"theme: '{path}' must be an array of rectangle objects")
+    return tuple(_parse_shape_spec(item, f"{path}[{i}]") for i, item in enumerate(raw))
+
+
+def _parse_text_spec(raw, path: str, *, default_bold: bool) -> TextSpec:
+    parsers = {
+        "x": _parse_nonneg_number,
+        "y": _parse_nonneg_number,
+        "w": lambda v: _parse_comp_dim(v, tokens=("sym",)),
+        "h": _parse_positive_number,
+        "color": _parse_comp_color,
+        "bold": _parse_comp_bool,
+        "align": lambda v: _parse_comp_enum(v, allowed=("left", "center", "right")),
+        "anchor": lambda v: _parse_comp_enum(v, allowed=("top", "middle")),
+        "margin": _parse_nonneg_number,
+    }
+    _require_comp_object(raw, path, allowed=parsers, required=("x", "y", "w", "h", "color"))
+    values = {}
+    for key, value in raw.items():
+        try:
+            values[key] = parsers[key](value)
+        except ValueError as e:
+            raise ValueError(f"theme: '{path}.{key}': {e}") from e
+    values.setdefault("bold", default_bold)
+    return TextSpec(**values)
+
+
+def _parse_composition(raw) -> Composition:
+    """Parse and validate the `composition` theme section.
+
+    Each part (cover / content_header) replaces the default wholesale; there
+    is no deep merge within a part. Colors are validated but kept symbolic
+    (see _parse_comp_color).
+    """
+    if not isinstance(raw, dict):
+        raise ValueError(
+            "theme: 'composition' must be an object (omit the key entirely to use the default layout)"
+        )
+    known_parts = ("cover", "content_header")
+    for key in raw:
+        if key not in known_parts:
+            raise ValueError(
+                f"theme: unknown key 'composition.{key}' (allowed: {', '.join(sorted(known_parts))})"
+            )
+    if not raw:
+        raise ValueError(
+            "theme: 'composition' must define at least one of: cover, content_header "
+            "(omit the key entirely to use the default layout)"
+        )
+
+    cover = None
+    if "cover" in raw:
+        c = raw["cover"]
+        _require_comp_object(
+            c, "composition.cover",
+            allowed=("shapes", "title", "subtitle"), required=("title", "subtitle"),
+        )
+        cover = CoverComposition(
+            shapes=_parse_shapes(c.get("shapes", []), "composition.cover.shapes"),
+            title=_parse_text_spec(c["title"], "composition.cover.title", default_bold=True),
+            subtitle=_parse_text_spec(c["subtitle"], "composition.cover.subtitle", default_bold=False),
+        )
+
+    content_header = None
+    if "content_header" in raw:
+        h = raw["content_header"]
+        _require_comp_object(
+            h, "composition.content_header",
+            allowed=("shapes", "title", "content_top"), required=("title", "content_top"),
+        )
+        try:
+            content_top = _parse_positive_number(h["content_top"])
+        except ValueError as e:
+            raise ValueError(f"theme: 'composition.content_header.content_top': {e}") from e
+        content_header = ContentHeaderComposition(
+            shapes=_parse_shapes(h.get("shapes", []), "composition.content_header.shapes"),
+            title=_parse_text_spec(h["title"], "composition.content_header.title", default_bold=True),
+            content_top=content_top,
+        )
+
+    return Composition(cover=cover, content_header=content_header)
+
+
 def load_theme(path: Path) -> Theme:
     """Load a partial theme JSON and merge it over the default Theme.
 
@@ -262,7 +586,7 @@ def load_theme(path: Path) -> Theme:
     if not isinstance(data, dict):
         raise ValueError(f"theme: top level of {path} must be a JSON object")
 
-    known_sections = {"colors", "fonts", "font_sizes_pt", "layout_in", "syntax_palette"}
+    known_sections = {"colors", "fonts", "font_sizes_pt", "layout_in", "syntax_palette", "composition"}
     for key in data:
         if key not in known_sections and key not in _THEME_META_KEYS:
             raise ValueError(
@@ -295,6 +619,30 @@ def load_theme(path: Path) -> Theme:
             except ValueError as e:
                 raise ValueError(f"theme: 'syntax_palette.{key}': {e}") from e
         theme = replace(theme, syntax_palette=palette)
+
+    if "composition" in data:
+        comp = _parse_composition(data["composition"])
+        theme = replace(theme, composition=comp)
+        # A custom content_header replaces the default band wholesale, so
+        # layout_in.title_band_height stops mattering; warn (not error) when
+        # a NON-DEFAULT value is spelled out alongside it, to catch a likely
+        # misunderstanding. A cover-only override keeps using it via the
+        # default content header, and a default-valued entry (e.g. a re-read
+        # theme_to_json dump, which always spells out layout_in) changes
+        # nothing, so neither warrants a warning.
+        layout_raw = data.get("layout_in")
+        band_h_raw = layout_raw.get("title_band_height") if isinstance(layout_raw, dict) else None
+        if (
+            comp.content_header is not None
+            and band_h_raw is not None
+            and float(band_h_raw) != Theme().title_band_height_in
+        ):
+            print(
+                "Warning: this theme overrides composition.content_header, so "
+                "layout_in.title_band_height is not used (it only affects the "
+                "default composition)",
+                file=sys.stderr,
+            )
 
     return theme
 
@@ -704,74 +1052,144 @@ class Deck:
     def __init__(self, *, aspect: str, theme: Theme):
         self.theme = theme
         self.prs = Presentation()
+        # Keep the inch sizes as literals (not derived from EMU) so that
+        # composition math (e.g. "sym" widths) reproduces the historical
+        # EMU-exact geometry without float round-trip drift.
         if aspect == "4:3":
-            self.prs.slide_width = Inches(10)
-            self.prs.slide_height = Inches(7.5)
+            self.slide_w_in, self.slide_h_in = 10.0, 7.5
         else:  # 16:9
-            self.prs.slide_width = Inches(13.333)
-            self.prs.slide_height = Inches(7.5)
+            self.slide_w_in, self.slide_h_in = 13.333, 7.5
+        self.prs.slide_width = Inches(self.slide_w_in)
+        self.prs.slide_height = Inches(self.slide_h_in)
         self.blank = self.prs.slide_layouts[6]
+        # Effective composition, resolved per part: a theme may override
+        # cover / content_header independently; a part left as None falls
+        # back to the built-in default composition.
+        default_comp = build_default_composition(theme, self.slide_w_in, self.slide_h_in)
+        theme_comp = theme.composition or Composition()
+        self.composition = Composition(
+            cover=theme_comp.cover or default_comp.cover,
+            content_header=theme_comp.content_header or default_comp.content_header,
+        )
+        # Drawing code and _chunk_blocks dereference both parts without None
+        # checks; guard the invariant here in case build_default_composition
+        # ever stops returning both parts.
+        assert self.composition.cover is not None
+        assert self.composition.content_header is not None
 
     def _new_slide(self):
         slide = self.prs.slides.add_slide(self.blank)
         return slide
 
-    def _add_title_band(self, slide, text: str):
-        band = slide.shapes.add_shape(
+    # ----- composition-driven drawing -----
+
+    def _resolve_comp_w(self, x: float, w) -> float:
+        """Resolve a composition width (number | 'full' | 'sym') to inches."""
+        if w == "full":
+            return self.slide_w_in
+        if w == "sym":
+            return self.slide_w_in - x * 2
+        return float(w)
+
+    def _resolve_comp_h(self, h) -> float:
+        """Resolve a composition height (number | 'full') to inches."""
+        if h == "full":
+            return self.slide_h_in
+        return float(h)
+
+    def _resolve_comp_color(self, color: str) -> RGBColor:
+        """Resolve a composition color token / hex string to an RGBColor.
+
+        Resolution happens at draw time (not at theme load) on purpose:
+        --primary-color is applied to the Theme *after* load_theme(), so an
+        early resolution would not see CLI overrides in "primary" tokens.
+        """
+        field_name = _THEME_COLOR_KEYS.get(color)
+        if field_name is not None:
+            return getattr(self.theme, field_name)
+        return _parse_hex_color(color)
+
+    def _draw_comp_shape(self, slide, spec: ShapeSpec) -> None:
+        """Draw one composition rectangle (solid fill, no outline)."""
+        w_in = self._resolve_comp_w(spec.x, spec.w)
+        h_in = self._resolve_comp_h(spec.h)
+        if w_in <= 0 or h_in <= 0:
+            # "sym" can go negative for large x; the validator cannot know the
+            # slide width, so this draw-time skip is the safety net.
+            print(
+                f"Warning: composition shape at x={spec.x}, y={spec.y} resolves to a "
+                f"non-positive size ({w_in:.3g} x {h_in:.3g} in) and was skipped",
+                file=sys.stderr,
+            )
+            return
+        shape = slide.shapes.add_shape(
             MSO_SHAPE.RECTANGLE,
-            Inches(0), Inches(0),
-            self.prs.slide_width, Inches(self.theme.title_band_height_in),
+            Inches(spec.x), Inches(spec.y), Inches(w_in), Inches(h_in),
         )
-        band.fill.solid()
-        band.fill.fore_color.rgb = self.theme.primary
-        band.line.fill.background()
-        tf = band.text_frame
-        tf.margin_left = Inches(0.35)
-        tf.margin_right = Inches(0.35)
-        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
-        tf.text = text
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = self._resolve_comp_color(spec.color)
+        shape.line.fill.background()
+
+    def _draw_comp_text(
+        self, slide, spec: TextSpec, text: str, font_name: str, size_pt: float,
+    ) -> None:
+        """Draw one composition text box (title / subtitle / header title)."""
+        w_in = self._resolve_comp_w(spec.x, spec.w)
+        if w_in <= 0 or spec.h <= 0:
+            print(
+                f"Warning: composition text at x={spec.x}, y={spec.y} resolves to a "
+                f"non-positive size ({w_in:.3g} x {spec.h:.3g} in) and was skipped",
+                file=sys.stderr,
+            )
+            return
+        tb = slide.shapes.add_textbox(
+            Inches(spec.x), Inches(spec.y), Inches(w_in), Inches(spec.h),
+        )
+        tf = tb.text_frame
+        # Explicit word_wrap=True: the legacy band drew text on the shape's
+        # own frame where the OOXML default (wrap="square") already wrapped,
+        # so this keeps the effective wrapping behavior identical.
+        tf.word_wrap = True
+        tf.margin_left = Inches(spec.margin)
+        tf.margin_right = Inches(spec.margin)
+        if spec.anchor == "middle":
+            tf.vertical_anchor = MSO_ANCHOR.MIDDLE
         p = tf.paragraphs[0]
-        p.font.name = self.theme.heading_font
-        p.font.size = Pt(self.theme.title_band_size_pt)
-        p.font.bold = True
-        p.font.color.rgb = self.theme.on_primary
+        p.text = text
+        if spec.align == "center":
+            p.alignment = PP_ALIGN.CENTER
+        elif spec.align == "right":
+            p.alignment = PP_ALIGN.RIGHT
+        p.font.name = font_name
+        p.font.size = Pt(size_pt)
+        p.font.bold = spec.bold
+        p.font.color.rgb = self._resolve_comp_color(spec.color)
+
+    def _add_content_header(self, slide, text: str):
+        """Draw the content-slide header: shapes in array order, then the
+        title text on top (z-order: decorations below, text frontmost)."""
+        header = self.composition.content_header
+        for spec in header.shapes:
+            self._draw_comp_shape(slide, spec)
+        self._draw_comp_text(
+            slide, header.title, text,
+            self.theme.heading_font, self.theme.title_band_size_pt,
+        )
 
     def add_title_slide(self, title: str, subtitle: Optional[str]):
         slide = self._new_slide()
-        # Full-bleed primary block on the left
-        bar = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE,
-            Inches(0), Inches(0), Inches(0.4), self.prs.slide_height,
+        cover = self.composition.cover
+        for spec in cover.shapes:
+            self._draw_comp_shape(slide, spec)
+        self._draw_comp_text(
+            slide, cover.title, title,
+            self.theme.heading_font, self.theme.title_slide_title_size_pt,
         )
-        bar.fill.solid()
-        bar.fill.fore_color.rgb = self.theme.primary
-        bar.line.fill.background()
-
-        title_tb = slide.shapes.add_textbox(
-            Inches(1.0), Inches(2.3),
-            self.prs.slide_width - Inches(1.5), Inches(2.0),
-        )
-        tf = title_tb.text_frame
-        tf.word_wrap = True
-        p = tf.paragraphs[0]
-        p.text = title
-        p.font.name = self.theme.heading_font
-        p.font.size = Pt(self.theme.title_slide_title_size_pt)
-        p.font.bold = True
-        p.font.color.rgb = self.theme.primary
-
         if subtitle:
-            sub_tb = slide.shapes.add_textbox(
-                Inches(1.0), Inches(4.4),
-                self.prs.slide_width - Inches(1.5), Inches(1.5),
+            self._draw_comp_text(
+                slide, cover.subtitle, strip_inline_markdown(subtitle),
+                self.theme.body_font, self.theme.title_slide_subtitle_size_pt,
             )
-            tf = sub_tb.text_frame
-            tf.word_wrap = True
-            p = tf.paragraphs[0]
-            p.text = strip_inline_markdown(subtitle)
-            p.font.name = self.theme.body_font
-            p.font.size = Pt(self.theme.title_slide_subtitle_size_pt)
-            p.font.color.rgb = self.theme.text
 
     def add_content_slide(
         self,
@@ -796,9 +1214,11 @@ class Deck:
             slide = self._new_slide()
             if spec.title:
                 title = spec.title if idx == 0 else f"{spec.title} ({idx + 1})"
-                self._add_title_band(slide, title)
-                top_cursor = Inches(self.theme.title_band_height_in + 0.2)
+                self._add_content_header(slide, title)
+                top_cursor = Inches(self.composition.content_header.content_top)
             else:
+                # Physical slides without a title (e.g. H2-less continuation
+                # pages) keep the historical header-less layout.
                 top_cursor = Inches(0.3)
             self._render_blocks(slide, chunk, top_cursor, base_dir)
 
@@ -848,10 +1268,23 @@ class Deck:
         (e.g. `### 7.1 ...`) to the next chunk so a heading never sits alone at
         the tail of a slide while its content starts on the next one.
         """
-        # Vertical budget per slide (inches), derived from the actual slide height
-        # (both 16:9 and 4:3 use 7.5in today; derive anyway to avoid drift).
-        slide_height_in = self.prs.slide_height / 914400  # EMU per inch
-        budget_in = slide_height_in - self.theme.title_band_height_in - self.theme.content_padding_in - 0.6
+        # Vertical budget per slide (inches), anchored on the composition's
+        # content_top (where body blocks actually start). K derivation: the
+        # historical budget was
+        #   slide_height - title_band_height - content_padding - 0.6
+        # and content started at title_band_height + 0.2, so rewriting the
+        # budget in content_top terms gives
+        #   slide_height - (content_top - 0.2) - content_padding - 0.6
+        #     = slide_height - content_top - (content_padding + 0.4)
+        # i.e. K = content_padding + 0.4 (NOT a fixed 0.9: content_padding is
+        # documented to influence chunking, so it must keep scaling here).
+        # Defaults (content_top=1.1, content_padding=0.5) yield the historical
+        # 7.5 - 1.1 - 0.9 = 5.5in budget.
+        budget_in = (
+            self.slide_h_in
+            - self.composition.content_header.content_top
+            - (self.theme.content_padding_in + 0.4)
+        )
 
         chunks: List[List[Block]] = []
         current: List[Block] = []
