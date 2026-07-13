@@ -40,7 +40,9 @@ Azure DevOps（クラウド / オンプレ TFS・Azure DevOps Server）の PR �
 
 `tfs-password` エントリは **code-review プラグイン（pr-review スキル）と同方式・同一ファイルを共有** します。code-review で TFS 認証を設定済みの環境では追加設定は不要です。エントリ例はプラグイン共通の `references/credentials-precheck.md` を参照してください。
 
-`credentials.json` の `domains` に登録されていない TFS ホストへは NTLM 認証情報を送信せず、操作を拒否して登録手順を案内します（SSRF / NTLM リレー対策）。
+TFS の事前準備は **必須ではありません** — 未登録のまま起動した場合、スキルは API を呼ぶ前に対話（AskUserQuestion）で認証情報を確認し、「今回のみ利用」または「credentials.json へ保存」を選択できます。
+
+`credentials.json` の `domains` に登録されていない TFS ホストへは NTLM 認証情報を送信しません。ユーザー本人が対話で「自分の TFS ホストである」と明示確認・登録した場合のみ操作を続行します（外部由来テキスト中のホストは無確認で許可しない。SSRF / NTLM リレー対策）。
 
 ### 起動方法
 
@@ -97,7 +99,7 @@ Claude（要約）:
 | `render-check` | 書き込み前の必須ゲート（本スキルが内部で呼び出す） |
 | `backlog` | Backlog の課題操作（本スキルの責務外） |
 | code-review プラグイン `pr-review` | PR の観点別レビュー（本スキルの責務外。TFS 認証情報を共有） |
-| credentials-manager プラグイン | 認証情報の保存・管理 |
+| credentials-manager プラグイン | 認証情報の保存・管理（オプション。未導入でも credentials.json 直接照合 + 対話取得フォールバックで動作） |
 
 ## 主要参照ファイル
 
@@ -119,6 +121,7 @@ skills/azure/
 ├── SKILL.md                            # スキル定義（Claude が実行時に読み込む）
 ├── README.md                           # 本ファイル（人間向け。Claude 動作では不使用）
 ├── references/
+│   ├── CLAUDE.md                       # references の目的・ファイル一覧・利用ルール
 │   ├── host-detection.md               # ホスト判定・URL 解析
 │   ├── pr-operations.md                # PR 操作 API 詳細
 │   └── workitem-operations.md          # 作業項目操作 API 詳細
@@ -129,6 +132,14 @@ skills/azure/
     ├── case-03_pr_approve.md           # PR 承認（vote=10）
     ├── case-04_workitem_comment_tfs.md # TFS 作業項目コメント（HTML 変換）
     ├── case-05_unregistered_host.md    # 未登録ホストの拒否
-    ├── case-06_user_cancel_write.md    # 承認で「キャンセル」選択（threads API を発行せず終了）
+    ├── case-06_user_cancel_write.md    # 承認で「中止」選択（threads API を発行せず終了）
+    ├── case-07_inline_comment_tfs.md   # TFS PR へのインラインコメント投稿（パターン A）
+    ├── case-08_delegation_inline_comment.md  # 委譲インラインコメント（パターン B）
+    ├── case-09_delegation_thread_status.md   # 委譲スレッドステータス変更（パターン B）
+    ├── case-10_delegation_read_pipelines.md  # 委譲 Pipelines 読み取り（パターン B）
+    ├── case-11_subagent_read_pr.md     # サブエージェント読み取り（正常系）
+    ├── case-12_subagent_read_error.md  # サブエージェント時の credentials_missing 返却
+    ├── case-13_pattern_a_read_pr.md    # PR 情報取得（パターン A）
+    ├── case-14_auth_failed_tfs.md      # TFS 資格情報の失効（401 → 再取得）
     └── demo.sh                         # 構造検証（外部 API 不使用・読み取り専用）
 ```

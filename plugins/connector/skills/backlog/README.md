@@ -13,7 +13,7 @@ Backlog REST API v2 で課題の検索・取得・コメント取得（読み取
 - 共有ファイルの一覧取得・メタデータ取得（読み取り系。ファイルダウンロードは対象外）
 - プロジェクトの記法設定（textFormattingRule）の取得と `render-check` への引き継ぎ
 
-Azure DevOps の操作は `azure` スキル、レンダリング検証ロジックは `render-check` スキル、認証情報の保存・管理は credentials-manager プラグインの担当（本スキルの責務外）。
+Azure DevOps の操作は `azure` スキル、レンダリング検証ロジックは `render-check` スキルの担当（本スキルの責務外）。認証情報の恒久保存・一元管理は credentials-manager プラグインが担当しますが **オプション** であり、未導入でも本スキルは credentials.json の直接照合と対話取得フォールバックで動作します。
 
 ## 導入手順
 
@@ -23,9 +23,9 @@ Azure DevOps の操作は `azure` スキル、レンダリング検証ロジッ�
 - 本スキルが含まれる connector プラグインがインストール済み
 - `jq` / `curl` が利用可能であること
 
-### 事前準備（Backlog API キーの登録）
+### 事前準備（Backlog API キーの登録・任意）
 
-`~/.claude/credentials.json` に対象スペース用のエントリを追加します。API キーは Backlog の個人設定 > API から発行できます。
+`~/.claude/credentials.json` に対象スペース用のエントリを追加します。API キーは Backlog の個人設定 > API から発行できます。**この事前準備は必須ではありません** — 未登録のまま起動した場合、スキルは API を呼ぶ前に対話（AskUserQuestion）で API キーを確認し、「今回のみ利用」または「credentials.json へ保存」を選択できます。
 
 ```json
 {
@@ -44,7 +44,7 @@ Azure DevOps の操作は `azure` スキル、レンダリング検証ロジッ�
 - エントリ名（`backlog-apikey`）は固定ではありません。スキルは `domains` と対象スペースのホスト名照合でエントリを特定します
 - `.backlog.com` スペースの場合は `urls` / `domains` を読み替えてください
 - 複数スペースを使う場合はスペースごとにエントリを追加します（別スペースのキーは流用されません）
-- エントリがない状態で起動すると、スキルは API を呼ばずに準備手順を案内して停止します
+- エントリがない状態で起動すると、スキルは API を呼ばずに対話で API キーを確認します（サブエージェント経由の呼び出しでは対話できないため `credentials_missing` エラーが返り、呼び出し元が対話取得後に再実行します）
 
 ### 起動方法
 
@@ -115,13 +115,19 @@ skills/backlog/
     ├── case-02_issue_search.md         # 課題検索（projectId 解決経由）
     ├── case-03_comment_post.md         # コメント投稿（render-check PASS → 承認 → POST）
     ├── case-04_status_update.md        # ステータス変更（ID 解決 → 承認 → PATCH）
-    ├── case-05_credentials_missing.md  # 認証情報なし（API を呼ばず停止）
+    ├── case-05_credentials_missing.md  # 認証情報なし（API を呼ばず対話取得フォールバック）
     ├── case-06_render_check_fail.md    # render-check FAIL → 修正 → 再チェック → 投稿
     ├── case-07_user_cancel_post.md     # 承認で「中止」選択（POST を発行せず終了）
-    ├── case-08_http_401_error.md       # HTTP 401（リトライせず即停止）
+    ├── case-08_http_401_error.md       # HTTP 401（同一キーでリトライせず再取得を確認）
     ├── case-09_delegation_read.md      # 他プラグイン委譲による課題取得（パターン B）
     ├── case-10_file_list.md            # ダイレクトパス URL によるフォルダ内ファイル一覧取得
     ├── case-11_file_alias.md           # エイリアス URL からのファイル情報取得
+    ├── case-12_file_direct_path.md     # ダイレクトパス URL によるファイル情報取得
+    ├── case-13_folder_alias.md         # エイリアス URL からのフォルダ一覧取得
+    ├── case-14_alias_resolve_fail.md   # エイリアス解決失敗（代替情報を依頼）
+    ├── case-15_subagent_credentials_missing.md  # サブエージェント時の credentials_missing 返却
+    ├── case-16_multi_store_resolution.md  # 複数ストアの優先順位解決
+    ├── case-17_subagent_auth_failed.md # サブエージェント時の auth_failed 返却
     └── demo.sh                         # 構造検証スクリプト（外部 API 非依存・読み取り専用）
 ```
 

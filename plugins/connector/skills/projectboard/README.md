@@ -23,11 +23,11 @@ WBS タスクを操作するスキル。タスクの読み取り・追加・更�
 ### 前提
 
 - bash (Git Bash) / curl / jq / Python 3.9+
-- credentials-manager プラグイン（認証情報の管理）
+- credentials-manager プラグイン（認証情報の一元管理。**オプション** — 未導入でも credentials.json の直接照合と対話取得フォールバックで動作する）
 
-### 事前準備（認証情報）
+### 事前準備（認証情報・任意）
 
-`~/.claude/credentials.json`（credentials-manager 管理）に `hue-projectboard` エントリを登録する:
+`~/.claude/credentials.json` に `hue-projectboard` エントリを登録する（未登録でも起動可能。その場合はスキルが API を呼ぶ前に対話でログインメール・パスワードを確認し、「今回のみ利用」または「credentials.json へ保存」を選択できる）:
 
 ```json
 {
@@ -80,8 +80,8 @@ WBS タスクを操作するスキル。タスクの読み取り・追加・更�
 | 変更したい内容 | 触る場所 |
 |--------------|---------|
 | API エンドポイント・データ構造の変更追従 | `references/api-spec.md`（読み取り）/ `references/api-write.md`（書き込み）— SSOT |
-| CSV の列構成 | `scripts/format/tasks_to_csv.py`（--fields / --mode all で動的列） |
-| クリティカルパス計算ロジック | `scripts/format/analyze_schedule.py`（duration 推定・CPM） |
+| CSV の列構成 | `references/scripts/format/tasks_to_csv.py`（--fields / --mode all で動的列） |
+| クリティカルパス計算ロジック | `references/scripts/format/analyze_schedule.py`（duration 推定・CPM） |
 | 書き込み API の仕様確定（推定 → 確実） | `references/api-write.md` セクション 8 の手順で HAR 採取 → 同ファイル更新 |
 
 ## ファイル構成
@@ -90,35 +90,35 @@ WBS タスクを操作するスキル。タスクの読み取り・追加・更�
 skills/projectboard/
 ├── SKILL.md                          # スキル定義（Claude が実行時に読み込む）
 ├── README.md                         # 本ファイル（人間向け）
-├── scripts/
-│   ├── setup/
-│   │   ├── requirements.txt          # 空（標準ライブラリのみ・依存なし）
-│   │   ├── setup_venv.sh             # venv 構築
-│   │   ├── teardown_venv.sh          # venv 削除
-│   │   └── cleanup_sensitive.sh      # cookies.txt・取得 JSON・HAR の削除
-│   ├── auth/
-│   │   ├── login.sh                  # フォームログイン（環境変数 PB_TENANT/PB_EMAIL/PB_PASSWORD）
-│   │   └── with_session.sh           # GET ラッパ（401 再ログイン + SPA 検知）
-│   ├── resolve/
-│   │   └── urlkey.py                 # urlKey ⇔ UUID（base62 + round-trip 自己検証）
-│   ├── fetch/
-│   │   ├── list_sheets.sh            # シート一覧（loadProjectPages）
-│   │   ├── sheet_detail.sh           # 列定義・statusSet（getPageDetail）
-│   │   └── get_tasks.sh              # タスクツリー（getWbsNodes）
-│   ├── write/
-│   │   ├── stomp_session.py          # WebSocket+STOMP 接続を保持し書き込みコマンドを実行（標準ライブラリのみ）
-│   │   └── post_node_api.sh          # 書き込み POST ラッパ（/wbs/wbs/node・XSRF・401/403・connectionId/operationId 注入）
-│   └── format/
-│       ├── tasks_to_csv.py           # ツリー → CSV（standard / all モード）
-│       └── analyze_schedule.py       # 構造解析 + クリティカルパス（CPM）
 ├── references/
+│   ├── CLAUDE.md                     # references の目的・ファイル一覧・利用ルール
 │   ├── setup.md                      # 環境構築
 │   ├── api-spec.md                   # 読み取り API 仕様（SSOT）
 │   ├── api-write.md                  # 書き込み API 仕様（SSOT・確証度付き）
 │   ├── pitfalls.md                   # 既知の落とし穴 15 項
-│   └── procedures.md                 # 実行手順（フロー別コマンド例）
+│   ├── procedures.md                 # 実行手順（フロー別コマンド例）
+│   └── scripts/                      # スキル固有スクリプト（ADR-025）
+│       ├── cleanup/
+│       │   └── cleanup_sensitive.sh  # cookies.txt・取得 JSON・HAR の削除
+│       ├── auth/
+│       │   ├── login.sh              # フォームログイン（環境変数 PB_TENANT/PB_EMAIL/PB_PASSWORD）
+│       │   └── with_session.sh       # GET ラッパ（401 再ログイン + SPA 検知）
+│       ├── resolve/
+│       │   └── urlkey.py             # urlKey ⇔ UUID（base62 + round-trip 自己検証）
+│       ├── fetch/
+│       │   ├── list_sheets.sh        # シート一覧（loadProjectPages）
+│       │   ├── sheet_detail.sh       # 列定義・statusSet（getPageDetail）
+│       │   └── get_tasks.sh          # タスクツリー（getWbsNodes）
+│       ├── write/
+│       │   ├── stomp_session.py      # WebSocket+STOMP 接続を保持し書き込みコマンドを実行（標準ライブラリのみ）
+│       │   └── post_node_api.sh      # 書き込み POST ラッパ（/wbs/wbs/node・XSRF・401/403・connectionId/operationId 注入）
+│       └── format/
+│           ├── tasks_to_csv.py       # ツリー → CSV（standard / all モード）
+│           └── analyze_schedule.py   # 構造解析 + クリティカルパス（CPM）
 └── evals/                            # 動作期待値ケース + 構造検証スクリプト
 ```
+
+venv 構築・削除はプラグイン共通スクリプト（`plugins/connector/references/scripts/setup/`、ADR-024）を使用する。
 
 ## 主要参照ファイル
 
