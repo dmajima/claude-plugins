@@ -8,7 +8,7 @@
 #   プラグイン共通 references の存在 / scripts の存在と bash 構文 / urlkey.py の round-trip /
 #   evals ケースの存在
 # - urlkey.py の round-trip は外部通信なしで実行できるため実テストする
-#   (検証済みペア abcDEFghiJKLmnoPQRst ⇔ 0bc4978b-41e7-11f1-9633-85b8872b7139)
+#   (アルゴリズム整合ペア wmVbmMRxdCcORy8oUSPGv ⇔ 0bc4978b-41e7-11f1-9633-85b8872b7139)
 # - API を伴う実動作の確認は evals/case-01 〜 06 の手順による Claude Code セッションでの
 #   目視確認に委ねる (evals/README.md 参照)
 #
@@ -111,7 +111,7 @@ check_file "API アクセス安全原則 (safe-api-access.md)" "$PLUGIN_DIR/refe
 # Step 4: scripts の存在と bash 構文
 write_section "Step 4: scripts の存在と bash 構文検証"
 scripts=(
-  "setup/requirements.txt" "setup/setup_venv.sh" "setup/teardown_venv.sh" "setup/cleanup_sensitive.sh"
+  "cleanup/cleanup_sensitive.sh"
   "auth/login.sh" "auth/with_session.sh"
   "resolve/urlkey.py"
   "fetch/list_sheets.sh" "fetch/sheet_detail.sh" "fetch/get_tasks.sh"
@@ -119,12 +119,19 @@ scripts=(
   "format/tasks_to_csv.py" "format/analyze_schedule.py"
 )
 for rel in "${scripts[@]}"; do
-  check_file "scripts/$rel" "$SKILL_DIR/scripts/$rel"
+  check_file "references/scripts/$rel" "$SKILL_DIR/references/scripts/$rel"
+done
+# プラグイン共通 venv スクリプト（ADR-024: プラグイン単位 1 venv）
+plugin_setup=(
+  "setup/requirements.txt" "setup/setup_venv.sh" "setup/teardown_venv.sh"
+)
+for rel in "${plugin_setup[@]}"; do
+  check_file "plugin references/scripts/$rel" "$PLUGIN_DIR/references/scripts/$rel"
 done
 if [[ "$whatif" == "true" ]]; then
   printf '  [WhatIf] 全 *.sh に bash -n を実行\n'
 else
-  for sh in "$SKILL_DIR"/scripts/*/*.sh; do
+  for sh in "$SKILL_DIR"/references/scripts/*/*.sh "$PLUGIN_DIR"/references/scripts/setup/*.sh; do
     if bash -n "$sh" 2>/dev/null; then
       printf '  [OK]   bash -n %s\n' "$(basename "$sh")"
     else
@@ -137,12 +144,12 @@ fi
 # Step 5: urlkey.py round-trip (外部通信なし)
 write_section "Step 5: urlkey.py round-trip 検証"
 if [[ "$whatif" == "true" ]]; then
-  printf '  [WhatIf] abcDEFghiJKLmnoPQRst → UUID → 再エンコードの一致を検証\n'
+  printf '  [WhatIf] wmVbmMRxdCcORy8oUSPGv → UUID → 再エンコードの一致を検証\n'
   printf '  [WhatIf] 不正 urlKey ("INVALID!!") が exit 1 で拒否されることを検証\n'
 else
   if command -v python > /dev/null 2>&1; then
     expected_uuid="0bc4978b-41e7-11f1-9633-85b8872b7139"
-    actual_uuid=$(python "$SKILL_DIR/scripts/resolve/urlkey.py" "abcDEFghiJKLmnoPQRst" 2>/dev/null || echo "ERROR")
+    actual_uuid=$(python "$SKILL_DIR/references/scripts/resolve/urlkey.py" "wmVbmMRxdCcORy8oUSPGv" 2>/dev/null || echo "ERROR")
     if [[ "$actual_uuid" == "$expected_uuid" ]]; then
       printf '  [OK]   urlkey.py decode (round-trip ガード込み)\n'
     else
@@ -150,7 +157,7 @@ else
       fail_count=$((fail_count + 1))
     fi
     # 負例: 不正文字を含む urlKey は exit 1 で拒否される (落とし穴 #2 の異常入力パス)
-    if python "$SKILL_DIR/scripts/resolve/urlkey.py" "INVALID!!" > /dev/null 2>&1; then
+    if python "$SKILL_DIR/references/scripts/resolve/urlkey.py" "INVALID!!" > /dev/null 2>&1; then
       printf '  [FAIL] urlkey.py が不正 urlKey を受理した (拒否されるべき)\n'
       fail_count=$((fail_count + 1))
     else
@@ -171,6 +178,8 @@ check_file "case-04 (タスク更新)" "$SCRIPT_DIR/case-04_task_update.md"
 check_file "case-05 (認証情報なし)" "$SCRIPT_DIR/case-05_credentials_missing.md"
 check_file "case-06 (セッション切れ)" "$SCRIPT_DIR/case-06_session_expired.md"
 check_file "case-07 (書き込み中止)" "$SCRIPT_DIR/case-07_write_cancel.md"
+check_file "case-08 (サブエージェント認証なし)" "$SCRIPT_DIR/case-08_subagent_credentials_missing.md"
+check_file "case-09 (badCredentials 境界)" "$SCRIPT_DIR/case-09_relogin_bad_credentials.md"
 
 # Step 7: 対話モード誘導
 write_section "Step 7: 対話モード誘導"

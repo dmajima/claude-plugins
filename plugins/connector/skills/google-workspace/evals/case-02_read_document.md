@@ -17,3 +17,11 @@ Google Drive の「プロジェクト計画書」の内容を読みたい
 
 ### Phase 3: 結果報告
 - ドキュメント内容を整形して報告
+
+## 分岐根拠
+
+読み取り操作（fileId 直接指定）。承認ゲートなしで read_file_content を呼び出す正常系。
+
+## 関連ケース
+
+- `case-01_file_search.md`（ファイル名指定時は search_files で fileId を解決してから本ケースの経路に入る）

@@ -119,6 +119,8 @@ check_file "case-03 (ファイル作成)" "$SCRIPT_DIR/case-03_create_file.md"
 check_file "case-04 (最近のファイル)" "$SCRIPT_DIR/case-04_recent_files.md"
 check_file "case-05 (MCP 利用不可)" "$SCRIPT_DIR/case-05_mcp_unavailable.md"
 check_file "case-06 (作成中止)" "$SCRIPT_DIR/case-06_user_cancel_create.md"
+check_file "case-07 (トークン失効 401)" "$SCRIPT_DIR/case-07_token_expired.md"
+check_file "case-08 (サブエージェント MCP 不可)" "$SCRIPT_DIR/case-08_subagent_mcp_unavailable.md"
 
 # Step 5: 対話モード誘導
 write_section "Step 5: 対話モード誘導"

@@ -7,7 +7,7 @@
 | 起動フレーズ | `Skill(skill: "connector:backlog", args: "読み取りのみ。PROJ-123 の件名・本文・コメントを取得して")` |
 | 引数 | 課題キー + 「読み取りのみ」 |
 | フラグ | なし |
-| 既存状態 | 呼び出し元は investigation プラグイン。credentials.json に Backlog API キー登録済み |
+| 既存状態 | 呼び出し元は investigation プラグイン。credentials.json に Backlog API キー登録済み。**後続フローなし（取得結果の報告で呼び出し元のターンが完了する文脈）** — 後続フローがある場合は `Skill()` ではなく `Agent()` を使う（delegation-interface.md セクション 3） |
 
 ## 期待動作
 

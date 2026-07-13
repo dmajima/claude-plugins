@@ -115,6 +115,10 @@ check_file "case-03 (スレッド resolve)" "$SCRIPT_DIR/case-03_thread_resolve.
 check_file "case-04 (認証失敗)" "$SCRIPT_DIR/case-04_auth_failure.md"
 check_file "case-05 (PR 全体コメント)" "$SCRIPT_DIR/case-05_pr_comment_pattern_a.md"
 check_file "case-06 (委譲 resolve)" "$SCRIPT_DIR/case-06_delegation_resolve.md"
+check_file "case-07 (パターンA 読み取り)" "$SCRIPT_DIR/case-07_pattern_a_read_pr.md"
+check_file "case-08 (サブエージェント読み取り)" "$SCRIPT_DIR/case-08_subagent_read_pr.md"
+check_file "case-09 (サブエージェント gh 未認証)" "$SCRIPT_DIR/case-09_subagent_credentials_missing.md"
+check_file "case-10 (API 401/403)" "$SCRIPT_DIR/case-10_api_auth_failed.md"
 
 # Step 5: 対話モード誘導
 write_section "Step 5: 対話モード誘導"

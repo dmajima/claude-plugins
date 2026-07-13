@@ -51,4 +51,4 @@
 
 - `case-02_issue_search.md`（同じ読み取り系だが、プロジェクトキー → projectId 数値解決を経由する検索操作）
 - `case-03_comment_post.md`（同じ課題に対する書き込み系。render-check + 承認ゲートが追加される）
-- `case-05_credentials_missing.md`（Phase 1 の認証事前確認に失敗し、API を呼ばず停止する）
+- `case-05_credentials_missing.md`（Phase 1 の認証事前確認で解決できず、API を呼ばず対話取得フォールバックへ分岐する。中止選択時のみ終了）

@@ -15,11 +15,11 @@ https://dashboard.ailead.app/share/pw_protected_key のデータを取得して
 ### Phase 1: URL確認
 - URL パターンは正しい
 
-### Phase 3: データ取得
+### Phase 2: データ取得
 - `fetch_share.py` がパスワード要求のレスポンスを受信
 - スクリプトがエラー出力
 
-### Phase 4: エラー報告
+### Phase 3: エラー報告
 - 「パスワード保護されたリンクは現在非対応です」とユーザーに報告
 - パスワードなしの共有リンクの作成を提案
 

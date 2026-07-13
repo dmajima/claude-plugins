@@ -6,13 +6,11 @@
 
 - ベース URL: `https://{space-host}/api/v2`（`{space-host}` 例: `example.backlog.jp`）
 - 認証: API キーをクエリパラメータ `apiKey` で付与する
-- API キーの取得（credentials.json から domains 照合で特定）:
+- API キーの取得（credentials.json から domains 照合で特定。全ストアの横断照合はプラグイン共通スクリプトに集約 — credentials-precheck.md セクション 2.1）:
 
 ```bash
-APIKEY=$(jq -r --arg host "$SPACE_HOST" \
-  '.credentials | to_entries[] | select(.value.domains[]? == $host) | .value.value' \
-  "$HOME/.claude/credentials.json" | head -n 1)
-[ -n "$APIKEY" ] || { echo "認証情報なし: $SPACE_HOST"; exit 1; }
+APIKEY=$(bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/credentials/cred_lookup.sh" --domain "$SPACE_HOST") \
+  || { echo "認証情報なし: $SPACE_HOST（credentials-precheck.md セクション 4 の対話取得フォールバックへ。サブエージェント実行時はセクション 5）"; exit 1; }
 ```
 
 - **プロセス一覧への露出対策**: URL に `apiKey` を含める場合は curl の `--config` ファイル経由で渡す（下記パターン）。`--config` ファイルには `url` 行のみを記載し、メソッド・データ・出力フォーマットは CLI 側で渡す（二重指定回避）
@@ -161,7 +159,12 @@ PROJECT_KEY=$(echo "$URL" | sed -n 's|^https://[^/]*/file/\([^/]*\)/.*|\1|p')
 FILE_PATH=$(echo "$URL" | sed -n 's|^https://[^/]*/file/[^/]*/\(.*\)|\1|p' | sed 's|[?#].*||')
 ```
 
-**入力値の検証**: URL からパースした `SPACE_HOST` / `PROJECT_KEY` / `FILE_PATH` を `--config` に埋め込む前に、改行・制御文字を含まないことを確認する（[safe-api-access.md](../../../references/safe-api-access.md) のインジェクションガードと同水準）。
+**入力値の検証**: URL からパースした `SPACE_HOST` / `PROJECT_KEY` / `FILE_PATH` を `--config` に埋め込む前に、以下で検証する（[safe-api-access.md](../../../references/safe-api-access.md) のインジェクションガードと同水準）:
+
+```bash
+[[ "$SPACE_HOST" =~ ^[A-Za-z0-9.-]+$ ]] || { echo "不正なホスト名"; exit 1; }
+case "${PROJECT_KEY}${FILE_PATH}" in (*$'\n'*|*$'\r'*|*\"*) echo "パース値に改行・制御文字・引用符が含まれる"; exit 1;; esac
+```
 
 **ディレクトリ URL（末尾 `/`）の場合:**
 

@@ -1,6 +1,6 @@
 ---
 name: backlog
-description: Backlog の課題検索・課題/コメント取得・コメント投稿・ステータス等メタ情報更新・共有ファイル一覧/メタデータ取得を行うスキル。「Backlog で PROJ-123 を取得」「Backlog の課題を検索」「この課題にコメント投稿」「ステータスを処理中に」「Backlog のファイルリンクの中身を見せて」等で起動。Backlog ファイル URL（/file/ や /alias/file/ を含む URL）が入力に含まれる場合も起動。書き込み前に render-check と承認必須。Use when operating Backlog issues or shared files. Trigger on Backlog file URLs containing /file/ or /alias/file/. SKIP when target is Azure DevOps (use azure) or only verifying rendering without posting (use render-check).
+description: Backlog の課題検索・課題/コメント取得・コメント投稿・メタ情報更新（ステータス等）・共有ファイル一覧取得を行うスキル。「Backlog で PROJ-123 を取得」「課題検索」「コメント投稿」「ステータス変更」等で起動。/file/ か /alias/file/ を含む Backlog URL の入力でも起動。Use when operating Backlog issues or shared files. SKIP when target is Azure DevOps (use azure) or rendering-only check (use render-check).
 ---
 
 # Backlog
@@ -20,7 +20,7 @@ Backlog REST API v2 で課題の検索・取得・コメント取得（読み取
 |-----|----------|
 | Azure DevOps（PR / 作業項目）の操作 | `azure` |
 | 投稿本文のレンダリング検証ロジック | `render-check` |
-| 認証情報の保存・管理 | credentials-manager プラグイン |
+| 認証情報の恒久保存・一元管理 | credentials-manager プラグイン（**オプション**。未導入でも本スキルは [credentials-precheck.md](../../references/credentials-precheck.md) セクション 1 の解決順序＝credentials.json 直接照合 → 対話取得フォールバックで動作する） |
 
 ## トリガー条件
 
@@ -43,15 +43,24 @@ Backlog REST API v2 で課題の検索・取得・コメント取得（読み取
 呼び出し前に以下が確認できること（不足時は対話で確認）:
 
 1. 対象スペースのホスト（例: `<space>.backlog.jp`）— 課題 URL・課題キー・ユーザー指定から特定
-2. `~/.claude/credentials.json` に対象スペースの API キーエントリが存在（[credentials-precheck.md](../../references/credentials-precheck.md)）
+2. 対象スペースの API キー — 認証情報ストア（credentials.json）のエントリ、または対話取得フォールバックでユーザーから取得（[credentials-precheck.md](../../references/credentials-precheck.md) セクション 1 の解決順序。credentials.json 未整備でも前提未達にはならない）
+
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|------|-------|------|
+| ユーザー直接の指示 / スラッシュコマンド | 対話 | 不足情報の確認・書き込み承認・対話取得フォールバックを `AskUserQuestion` で行う |
+| 他プラグインからの `Skill()` 委譲（「読み取りのみ」等の明示） | 非対話 | 明示された読み取り操作のみ実行する（書き込みの承認は省略しない） |
+| サブエージェント起動（`Agent()` 経由） | 非対話 | 質問せず実行し、認証未解決時は `credentials_missing` マニフェストを返す |
 
 ## 実行フロー
 
 ### 1. 認証事前確認
 
 - 参照: [../../references/credentials-precheck.md](../../references/credentials-precheck.md)
-- 対象スペースのホストを確定し、credentials.json の `domains` と照合して API キーの存在を確認する
-- 確認できない場合は **API を呼ばずに** ユーザーへ準備を依頼して停止する
+- 対象スペースのホストを確定し、セクション 1 の解決順序（credentials-manager（導入時）→ credentials.json 直接照合 → 対話取得フォールバック）で API キーを解決する
+- 確認できない場合も **API は呼ばない**。credentials-manager / credentials.json が無くても停止せず、対話取得フォールバック（同セクション 4）で API キーをユーザーから取得して続行する（ユーザーが中止を選択した場合のみ終了）
+- サブエージェント実行時（`AskUserQuestion` 利用不可）は質問せず `credentials_missing` マニフェストを返す（同セクション 5）
 
 ### 2. 操作種別判定
 

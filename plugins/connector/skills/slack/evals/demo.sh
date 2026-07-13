@@ -120,6 +120,9 @@ check_file "case-04 (スレッド読取)" "$SCRIPT_DIR/case-04_read_thread.md"
 check_file "case-05 (送信中止)" "$SCRIPT_DIR/case-05_user_cancel_send.md"
 check_file "case-06 (MCP 利用不可)" "$SCRIPT_DIR/case-06_mcp_unavailable.md"
 check_file "case-07 (プライベート検索同意)" "$SCRIPT_DIR/case-07_private_search_consent.md"
+check_file "case-08 (非対話書き込み)" "$SCRIPT_DIR/case-08_non_interactive_write.md"
+check_file "case-09 (トークン失効 401)" "$SCRIPT_DIR/case-09_token_expired.md"
+check_file "case-10 (サブエージェント MCP 不可)" "$SCRIPT_DIR/case-10_subagent_mcp_unavailable.md"
 
 # Step 5: 対話モード誘導
 write_section "Step 5: 対話モード誘導"

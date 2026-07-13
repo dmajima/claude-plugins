@@ -1,6 +1,6 @@
 ---
 name: google-workspace
-description: Google Drive のファイル検索・読取・作成・コピー・メタデータ取得・権限確認を MCP 経由で行うスキル。「Drive で議事録を検索して」「Google ドキュメントを作成して」「スプレッドシートを読んで」等で起動。Use when searching, reading, or creating Google Drive files. SKIP when target is Backlog (use backlog), Azure (use azure), ProjectBoard (use projectboard), ailead (use ailead), or Slack (use slack).
+description: Google Drive のファイル検索・読取・作成・コピー・メタデータ取得・権限確認を MCP 経由で行うスキル。「Drive で議事録を検索して」「Google ドキュメントを作成して」「スプレッドシートを読んで」等で起動。Use when searching, reading, or creating Google Drive files. SKIP when target is another service (use backlog / azure / projectboard / ailead / slack).
 ---
 
 # Google Workspace Connector
@@ -97,7 +97,7 @@ AskUserQuestion({
   header: "Drive 作成",
   options: [
     { label: "作成する", description: "ファイル名: {タイトル}\n種別: {MIME}\n内容: {要約}" },
-    { label: "キャンセル", description: "作成を取りやめます" }
+    { label: "中止", description: "作成を取りやめます" }
   ]
 })
 ```
@@ -117,7 +117,8 @@ MCP ツール利用不可の場合は MCP 導入サポート or 直接 API の�
 - `read_file_content` は非常に大きなファイルでは内容が不完全になる場合がある
 - `download_file_content` で Google ネイティブファイルをダウンロードする場合は `exportMimeType` が必須
 - テキスト/CSV のアップロードはデフォルトで Google ドキュメント/スプレッドシートに変換される（`disableConversionToGoogleType: true` で回避可能）
-- MCP 利用時は認証は MCP が自動管理。直接対応時は credentials-manager 経由で管理
+- MCP 利用時は認証は MCP が自動管理。直接対応（フォールバック）時は [../../references/credentials-precheck.md](../../references/credentials-precheck.md) セクション 1 の解決順序で Bearer トークンを取得する（credentials-manager は **オプション**。未導入時は credentials.json 直接照合 → 対話取得フォールバックでトークンの提供を受ける）
+- サブエージェント実行時（`AskUserQuestion` 利用不可）に MCP 利用不可・トークン未解決となった場合は、質問せず `mcp_unavailable` / `credentials_missing` マニフェストを返す（返却動作は [../../references/credentials-precheck.md](../../references/credentials-precheck.md) セクション 5、呼び出し元の復帰は [../../references/subagent-protocol.md](../../references/subagent-protocol.md) セクション 3.5）
 - render-check ゲートは Google Drive 操作では不要
 
 ## サブエージェント呼び出し（他プラグイン向け）

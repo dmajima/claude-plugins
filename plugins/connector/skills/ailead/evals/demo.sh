@@ -110,8 +110,9 @@ check_file "環境構築 (setup.md)" "$SKILL_DIR/references/setup.md"
 
 # Step 3: スキル内 scripts の存在
 write_section "Step 3: スキル内 scripts の存在検証"
-check_file "データ取得スクリプト (fetch_share.py)" "$SKILL_DIR/scripts/fetch/fetch_share.py"
-check_file "venv 構築スクリプト (setup_venv.sh)" "$SKILL_DIR/scripts/setup/setup_venv.sh"
+check_file "データ取得スクリプト (fetch_share.py)" "$SKILL_DIR/references/scripts/fetch/fetch_share.py"
+check_file "venv 構築スクリプト (プラグイン共通 setup_venv.sh)" "$PLUGIN_DIR/references/scripts/setup/setup_venv.sh"
+check_file "依存定義 (プラグイン共通 requirements.txt)" "$PLUGIN_DIR/references/scripts/setup/requirements.txt"
 
 # Step 4: プラグイン共通 references の存在
 write_section "Step 4: プラグイン共通 references の存在検証"

@@ -1,4 +1,4 @@
-# Case 06: TFS PR コメント投稿の承認で「キャンセル」選択（threads API を発行せず終了）
+# Case 06: TFS PR コメント投稿の承認で「中止」選択（threads API を発行せず終了）
 
 ## 入力
 
@@ -25,10 +25,10 @@
 - 投稿本文 + ターゲット `ado-markdown` で `render-check` スキルを実行する
 - 5 カテゴリ（NOTATION / AUTOLINK / STRUCTURE / SECRET / SIZE）全てが検査され、総合判定 **PASS** が返る
 
-### Phase 4: 承認（ユーザーがキャンセルを選択）
+### Phase 4: 承認（ユーザーが中止を選択）
 
 - 対象 PR（PR 123・タイトル）・操作内容（新規スレッドとしてコメント投稿）・確定本文を提示し、`AskUserQuestion` で承認を求める
-- ユーザーが「キャンセル」を選択する
+- ユーザーが「中止」を選択する
 
 ### Phase 5: 中止の報告
 
@@ -45,7 +45,7 @@
 
 ## 分岐の根拠
 
-このケースが分岐するトリガーは AskUserQuestion の選択 = キャンセル である。case-02 と同じく render-check PASS から承認質問へ進むが、ユーザーが承認ではなくキャンセルを選択するため、threads API が発行されずに終了する。
+このケースが分岐するトリガーは AskUserQuestion の選択 = 中止 である。case-02 と同じく render-check PASS から承認質問へ進むが、ユーザーが承認ではなく中止を選択するため、threads API が発行されずに終了する。
 
 ## 関連ケース
 

@@ -51,4 +51,4 @@
 
 - `case-01_issue_get.md`（課題キー直指定の取得。`issueIdOrKey` には課題キーがそのまま使えるため ID 解決が不要）
 - `case-04_status_update.md`（同じ一覧系 API を ID 解決に使う書き込みケース）
-- `case-05_credentials_missing.md`（認証事前確認に失敗した場合の停止動作）
+- `case-05_credentials_missing.md`（認証事前確認で解決できない場合の対話取得フォールバック分岐。中止選択時のみ終了）

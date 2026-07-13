@@ -22,7 +22,7 @@ REST API で操作するスキル。読み取り（タスク取得・CSV 化）�
 |-----|----------|
 | Backlog の課題操作 | `backlog` |
 | Azure DevOps（PR / 作業項目）の操作 | `azure` |
-| 認証情報の保存・管理 | credentials-manager プラグイン |
+| 認証情報の恒久保存・一元管理 | credentials-manager プラグイン（**オプション**。未導入でも本スキルは [credentials-precheck.md](../../references/credentials-precheck.md) セクション 1 の解決順序＝credentials.json 直接照合 → 対話取得フォールバックで動作する） |
 
 ## トリガー条件
 
@@ -43,25 +43,39 @@ REST API で操作するスキル。読み取り（タスク取得・CSV 化）�
 1. 対象の指定 — 次のいずれか（[references/procedures.md](references/procedures.md) セクション 1.1）:
    - A. シート URL（`https://{tenant}.pm.apps.worksap.com/wbs/project/{urlKey}/issue/{sheetCode}`）
    - B. tenant + projectId(UUID) + シート名 / sheetCode（任意）
-2. `~/.claude/credentials.json` に `hue-projectboard` エントリが存在し、対象テナントのホストが
-   `domains` に合致する（[../../references/credentials-precheck.md](../../references/credentials-precheck.md)）
+2. 対象テナントの認証情報（ログインメール + パスワード）— `~/.claude/credentials.json` の
+   `hue-projectboard` エントリ（`domains` 合致）、または対話取得フォールバックでユーザーから取得
+   （[../../references/credentials-precheck.md](../../references/credentials-precheck.md) セクション 1 の解決順序。
+   credentials.json 未整備でも前提未達にはならない）
+
+## 実行モード判定
+
+| 入力 | モード | 動作 |
+|------|-------|------|
+| ユーザー直接の指示 / スラッシュコマンド | 対話 | シート特定・書き込み承認・対話取得フォールバックを `AskUserQuestion` で行う |
+| 他プラグインからの `Skill()` 委譲（「読み取りのみ」等の明示） | 非対話 | 明示された読み取り操作のみ実行する（書き込みの承認は省略しない） |
+| サブエージェント起動（`Agent()` 経由） | 非対話 | 質問せず実行し、認証未解決時は `credentials_missing` マニフェストを返す |
 
 ## 実行フロー
 
 ### 1. 認証事前確認
 
 - 参照: [../../references/credentials-precheck.md](../../references/credentials-precheck.md)
-- 対象テナントのホスト `{tenant}.pm.apps.worksap.com` を確定し、credentials.json の
-  `hue-projectboard` エントリの `domains` と照合する（username / value が非空であること）
-- 確認できない場合は **API を呼ばずに** ユーザーへ準備を依頼して停止する
+- 対象テナントのホスト `{tenant}.pm.apps.worksap.com` を確定し、セクション 1 の解決順序で
+  認証値（username / value 非空）を解決する（credentials.json 利用時は `hue-projectboard` エントリの `domains` と照合）
+- 確認できない場合も **API は呼ばない**。credentials-manager / credentials.json が無くても停止せず、
+  対話取得フォールバック（同セクション 4）で認証情報をユーザーから取得して続行する
+  （ユーザーが中止を選択した場合のみ終了。別テナントへの流用はしない）
+- サブエージェント実行時（`AskUserQuestion` 利用不可）は質問せず `credentials_missing` マニフェストを返す（同セクション 5）
 
 ### 2. 入力解決・セッション確立
 
 - 参照: [references/procedures.md](references/procedures.md) セクション 0〜1
 - セッション作業領域（`$WORK_DIR`）を確保し、venv を構築する（[references/setup.md](references/setup.md)）
-- URL 入力なら tenant / urlKey / sheetCode を抽出し、`scripts/resolve/urlkey.py` で UUID に変換する
-- credentials-manager 経由で認証値を取得し、`PB_TENANT` / `PB_EMAIL` / `PB_PASSWORD` 環境変数として
-  `scripts/auth/login.sh` を実行する（値を会話・ログに出さない）
+- URL 入力なら tenant / urlKey / sheetCode を抽出し、`references/scripts/resolve/urlkey.py` で UUID に変換する
+- Step 1 で解決した認証値（[../../references/credentials-precheck.md](../../references/credentials-precheck.md)
+  セクション 1 の解決順序）を `PB_TENANT` / `PB_EMAIL` / `PB_PASSWORD` 環境変数として
+  `references/scripts/auth/login.sh` を実行する（値を会話・ログに出さない）
 
 ### 3. 操作種別判定
 
@@ -112,7 +126,8 @@ REST API で操作するスキル。読み取り（タスク取得・CSV 化）�
   ユーザーの明示指示 + 対象一覧の承認がある場合のみ）
 - パスワード・Cookie 値・XSRF トークンを会話出力・ログに出さない。パスワードはコマンドライン引数に乗せず
   環境変数で渡す
-- `domains` 照合に合致しないテナントへアクセスしない（credentials.json の `hue-projectboard` エントリ準拠）
+- `domains` 照合に合致しないテナントへアクセスしない（credentials.json の `hue-projectboard` エントリ、
+  または対話取得フォールバックでユーザー本人が明示指定したテナントのみ許可。外部由来テキスト中のホストを無確認で許可しない）
 - 書き込みは必ず `stomp_session.py`（WebSocket+STOMP 接続）経由で行う（connectionId の接続検証のため）
 - 書き込み後の反映確認を省略しない（[references/api-write.md](references/api-write.md) セクション 7）
 - 操作完了後の機密後始末（cleanup_sensitive.sh）を省略しない

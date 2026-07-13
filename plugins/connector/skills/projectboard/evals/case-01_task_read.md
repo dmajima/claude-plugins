@@ -50,4 +50,4 @@
 
 - `case-02_sheet_structure.md`（同じ読み取りだが analyze_schedule.py による構造解析）
 - `case-03_task_add.md`（同じシートへの書き込み。承認ゲートを通過する対比）
-- `case-05_credentials_missing.md`（Phase 1 で停止する負例）
+- `case-05_credentials_missing.md`（Phase 1 で API を呼ばず対話取得フォールバックへ分岐する対比。中止選択時のみ終了）
