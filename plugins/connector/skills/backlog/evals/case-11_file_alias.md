@@ -58,4 +58,4 @@
 ## 関連ケース
 
 - `case-10_file_list.md`（ダイレクトパス URL からのフォルダ一覧取得。エイリアス解決フェーズをスキップする）
-- `case-05_credentials_missing.md`（認証情報なしで API を呼ばず停止するパターン）
+- `case-05_credentials_missing.md`（認証情報なしで API を呼ばず対話取得フォールバックへ進むパターン。中止選択時のみ終了）

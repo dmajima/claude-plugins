@@ -10,12 +10,16 @@
 | case-02 | クラウド PR へのコメント投稿（az devops invoke / api-version 7.1。render-check → 承認 → 投稿） | ホスト種別 = クラウド（dev.azure.com → az CLI） |
 | case-03 | PR 承認（vote=10。connectionData で自分の reviewer ID を取得 → PUT） | 操作種別 = 書き込み（本文なし）= render-check 省略・vote 値明示の承認必須 |
 | case-04 | TFS 作業項目へのコメント投稿（render-check FAIL → HTML 変換 → JSON Patch で System.History に add） | 投稿先 = TFS 作業項目（System.History は Markdown 非解釈・HTML レンダリング） |
-| case-05 | 未登録ホストへの操作依頼（API を 1 件も発行せず拒否し、credentials.json 登録手順を案内） | ホスト判定 = 4（クラウドにも登録済み TFS にも該当しない） |
-| case-06 | TFS PR コメント投稿の承認でユーザーが「キャンセル」を選択（threads API を発行せず中止を報告） | AskUserQuestion の選択 = キャンセル |
+| case-05 | 未登録ホストへの操作依頼（API を発行せずユーザー確認 → 対話取得フォールバックで登録・続行、中止時のみ終了） | ホスト判定 = 4（クラウドにも登録済み TFS にも該当しない） |
+| case-06 | TFS PR コメント投稿の承認でユーザーが「中止」を選択（threads API を発行せず中止を報告） | AskUserQuestion の選択 = 中止 |
 | case-07 | TFS PR へのインラインコメント投稿（threadContext 付き。パターン A・全安全ゲート通過） | 操作種別 = インラインコメント（threadContext 付きスレッド作成） |
 | case-08 | 他プラグイン委譲によるインラインコメント投稿（パターン B。render-check・承認スキップ） | 呼び出しパターン = B（委譲）+ 本文あり書き込み |
 | case-09 | 他プラグイン委譲によるスレッドステータス変更（パターン B。承認スキップ） | 呼び出しパターン = B（委譲）+ 本文なし書き込み |
 | case-10 | 他プラグイン委譲による Pipelines ビルド結果取得（パターン B。読み取り・透過返却） | 呼び出しパターン = B（委譲）+ 読み取り系 |
+| case-11 | サブエージェント呼び出しによる PR 情報取得（ファイル書き出し + success マニフェスト返却） | 呼び出し方式 = `Agent()`（subagent-protocol.md）正常系 |
+| case-12 | サブエージェント呼び出しで認証情報なし（質問せず `credentials_missing` マニフェスト返却 → 呼び出し元が対話復帰） | 実行コンテキスト = サブエージェント（解決順序 3b） |
+| case-13 | パターン A（ユーザー直接）の PR 情報読み取り | 呼び出しパターン = A + 読み取り系 |
+| case-14 | 登録済み TFS 資格情報の失効（401。同一値でリトライせず対話取得フォールバックで再取得を確認） | HTTP ステータス = 401（同一値リトライ厳禁・新値受領時のみ 1 回再実行） |
 
 ## 実行確認方法
 

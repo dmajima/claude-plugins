@@ -91,7 +91,15 @@ flowchart LR
 /plugin install connector@dmajima-claude-plugins
 ```
 
-### B. 自動更新の有効化
+### B. ローカル複製（リポジトリ未取得の場合）
+
+マーケットプレイスのリポジトリをローカルに複製してから A の手順を実施します（複製済みの場合は不要）。
+
+```text
+git clone <dmajima-claude-plugins リポジトリの URL> <ローカルパス>
+```
+
+### C. 自動更新の有効化
 
 `~/.claude/settings.json` の `extraKnownMarketplaces` で `autoUpdate: true` を設定すると、セッション起動時にマーケットプレイス + インストール済みプラグインが自動更新されます。
 
@@ -106,9 +114,11 @@ flowchart LR
 }
 ```
 
-### C. 依存関係
+### D. 依存関係
 
 依存プラグインなし。
+
+- credentials-manager プラグインは **不要（オプション）**。導入済み環境では認証情報の照合に優先利用するが、未導入でも全スキルが認証情報ストア（credentials-manager の保存先と従来パス `~/.claude/credentials.json` の両方）の直接照合 → 対話取得フォールバック（実行時に AskUserQuestion で認証情報を確認）で動作する（[`references/credentials-precheck.md`](references/credentials-precheck.md)）
 
 **外部ツール依存**（利用者環境に導入されている前提のツール）:
 
@@ -117,6 +127,8 @@ flowchart LR
 - Python 3.9+（**HUE ProjectBoard を操作する場合のみ**。urlKey 変換・CSV 整形・クリティカルパス計算に使用。外部 PyPI 依存なし）
 
 ## 事前準備（認証情報）
+
+以下の事前準備は **必須ではない**。credentials.json が未整備でも、各スキルは API を呼ぶ前に対話（AskUserQuestion）で認証情報を確認し、「今回のみ利用」または「credentials.json へ保存」を選択できる（[`references/credentials-precheck.md`](references/credentials-precheck.md) セクション 4）。事前に登録しておくと確認なしで動作し、サブエージェント経由の呼び出し（後述）でも往復なしで完遂できる。
 
 | サービス | 準備 |
 |---------|------|
@@ -187,9 +199,13 @@ SAMPLE-67 の進捗を 50% にして             → projectboard（変更前後
 
 サブエージェントが結果をファイルに書き出し、マニフェスト（ファイルパス + 概要）を返す。呼び出し元はマニフェストを受け取り、必要なファイルを Read して後続フローを続行する。
 
-詳細なプロトコル・テンプレートは [`references/subagent-protocol.md`](references/subagent-protocol.md) を参照。
+サブエージェント内では AskUserQuestion が使えないため、認証情報が未整備の場合は `credentials_missing` エラーマニフェストが返る。呼び出し元はメインコンテキストで対話取得フォールバック（[`references/credentials-precheck.md`](references/credentials-precheck.md) セクション 4）を実施し、認証情報を保存してから再起動することで完遂できる。
+
+詳細なプロトコル・テンプレート・復帰手順は [`references/subagent-protocol.md`](references/subagent-protocol.md) を参照。
 
 ## code-review プラグインとの関係
+
+> code-review プラグインは本マーケットプレイス（dmajima-claude-plugins）ではなく **別マーケットプレイス（customerep-claudecode）で提供** されるプラグインです。未導入でも connector 単体の動作には影響しません（本セクションは併用時の責務分担の説明です）。
 
 | 観点 | connector（本プラグイン） | code-review |
 |-----|--------------------------|-------------|
@@ -215,11 +231,16 @@ plugins/connector/
 │   ├── slack-read.md / slack-post.md
 │   └── google-read.md / google-post.md
 ├── references/                          # プラグイン共通ナレッジ
+│   ├── CLAUDE.md                        # references の目的・原則・ナビゲーション（scripts/ 等の各サブフォルダにも CLAUDE.md）
 │   ├── credentials-precheck.md          # 認証情報の事前確認
 │   ├── delegation-interface.md          # 委譲インターフェース仕様（Skill() ベース・SSOT）
 │   ├── subagent-protocol.md             # サブエージェント呼び出しプロトコル（Agent() ベース・SSOT）
 │   ├── safe-api-access.md               # API アクセス安全原則（ホワイトリスト・エラー分岐・書き込みゲート）
 │   ├── signatures.md                    # 投稿署名
+│   ├── scripts/                         # プラグイン共通スクリプト（ADR-024/025）
+│   │   ├── run_via_job.sh               # PowerShell ツール経由 Python 起動用 Start-Job ラッパー
+│   │   ├── credentials/                 # 認証情報ストアの照合（cred_lookup.sh）・保存（cred_save.sh）
+│   │   └── setup/                       # venv 構築・削除・依存統合（setup_venv.sh / teardown_venv.sh / requirements.txt）
 │   └── rendering/                       # レンダリングルール（render-check が参照）
 │       ├── backlog-notation.md          # Backlog 記法
 │       ├── backlog-markdown.md          # Backlog Markdown
@@ -228,37 +249,37 @@ plugins/connector/
     ├── backlog/                         # Backlog 操作スキル
     │   ├── SKILL.md / README.md
     │   ├── references/                  # api-read.md / api-write.md
-    │   └── evals/                       # 9 ケース + demo.sh
+    │   └── evals/                       # 17 ケース + demo.sh
     ├── azure/                           # Azure DevOps 操作スキル（PR・作業項目・commit・Pipelines）
     │   ├── SKILL.md / README.md
     │   ├── references/                  # host-detection.md / pr-operations.md / workitem-operations.md
-    │   └── evals/                       # 13 ケース + demo.sh
+    │   └── evals/                       # 14 ケース + demo.sh
     ├── github/                          # GitHub PR 操作スキル
     │   ├── SKILL.md / README.md
     │   ├── references/                  # pr-operations.md
-    │   └── evals/                       # 8 ケース
+    │   └── evals/                       # 10 ケース + demo.sh
     ├── render-check/                    # 投稿前レンダリング検証スキル
     │   ├── SKILL.md / README.md
     │   ├── references/                  # check-procedures.md
     │   └── evals/                       # 7 ケース + demo.sh
     ├── projectboard/                    # HUE ProjectBoard 操作スキル
     │   ├── SKILL.md / README.md
-    │   ├── scripts/                     # setup / auth / resolve / fetch / write / format
     │   ├── references/                  # setup.md / api-spec.md / api-write.md / pitfalls.md / procedures.md
-    │   └── evals/                       # 7 ケース + demo.sh
+    │   │   └── scripts/                 # cleanup / auth / resolve / fetch / write / format（ADR-025）
+    │   └── evals/                       # 9 ケース + demo.sh
     ├── ailead/                          # ailead 共有リンク取得スキル（読み取り専用）
     │   ├── SKILL.md / README.md
-    │   ├── scripts/                     # fetch/fetch_share.py
-    │   ├── references/                  # api-spec.md / procedures.md
-    │   └── evals/                       # 11 ケース
+    │   ├── references/                  # api-spec.md / procedures.md / setup.md
+    │   │   └── scripts/                 # fetch/fetch_share.py（ADR-025）
+    │   └── evals/                       # 11 ケース + demo.sh
     ├── slack/                           # Slack 操作スキル（MCP 経由）
     │   ├── SKILL.md / README.md
-    │   ├── references/                  # mcp-fallback.md
-    │   └── evals/                       # 8 ケース
+    │   ├── references/                  # mcp-tools.md / mcp-fallback.md
+    │   └── evals/                       # 10 ケース + demo.sh
     └── google-workspace/               # Google Workspace 操作スキル（MCP 経由）
         ├── SKILL.md / README.md
-        ├── references/                  # mcp-fallback.md
-        └── evals/                       # 6 ケース
+        ├── references/                  # mcp-tools.md / mcp-fallback.md
+        └── evals/                       # 8 ケース + demo.sh
 ```
 
 ## 依存システム（External Dependencies）
@@ -278,8 +299,9 @@ plugins/connector/
 | Azure CLI `az` + `azure-devops` 拡張 | クラウド Azure DevOps の操作 | クラウド利用時のみ。オンプレ TFS のみなら不要 |
 | Python 3.9+ | ProjectBoard の urlKey 変換・CSV 整形・クリティカルパス計算（標準ライブラリのみ・外部 PyPI 依存なし） | ProjectBoard 利用時のみ |
 
-backlog / azure / render-check はスクリプト同梱なし（AI 実行型）。projectboard はスクリプト同梱型
-（`skills/projectboard/scripts/` — 認証・取得・書き込み・整形の再利用可能スクリプト群）。
+backlog / azure / github / render-check はスクリプト同梱なし（AI 実行型）。ailead / projectboard はスクリプト同梱型
+（`skills/{ailead,projectboard}/references/scripts/` — データ取得・認証・書き込み・整形の再利用可能スクリプト群）。
+venv 構築・削除はプラグイン共通スクリプト（`references/scripts/setup/`、ADR-024）に統合されている。
 
 ## ライセンス
 

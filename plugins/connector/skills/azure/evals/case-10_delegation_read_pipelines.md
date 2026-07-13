@@ -5,7 +5,7 @@
 | 項目 | 値 |
 |-----|---|
 | 起動フレーズ | `Skill(skill: "connector:azure", args: "読み取りのみ。https://dev.azure.com/contoso/WebApp のプロジェクト WebApp のビルド 5678 の結果・テスト結果・ログを取得して")` |
-| 既存状態 | 呼び出し元は coding プラグイン。`az` CLI ログイン済み |
+| 既存状態 | 呼び出し元は coding プラグイン。`az` CLI ログイン済み。**後続フローなし（取得結果の報告で呼び出し元のターンが完了する文脈）** — 後続フローがある場合は `Skill()` ではなく `Agent()` を使う（delegation-interface.md セクション 3） |
 
 ## 期待動作
 
@@ -17,4 +17,4 @@
 
 ## 分岐の根拠
 
-パターン B + 読み取り系。安全ゲート不要。Pipelines API 経路の初の eval。
+パターン B + 読み取り系。安全ゲート不要。Pipelines API 経路の初の eval。`Skill()` 委譲が正当なのは後続フローなしの場合のみで、後続フローのある read は `case-11_subagent_read_pr.md`（`Agent()` 経由）が対比となる。

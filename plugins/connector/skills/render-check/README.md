@@ -94,7 +94,7 @@ System.out.println("done");
 |-------|------|
 | `backlog` | 呼び出し元。Backlog への書き込み前に本スキルを必須ゲートとして実行する |
 | `azure` | 呼び出し元。Azure DevOps への書き込み前に本スキルを必須ゲートとして実行する |
-| credentials-manager プラグイン | 責務外の認証情報管理を担当する |
+| credentials-manager プラグイン | 責務外の認証情報管理を担当する（オプション。本スキル自体は認証情報を使用しない） |
 
 ## ファイル構成
 

@@ -9,9 +9,13 @@
 | case-01 | GitHub PR へのインラインコメント投稿（パターン A。承認を経て gh api で投稿） | 操作種別 = インラインコメント + パターン A |
 | case-02 | 他プラグイン委譲による Pending Review 一括投稿（パターン B。承認スキップ） | パターン B + 複数コメントまとめ投稿 |
 | case-03 | レビュースレッド resolve（パターン A。GraphQL mutation 経由） | 操作種別 = スレッド resolve |
-| case-04 | 認証失敗時の停止（gh auth status 失敗。API を呼ばずに停止） | 認証失敗 → 停止 |
+| case-04 | 認証失敗（gh auth status 失敗。API を呼ばず `gh auth login` の案内 → 再確認 → 続行。サブエージェント時は `credentials_missing` 返却） | 認証失敗 → 認証確立の確認 |
 | case-05 | PR 全体コメント投稿（パターン A。Issues API 経由。署名自動付加） | 操作種別 = 全体コメント |
 | case-06 | 他プラグイン委譲によるスレッド resolve（パターン B。承認スキップ） | 呼び出しパターン = B + resolve |
+| case-07 | ユーザー直接の PR 情報取得（パターン A・読み取り） | 呼び出しパターン = A + 読み取り系 |
+| case-08 | サブエージェント呼び出しによる PR 情報取得（ファイル書き出し + マニフェスト返却） | 呼び出し方式 = `Agent()`（subagent-protocol.md） |
+| case-09 | サブエージェント呼び出しで gh CLI 未認証（質問せず `credentials_missing` マニフェスト返却 → 呼び出し元が案内・復帰） | 実行コンテキスト = サブエージェント（解決順序 3b） |
+| case-10 | API 応答での 401/403（gh auth status 成功後のトークン失効。同一値でリトライせず再認証 → 1 回だけ再実行。サブエージェント時は `auth_failed` 返却） | HTTP 401/403（同一値リトライ厳禁） |
 
 ## 実行確認方法
 
@@ -19,3 +23,4 @@
 
 - 各ケースは GitHub API（`gh` CLI 経由）への実アクセスを前提とするため、`run_evals.py` による自動実行の対象外
 - 書き込み系ケースの確認は検証用リポジトリ・検証用 PR に対して行うこと
+- パターン B（`Skill()` 委譲）の読み取り専用ケースは、azure case-10 / backlog case-09 と同一プロトコル（delegation-interface.md）のため本スキルでは省略している（github 固有の分岐がない）

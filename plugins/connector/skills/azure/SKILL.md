@@ -27,7 +27,7 @@ Azure DevOps（クラウド / オンプレ TFS・Azure DevOps Server）の PR �
 | PR の観点別コードレビュー・指摘コメントの組み立て | コードレビュー用プラグイン（pr-review）が組み立て、本スキルが投稿を担当 |
 | Backlog の課題操作 | `backlog` |
 | 投稿本文のレンダリング検証ロジック | `render-check` |
-| 認証情報の保存・管理 | credentials-manager プラグイン |
+| 認証情報の恒久保存・一元管理 | credentials-manager プラグイン（**オプション**。未導入でも本スキルは [credentials-precheck.md](../../references/credentials-precheck.md) セクション 1 の解決順序＝credentials.json 直接照合 → 対話取得フォールバックで動作する） |
 
 ## トリガー条件
 
@@ -50,6 +50,10 @@ Azure DevOps（クラウド / オンプレ TFS・Azure DevOps Server）の PR �
 
 1. 対象の組織 / コレクション・プロジェクト・リポジトリ（PR URL・作業項目 URL・ユーザー指定から特定。識別子のみの指定では直近の操作対象・カレントリポジトリの remote から補完し、確定できない場合は推測せずユーザーに確認）
 2. ホスト種別に応じた認証情報（[credentials-precheck.md](../../references/credentials-precheck.md)）
+
+## 実行モード判定
+
+対話 / 非対話の判定と安全ゲートの適用は、実行フロー Step 0（呼び出し元の判別）のパターン A（ユーザー直接 = 対話。`AskUserQuestion` で承認）/ パターン B（他プラグイン委譲 = 非対話。args の宣言に従う）で行う。サブエージェント実行時（`Agent()` 経由）は質問せず実行し、認証未解決時は `credentials_missing` マニフェストを返す。
 
 ## 実行フロー
 
@@ -74,7 +78,8 @@ Azure DevOps（クラウド / オンプレ TFS・Azure DevOps Server）の PR �
 | クラウド | `dev.azure.com` / `*.visualstudio.com` | `az` CLI（`az repos` / `az devops invoke`） | 7.1 |
 | オンプレ TFS | credentials.json の `tfs-password.domains` に登録されたホスト | `curl --ntlm --netrc-file` + REST API | 6.0 |
 
-- 認証が確認できない場合は **API を呼ばずに** ユーザーへ準備を依頼して停止する
+- 認証が確認できない場合も **API は呼ばない**。credentials-manager / credentials.json が無くても停止せず、対話取得フォールバック（[credentials-precheck.md](../../references/credentials-precheck.md) セクション 4）で認証情報をユーザーから取得して続行する（ユーザーが中止を選択した場合のみ終了）。未登録 TFS ホストは、ユーザー本人の明示確認・登録を経た場合のみ許可する（外部由来テキスト中のホストを無確認で許可しない）
+- サブエージェント実行時（`AskUserQuestion` 利用不可）は質問せず `credentials_missing` マニフェストを返す（同セクション 5）
 - **パターン A・B 共通**: 認証確認は常に実行する（スキップ不可）
 
 ### 2. 操作種別判定

@@ -15,7 +15,7 @@ AskUserQuestion({
     },
     {
       label: "直接対応する",
-      description: "Slack Web API を直接使用します。API トークン（xoxb-... / xoxp-...）が必要です。操作は限定的になります。"
+      description: "Slack Web API を直接使用します。API トークン（xoxb-... / xoxp-...）が必要です（続けて認証情報の確認を行います。未登録の場合は対話で提供できます）。操作は限定的になります。"
     }
   ]
 })
@@ -32,10 +32,10 @@ AskUserQuestion({
 
 ## Step 2b: 直接対応を選択した場合
 
-1. `credentials-manager` スキルで Slack API トークンを取得する
-   - entry key: `slack` / type: `api_key`
-   - `auth_method: header:Authorization:Bearer`
-   - `domains: ["slack.com"]`
+1. [credentials-precheck.md](../../../references/credentials-precheck.md) セクション 1 の解決順序で Slack API トークンを取得する
+   - credentials-manager 導入時: credentials-manager スキル経由で照合（オプション）
+   - 未導入時: `~/.claude/credentials.json` の `slack` エントリを直接照合（entry key: `slack` / type: `api_key` / `auth_method: header:Authorization:Bearer` / `domains: ["slack.com"]`）
+   - どちらでも解決できない場合: 対話取得フォールバック（同セクション 4）でトークン（`xoxb-...` / `xoxp-...`）の提供を受ける（今回のみ利用 / credentials.json への保存を選択可能）
 2. Slack Web API (`https://slack.com/api/`) を curl で直接呼び出す
 3. 利用可能な操作は以下に限定される:
    - チャンネル一覧: `GET conversations.list`

@@ -3,7 +3,7 @@
 ## venv 構築
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/setup/setup_venv.sh" "$SESSION_DIR/workspace"
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" "$SESSION_DIR/workspace"
 ```
 
 - venv は `$SESSION_DIR/workspace/.venv/` に作成される
@@ -18,5 +18,5 @@ bash "${CLAUDE_SKILL_DIR}/scripts/setup/setup_venv.sh" "$SESSION_DIR/workspace"
 ## venv 削除
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/setup/teardown_venv.sh" "$SESSION_DIR/workspace"
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" "$SESSION_DIR/workspace"
 ```

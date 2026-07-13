@@ -27,6 +27,18 @@ Google Drive でファイルを検索したい
   3. Claude Code セッションを再起動
 
 ### Phase 3b: 直接対応を選択した場合
-- `credentials-manager` スキルで Google API トークンの有無を確認
+- credentials-precheck.md セクション 1 の解決順序で Google API トークンを確認（credentials-manager（導入時）→ credentials.json の `google-drive` エントリ直接照合）
 - トークンがある場合: `https://www.googleapis.com/drive/v3/files?q=...` で検索
-- トークンがない場合: ユーザーに Bearer Token の提供を依頼
+- トークンがない場合: 対話取得フォールバック（credentials-precheck.md セクション 4）の 4 択（入力して続行（今回のみ）/ 入力して続行（保存する）/ 登録手順の案内 / 中止）を提示する（credentials-manager / credentials.json 不在でも停止しない）
+
+### サブエージェント実行時の対比
+- サブエージェント（`AskUserQuestion` 利用不可）で MCP 利用不可となった場合は、Phase 2 以降の質問を試みず `{"status":"error","error":"mcp_unavailable","service":"google-drive",...}` マニフェストを返す（subagent-protocol.md セクション 3.5 で呼び出し元が復帰）
+
+## 分岐根拠
+
+MCP 未導入環境でのフォールバックフロー。MCP 導入サポートと直接 API の二択を提供し、直接 API 選択時も認証情報の解決順序（credentials-precheck.md セクション 1）で必ず対話取得まで到達する。
+
+## 関連ケース
+
+- `case-08_subagent_mcp_unavailable.md`（同じ MCP 不可でもサブエージェント実行時は質問せずマニフェストを返す対比）
+- `case-07_token_expired.md`（トークンはあるが失効している場合）

@@ -5,13 +5,13 @@ API 仕様の詳細は [api-spec.md](api-spec.md)（読み取り）/ [api-write.
 
 ## 0. スクリプト共通規約
 
-すべての `scripts/**/*.sh` / `*.py` が従う規約:
+すべての `references/scripts/**/*.sh` / `*.py` が従う規約:
 
 | 規約 | 内容 |
 |---|---|
 | WORK_DIR | 第 1 引数でセッション作業領域（`.claude/.local/work/{session}/workspace`）を受け取る。出力は全て `$WORK_DIR` 配下 |
 | Cookie | `$WORK_DIR/cookies.txt` をスクリプト間で共有。相対パス `cookies.txt` 禁止 |
-| 認証値 | `PB_TENANT` / `PB_EMAIL` / `PB_PASSWORD` 環境変数で受け渡す。スクリプト内で credentials.json を直接読まない（値の取得は Claude エージェント層が credentials-manager 経由で行う）。パスワードはコマンドライン引数に乗せない |
+| 認証値 | `PB_TENANT` / `PB_EMAIL` / `PB_PASSWORD` 環境変数で受け渡す。スクリプト内で credentials.json を直接読まない（値の取得は Claude エージェント層が [credentials-precheck.md](../../../references/credentials-precheck.md) セクション 1 の解決順序＝credentials-manager（導入時）→ credentials.json 直接照合 → 対話取得フォールバックで行う）。パスワードはコマンドライン引数に乗せない |
 | 機密マスク | ログ / 標準出力に Cookie 値・パスワード・トークンを出さない |
 | Python | venv の python を明示指定。先頭で `sys.stdout.reconfigure(encoding='utf-8')`。`open()` は `encoding='utf-8'` 明示 |
 
@@ -28,20 +28,22 @@ URL 入力時の urlKey → UUID 変換:
 
 ```bash
 PY="$WORK_DIR/.venv/Scripts/python.exe"   # Unix は .venv/bin/python
-UUID=$("$PY" "${CLAUDE_SKILL_DIR}/scripts/resolve/urlkey.py" "$URLKEY")
+UUID=$("$PY" "${CLAUDE_SKILL_DIR}/references/scripts/resolve/urlkey.py" "$URLKEY")
 ```
 
 ### 1.2 認証情報の取得とログイン
 
-1. Claude エージェント層が credentials-manager 経由で `hue-projectboard` エントリから
-   username（メール）と value（パスワード）を取得する
-2. tenant のホスト `{tenant}.pm.apps.worksap.com` が同エントリの `domains` に合致することを確認する
-   （ワイルドカード `pm.apps.worksap.com` 含む。合致しないテナントへはアクセスしない）
+1. Claude エージェント層が [credentials-precheck.md](../../../references/credentials-precheck.md)
+   セクション 1 の解決順序で認証値（username=メール / value=パスワード）を取得する
+   （credentials-manager（導入時）→ credentials.json の `hue-projectboard` エントリ → 対話取得フォールバック）
+2. tenant のホスト `{tenant}.pm.apps.worksap.com` の許可を確認する — credentials.json 利用時は
+   同エントリの `domains` 合致（ワイルドカード `pm.apps.worksap.com` 含む）、対話取得時は
+   ユーザー本人が明示指定したテナントであること（合致・確認できないテナントへはアクセスしない）
 3. ログイン実行:
 
 ```bash
 PB_TENANT="$TENANT" PB_EMAIL="$EMAIL" PB_PASSWORD="$PASSWORD" \
-  bash "${CLAUDE_SKILL_DIR}/scripts/auth/login.sh" "$WORK_DIR"
+  bash "${CLAUDE_SKILL_DIR}/references/scripts/auth/login.sh" "$WORK_DIR"
 ```
 
 以降の fetch / write スクリプトにも同じ環境変数を渡す（401 時の自動再ログインに使用）。
@@ -52,7 +54,7 @@ PB_TENANT="$TENANT" PB_EMAIL="$EMAIL" PB_PASSWORD="$PASSWORD" \
 ENV=(env PB_TENANT="$TENANT" PB_EMAIL="$EMAIL" PB_PASSWORD="$PASSWORD")
 
 # [1] シート一覧 → $WORK_DIR/pb_sheets.json
-"${ENV[@]}" bash "${CLAUDE_SKILL_DIR}/scripts/fetch/list_sheets.sh" "$WORK_DIR" "$UUID"
+"${ENV[@]}" bash "${CLAUDE_SKILL_DIR}/references/scripts/fetch/list_sheets.sh" "$WORK_DIR" "$UUID"
 
 # [2] シート特定（Claude エージェント層が実施）
 #   - pageType=ISSUE で絞り込み
@@ -61,10 +63,10 @@ ENV=(env PB_TENANT="$TENANT" PB_EMAIL="$EMAIL" PB_PASSWORD="$PASSWORD")
 jq -r '.[] | select(.pageType == "ISSUE") | "\(.title)\t\(.id)\t\(.sourceId)"' "$WORK_DIR/pb_sheets.json"
 
 # [3] (任意) 列定義・statusSet → $WORK_DIR/pb_pagedetail.json
-"${ENV[@]}" bash "${CLAUDE_SKILL_DIR}/scripts/fetch/sheet_detail.sh" "$WORK_DIR" "$UUID" "$PAGE_ID"
+"${ENV[@]}" bash "${CLAUDE_SKILL_DIR}/references/scripts/fetch/sheet_detail.sh" "$WORK_DIR" "$UUID" "$PAGE_ID"
 
 # [4] タスクツリー → $WORK_DIR/pb_wbsnodes.json（wbsId は sourceId — 落とし穴 #3）
-"${ENV[@]}" bash "${CLAUDE_SKILL_DIR}/scripts/fetch/get_tasks.sh" "$WORK_DIR" "$SOURCE_ID"
+"${ENV[@]}" bash "${CLAUDE_SKILL_DIR}/references/scripts/fetch/get_tasks.sh" "$WORK_DIR" "$SOURCE_ID"
 ```
 
 ### 2.1 特定タスクの読み取り
@@ -89,11 +91,11 @@ jq -r --arg key "SAMPLE-67" \
 
 ```bash
 # 標準 10 列
-"$PY" "${CLAUDE_SKILL_DIR}/scripts/format/tasks_to_csv.py" \
+"$PY" "${CLAUDE_SKILL_DIR}/references/scripts/format/tasks_to_csv.py" \
   "$WORK_DIR/pb_wbsnodes.json" "$WORK_DIR/pb_tasks.csv"
 
 # 全列（シートの列定義から動的生成 — ADR-8。pb_pagedetail.json が必要）
-"$PY" "${CLAUDE_SKILL_DIR}/scripts/format/tasks_to_csv.py" \
+"$PY" "${CLAUDE_SKILL_DIR}/references/scripts/format/tasks_to_csv.py" \
   "$WORK_DIR/pb_wbsnodes.json" "$WORK_DIR/pb_tasks.csv" \
   --mode all --page-detail "$WORK_DIR/pb_pagedetail.json"
 ```
@@ -101,7 +103,7 @@ jq -r --arg key "SAMPLE-67" \
 ## 3. シート全体の構造解析（クリティカルパス含む）
 
 ```bash
-"$PY" "${CLAUDE_SKILL_DIR}/scripts/format/analyze_schedule.py" \
+"$PY" "${CLAUDE_SKILL_DIR}/references/scripts/format/analyze_schedule.py" \
   "$WORK_DIR/pb_wbsnodes.json" \
   --out-json "$WORK_DIR/pb_analysis.json" > "$WORK_DIR/pb_analysis.md"
 ```
@@ -129,12 +131,12 @@ jq -r --arg key "SAMPLE-67" \
 ```bash
 ENV=(env PB_TENANT="$TENANT" PB_EMAIL="$EMAIL" PB_PASSWORD="$PASSWORD")
 write_node() {  # write_node <body.json>
-  "${ENV[@]}" "$PY" "${CLAUDE_SKILL_DIR}/scripts/write/stomp_session.py" \
+  "${ENV[@]}" "$PY" "${CLAUDE_SKILL_DIR}/references/scripts/write/stomp_session.py" \
     "$WORK_DIR" "$TENANT" "$UUID" "$SOURCE_ID" \
-    -- bash "${CLAUDE_SKILL_DIR}/scripts/write/post_node_api.sh" "$WORK_DIR" updateNodeContent "$1"
+    -- bash "${CLAUDE_SKILL_DIR}/references/scripts/write/post_node_api.sh" "$WORK_DIR" updateNodeContent "$1"
 }
 # 対象シートの最新状態を取得（対象ノード id・親 id・既存値の確認）
-"${ENV[@]}" bash "${CLAUDE_SKILL_DIR}/scripts/fetch/get_tasks.sh" "$WORK_DIR" "$SOURCE_ID"
+"${ENV[@]}" bash "${CLAUDE_SKILL_DIR}/references/scripts/fetch/get_tasks.sh" "$WORK_DIR" "$SOURCE_ID"
 ```
 
 ### 4.2 タスク追加（updateNodeContent の addNodes 経由）
@@ -182,7 +184,7 @@ write_node "$WORK_DIR/pb_body.json"
 jq . "$WORK_DIR/pb_write_response.json"
 
 # 再取得して反映確認
-"${ENV[@]}" bash "${CLAUDE_SKILL_DIR}/scripts/fetch/get_tasks.sh" "$WORK_DIR" "$SOURCE_ID"
+"${ENV[@]}" bash "${CLAUDE_SKILL_DIR}/references/scripts/fetch/get_tasks.sh" "$WORK_DIR" "$SOURCE_ID"
 jq -r --arg key "$TASK_KEY" \
   '.displayRoot | recurse(.children[]?) | .data | select(.taskId == $key)' \
   "$WORK_DIR/pb_wbsnodes.json"
@@ -194,8 +196,8 @@ jq -r --arg key "$TASK_KEY" \
 ## 5. 後始末（必須）
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/setup/cleanup_sensitive.sh" "$WORK_DIR"
-bash "${CLAUDE_SKILL_DIR}/scripts/setup/teardown_venv.sh" "$WORK_DIR"   # 後続タスクで使わない場合
+bash "${CLAUDE_SKILL_DIR}/references/scripts/cleanup/cleanup_sensitive.sh" "$WORK_DIR"
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" "$WORK_DIR"   # 後続タスクで使わない場合
 ```
 
 成果物（CSV / 解析レポート）を残す場合は cleanup 前にセッションフォルダ直下へ移動する。

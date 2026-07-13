@@ -11,9 +11,11 @@ projectboard スキルの動作期待値ケース集。各ケースは外部 API
 | [case-02_sheet_structure.md](case-02_sheet_structure.md) | シート全体の構造解析・クリティカルパス（読み取り） | 解析経路（analyze_schedule.py） |
 | [case-03_task_add.md](case-03_task_add.md) | タスク追加（書き込み） | 承認ゲート + addNode + 反映検証 |
 | [case-04_task_update.md](case-04_task_update.md) | ステータス更新（書き込み） | ID 解決 + 承認ゲート + updateNodeContent |
-| [case-05_credentials_missing.md](case-05_credentials_missing.md) | 認証情報なし | API を呼ばず停止 |
+| [case-05_credentials_missing.md](case-05_credentials_missing.md) | 認証情報なし | API を呼ばず対話取得フォールバック（中止時のみ終了） |
 | [case-06_session_expired.md](case-06_session_expired.md) | セッション切れ（401） | 自動再ログイン + リトライ |
 | [case-07_write_cancel.md](case-07_write_cancel.md) | 書き込み承認で中止 | POST 未発行・正常中止 |
+| [case-08_subagent_credentials_missing.md](case-08_subagent_credentials_missing.md) | サブエージェント呼び出しで認証情報なし | 質問せず `credentials_missing` マニフェスト返却（呼び出し元が対話復帰） |
+| [case-09_relogin_bad_credentials.md](case-09_relogin_bad_credentials.md) | 自動再ログインで badCredentials（セッション例外の境界） | 同一値で再送せず対話取得フォールバックへ（サブエージェント時は `auth_failed` 返却） |
 
 ## 構造検証
 

@@ -20,3 +20,11 @@ Google Drive に「週次MTG議事録」という名前で新しいドキュメ�
 ### Phase 3: 作成実行
 - `create_file` で `title: "週次MTG議事録"`, `contentMimeType: "application/vnd.google-apps.document"` を指定
 - ファイルリンクを報告
+
+## 分岐根拠
+
+書き込み操作（承認必須）。AskUserQuestion 承認 → create_file の正常系。
+
+## 関連ケース
+
+- `case-06_user_cancel_create.md`（同じ作成依頼で承認時に「中止」を選択する対比）

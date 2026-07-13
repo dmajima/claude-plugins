@@ -27,7 +27,7 @@ GitHub の PR 操作を `gh` CLI および GitHub MCP ツール経由で行う�
 | PR の観点別コードレビュー・指摘コメントの組み立て | コードレビュー用プラグイン（pr-review）が組み立て、本スキルが投稿を担当 |
 | Azure DevOps PR / 作業項目操作 | `connector:azure` |
 | Backlog / ProjectBoard / ailead / Slack / Google Workspace | 各専用コネクタスキル |
-| 認証情報の保存・管理 | credentials-manager プラグイン |
+| 認証情報の恒久保存・一元管理 | credentials-manager プラグイン（**オプション**。本スキルの認証は `gh` CLI が担うため、credentials-manager / credentials.json が無くても動作する） |
 
 ## トリガー条件
 
@@ -45,6 +45,10 @@ GitHub の PR 操作を `gh` CLI および GitHub MCP ツール経由で行う�
 
 1. `gh` CLI がインストール済みであること（未インストール時はユーザーに案内して停止）
 2. `gh auth login` 済み、または `GH_TOKEN` / `GITHUB_TOKEN` 環境変数が設定済みであること
+
+## 実行モード判定
+
+対話 / 非対話の判定と承認ゲートの適用は、実行フロー Step 0（呼び出し元の判別）のパターン A（ユーザー直接 = 対話。`AskUserQuestion` で承認）/ パターン B（他プラグイン委譲 = 非対話。args の「承認済み」宣言に従う）で行う。サブエージェント実行時（`Agent()` 経由）は質問せず実行し、認証未解決時は `credentials_missing` マニフェストを返す。
 
 ## 実行フロー
 
@@ -64,7 +68,8 @@ gh auth status
 ```
 
 - 終了コード 0: 認証済み → 次のステップへ
-- 終了コード != 0: `gh auth login` の実行をユーザーに案内して停止
+- 終了コード != 0: API を呼ばずに `gh auth login` の実行（または `GH_TOKEN` の設定）をユーザーに案内する。`gh auth login` は対話ログインのため値の代理受領はせず、ユーザーの実行完了後に `gh auth status` を再確認して続行する（中止指示があった場合のみ終了）
+- サブエージェント実行時（`AskUserQuestion` 利用不可）は案内せず `credentials_missing` マニフェストを返す（返却動作は [../../references/credentials-precheck.md](../../references/credentials-precheck.md) セクション 5、呼び出し元の復帰は [../../references/subagent-protocol.md](../../references/subagent-protocol.md) セクション 3.5）
 
 ### 2. 操作種別判定
 

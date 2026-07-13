@@ -135,6 +135,9 @@ check_file "case-11 (ファイルエイリアス)" "$SCRIPT_DIR/case-11_file_ali
 check_file "case-12 (ファイル直パス)" "$SCRIPT_DIR/case-12_file_direct_path.md"
 check_file "case-13 (フォルダエイリアス)" "$SCRIPT_DIR/case-13_folder_alias.md"
 check_file "case-14 (エイリアス解決失敗)" "$SCRIPT_DIR/case-14_alias_resolve_fail.md"
+check_file "case-15 (サブエージェント認証なし)" "$SCRIPT_DIR/case-15_subagent_credentials_missing.md"
+check_file "case-16 (複数ストア解決)" "$SCRIPT_DIR/case-16_multi_store_resolution.md"
+check_file "case-17 (サブエージェント 401)" "$SCRIPT_DIR/case-17_subagent_auth_failed.md"
 
 # Step 5: 対話モード誘導 (実 API 動作は Claude Code セッションでのみ確認可能)
 write_section "Step 5: 対話モード誘導"

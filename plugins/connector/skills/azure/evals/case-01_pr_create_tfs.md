@@ -57,4 +57,4 @@
 
 - `case-02_pr_comment_cloud.md`（ホストがクラウドの場合。az CLI / api-version 7.1 経路になる対比）
 - `case-03_pr_approve.md`（本文なしの書き込み。render-check を省略し承認のみ必須）
-- `case-05_unregistered_host.md`（ホストが credentials.json 未登録の場合。API を発行せず停止）
+- `case-05_unregistered_host.md`（ホストが credentials.json 未登録の場合。API を発行せずユーザー確認・対話取得フォールバックへ分岐）

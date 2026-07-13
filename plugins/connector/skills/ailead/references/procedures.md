@@ -16,7 +16,7 @@ key = re.search(r'/share/([^/?#]+)', url).group(1)
 
 ```bash
 "$SESSION_DIR/workspace/.venv/Scripts/python" \
-  "${CLAUDE_SKILL_DIR}/scripts/fetch/fetch_share.py" \
+  "${CLAUDE_SKILL_DIR}/references/scripts/fetch/fetch_share.py" \
   --url "https://dashboard.ailead.app/share/<key>" \
   --output "$SESSION_DIR/workspace"
 ```
@@ -27,6 +27,8 @@ key = re.search(r'/share/([^/?#]+)', url).group(1)
 3. 事前解析済み `operationHash` で GraphQL API 呼び出し
 4. 失敗時は JS チャンクから `operationHash` を再抽出してリトライ
 5. レスポンスをパースし、4ファイルを出力
+
+> **PowerShell ツール経由で起動する場合（例外運用）**: Windows + PowerShell ツールでは Python 子プロセスがハングする既知事象があるため、直接 `&` 起動せずプラグイン共通の Start-Job ラッパー `${CLAUDE_PLUGIN_ROOT}/references/scripts/run_via_job.sh` を経由する（グローバルルール `python-subprocess-hang-windows.md`）。通常の Bash ツール経由では上記の直接実行でよい。
 
 ## 3. 出力ファイル
 

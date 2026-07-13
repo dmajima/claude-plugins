@@ -16,6 +16,7 @@
 | case-08 | callSummary が null（AI要約未生成 → 正常系として処理続行、topicCount: 0） | 異常系 — データ欠損（部分成功） |
 | case-09 | transcripts が時刻順でない（ソートして正規化 → 正常出力） | 異常系 — データ整合（自動補正） |
 | case-10 | 全 known hash 失敗 + JS チャンク再抽出も失敗（operationHash 取得不能 → exit 1） | エラー系 — ハッシュ全滅 |
+| case-11 | サブエージェント経由の取得（Agent() 起動 → Skill 実行 → 出力ディレクトリへコピー → マニフェスト返却） | 呼び出し方式 = `Agent()`（subagent-protocol.md） |
 
 ## 実行確認方法
 

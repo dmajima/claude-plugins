@@ -1,0 +1,4 @@
+# connector プラグイン共通 依存パッケージ（全スキルの依存をマージ・ADR-024 準拠）
+# - ailead: requests（外部共有リンクの GraphQL API 呼び出し）
+# - projectboard: 標準ライブラリのみ（sys / re / json / csv / datetime / argparse。依存追加なし）
+requests>=2.31.0,<3.0.0

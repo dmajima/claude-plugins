@@ -72,15 +72,15 @@ ailead の外部共有リンクから会議データ（文字起こし・AI要�
 
 - `.claude/.local/work/{yyyyMMdd_nn_ailead_fetch}/` にセッションフォルダを作成する
 - `workspace/` サブディレクトリを作成する
-- venv を構築する: `bash "${CLAUDE_SKILL_DIR}/scripts/setup/setup_venv.sh" "{session}/workspace"`
+- venv を構築する: `bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" "{session}/workspace"`
 
 ### Step 3: データ取得（Python スクリプト実行）
 
-`${CLAUDE_SKILL_DIR}/scripts/fetch/fetch_share.py` を venv の Python で実行する。
+`${CLAUDE_SKILL_DIR}/references/scripts/fetch/fetch_share.py` を venv の Python で実行する。
 
 ```bash
 "{session}/workspace/.venv/Scripts/python" \
-  "${CLAUDE_SKILL_DIR}/scripts/fetch/fetch_share.py" \
+  "${CLAUDE_SKILL_DIR}/references/scripts/fetch/fetch_share.py" \
   --url "<ailead共有URL>" \
   --output "{session}/workspace"
 ```
@@ -109,7 +109,7 @@ ailead の外部共有リンクから会議データ（文字起こし・AI要�
 
 ### Step 5: クリーンアップ
 
-- venv の削除: `bash "${CLAUDE_SKILL_DIR}/scripts/setup/teardown_venv.sh" "{session}/workspace"`
+- venv の削除: `bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" "{session}/workspace"`
 - `workspace/` 内の一時ファイル（`response.json` 等）はユーザーが不要と判断した場合に削除
 
 ## エラーハンドリング
