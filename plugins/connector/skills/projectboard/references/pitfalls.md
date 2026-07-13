@@ -10,7 +10,7 @@ HUE ProjectBoard 連携で実機検証により判明した落とし穴。番号
 | 4 | node 系 API は GET も POST も **同一 base `/wbs/wbs/node`**（読み取りと書き込みで同じ axios インスタンス） | [api-write.md](api-write.md) に SSOT 化。`/wbs/project/node` への POST は 500（過去版の誤りを訂正済み） |
 | 5 | `X-Requested-With: XMLHttpRequest` が無いと 400 illegalArgs | 全 API に付与（スクリプト実装済み） |
 | 6 | POST は CSRF 必須（403）。GET は不要 | post_node_api.sh が X-XSRF-TOKEN を自動付与・403 時再取得 |
-| 7 | **書き込みには生きた WebSocket+STOMP 接続が必須**（connectionId = SockJS session_id をサーバが接続検証）。受信専用ではない | 書き込み前に `stomp_session.py` で WebSocket+STOMP CONNECT し、接続保持中に REST 書き込み（ADR-1 を改訂） |
+| 7 | **書き込みには生きた WebSocket+STOMP 接続が必須**（connectionId = SockJS session_id をサーバが接続検証）。受信専用ではない | 書き込み前に `stomp_session.py` で WebSocket+STOMP CONNECT し、接続保持中に REST 書き込み（ADR-1 の方式に代わり本方式を採用） |
 | 8 | パラメータ不足時に 200 + SPA の HTML が返る | 先頭バイトの `<!DOCTYPE` / `<html` 検知（with_session.sh / post_node_api.sh 実装済み） |
 | 9 | SESSION タイムアウトで 401 | with_session.sh / post_node_api.sh が再ログイン + 1 回リトライ |
 | 10 | 組織設定の SSO 切替でフォームログインが破綻しうる | login.sh の redirect 検知で明示エラー（exit 3） |

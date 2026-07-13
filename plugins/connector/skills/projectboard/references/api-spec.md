@@ -17,7 +17,7 @@ API 変更を検知したら本ファイルを更新する（他ドキュメン�
 
 ## 2. 認証（Cookie セッション）
 
-Spring Security フォームログイン。`scripts/auth/login.sh` が実装。
+Spring Security フォームログイン。`references/scripts/auth/login.sh` が実装。
 
 | 項目 | 値 |
 |------|---|
@@ -36,14 +36,15 @@ redirect_url による判定:
 
 認証情報は credentials.json の `hue-projectboard` エントリ
 （`type=password` / `username`=メール / `value`=パスワード / `auth_method=form:email:password`）。
-取得は credentials-manager 経由（ハードコード禁止）。
+取得は [credentials-precheck.md](../../../references/credentials-precheck.md) セクション 1 の解決順序で行う
+（credentials-manager（導入時）→ credentials.json 直接照合 → 対話取得フォールバック。ハードコード禁止）。
 
 ## 3. urlKey ⇔ UUID 変換
 
 URL の `/wbs/project/{urlKey}/...` の urlKey は projectId(UUID) の base62 表現。API は UUID を要求。
-`scripts/resolve/urlkey.py` が実装（alphabet `a-z A-Z 0-9`、decode→re-encode の自己検証ガード付き — ADR-7）。
+`references/scripts/resolve/urlkey.py` が実装（alphabet `a-z A-Z 0-9`、decode→re-encode の自己検証ガード付き — ADR-7）。
 
-検証済みペア: `abcDEFghiJKLmnoPQRst` ⇔ `0bc4978b-41e7-11f1-9633-85b8872b7139`
+アルゴリズム整合ペア（round-trip 検証用）: `wmVbmMRxdCcORy8oUSPGv` ⇔ `0bc4978b-41e7-11f1-9633-85b8872b7139`
 
 ## 4. API 呼び出し規約
 
