@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# teardown_venv.sh - ailead スキル用 venv 削除スクリプト
+# teardown_venv.sh - connector プラグイン共通 venv 削除スクリプト（ADR-024）
 #
 # 使い方:
-#   bash "${CLAUDE_SKILL_DIR}/scripts/setup/teardown_venv.sh" <WORK_DIR>
+#   bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" <WORK_DIR>
 #
 # 引数:
 #   WORK_DIR  venv が作成されているワークディレクトリのパス

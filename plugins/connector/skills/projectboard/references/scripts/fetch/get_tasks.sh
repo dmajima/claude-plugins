@@ -3,7 +3,7 @@
 #
 # 使い方:
 #   PB_TENANT=<tenant> [PB_EMAIL=... PB_PASSWORD=...] \
-#     bash "${CLAUDE_SKILL_DIR}/scripts/fetch/get_tasks.sh" <WORK_DIR> <WBS_ID>
+#     bash "${CLAUDE_SKILL_DIR}/references/scripts/fetch/get_tasks.sh" <WORK_DIR> <WBS_ID>
 #
 # 引数:
 #   WORK_DIR  セッション作業領域（cookies.txt が必要）

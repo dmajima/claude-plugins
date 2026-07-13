@@ -2,7 +2,7 @@
 # run.sh - fetch_share.py を実行するラッパー
 #
 # 使い方:
-#   bash "${CLAUDE_SKILL_DIR}/scripts/fetch/run.sh" \
+#   bash "${CLAUDE_SKILL_DIR}/references/scripts/fetch/run.sh" \
 #     --python "<venv>/Scripts/python" \
 #     --url "<ailead共有URL>" \
 #     --output "<出力ディレクトリ>"

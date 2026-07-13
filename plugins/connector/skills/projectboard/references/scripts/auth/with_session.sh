@@ -3,7 +3,7 @@
 #
 # 使い方:
 #   PB_TENANT=<tenant> PB_EMAIL=<email> PB_PASSWORD=<password> \
-#     bash "${CLAUDE_SKILL_DIR}/scripts/auth/with_session.sh" <WORK_DIR> <API_PATH> <OUTFILE>
+#     bash "${CLAUDE_SKILL_DIR}/references/scripts/auth/with_session.sh" <WORK_DIR> <API_PATH> <OUTFILE>
 #
 # 引数:
 #   WORK_DIR   cookies.txt があるセッション作業領域

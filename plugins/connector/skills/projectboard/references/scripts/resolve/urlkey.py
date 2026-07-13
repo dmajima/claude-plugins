@@ -11,7 +11,9 @@
 #   decode は decode→re-encode の round-trip が入力と一致しなければ即エラーにする。
 #   アルゴリズム変更時のサイレント誤変換（別プロジェクト取得）を fail-fast 化する。
 #
-# 検証済み: abcDEFghiJKLmnoPQRst → 0bc4978b-41e7-11f1-9633-85b8872b7139
+# アルゴリズム整合ペア（round-trip 検証用）: wmVbmMRxdCcORy8oUSPGv ⇔ 0bc4978b-41e7-11f1-9633-85b8872b7139
+# 注意: 先頭が 'a'（値 0）の urlKey は再エンコードで桁落ちするため round-trip ガードが拒否する
+#       （実運用の urlKey で発生した場合は本スクリプトのエンコード桁埋め対応が必要）
 import sys
 import re
 

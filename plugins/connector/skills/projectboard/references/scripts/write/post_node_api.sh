@@ -3,14 +3,14 @@
 #
 # 使い方:
 #   PB_TENANT=<tenant> [PB_EMAIL=... PB_PASSWORD=...] \
-#     bash "${CLAUDE_SKILL_DIR}/scripts/write/post_node_api.sh" <WORK_DIR> <API_NAME> <BODY_FILE>
+#     bash "${CLAUDE_SKILL_DIR}/references/scripts/write/post_node_api.sh" <WORK_DIR> <API_NAME> <BODY_FILE>
 #
 # 引数:
 #   WORK_DIR   セッション作業領域（cookies.txt が必要。事前に login.sh 実行）
 #   API_NAME   呼び出す API 名（下記ホワイトリストのみ許可）
 #   BODY_FILE  JSON リクエストボディのファイルパス（jq 等で構築したもの）
 #
-# 許可 API（base: /wbs/project/node/ — 読み取りの /wbs/wbs/node とは異なる。落とし穴 #4）:
+# 許可 API（base: /wbs/wbs/node/ — 読み取りの getWbsNodes と同一 base。POST を /wbs/project/node/ とする旧記述は誤り。落とし穴 #4）:
 #   addNode                  ノード（タスク/パッケージ/マイルストーン）新規作成
 #   updateNodeContent        ノードのフィールド更新
 #   moveNode                 ノード移動（親変更・並べ替え）

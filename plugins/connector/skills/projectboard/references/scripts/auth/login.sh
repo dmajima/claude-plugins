@@ -3,7 +3,7 @@
 #
 # 使い方:
 #   PB_TENANT=<tenant> PB_EMAIL=<email> PB_PASSWORD=<password> \
-#     bash "${CLAUDE_SKILL_DIR}/scripts/auth/login.sh" <WORK_DIR>
+#     bash "${CLAUDE_SKILL_DIR}/references/scripts/auth/login.sh" <WORK_DIR>
 #
 # 引数:
 #   WORK_DIR      Cookie jar (cookies.txt) を生成するセッション作業領域
@@ -77,11 +77,11 @@ case "$LOC" in
     echo "login: OK (tenant=${PB_TENANT})"
     ;;
   *"error=badCredentials"*)
-    echo "login: FAILED (bad credentials)。credentials.json の hue-projectboard エントリを確認してください" >&2
+    echo "login: FAILED (bad credentials)。認証値を確認してください（credentials.json の hue-projectboard エントリ、または対話取得フォールバック: credentials-precheck.md セクション 4）" >&2
     exit 1
     ;;
   *)
-    echo "login: UNEXPECTED redirect（SSO 等への切替の可能性。フォームログイン不可）" >&2
+    echo "login: UNEXPECTED redirect（SSO 等への切替の可能性。フォームログイン不可）。組織で SSO / MFA が有効な場合、本スキルからのログインはできません。組織の管理者にフォームログイン可能なアカウントまたは代替認証手段の有無を確認してください" >&2
     exit 3
     ;;
 esac

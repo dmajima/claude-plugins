@@ -2,7 +2,7 @@
 # cleanup_sensitive.sh - projectboard スキルの機密ファイル後始末スクリプト
 #
 # 使い方:
-#   bash "${CLAUDE_SKILL_DIR}/scripts/setup/cleanup_sensitive.sh" <WORK_DIR>
+#   bash "${CLAUDE_SKILL_DIR}/references/scripts/cleanup/cleanup_sensitive.sh" <WORK_DIR>
 #
 # 引数:
 #   WORK_DIR  セッション作業領域（cookies.txt 等が生成されたディレクトリ）

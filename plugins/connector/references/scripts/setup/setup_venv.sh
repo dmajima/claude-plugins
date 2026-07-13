@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
-# setup_venv.sh - ailead スキル用 venv 構築スクリプト
+# setup_venv.sh - connector プラグイン共通 venv 構築スクリプト（ADR-024: プラグイン単位 1 venv）
 #
 # 使い方:
-#   bash "${CLAUDE_SKILL_DIR}/scripts/setup/setup_venv.sh" <WORK_DIR>
+#   bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" <WORK_DIR>
 #
 # 引数:
 #   WORK_DIR  venv を作成するワークディレクトリのパス（通常はセッションの workspace/ 配下）
-#             例: .claude/.local/work/20260616_01_ailead_fetch/workspace
+#             例: .claude/.local/work/20260612_01_projectboard/workspace
+#
+# 処理内容:
+#   1. <WORK_DIR>/.venv に venv を作成
+#   2. 同ディレクトリの requirements.txt（全スキルの依存を統合）からパッケージをインストール
+#   各スキル（ailead / projectboard）は本スクリプトを呼び出すだけで、独自に venv を作成しない
 
 set -euo pipefail
 
-WORK_DIR="${1:?エラー: WORK_DIR を第1引数に指定してください。例: setup_venv.sh .claude/.local/work/20260616_01_ailead_fetch/workspace}"
+WORK_DIR="${1:?エラー: WORK_DIR を第1引数に指定してください。例: setup_venv.sh .claude/.local/work/20260612_01_projectboard/workspace}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="$WORK_DIR/.venv"
 REQUIREMENTS="$SCRIPT_DIR/requirements.txt"
