@@ -9,6 +9,34 @@
   ],
   "plugins": [
     {
+      "name": "coding",
+      "source": "./plugins/coding",
+      "description": "多言語対応の実装・設計ワークフロープラグイン（言語スキル8種+SSOT規約管理・自動検出・プロジェクト規約優先）",
+      "category": "developer-tools",
+      "author": {
+        "name": "dmajima"
+      },
+      "keywords": [
+        "coding",
+        "implementation",
+        "implementation-workflow",
+        "multi-language",
+        "csharp",
+        "python",
+        "javascript",
+        "typescript",
+        "html",
+        "css",
+        "php",
+        "sql",
+        "coding-conventions",
+        "language-profile",
+        "framework-detection",
+        "self-review",
+        "orchestration"
+      ]
+    },
+    {
       "name": "connector",
       "source": "./plugins/connector",
       "description": "7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き）",
