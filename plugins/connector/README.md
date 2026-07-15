@@ -205,7 +205,7 @@ SAMPLE-67 の進捗を 50% にして             → projectboard（変更前後
 
 ## code-review プラグインとの関係
 
-> code-review プラグインは本マーケットプレイス（dmajima-claude-plugins）ではなく **別マーケットプレイス（customerep-claudecode）で提供** されるプラグインです。未導入でも connector 単体の動作には影響しません（本セクションは併用時の責務分担の説明です）。
+> code-review プラグインは本マーケットプレイス（dmajima-claude-plugins）ではなく **別マーケットプレイスで提供** されるプラグインです。未導入でも connector 単体の動作には影響しません（本セクションは併用時の責務分担の説明です）。
 
 | 観点 | connector（本プラグイン） | code-review |
 |-----|--------------------------|-------------|
