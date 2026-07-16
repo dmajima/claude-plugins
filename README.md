@@ -12,7 +12,8 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 
 | プラグイン | 説明 | バージョン | インストール |
 |----------|------|----------|----------|
-| `connector` | 7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き） | 2.5.0 | `/plugin install connector@dmajima-claude-plugins` |
+| `coding` | 多言語対応の実装・設計ワークフロープラグイン（言語スキル8種+SSOT規約管理・自動検出・プロジェクト規約優先） | 1.0.0 | `/plugin install coding@dmajima-claude-plugins` |
+| `connector` | 7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き） | 2.5.1 | `/plugin install connector@dmajima-claude-plugins` |
 | `convert-doc` | Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX 取り込み・デザイン追加対応） | 4.1.0 | `/plugin install convert-doc@dmajima-claude-plugins` |
 | `credentials-manager` | 認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン | 2.1.2 | `/plugin install credentials-manager@dmajima-claude-plugins` |
 | `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.11.1 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
@@ -125,14 +126,15 @@ dmajima-claude-plugins/
 │   └── marketplace.json    # マーケットプレイス定義（プラグイン一覧の正典）
 ├── README.md               # このファイル（マーケットプレイス README）
 └── plugins/                # プラグイン格納先
+    ├── coding/
+    ├── connector/
     ├── convert-doc/
     ├── credentials-manager/
     ├── extension-toolkit/
     ├── maintenance/
     ├── meeting-minutes/
     ├── session-usage/
-    ├── skill-router/
-    └── connector/
+    └── skill-router/
 ```
 
 ## ライセンス・連絡先
