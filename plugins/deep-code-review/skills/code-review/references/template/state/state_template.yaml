@@ -1,0 +1,138 @@
+# deep-code-review — State Management File
+#
+# 配置: .claude/.local/plugins/deep-code-review/<branch>/<yyyyMMdd_HHmmss>/state.yaml
+#       (<branch> はレビュー対象のブランチ名。"/" を含む場合はそのままディレクトリ階層化)
+#       (<yyyyMMdd_HHmmss> はレビュー実施日時)
+# 役割: レビュー実施時点の状態スナップショット。次回レビュー時は最新の state.yaml を読んで前回情報を継承する。
+#
+# 値欄のプレースホルダ表記:
+#   {{...}} はオーケストレーター Step 8.5 で生成時に値が埋め込まれる箇所を示す。
+#
+# 型注釈:
+#   # type: string / int / bool / list / null のいずれかをコメントで明示する。
+#   YAML の型推論に頼らず、実装時はこのコメントを参照すること。
+
+schema_version: 1
+branch: {{branch_name}}                 # type: string
+
+# --- ブランチ横断で累積する情報（last_review とは独立） ---
+
+# 提出コードをルール・規約の類推に利用した判断の累積履歴
+# レビュー回を跨いで参照されるため、last_review の外に配置する
+# 再レビュー時: 前回 state.yaml の code_as_reference_decisions を引き継ぎ、
+#               今回の新規承認をマージして保存する
+code_as_reference_decisions:
+  - description: {{提出コードから類推した規約・ルールの内容}}  # type: string
+    user_approved: {{true | false}}                            # type: bool
+    approved_at: {{YYYY-MM-DD HH:mm:ss | null}}               # type: string | null
+    context: {{どの場面で類推が必要になったかの説明}}            # type: string
+    review_round: {{承認時のレビュー回数}}                      # type: int
+
+# --- 当該レビュー実施結果 ---
+
+last_review:
+  reviewed_at: {{YYYY-MM-DD HH:mm:ss}}   # type: string
+  git_head: {{short_sha}}                 # type: string (7桁短縮 SHA)
+  review_round: {{N}}                     # type: int — 同一ブランチに対する通番（初回 1、再レビュー 2, 3...）
+  mode: {{standard | quick}}              # type: string
+  verdict: {{OK | Needs Attention | Needs Work}}  # type: string
+  previous_review_dir: {{直近の前回フォルダ名 yyyyMMdd_HHmmss | null}}  # type: string | null
+  scope: {{pr-diff | branch-diff | file-list}}    # type: string
+  pr_identifier: {{PR URL | null}}        # type: string | null — PR レビュー時のみ
+  review_summary_file: review-summary.md  # type: string (固定値。同フォルダ内の PR サマリーと完全同一のファイル)
+  agent_teams_pattern: {{quality-assurance | security-compliance | system-design | data-quality-extended | frontend-quality-extended | subagent}}  # type: string
+
+  # 件数集計
+  # 算出定義:
+  #   critical       = findings のうち severity=Critical かつ section=issues の件数
+  #   high           = findings のうち severity=High かつ section=issues の件数
+  #   medium         = findings のうち severity=Medium かつ section=issues の件数
+  #   suggestions    = findings のうち section=suggestions の件数（severity は Low 固定）
+  #   scope_out      = findings のうち section=scope_out の件数（severity 問わず）
+  #   total_findings = findings 配列の全要素数（= critical + high + medium + suggestions + scope_out）
+  counts:
+    critical: {{N}}                       # type: int
+    high: {{N}}                           # type: int
+    medium: {{N}}                         # type: int
+    suggestions: {{N}}                    # type: int
+    scope_out: {{N}}                      # type: int
+    total_findings: {{N}}                 # type: int
+
+  # ビルド・テスト状態
+  build:
+    status: {{PASS | FAIL | SKIPPED | N/A}}   # type: string
+    command: {{実行コマンド | null}}            # type: string | null
+    exit_code: {{0..N | null}}                 # type: int | null
+  test_runner:
+    status: {{GREEN | RED | SKIPPED | N/A}}    # type: string
+    pass_count: {{N | null}}                   # type: int | null
+    fail_count: {{N | null}}                   # type: int | null
+
+  # 当回レビューの全指摘（Finding ID 単位）
+  # 再レビュー時はこのリストが「前回の指摘」として読み込まれる
+  #
+  # finding.status の状態遷移:
+  #   open ──(コード修正確認)──→ resolved
+  #   open ──(ユーザー除外指示)──→ wont_fix
+  #   open ──(PR スコープ外了承)──→ scope_out
+  #   open ──(次回レビューでも未解消)──→ open (remaining_issues へ引き継ぎ)
+  #
+  # 注意: resolved / wont_fix / scope_out は最終状態。open のみが remaining_issues に移行する。
+  findings:
+    - id: {{CR-NNN}}                      # type: string
+      severity: {{Critical | High | Medium | Low}}  # type: string
+      category: {{セキュリティ | データ破損 | 機能停止 | パフォーマンス | 保守性 | 規約 | 依存 | テスト | 可読性 | 命名 等}}  # type: string
+      title: {{1行サマリ}}                 # type: string
+      file: {{ファイルパス}}               # type: string
+      line_start: {{N | null}}            # type: int | null
+      line_end: {{N | null}}              # type: int | null
+      section: {{issues | suggestions | scope_out}}  # type: string
+      status: {{open | resolved | wont_fix | scope_out}}  # type: string
+      post_failed: {{true | false}}                        # type: bool — PR コメント投稿失敗時に true。次回レビューで再投稿を試みる
+      agent: {{検出エージェント名。複数の場合はカンマ区切り}}  # type: string
+      # PR コメント連携（Azure DevOps / GitHub）
+      # type: string — 数値の場合も文字列として格納する（GitLab 等の将来拡張で非数値 ID に対応するため）
+      pr_thread_id: {{Azure DevOps thread ID | GitHub comment ID | null}}  # type: string | null
+      pr_thread_url: {{PR コメントへの完全 URL | null}}                    # type: string | null
+      pr_thread_status: {{active | fixed | wontFix | closed | null}}       # type: string | null
+      # 再レビュー時の引き継ぎ用要約（指摘の本質を端的に記述）
+      detail_summary: |                   # type: string (複数行)
+        {{指摘内容の要約。再レビュー時に前回指摘を正しく理解するために十分な情報を含める。
+          例: "OrderSearch.cs:140-148 で SqlCommand に文字列連結で WHERE 句を構築しており、
+          ユーザー入力がエスケープされずに SQL 文に挿入される。パラメータ化クエリへの変更が必要。"}}
+
+  # 前回 state.yaml の remaining_issues から引き継いだもののうち、
+  # 今回コードで修正が確認できた項目
+  resolved_since_last:
+    - id: {{前回の Finding ID}}            # type: string
+      title: {{解決確認した内容の1行サマリ}}  # type: string
+      resolution: {{code_fix | scope_out_ack | user_ignore | by_design}}  # type: string
+      resolved_in_commit: {{修正コミット SHA | null}}  # type: string | null
+
+  # 前回 findings のうち、今回も未解消のまま残っている指摘
+  # 次回レビューはこのリストを起点に解消確認する
+  remaining_issues:
+    - id: {{前回の Finding ID}}            # type: string
+      severity: {{severity}}               # type: string
+      title: {{1行サマリ}}                  # type: string
+      file: {{ファイルパス}}                # type: string
+      line_start: {{N | null}}             # type: int | null
+      line_end: {{N | null}}               # type: int | null
+      original_review_dir: {{最初に報告された yyyyMMdd_HHmmss}}  # type: string
+      original_review_round: {{最初に報告されたレビュー回数}}      # type: int
+      pr_thread_id: {{PR thread ID | null}}      # type: string | null
+      pr_thread_url: {{PR コメント URL | null}}  # type: string | null
+      detail_summary: |                    # type: string (複数行)
+        {{前回の detail_summary を引き継ぐ}}
+
+  # ユーザーが明示的に「指摘から外して」と指示した項目（履歴として記録）
+  ignored_by_user:
+    - id: {{Finding ID}}                   # type: string
+      reason: {{ユーザーが述べた除外理由}}    # type: string
+      ignored_at: {{YYYY-MM-DD HH:mm:ss}}  # type: string
+
+  # inputs フォルダから参照した仕様書・設計書
+  inputs_used:
+    - path: {{inputs/ からの相対パス}}       # type: string
+      description: {{この資料が記述する内容の1行要約}}  # type: string
+      last_updated: {{YYYY-MM-DD HH:mm:ss}}  # type: string

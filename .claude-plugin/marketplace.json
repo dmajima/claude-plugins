@@ -5,7 +5,8 @@
   },
   "description": "dmajima 個人用 Claude Code プラグインマーケットプレイス",
   "allowCrossMarketplaceDependenciesOn": [
-    "anthropic-agent-skills"
+    "anthropic-agent-skills",
+    "claude-plugins-official"
   ],
   "plugins": [
     {
@@ -119,6 +120,43 @@
         "credentials-manager",
         "manage-command",
         "interactive-ui"
+      ]
+    },
+    {
+      "name": "deep-code-review",
+      "source": "./plugins/deep-code-review",
+      "description": "Azure DevOps/オンプレTFS・GitHub PR 対応の観点別マルチエージェントコードレビュー（Anthropic公式 code-review とは別）。8言語+主要FW・信頼度スコアで多角レビューし統合サマリと判定を返す",
+      "category": "developer-tools",
+      "author": {
+        "name": "dmajima"
+      },
+      "keywords": [
+        "code-review",
+        "plugin",
+        "multi-agent",
+        "multi-skill",
+        "pr-review",
+        "github",
+        "azure-devops",
+        "security",
+        "lint",
+        "test",
+        "dependency",
+        "architecture",
+        "frontend",
+        "tfs",
+        "on-premises",
+        "ntlm",
+        "multi-language",
+        "csharp",
+        "python",
+        "javascript",
+        "typescript",
+        "html",
+        "css",
+        "php",
+        "sql",
+        "confidence-score"
       ]
     },
     {
