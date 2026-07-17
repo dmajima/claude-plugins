@@ -1,0 +1,44 @@
+{
+  "name": "deep-code-review",
+  "version": "1.0.0",
+  "description": "Azure DevOps/オンプレTFS・GitHub PR 対応の観点別マルチエージェントコードレビュー（Anthropic公式 code-review とは別）。8言語+主要FW・信頼度スコアで多角レビューし統合サマリと判定を返す",
+  "license": "MIT",
+  "author": {
+    "name": "dmajima"
+  },
+  "keywords": [
+    "code-review",
+    "plugin",
+    "multi-agent",
+    "multi-skill",
+    "pr-review",
+    "github",
+    "azure-devops",
+    "security",
+    "lint",
+    "test",
+    "dependency",
+    "architecture",
+    "frontend",
+    "tfs",
+    "on-premises",
+    "ntlm",
+    "multi-language",
+    "csharp",
+    "python",
+    "javascript",
+    "typescript",
+    "html",
+    "css",
+    "php",
+    "sql",
+    "confidence-score"
+  ],
+  "dependencies": [
+    { "name": "connector", "version": ">=2.1.0 <3.0.0" },
+    { "name": "github", "marketplace": "claude-plugins-official" },
+    { "name": "csharp-lsp", "marketplace": "claude-plugins-official" },
+    { "name": "typescript-lsp", "marketplace": "claude-plugins-official" },
+    { "name": "microsoft-docs", "marketplace": "claude-plugins-official" }
+  ]
+}

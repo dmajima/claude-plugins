@@ -16,6 +16,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 | `connector` | 7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き） | 2.5.1 | `/plugin install connector@dmajima-claude-plugins` |
 | `convert-doc` | Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX 取り込み・デザイン追加対応） | 4.1.0 | `/plugin install convert-doc@dmajima-claude-plugins` |
 | `credentials-manager` | 認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン | 2.1.2 | `/plugin install credentials-manager@dmajima-claude-plugins` |
+| `deep-code-review` | Azure DevOps/オンプレTFS・GitHub PR 対応の観点別マルチエージェントコードレビュー（Anthropic公式 code-review とは別）。8言語+主要FW・信頼度スコアで多角レビューし統合サマリと判定を返す | 1.0.0 | `/plugin install deep-code-review@dmajima-claude-plugins` |
 | `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.11.1 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 | `maintenance` | Claude Code 環境のメンテナンス統合プラグイン（プラグイン一括更新 / 古い作業フォルダ整理 / Git 経由設定同期） | 1.0.0 | `/plugin install maintenance@dmajima-claude-plugins` |
 | `meeting-minutes` | 会議の文字起こし・録画データから構造化議事録を作成し Markdown / docx 出力 | 1.3.0 | `/plugin install meeting-minutes@dmajima-claude-plugins` |
@@ -82,11 +83,12 @@ git checkout v{x.y.z}   # 推奨: 特定リリースタグを指定（最新タ�
 
 ## 依存マーケットプレイス
 
-`marketplace.json` で `allowCrossMarketplaceDependenciesOn: ["anthropic-agent-skills"]` を宣言しています。これにより本マーケットプレイス内のプラグインが `anthropic-agent-skills` マーケットプレイス（Anthropic 公式）のプラグインを `dependencies` として宣言可能です。
+`marketplace.json` で `allowCrossMarketplaceDependenciesOn: ["anthropic-agent-skills", "claude-plugins-official"]` を宣言しています。これにより本マーケットプレイス内のプラグインが以下のマーケットプレイスのプラグインを `dependencies` として宣言可能です。
 
 | 依存マーケットプレイス | 用途 | 利用プラグイン | 個別追加（自動解決不可時） |
 |------------------|-----|------------|----------------------|
 | `anthropic-agent-skills` | スキル雛形・ドキュメント生成系の参考実装 | `extension-toolkit`（`example-skills` / `document-skills` を依存宣言） | `/plugin marketplace add https://github.com/anthropics/skills` |
+| `claude-plugins-official` | GitHub MCP / C#・TS LSP / Microsoft Docs 連携 | `deep-code-review`（`github` / `csharp-lsp` / `typescript-lsp` / `microsoft-docs` を依存宣言） | `/plugin marketplace add anthropics/claude-plugins-official` |
 
 依存マーケットプレイスは `allowCrossMarketplaceDependenciesOn` で許可されていても、**利用者が `/plugin marketplace add` 済みでなければ Claude Code 公式仕様により依存は未解決のまま放置されます**（自動マーケ追加機構なし）。詳細は ADR-028（[`plugins/extension-toolkit/references/architecture/decisions-021-033.md`](plugins/extension-toolkit/references/architecture/decisions-021-033.md)）参照。
 
@@ -130,6 +132,7 @@ dmajima-claude-plugins/
     ├── connector/
     ├── convert-doc/
     ├── credentials-manager/
+    ├── deep-code-review/
     ├── extension-toolkit/
     ├── maintenance/
     ├── meeting-minutes/
