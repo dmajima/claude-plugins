@@ -139,7 +139,7 @@ done
 ```
 [ ] 単一セッション応答時間を既定 3 回計測し、中央値を実測値 measured_value として採用している
 [ ] 閾値と実測値（中央値）を比較して pass / fail を判定している
-[ ] fail に extras.measured_value / extras.threshold を記録している
+[ ] pass / fail を問わず results[] 直下の extras.measured_value / extras.threshold を記録している（fail 時の defect.extras 併記は従来互換）
 [ ] severity を severity-policy.md 4.1 のバンド（超過率）で判定している（補正時は理由を記録）
 [ ] 負荷ツールを Bash で検出し、未検出時は多重負荷ケースを skipped + reason で返している
 [ ] 単一セッション応答時間計測は負荷ツール未検出でも実施している

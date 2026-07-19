@@ -190,7 +190,11 @@ def mask_secrets_in_text(text):
 
 
 def _mask_str_list(values):
-    """文字列リストの各要素をその場でマスクし、置換件数を返す。"""
+    """リストの各要素をその場でマスクし、置換件数を返す。
+
+    要素が dict（extras.session_findings の発見事象等）の場合は
+    _mask_mapping_values を再帰適用する（自由記述フィールドの取りこぼし防止）。
+    """
     if not isinstance(values, list):
         return 0
     count = 0
@@ -200,6 +204,8 @@ def _mask_str_list(values):
             if n:
                 values[i] = masked
                 count += n
+        elif isinstance(item, dict):
+            count += _mask_mapping_values(item)
     return count
 
 
@@ -721,6 +727,27 @@ def format_extras_value_lines(value):
                 lines.append(truncate_extras_value(entry))
         return lines
     return [truncate_extras_value(value)]
+
+
+def format_extras_cell(extras):
+    """結果直下 extras（result.extras）をレベル別表 / シートのセル文字列へ整形する（defect.extras と同型）。
+
+    dict でない・空 dict は空文字。list 値（session_findings 等）は format_extras_value_lines で
+    要素ごとの箇条書き行へ展開する（長大値は切り詰め）。改行区切りで返す
+    （Markdown 側は md_cell が <br> へ変換・Excel 側はセル内改行として表示）。
+    """
+    if not isinstance(extras, dict) or not extras:
+        return ""
+    lines = []
+    for key, value in extras.items():
+        value_lines = format_extras_value_lines(value)
+        if isinstance(value, list) and value:
+            lines.append(f"{key}:")
+            for item in value_lines:
+                lines.append(f"- {item}")
+        else:
+            lines.append(f"{key}: {value_lines[0]}")
+    return "\n".join(lines)
 
 
 def format_duration(value):

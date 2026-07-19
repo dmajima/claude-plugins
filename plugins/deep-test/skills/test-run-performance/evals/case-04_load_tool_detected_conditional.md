@@ -20,7 +20,7 @@
 - ケース定義の並列数（20）・継続時間（60 秒）・対象に従い k6 で多重負荷計測を実行する（performance-execution.md 4.2）
 - 取得指標（スループット req/s・エラー率・応答時間パーセンタイル p50/p95）を記録し、実行ログ・集計結果を evidence/ へ move する（performance-execution.md 4.2 / data-locations.md 5 章）
 - 実行主体・ツール名を actual に明記する（Playwright 計測部分と負荷ツール部分の切り分け。performance-execution.md 4.2）
-- ケース閾値（スループット・エラー率）との比較で pass / fail を判定し、fail 時は extras に実測値・閾値を記録する
+- ケース閾値（スループット・エラー率）との比較で pass / fail を判定し、pass / fail を問わず results[] 直下の extras に実測値・閾値を記録する（yaml-schema-results.md 4 章）
 - 多重負荷を実施しても「専用負荷試験の代替」「性能保証」と表現しない（test-levels.md 7 章 / performance-execution.md 4.3）
 - 中間結果 JSON にエントリを埋めて返却する（execution-policy.md 4 章）
 
@@ -29,7 +29,7 @@
 | 区分 | 内容 |
 |-----|------|
 | 生成ファイル | k6 の実行ログ・集計結果（スループット・エラー率・p50/p95）と計測値生データ(JSON)を evidence/{run_id}/{case_id}/ へ移送。test-results.yaml へは書き込まない |
-| 標準出力（要約） | 中間結果 JSON（skill: "test-run-performance" / 受領 run_id / 当該ケースの判定・actual に実行主体〔k6〕を明記、fail 時は extras.measured_value/threshold 付き） |
+| 標準出力（要約） | 中間結果 JSON（skill: "test-run-performance" / 受領 run_id / 当該ケースの判定・actual に実行主体〔k6〕を明記・extras.measured_value/threshold 付き〔status を問わず〕） |
 | 終了状態 | k6 検出により多重負荷計測を条件付き実行し、ケース閾値（スループット・エラー率）との比較結果（pass / fail）で当該ケースを返却 |
 
 ## 関連ケース

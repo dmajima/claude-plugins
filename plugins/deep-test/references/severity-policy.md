@@ -48,7 +48,7 @@ flowchart TD
 
 ### 4.1 性能テスト
 
-閾値超過は fail とし、実測値と閾値を `defect.extras`（`measured_value` / `threshold`）に記録する（フィールド定義は `yaml-schema-results.md` 4 章）。
+閾値超過は fail とする。実測値と閾値は status を問わず results[] 直下の `extras`（`measured_value` / `threshold`）に記録する（fail 時の defect.extras 併記は従来互換。フィールド定義・使い分けは `yaml-schema-results.md` 4 章）。
 severity は**閾値超過率**と業務影響で判定する。
 
 | 状況の目安 | severity |

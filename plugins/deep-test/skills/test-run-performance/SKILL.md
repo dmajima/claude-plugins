@@ -39,7 +39,7 @@ allowed-tools:
 | 応答時間計測 | scope の performance レベルのケースについて、対象操作の**単一セッション応答時間**を計測する（`browser_navigate` の所要時間 + `browser_evaluate` による Navigation Timing API / Performance API メトリクス: TTFB・DOMContentLoaded・load・LCP 等） |
 | 複数回計測・中央値採用 | 同一計測を**既定 3 回**繰り返し、**中央値**を実測値として採用する（`${CLAUDE_SKILL_DIR}/references/performance-execution.md`） |
 | 閾値判定 | ケースの expected が持つ閾値（例: 3 秒以内）と実測値を比較し pass / fail を判定する |
-| defect 記録 | fail 時に `defect.extras.measured_value` / `defect.extras.threshold` を記録し、severity を `${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md` 4.1（閾値超過率バンド）で判定する |
+| 実測値・defect 記録 | 実測値・閾値を status を問わず results[] 直下の `extras.measured_value` / `extras.threshold` に記録し（fail 時の defect.extras 併記は従来互換）、fail 時は severity を `${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md` 4.1（閾値超過率バンド）で判定する |
 | 条件付き多重負荷 | 多重負荷は k6 / ab / Locust 等を Bash で検出した場合のみ実行し、未検出なら該当ケースを `skipped` + reason で返す（偽装しない） |
 | エビデンス収集 | 計測値の生データ（JSON）・スクリーンショットをエビデンスとして収集・移送する |
 
@@ -95,8 +95,8 @@ flowchart TD
     E --> F[既定 3 回繰り返し 中央値を算出]
     F --> G[計測値生データ JSON を evidence/ へ保存<br>スクリーンショット取得・move]
     G --> H{中央値 <= 閾値?}
-    H -->|Yes| I[pass 記録<br>actual に実測値・閾値を記述]
-    H -->|No| J[fail 記録<br>extras.measured_value / threshold<br>severity は 4.1 バンドで判定]
+    H -->|Yes| I[pass 記録<br>extras に実測値・閾値を記録<br>actual にも記述]
+    H -->|No| J[fail 記録<br>extras に実測値・閾値を記録<br>severity は 4.1 バンドで判定]
     D -->|多重負荷| K{負荷ツール検出?}
     K -->|検出| L[負荷ツールで多重負荷計測<br>スループット・エラー率]
     K -->|未検出| M[skipped + reason<br>負荷ツール未検出]
@@ -116,7 +116,7 @@ flowchart TD
 
 - 単一セッション応答時間を既定 3 回計測し、中央値を実測値として採用している
 - 閾値と実測値を比較して pass / fail を判定している
-- fail に `extras.measured_value` / `extras.threshold` を記録し、severity を `severity-policy.md` 4.1 のバンドで判定している
+- pass / fail を問わず results[] 直下の `extras.measured_value` / `extras.threshold` を記録し、fail 時は severity を `severity-policy.md` 4.1 のバンドで判定している
 - 負荷ツール未検出時に多重負荷ケースを `skipped` + reason で返し、「多重負荷・スループット計測は専用負荷試験の代替ではない」旨と整合している
 - 計測値の生データ（JSON）をエビデンスに含めている
 - scope の全ケースについて 1 エントリを返している

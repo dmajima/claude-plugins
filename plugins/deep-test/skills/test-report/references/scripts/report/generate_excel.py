@@ -43,6 +43,7 @@ from report_model import (
     date_part,
     evidence_path_note,
     format_duration,
+    format_extras_cell,
     format_extras_value_lines,
     join_lines,
     level_label,
@@ -126,26 +127,6 @@ def format_ng_detail(result):
                     lines.append(f"- {item}")
             else:
                 lines.append(f"{key}: {value_lines[0]}")
-    return "\n".join(lines)
-
-
-def format_extras_cell(extras):
-    """結果直下 extras（result.extras）をレベル別シートのセル文字列へ整形する（defect.extras と同型）。
-
-    dict でない・空 dict は空文字。list 値（session_findings 等）は format_extras_value_lines で
-    要素ごとの箇条書き行へ展開する（長大値は切り詰め）。改行区切りで併記する。
-    """
-    if not isinstance(extras, dict) or not extras:
-        return ""
-    lines = []
-    for key, value in extras.items():
-        value_lines = format_extras_value_lines(value)
-        if isinstance(value, list) and value:
-            lines.append(f"{key}:")
-            for item in value_lines:
-                lines.append(f"- {item}")
-        else:
-            lines.append(f"{key}: {value_lines[0]}")
     return "\n".join(lines)
 
 

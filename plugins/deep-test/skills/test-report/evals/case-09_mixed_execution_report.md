@@ -8,7 +8,7 @@ latest に自動実行（playwright-mcp / test-framework 等）と手動実施�
 | 項目 | 内容 |
 |-----|------|
 | 起動 | オーケストレータ `test` の report フェーズから委譲（対話・Excel 選択。Markdown でも同一規範） |
-| 前提 | latest に `executed_by: playwright-mcp` / `test-framework` の自動結果と、`human-assisted` の手動結果（`automation: manual-assist` の pass 1 件 + `exploratory` の fail 1 件〔defect + `extras.session_findings` あり〕）が混在する。バリデーション・エビデンス監査は通過する |
+| 前提 | latest に `executed_by: playwright-mcp` / `test-framework` の自動結果と、`human-assisted` の手動結果（`automation: manual-assist` の pass 1 件 + `exploratory` の fail 1 件〔defect + `extras.session_findings` あり〕）が混在する。自動結果には performance の **pass** 1 件（results[] 直下 `extras.measured_value: 1.42 秒（中央値）` / `extras.threshold: 2.0 秒`）を含む。バリデーション・エビデンス監査は通過する |
 
 ## 分岐の根拠
 
@@ -16,7 +16,7 @@ latest に自動実行（playwright-mcp / test-framework 等）と手動実施�
 
 ## 期待動作
 
-- レベル別シート / セクションの明細が **14 列**で、status の直後の 9 列目に「実行主体」列（値 = `executed_by`。human-assisted / playwright-mcp / test-framework 等がそのまま出る）が出力される（14 列目は「補足情報（extras）」= results[] 直下 extras の転載・status を問わず）
+- レベル別シート / セクションの明細が **14 列**で、status の直後の 9 列目に「実行主体」列（値 = `executed_by`。human-assisted / playwright-mcp / test-framework 等がそのまま出る）が出力される（14 列目は「補足情報（extras）」= results[] 直下 extras の転載・status を問わず。前提の performance **pass 行**に `measured_value: 1.42 秒（中央値）` / `threshold: 2.0 秒` が転載されることを含む）
 - サマリのレベル別集計表に「自動」「手動」列が出力される（自動 = executed_by が playwright-mcp / playwright-test / test-framework / api の件数、手動 = human-assisted の件数。latest 採用の機械集計）
 - レベル別集計表の直下に**手動内訳注記**の定型文が出力される（manual-assist X 件 / exploratory Y 件は test-cases.yaml の `automation` による機械集計値。本前提では X=1 / Y=1）
 - 免責注記が **6 項目**（UAT / 性能 / セキュリティ / 再テスト / 用語 / 手動）で出力され、「手動」項目の趣旨（executed_by: human-assisted の結果は人間の実施・申告に基づく記録であり、機械検証とは実行主体が異なる）が欠落しない

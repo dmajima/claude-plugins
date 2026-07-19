@@ -76,7 +76,7 @@ runs[].status の意味:
 
 - **results[].extras**（結果自体の情報）: 性能の `measured_value` / `threshold` は status を問わずこちらを第一記録先とする
 - **defect.extras**（欠陥診断の文脈情報）: `stack_trace` など、欠陥の診断に付随する情報
-- fail 時に `measured_value` / `threshold` を defect.extras へ併記する従来形は互換として許容する
+- fail 時に `measured_value` / `threshold` を defect.extras へ併記する従来形は互換として許容する（既存記録の読み取り互換。新規記録では results[].extras へ記録し、同一値の重複併記を要しない）
 
 ```yaml
 # extras の記載例（性能テスト・results[] 直下。status を問わず記録可能）
@@ -198,4 +198,4 @@ latest:
 | `evidence-policy.md` | defect 3 点セットの内容要件・二段バリデーション・機微情報マスキング |
 | `retest-policy.md` | latest 採用の集計規則・status×モード対象判定・resume 規約 |
 | `execution-policy.md` | 条件付き動的検証（skipped 記録）・タイムアウト・中間結果返却フォーマット |
-| `report-format.md` | annotations（所見・注記）・defect.extras の報告書への転載定義 |
+| `report-format.md` | annotations（所見・注記）・extras（results[] 直下・defect 配下）の報告書への転載定義 |
