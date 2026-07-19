@@ -36,6 +36,7 @@
 | 27 | case-27_resume_environment_recheck.md | resume 時の環境再確認（ps + health 再確認 → healthy 再利用〔再 up 不要〕/ unhealthy down → up） | resume |
 | 28 | case-28_manual_count_in_approval_gate.md | 人間承認ゲートで手動実施ケース件数を提示（select 出力 details.automation の機械集計・manual-assist / exploratory 内訳付き） | フル・対話 |
 | 29 | case-29_non_interactive_manual_sheet_fallback.md | 非対話の手動系ケース縮退（Phase 5 手順 0.5 の手順書一括生成 → manual-sheet= 付与 → skipped reason にパス転記・生成失敗はフェイルオープン） | フル・非対話 |
+| 30 | case-30_environment_yaml_parse_check.md | Phase 1.7 provision 受領後の environment.yaml parse 検証（venv Python safe_load・失敗は再委譲 1 回 → 環境なし縮退・venv 不在は目視縮退・フローを止めない） | フル（対話 / 非対話共通） |
 
 ## ケースファイルの構成
 

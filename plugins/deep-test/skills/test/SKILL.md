@@ -13,7 +13,7 @@ allowed-tools:
 
 > **権限ポリシー**
 > - 実務（設計・レビュー・実行・報告書生成）は worker スキルへ **Skill ツール経由で委譲** する。エージェントの直接起動は行わない（worker スキルの責務。`${CLAUDE_PLUGIN_ROOT}/references/agents.md`）
-> - `Bash` は **results_manager.py の実行と venv 構築（setup_venv.sh）** に使用する。`test-results.yaml` / `test-cases.yaml` を Edit / Write で直接編集することは禁止
+> - `Bash` は **results_manager.py の実行・venv 構築（setup_venv.sh）・`environment.yaml` の parse 検証（venv Python。`${CLAUDE_SKILL_DIR}/references/flow.md` 6 章 Phase 1.7 節）** に使用する。`test-results.yaml` / `test-cases.yaml` を Edit / Write で直接編集することは禁止
 > - MCP ゲートの実利用可否判定に `ToolSearch` を使用する（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 4 章）
 
 # test スキル（オーケストレータ）
