@@ -12,7 +12,7 @@
 
 ## 分岐の根拠
 
-SKILL.md「実行モード判定」（`automation: manual-assist` のケース: 対話時はユーザーに手動確認を依頼し `executed_by: human-assisted` で記録・非対話時は skipped + reason）、`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 9 章（非対話既定値表: `automation: manual-assist` のケースは実行せず skipped + reason 記録）・4 章（中間結果フォーマット: executed_by の enum）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md` 2 章（automation enum と executed_by の対応: manual-assist → human-assisted）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-results.md` 6 章（skipped の意味論）。
+SKILL.md「実行モード判定」（`automation: manual-assist` のケース: 対話時は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md` に従いユーザーに手動確認を依頼し `executed_by: human-assisted` で記録・非対話時は skipped + reason）、`${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md` 2 章（提示 3 要素: 確認対象・手順・判断基準）・3 章（結果聴取の選択肢と AskUserQuestion 設計）、`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 9 章（非対話既定値表: `automation: manual-assist` のケースは実行せず skipped + reason 記録）・4 章（中間結果フォーマット: executed_by の enum）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md` 2 章（automation enum と executed_by の対応: manual-assist → human-assisted）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-results.md` 6 章（skipped の意味論）。
 
 ## 期待動作
 
