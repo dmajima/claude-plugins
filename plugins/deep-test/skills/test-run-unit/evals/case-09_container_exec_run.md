@@ -36,3 +36,4 @@ SKILL.md「実行モード判定」（コンテナ内 exec 実行〔代替経路
 
 - case-01: ホストにランナーあり（既定のホスト実行。優先順位 1 が不変であることの対比）
 - case-03: ランナー不在かつ exec_forms も無い / environment.yaml 不在（どちらの手段も無い → skipped。意味論・文言不変の対比）
+- case-10: 同じ構成で環境が down（`status.state: down`）→ 代替経路を選択せず skipped（本ケースの対）

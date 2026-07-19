@@ -22,8 +22,8 @@ flowchart TD
     B --> C[既定 3 回計測]
     C --> D[中央値を実測値に採用]
     D --> E{中央値 <= 閾値?}
-    E -->|Yes| F[pass]
-    E -->|No| G[fail: extras.measured_value / threshold 記録]
+    E -->|Yes| F[pass: extras.measured_value / threshold 記録]
+    E -->|No| G[fail: extras.measured_value / threshold 記録 + severity 判定]
     A -.->|負荷ツール検出時のみ| H[多重負荷計測]
     A -.->|負荷ツール未検出| I[多重負荷ケースは skipped]
 ```

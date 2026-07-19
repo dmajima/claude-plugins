@@ -22,7 +22,7 @@ memory_scope: project
 
 ## レビュー制約（重要）
 
-- **対象**: fail 全件の defect（severity / reproduction_steps / test_data / extras）・actual・blocked 判定の妥当性
+- **対象**: fail 全件の defect（severity / reproduction_steps / test_data / extras）・results[] 直下の extras（measured_value / threshold 等の結果付随情報）・actual・blocked 判定の妥当性
 - **対象外（他エージェントの領分を侵さない）**: テストケース設計の網羅性・実行可能性（設計文脈のレビュアー）/ エビデンスファイルの実在確認・パス規約・機微情報マスキングの監査（evidence-auditor）/ 報告書の生成 / 欠陥修正・成果物の書き換え
 - severity の判定は severity-policy.md の基準・判定フローのみを根拠とし、独自基準やコードレビュー指摘の重大度基準を持ち込まない。判定に迷う欠陥は高い側に倒されている前提を踏まえて妥当性を確認する
 - 実績（test-results.yaml）の修正・書き込みは行わない（読み取り専用の分析。severity 訂正等の反映は起動元フローが行う）
@@ -33,7 +33,7 @@ memory_scope: project
 1. **原因分類**: 各 fail を「アプリケーション欠陥 / テストケース不備（期待値誤り・手順誤り）/ テストデータ・環境要因（データ不整合・タイミング・環境差異）/ テスト実行上の問題（操作ミス・待機不足）」に分類し、真の欠陥とテスト側の問題を区別する
 2. **再現手順の完全性**: reproduction_steps が evidence-policy.md 節 1 の要件（環境情報・前提条件・番号付き操作ステップ・使用データ・発生条件/再現率）をすべて含み、第三者が記述だけで再現できる粒度か
 3. **severity 妥当性**: 付与された severity が severity-policy.md の定義・判定フローと整合するか。特に「回避策」の評価が本番の実運用で現実的な代替手段を指しているか（テスト環境限定の裏道を回避策と見なしていないか）
-4. **レベル別補足基準の適用**: 性能の fail に閾値超過率基準（extras.measured_value / threshold）が、セキュリティの fail に悪用可能性・影響範囲基準（extras.owasp_category）が正しく適用されているか
+4. **レベル別補足基準の適用**: 性能の fail に閾値超過率基準（results[] 直下の extras.measured_value / threshold。fail 時の defect.extras 併記は従来互換）が、セキュリティの fail に悪用可能性・影響範囲基準（defect.extras.owasp_category）が正しく適用されているか
 5. **severity 補正の記録**: 目安からの補正（性能の 1 段階補正・セキュリティの引き上げ）が行われた場合、その理由が defect に記録されているか
 6. **test_data の 3 値整合**: 入力値・期待値・実際値が揃っているか。期待値がケース定義の expected と矛盾していないか（矛盾はテストケース不備のシグナル）
 7. **根本原因の関連付け**: 複数の fail が同一根本原因に由来する可能性を指摘し、欠陥をグルーピングする（修正の重複作業と見落としの防止）
@@ -86,7 +86,7 @@ memory_scope: project
 
 ## 入力情報
 - 対象 run: {{run_id・mode・environment}}
-- fail 全件の defect 詳細（test-results.yaml からの抜粋）: {{fail の defect 一覧（severity / reproduction_steps / test_data / evidence / extras / actual）}}
+- fail 全件の defect 詳細（test-results.yaml からの抜粋）: {{fail の defect 一覧（severity / reproduction_steps / test_data / evidence / extras / actual）と results[] 直下の extras（measured_value / threshold 等・存在する場合）}}
 - blocked ケースと depends_on の対応: {{blocked 一覧と依存関係}}
 - エビデンスのパス一覧: {{evidence/ 配下の相対パス一覧}}
 

@@ -90,7 +90,7 @@ plugins/deep-test/skills/test-environment/
 │   ├── environment-procedures.md     # 検出 → 消費 → 派生 → 検証 → up / down / status の詳細手順・縮退表・resume・ハンドオフ
 │   ├── compose-derivation.md         # 派生パターン集（ports !override・volume・network・profiles・.env.test・本番誤爆突合）
 │   └── agents.md                     # フェーズ定義（env-architect の起動フェーズ）
-└── evals/                            # 動作分岐検証ケース（case-01〜09 + README・9 ケース）
+└── evals/                            # 動作分岐検証ケース（case-01〜19 + README・19 ケース）
 ```
 
 > Python は同梱しない（venv 構築も不要）。docker 操作は Bash 直実行（docker CLI の単発呼出）で完結し、`environment.yaml` と派生成果物は LLM が Write で直接生成する。起動待機は `up --wait --wait-timeout`（公式フラグ）と条件付き curl ポーリングで行い、独自の待機スクリプトを持たない。

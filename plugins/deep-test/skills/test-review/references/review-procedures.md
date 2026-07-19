@@ -111,7 +111,7 @@ Critical / High 指摘を test-design が着手できる粒度の修正指示に
 2. `results=`（省略時は `{target-slug}/test-results.yaml`）を Read する（**読み取りのみ**。Edit / Write は禁止）
 3. 対象 run を確定する: `run=` 指定があればその run、なければ最新 run（run_id 降順の先頭）
 4. 対象 run の結果から以下を抽出・整理する:
-   - fail 全件の defect 詳細（severity / reproduction_steps / test_data / evidence / extras）と対応するケース定義（test-cases.yaml の steps / expected / data）
+   - fail 全件の defect 詳細（severity / reproduction_steps / test_data / evidence / extras）と results[] 直下の extras（measured_value / threshold 等・存在する場合。defect.extras とは別領域）、対応するケース定義（test-cases.yaml の steps / expected / data）
    - defect.evidence / results[].evidence のパス一覧（実在確認は Glob で行い、欠落はそのまま指摘材料にする）
    - blocked / skipped の件数と reason（未確認事項の材料）
 
@@ -122,7 +122,7 @@ defect-analyst / user-perspective-reviewer を **1 メッセージ内で並列�
 | 構成要素 | 内容 |
 |---------|------|
 | 共通入力（agents.md 4.1 章） | 対象の説明と target-slug / 解決済みパス / references 参照指示 |
-| defect-analyst 追加入力（4.2 章） | fail 全件の defect 詳細（test-results.yaml からの抜粋）/ エビデンスのパス一覧 / severity-policy.md の参照指示 |
+| defect-analyst 追加入力（4.2 章） | fail 全件の defect 詳細 + results[] 直下の extras（test-results.yaml からの抜粋）/ エビデンスのパス一覧 / severity-policy.md の参照指示 |
 | user-perspective-reviewer 追加入力（4.2 章） | 業務シナリオ・ユーザー要件 / 実行結果サマリ（レベル別集計・fail 概要） |
 | 共通注入事項（4.3 章） | 規定ブロックを必ず含める |
 | 出力形式（4.4 章） | 指摘リスト（信頼度付き）・所見・未確認事項 |
