@@ -76,7 +76,7 @@ SKILL.md の実行フロー（mermaid・モード表）に対応する各 Phase 
 | 2: 設計 | test-plan.md + test-cases.yaml（全ケース draft）の生成 | Skill: test-design |
 | 3: 設計レビュー | PASS → test-review が approved 化まで実施。NEEDS REVISION → test-design へ差し戻し（**上限 3 回**、超過時は対話=AskUserQuestion / 非対話=エラー中断） | Skill: test-review（design） |
 | 4: 対象確定 + ゲート | `select` で scope を機械確定（LLM 判断禁止）→ 承認済みケースゲート → 人間承認ゲート（**AskUserQuestion**。非対話はスキップ）→ MCP ゲート（ToolSearch 実判定。未ロードは再起動ハンドオフで**停止**、unit のみは判定不要） | results_manager + AskUserQuestion + ToolSearch |
-| 5: 実行 | 手順 0: `environment.yaml` が applicable なら environment up（`action=up`。失敗は縮退でフローを止めない。down は Phase 6 判定後 = PASS → down・NEEDS REVISION → ids 再実行に備え維持）→ `start-run` → レベル順**逐次**で test-run-* を Skill 起動（並列禁止）→ 中間結果を 1 件ずつ `record`（exit 2 は当該実行スキルへ追加取得を指示して再 record）→ `finish-run`（欠落検出時は補完実行後に再確定） | Skill: test-run-* + results_manager + Skill: test-environment（up / down） |
+| 5: 実行 | 手順 0: `environment.yaml` が applicable なら environment up（`action=up`。失敗は縮退でフローを止めない。down は Phase 6 判定後 = PASS → down・NEEDS REVISION → ids 再実行に備え維持）→ 手順 0.5（非対話時のみ）: 手動系ケース（`automation: manual-assist` / `exploratory`）の手順書一括生成（生成失敗はフェイルオープンで続行）→ `start-run` → レベル順**逐次**で test-run-* を Skill 起動（並列禁止。レベル内の `cases=` は自動 → 手動の順・手動系ケースを含むレベルには非対話・生成成功時のみ `manual-sheet={path}` を付与）→ 中間結果を 1 件ずつ `record`（exit 2 は当該実行スキルへ追加取得を指示して再 record）→ `finish-run`（欠落検出時は補完実行後に再確定） | Skill: test-run-* + results_manager + Skill: test-environment（up / down） |
 | 6: 結果レビュー | 欠陥分析・severity 妥当性の検証。NEEDS REVISION の遡行は 4 章（上限 3 回） | Skill: test-review（results） |
 | 7: 報告 | `validate`（違反があれば差し戻して生成しない）→ test-report 起動（形式選択は test-report が実施、非対話既定 Markdown）。報告書はセッション作業領域直下 | results_manager + Skill: test-report |
 
@@ -88,10 +88,10 @@ SKILL.md の実行フロー（mermaid・モード表）に対応する各 Phase 
 |-------|---------|---------|---------------|
 | 設計レビューゲート | test-review（設計文脈）の返却（PASS / NEEDS REVISION） | 返却 JSON の `verdict` を読む。判定があいまいな返却（verdict 欠落）は NEEDS REVISION として扱う | 4 章の修正ループへ |
 | 承認済みケースゲート | `select` 出力の `draft_cases` | `draft_cases` が空 → 通過。非空 → test-review（設計文脈）を draft ケースに対して実施（PASS 時の approved 化は test-review が実施）→ `select` を再実行して確認 | Phase 3（対象は draft ケースのみ） |
-| 人間承認ゲート | `select` 出力の `cases` / `details` | AskUserQuestion で提示（ケース数・レベル別内訳・想定所要時間 = details の timeout_sec 合計を上限とする概算・破壊的操作ケース数 = select 出力の `destructive` 集計）。非対話時はスキップ | 中断（scope・実績は未変更のまま） |
+| 人間承認ゲート | `select` 出力の `cases` / `details` | AskUserQuestion で提示（ケース数・レベル別内訳・想定所要時間 = details の timeout_sec 合計を上限とする概算・破壊的操作ケース数 = select 出力の `destructive` 集計・手動実施ケース件数 = select 出力の `details.automation` の `manual-assist` / `exploratory` を destructive と同型で機械集計〔提示項目の定義は execution-policy.md 1.3・処理規範は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md`〕）。非対話時はスキップ | 中断（scope・実績は未変更のまま） |
 | MCP ゲート | scope のレベル構成 + ToolSearch 結果 | scope が unit のみ → 判定不要で通過。それ以外 → ToolSearch で `mcp__playwright__` 系を検索（手順・判定基準は `${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 4 章） | 再起動ハンドオフを出力して停止（run 開始前なら start-run しない。run 中の喪失は skipped 記録で継続） |
 
-ゲート判定の順序は固定: `select` → 承認済みケースゲート → 人間承認ゲート → MCP ゲート → environment up（`environment.yaml` が applicable のときのみ実施する Phase 5 手順 0。ゲートではなく、失敗は縮退でフローを止めない）→ `start-run`。
+ゲート判定の順序は固定: `select` → 承認済みケースゲート → 人間承認ゲート → MCP ゲート → environment up（`environment.yaml` が applicable のときのみ実施する Phase 5 手順 0。ゲートではなく、失敗は縮退でフローを止めない）→ 手動手順書の一括生成（非対話時のみ実施する Phase 5 手順 0.5。ゲートではなく、生成失敗はフェイルオープンで続行）→ `start-run`。
 `start-run` は**全ゲート通過後**にのみ実行する（未実行の run レコードを残さないため）。
 
 ## 4. NEEDS REVISION 時の遡行ループ
@@ -257,7 +257,7 @@ Skill(skill: "deep-test:test-review", args: "context=design target={target-slug}
    ```
 
 2. 承認済みケースゲート: 出力の `draft_cases` が空でなければ、先に test-review（設計文脈）を実施して approved 化してから進む（approved 化は test-review が実施）
-3. 人間承認ゲート: AskUserQuestion で「実行に進むか」を確認する。提示必須項目（ケース数 / 対象レベル / 想定所要時間 / 破壊的操作ケース数 = select の `destructive` 集計）は execution-policy.md 1.3。非対話時はスキップ
+3. 人間承認ゲート: AskUserQuestion で「実行に進むか」を確認する。提示必須項目（ケース数 / 対象レベル / 想定所要時間 / 破壊的操作ケース数 = select の `destructive` 集計 / 手動実施ケース件数（select `details.automation` の機械集計））は execution-policy.md 1.3。非対話時はスキップ
 4. MCP ゲート: scope に Playwright 必要レベルが含まれる場合のみ、ToolSearch で `mcp__playwright__*` の実利用可否を判定する（playwright-mcp.md 4 章）。未ロード → 再起動ハンドオフを出力して停止（利用可を装った続行は禁止）。unit のみの scope は判定不要で通過
 
 ### Phase 5: 実行（レベル順逐次 → record → finish-run）
@@ -271,6 +271,14 @@ Skill(skill: "deep-test:test-review", args: "context=design target={target-slug}
    `--non-interactive`（モード指定）は非対話時のみ付与する（Phase 1.7 と同じ条件注記）
 
    up 完了後の endpoints（base URL）・project 名（`{slug}-test`）は `environment.yaml` から読み、`--environment` の環境文字列と実行スキルへ渡す対象アプリ情報に用いる
+
+0.5. **手順 0.5: 手動手順書の一括生成**（**非対話時のみ**。scope に `automation: manual-assist` / `exploratory` のケース〔select 出力の `details.automation` で判別〕を含む場合のみ。`start-run` 直前）。`generate_manual_sheet.py` で scope 内の手動系ケースの手順書（exploratory はチャーターシート様式）を一括生成する:
+
+   ```bash
+   "<venv>/Scripts/python.exe" "${CLAUDE_SKILL_DIR}/references/scripts/manual/generate_manual_sheet.py"      --cases "{base}/{target-slug}/test-cases.yaml"      --ids "TC-FUNC-010,TC-UAT-006"      --out "{base}/{target-slug}/manual/manual-sheet_{yyyyMMdd-HHmmss}.md"      --target "{target-slug}"
+   ```
+
+   `--ids` には scope 内の手動系ケース ID の CSV を渡す（`--automation` は既定 both = manual-assist / exploratory の両方が対象。exit code: 0 = 成功〔stdout に生成パスを 1 行出力〕/ 2 = 対象なし / 1 = エラー / 64 = 引数不正）。成功時は生成パスを手順 2 の Skill args `manual-sheet={path}` として実行スキルへ引き渡す（実行スキルは skipped の reason に転記する）。**exit 非 0 はフェイルオープン**とし、`manual-sheet=` を付与せず従来どおり理由のみの skipped で続行する（フローは止めない。規範は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md` 7 章）。対話時は本手順を実施せず、手動ケース到達時に実行スキルが `manual-execution.md`（提示 3 要素・聴取・エビデンス受領）に従いユーザーへ確認する。ユーザーが「後で実施」を選択した場合のみ、オーケストレータが本コマンドと同型のオンデマンド生成（`--ids` に当該ケースのみ指定）で同じ縮退（skipped + reason に手順書パス）を行う
 
 1. run を開始し run_id を取得する:
 
@@ -290,6 +298,8 @@ Skill(skill: "deep-test:test-review", args: "context=design target={target-slug}
    ```
 
    各レベルの実行完了時（当該レベル全ケースの record 完了後）、簡潔な進捗サマリ（レベル名・実行件数・pass / fail 内訳）を出力してから次レベルの実行スキルを起動する
+
+   レベル内の `cases=` は**自動実行ケース群（`automation: playwright` / `playwright-test` / `test-framework` / `api`）→ 手動実施ケース群（`manual-assist` / `exploratory`）の順**に並べて渡す（対話の分断を防ぎ、人間の拘束を後半へ集約する。実行スキルは受領順に処理する）。手動系ケースを含むレベルへの委譲では、非対話・手順書生成成功時のみ args に `manual-sheet={path}`（手順 0.5 の生成パス）を付与する（対話時は付与しない。`state-handoff.md` 1 章）
 
 3. 実行スキルの中間結果 JSON（execution-policy.md 4 章）を受領し、results[] の要素を 1 件ずつ `--result-json -`（標準入力）で record する。中間結果 JSON の完全な構造は execution-policy.md 4 章・yaml-schema-results.md 参照:
 

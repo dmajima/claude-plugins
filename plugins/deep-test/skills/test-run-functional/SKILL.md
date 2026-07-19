@@ -78,7 +78,7 @@ allowed-tools:
 | ユーザー直接起動で必須入力（target-slug / run_id / 対象ケース / 対象 URL）が欠落 | 単独 | 実行せず、`/deep-test:test`（run-only モード等）経由の起動を案内する。run_id 採番・実績記録はオーケストレータの責務のため、単独実行では実績が記録されない旨を伝える |
 
 - ケース定義本体が引数で渡されない場合は、`.claude/.local/plugins/deep-test/{target-slug}/test-cases.yaml` から該当ケースを Read で参照する（読み取りのみ）
-- `automation: manual-assist` のケース: 対話時はユーザーに手動確認を依頼し `executed_by: human-assisted` で記録する。非対話時は skipped + reason（非対話既定値表は execution-policy.md）
+- `automation: manual-assist` / `exploratory` のケース: 対話時はユーザーに手動確認を依頼し `executed_by: human-assisted` で記録する（提示 3 要素・聴取・エビデンス受領・記録規約は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md` に従う）。非対話時は skipped + reason（非対話既定値表は execution-policy.md。オーケストレータから `manual-sheet=` で手順書パスを受領した場合は reason に含める）
 - `automation: playwright-test` のケース: fixtures.yaml と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts`）を前提に `npx playwright test`（Bash 実行）で実走し、pass / fail と JUnit / レポートをエビデンス化して `executed_by: playwright-test` で記録する。Playwright・ランナー未導入または fixtures.yaml 不在時は実行を偽装せず skipped + reason（手順は `${CLAUDE_SKILL_DIR}/references/functional-execution.md` 7 章・SKIPPED 規範は execution-policy.md / playwright-test.md）。既存の MCP（`automation: playwright`）・manual-assist 経路は不変
 
 ## 実行フロー

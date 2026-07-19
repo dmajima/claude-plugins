@@ -6,7 +6,7 @@
 
 | 項目 | 内容 |
 |-----|------|
-| 委譲 args | `target-slug=order-management-web` / `run_id=R20260717-173000` / ケース: `[TC-SEC-030]`（`automation: manual-assist`。多要素認証デバイスの実操作を伴うログイン確認・管理コンソール上の権限設定の目視確認など人手が不可欠なケース）/ アプリ情報あり / `--non-interactive` |
+| 委譲 args | `target-slug=order-management-web` / `run_id=R20260717-173000` / ケース: `[TC-SEC-030]`（`automation: manual-assist`。多要素認証デバイスの実操作を伴うログイン確認・管理コンソール上の権限設定の目視確認など人手が不可欠なケース）/ アプリ情報あり / `--non-interactive` / `manual-sheet=manual/manual-sheet_20260717-173000.md`（オーケストレータが Phase 5 手順 0.5 で一括生成した手順書のパス。非対話・生成成功時のみ付与） |
 | 起動形態 | 委譲（オーケストレータ test の run フェーズ・非対話） |
 | 前提 | 対象はテスト環境。非対話モードのため人手確認を求められない |
 
@@ -16,7 +16,8 @@ SKILL.md「実行モード判定」の manual-assist 分岐（非対話時は sk
 
 ## 期待動作
 
-- 人手介在ができないため実行せず、`status: skipped` + `reason`（例: 「非対話モードのため人手確認ケースは未実施」）で返す（execution-policy.md 9 章）
+- 人手介在ができないため実行せず、`status: skipped` + `reason` で返す。`manual-sheet=` で受領した手順書パスを reason に転記する（例: 「非対話のため未実施。手順書: manual/manual-sheet_20260717-173000.md」。manual-execution.md 7 章の形式。実行スキル自身は `generate_manual_sheet.py` を起動しない）
+- `manual-sheet=` を受領していない場合（オーケストレータ側の生成失敗 = フェイルオープン）は、従来どおり理由のみ（例: 「非対話モードのため人手確認ケースは未実施」）の skipped で返す（execution-policy.md 9 章）
 - ブラウザ・API で自動実行したかのように偽装しない（executed_by を `playwright-mcp` / `api` と誤記しない・skipped を「問題なし」に書き換えない）
 - 未実施のセキュリティケースを「脆弱性なし」「対策済み」と結論しない（未確認のまま skipped とする）
 - ユーザーへの手動確認依頼を行わない（非対話モード）

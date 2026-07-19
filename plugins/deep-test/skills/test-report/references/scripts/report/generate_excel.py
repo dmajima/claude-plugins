@@ -43,12 +43,13 @@ from report_model import (
     date_part,
     evidence_path_note,
     format_duration,
+    format_extras_value_lines,
     join_lines,
     level_label,
     load_yaml,
+    manual_breakdown_note,
     sanitize,
     sanitized_count,
-    truncate_extras_value,
 )
 
 # ---------------------------------------------------------------------------
@@ -82,6 +83,7 @@ LEVEL_SHEET_COLUMNS = [
     ("期待結果", 35),
     ("実際結果", 35),
     ("status", 10),
+    ("実行主体", 12),
     ("reason", 25),
     ("実行時間(秒)", 10),
     ("エビデンス参照", 40),
@@ -110,12 +112,19 @@ def format_ng_detail(result):
         lines.append(str(step))
     lines.append("検証データ:")
     lines.append(format_test_data(defect.get("test_data")))
-    # 補足情報（defect.extras）: レベル別の拡張情報を改行区切りで併記（長大値は切り詰め）
+    # 補足情報（defect.extras）: レベル別の拡張情報を改行区切りで併記（長大値は切り詰め）。
+    # list 値（session_findings 等）は repr のままにせず要素ごとの箇条書き行で整形する
     extras = defect.get("extras")
     if isinstance(extras, dict) and extras:
         lines.append("補足情報:")
         for key, value in extras.items():
-            lines.append(f"{key}: {truncate_extras_value(value)}")
+            value_lines = format_extras_value_lines(value)
+            if isinstance(value, list) and value:
+                lines.append(f"{key}:")
+                for item in value_lines:
+                    lines.append(f"- {item}")
+            else:
+                lines.append(f"{key}: {value_lines[0]}")
     return "\n".join(lines)
 
 
@@ -195,7 +204,7 @@ def set_widths(ws, widths):
 def build_summary_sheet(ws, model, generated_on):
     ws.title = "サマリ"
     ws.cell(row=1, column=1, value=sanitize(f"テスト報告書 サマリ: {model['target']}"))
-    style_header_row(ws, 1, 7)
+    style_header_row(ws, 1, 9)
     row = 3
 
     # 基本情報
@@ -214,8 +223,11 @@ def build_summary_sheet(ws, model, generated_on):
         ("run 数", len(model["runs"])),
     ]
     row = write_table(ws, row, ["項目", "内容"], info_rows)
-    # エビデンスパスの基準注記（必須出力。report_model.evidence_path_note）
-    note_cell = ws.cell(row=row, column=1, value=sanitize(evidence_path_note(model["target"])))
+    # エビデンスパスの基準注記（必須出力。基準は results 実パスから導出。report_model.evidence_path_note）
+    note_cell = ws.cell(
+        row=row, column=1,
+        value=sanitize(evidence_path_note(model["target"], model.get("results_path"))),
+    )
     note_cell.alignment = CELL_ALIGN
     row += 2
 
@@ -240,18 +252,38 @@ def build_summary_sheet(ws, model, generated_on):
     )
     row += 1
 
-    # レベル別集計（latest 採用）
+    # レベル別集計（latest 採用。自動 / 手動 = 実行主体別内訳）
     row = write_section_label(ws, row, "レベル別集計（latest 採用）")
     agg_rows = [
-        (level_label(lr["level"]), lr["target"], lr["pass"], lr["fail"], lr["blocked"], lr["skipped"], lr["na"])
+        (
+            level_label(lr["level"]),
+            lr["target"],
+            lr["pass"],
+            lr["fail"],
+            lr["blocked"],
+            lr["skipped"],
+            lr["na"],
+            lr["auto"],
+            lr["manual"],
+        )
         for lr in model["level_rows"]
     ]
     t = model["total"]
-    agg_rows.append(("合計", t["target"], t["pass"], t["fail"], t["blocked"], t["skipped"], t["na"]))
-    row = write_table(
-        ws, row, ["レベル", "対象数", "pass", "fail", "blocked", "skipped", "na"], agg_rows
+    agg_rows.append(
+        (
+            "合計", t["target"], t["pass"], t["fail"], t["blocked"], t["skipped"], t["na"],
+            t["auto"], t["manual"],
+        )
     )
-    row += 1
+    row = write_table(
+        ws, row,
+        ["レベル", "対象数", "pass", "fail", "blocked", "skipped", "na", "自動", "手動"],
+        agg_rows,
+    )
+    # 手動内訳注記（必須出力。report_model.manual_breakdown_note）
+    breakdown_cell = ws.cell(row=row, column=1, value=sanitize(manual_breakdown_note(model)))
+    breakdown_cell.alignment = CELL_ALIGN
+    row += 2
 
     # NG 一覧
     row = write_section_label(ws, row, "NG 一覧（latest が fail のケース）")
@@ -345,9 +377,9 @@ def build_summary_sheet(ws, model, generated_on):
     row = write_section_label(ws, row, "免責注記")
     row = write_table(ws, row, ["項目", "注記"], build_disclaimer_rows(model))
 
-    set_widths(ws, [24, 22, 22, 14, 12, 14, 60])
+    set_widths(ws, [24, 22, 22, 14, 12, 14, 60, 10, 10])
     ws.freeze_panes = "A2"
-    setup_page(ws, 7, row)
+    setup_page(ws, 9, row)
 
 
 def build_transition_sheet(ws, model):
@@ -429,6 +461,7 @@ def build_level_sheet(wb, model, level):
                 case.get("expected", ""),
                 result.get("actual") or "",
                 ref.get("status", ""),
+                result.get("executed_by") or "",
                 result.get("reason") or "",
                 format_duration(duration),
                 join_lines(result.get("evidence")),
@@ -458,6 +491,8 @@ def main():
     results_doc = load_yaml(args.results, "test-results.yaml")
     cases_doc = load_yaml(args.cases, "test-cases.yaml")
     model = build_model(cases_doc, results_doc)
+    # エビデンスパス基準注記の導出元（results 実パス。非既定 base でも実配置と一致させる）
+    model["results_path"] = args.results
 
     generated_on = date.today().strftime("%Y-%m-%d")
     wb = Workbook()

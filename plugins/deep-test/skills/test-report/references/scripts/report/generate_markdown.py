@@ -39,12 +39,13 @@ from report_model import (
     date_part,
     evidence_path_note,
     format_duration,
+    format_extras_value_lines,
     join_lines,
     level_label,
     load_yaml,
+    manual_breakdown_note,
     sanitize,
     sanitized_count,
-    truncate_extras_value,
 )
 
 # ---------------------------------------------------------------------------
@@ -60,6 +61,7 @@ LEVEL_TABLE_HEADERS = [
     "期待結果",
     "実際結果",
     "status",
+    "実行主体",
     "reason",
     "実行時間(秒)",
     "エビデンス参照",
@@ -144,8 +146,8 @@ def build_markdown(model, generated_on):
         ],
     )
     lines.append("")
-    # エビデンスパスの基準注記（必須出力。report_model.evidence_path_note）
-    lines.append(sanitize(evidence_path_note(model["target"])))
+    # エビデンスパスの基準注記（必須出力。基準は results 実パスから導出。report_model.evidence_path_note）
+    lines.append(sanitize(evidence_path_note(model["target"], model.get("results_path"))))
     lines.append("")
     lines.append("### 1.2 run 情報")
     lines.append("")
@@ -176,12 +178,24 @@ def build_markdown(model, generated_on):
             lr["blocked"],
             lr["skipped"],
             lr["na"],
+            lr["auto"],
+            lr["manual"],
         )
         for lr in model["level_rows"]
     ]
     t = model["total"]
-    agg_rows.append(("合計", t["target"], t["pass"], t["fail"], t["blocked"], t["skipped"], t["na"]))
-    lines += md_table(["レベル", "対象数", "pass", "fail", "blocked", "skipped", "na"], agg_rows)
+    agg_rows.append(
+        (
+            "合計", t["target"], t["pass"], t["fail"], t["blocked"], t["skipped"], t["na"],
+            t["auto"], t["manual"],
+        )
+    )
+    lines += md_table(
+        ["レベル", "対象数", "pass", "fail", "blocked", "skipped", "na", "自動", "手動"], agg_rows
+    )
+    lines.append("")
+    # 手動内訳注記（必須出力。report_model.manual_breakdown_note）
+    lines.append(sanitize(manual_breakdown_note(model)))
     lines.append("")
     lines.append("### 1.4 総合判定")
     lines.append("")
@@ -221,7 +235,7 @@ def build_markdown(model, generated_on):
     # 3. レベル別セクション（実施レベルのみ・列構成は Excel と同一）
     lines.append("## 3. レベル別結果")
     lines.append("")
-    lines.append(sanitize(evidence_path_note(model["target"])))
+    lines.append(sanitize(evidence_path_note(model["target"], model.get("results_path"))))
     lines.append("")
     for idx, level in enumerate(model["executed_levels"], start=1):
         lines.append(f"### 3.{idx} {level_label(level)}")
@@ -258,6 +272,7 @@ def build_markdown(model, generated_on):
                     case.get("expected", ""),
                     result.get("actual") or "",
                     ref.get("status", ""),
+                    result.get("executed_by") or "",
                     result.get("reason") or "",
                     format_duration(duration),
                     md_evidence_paths(result.get("evidence")),
@@ -288,14 +303,22 @@ def build_markdown(model, generated_on):
         for path in defect.get("evidence") or ng["result"].get("evidence") or []:
             path = sanitize(str(path))
             lines.append(f"  - `{path}`")
-        # 補足情報（defect.extras）: レベル別の拡張情報（stack_trace 等の長大値は切り詰め）
+        # 補足情報（defect.extras）: レベル別の拡張情報（stack_trace 等の長大値は切り詰め）。
+        # list 値（session_findings 等）は repr のままにせず要素ごとの入れ子箇条書きで整形する
         extras = defect.get("extras")
         if isinstance(extras, dict) and extras:
             lines.append("- 補足情報:")
             for key, value in extras.items():
-                text = sanitize(truncate_extras_value(value))
-                text = text.replace("\r\n", "\n").replace("\n", "<br>")
-                lines.append(f"  - {sanitize(str(key))}: {text}")
+                value_lines = format_extras_value_lines(value)
+                if isinstance(value, list) and value:
+                    lines.append(f"  - {sanitize(str(key))}:")
+                    for item in value_lines:
+                        text = sanitize(item).replace("\r\n", "\n").replace("\n", "<br>")
+                        lines.append(f"    - {text}")
+                else:
+                    text = sanitize(value_lines[0])
+                    text = text.replace("\r\n", "\n").replace("\n", "<br>")
+                    lines.append(f"  - {sanitize(str(key))}: {text}")
         lines.append("")
 
     # 5. 未確認事項（skipped 一覧 + ケース定義に存在しない実績 ID）
@@ -376,6 +399,8 @@ def main():
     results_doc = load_yaml(args.results, "test-results.yaml")
     cases_doc = load_yaml(args.cases, "test-cases.yaml")
     model = build_model(cases_doc, results_doc)
+    # エビデンスパス基準注記の導出元（results 実パス。非既定 base でも実配置と一致させる）
+    model["results_path"] = args.results
 
     generated_on = date.today().strftime("%Y-%m-%d")
     content = build_markdown(model, generated_on)

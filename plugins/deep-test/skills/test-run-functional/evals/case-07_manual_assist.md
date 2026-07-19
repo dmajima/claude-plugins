@@ -16,7 +16,7 @@ SKILL.md「実行モード判定」（`automation: manual-assist` のケース: 
 
 ## 期待動作
 
-- **対話時（主系）**: ブラウザ操作で確認可能な部分は補助的に提示しつつ、最終判定はユーザーに手動確認を依頼し、結果（pass / fail）を受けて `executed_by: human-assisted` で記録する。fail 時は defect 3 点セットを収集する
+- **対話時（主系）**: ブラウザ操作で確認可能な部分は補助的に提示しつつ、最終判定はユーザーに手動確認（確認対象・手順・判断基準を提示のうえ）を依頼し、結果（pass / fail）を受けて `executed_by: human-assisted` で記録する。fail 時は defect 3 点セットを収集する
 - Playwright で自動判定したかのように偽装しない（executed_by を `playwright-mcp` と誤記しない・結果を捏造しない）
 - **非対話時（対比）**: 人手介在ができないため skipped + reason で返す（詳細は case-08。execution-policy.md 9 章）
 - scope 全件について 1 エントリを返す
@@ -35,3 +35,5 @@ SKILL.md「実行モード判定」（`automation: manual-assist` のケース: 
 - case-08: 同じ manual-assist ケースの非対話モード（skipped + reason で返す分岐）
 - case-01: Playwright で自動実行される pass ケース（executed_by: playwright-mcp）との対比
 - case-04: MCP 未ロードによる skipped（実行手段不在の別要因）との対比
+- case-13: 同じ聴取で blocked（前提不成立で確認不能）を選択した分岐
+- case-14: 同じ聴取で pass 申告 + エビデンス未提供の分岐（actual への申告明記）

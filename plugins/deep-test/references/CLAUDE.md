@@ -36,6 +36,7 @@
 | Playwright Test（`.spec.ts` + フィクスチャ）の実行規約・`fixtures.yaml`（test-fixture 生成・Phase 1.6）のスキーマ・認証/モック/シードのパターンを確認する | `playwright-test.md` |
 | エージェントの選定・起動・プロンプト組み立てを行う | `agents.md` |
 | 実行時の共通規範（MCP ゲート・条件付き動的検証・SKIPPED・タイムアウト・テストデータ分離・非対話既定値）を確認する | `execution-policy.md` |
+| 手動実施（`manual-assist` / `exploratory`）ケースの提示・聴取・人間提供エビデンス受領・探索的セッション規範・手順書/チャーターシート様式を確認する | `manual-execution.md` |
 | venv を構築・削除する（全スキル共通の requirements.txt を含む） | `scripts/setup/`（`setup_venv.sh` / `teardown_venv.sh` / `requirements.txt`） |
 | Python スクリプトをタイムアウト付きで実行する（任意利用のラッパー） | `scripts/run/run_via_job.sh` |
 | エビデンスを外部共有・クリーンアップ用にアーカイブする | `scripts/run/archive_evidence.sh`（利用手順は `data-locations.md` 7 章） |
@@ -63,6 +64,7 @@
 | `playwright-test.md` | Playwright Test（`.spec.ts` + フィクスチャ）実行規約・`fixtures.yaml` スキーマ（test-fixture 生成・Phase 1.6）・認証(storageState)/モック(route.fulfill)/シード/base(test.extend) のパターン規範 |
 | `agents.md` | エージェント選定表・起動方式・プロンプト組み立て・共通注入事項・並列起動の原則 |
 | `execution-policy.md` | 実行共通規範（MCP ゲート・条件付き動的検証・SKIPPED 記録・タイムアウト・テストデータ分離・環境安全・非対話既定値表） |
+| `manual-execution.md` | 手動実行規範（`manual-assist` / `exploratory` の提示 3 要素・AskUserQuestion 聴取設計・人間提供エビデンスの受領/移送/マスキング適用手順・中断/resume・探索的セッション規範〔チャーター・タイムボックス・セッションシート・session_findings〕・非対話の手順書縮退・手順書/チャーターシート様式） |
 
 ## 禁止事項
 

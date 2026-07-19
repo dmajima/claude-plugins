@@ -18,6 +18,9 @@
 | 09 | case-09_playwright_test_run.md | automation: playwright-test × `npx playwright test` 実走 pass（.spec.ts を実行し全 pass を記録・executed_by: playwright-test・MCP 経路と併存） | 委譲 |
 | 10 | case-10_playwright_test_skipped.md | automation: playwright-test だが Playwright/ランナー・fixtures.yaml/SUT テストコード不在 → skipped + reason（実走前提の欠如・MCP 未ロード skipped〔case-04〕とは別前提） | 委譲 |
 | 11 | case-11_endpoints_base_url.md | environment.yaml の endpoints[] 由来 base URL を対象アプリ情報として受領して実行（受領形・実行手順は不変・出所の注記のみ。case-01 の対） | 委譲 |
+| 12 | case-12_exploratory_findings.md | automation: exploratory × 対話で発見事象 2 件（代表 1 件を defect 3 点セット + 全件を extras.session_findings + 再現ケース draft 起票の推奨案内） | 委譲 |
+| 13 | case-13_manual_assist_blocked_or_defer.md | automation: manual-assist × 対話で blocked 選択（前提不成立の理由を聴取して blocked + reason 記録。「後で実施」縮退は test-run-scenario evals case-13 が専用で扱う） | 委譲 |
+| 14 | case-14_manual_assist_pass_without_evidence.md | automation: manual-assist × 対話で pass 申告 + エビデンス未提供（actual に「人間の申告に基づく（エビデンスなし）」を明記・priority: high は取得を促す） | 委譲 |
 
 ## ケースファイルの構成
 
@@ -36,4 +39,6 @@
 実行スキルはオーケストレータ `test` からの委譲起動が標準のため、本 evals の主軸は **実行手段（Playwright MCP・対象アプリ）の可否と結果 status の分岐**（pass / fail / blocked / skipped）である。
 特に blocked と skipped の使い分け（skipped = 実行手段不在 / blocked = 前提不成立・タイムアウト等のテスト論理上のブロック。yaml-schema-results.md 6 章）を case-03〜05 で検証する。
 `automation: playwright-test`（`npx playwright test` 実走）経路は case-09（全 pass）/ case-10（実走前提不在の skipped）で扱い、MCP 経路（`automation: playwright`）と併存する分岐を検証する。
+手動 / 探索の軸は `automation: manual-assist`（case-07 / 08 / 13 / 14）と `exploratory`（チャーターベース人間セッションの発見事象記録。case-12）で扱う（規範は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md`。非対話縮退は manual-assist / exploratory 共通機構のため case-08 が代表する）。
+manual-assist の聴取分岐は blocked 選択 = case-13 / エビデンスなし pass 申告 = case-14 が扱い、「後で実施」選択の縮退は test-run-scenario evals case-13 が専用で扱う。exploratory の結果終端はスキル横断で対応する（pass = test-run-scenario evals case-11 / fail = 本 evals case-12 / blocked = test-run-scenario evals case-14）。
 起動形態の軸（委譲 / 単独）は case-06 のみで扱う。

@@ -16,7 +16,7 @@ SKILL.md「実行モード判定」（`automation: manual-assist` のケース: 
 
 ## 期待動作
 
-- **対話時（主系）**: ユーザーに手動確認を依頼し、結果（pass / fail）を受けて `executed_by: human-assisted` で記録する。fail 時は defect 3 点セットを収集する
+- **対話時（主系）**: ユーザーに手動確認（確認対象・手順・判断基準を提示のうえ）を依頼し、結果（pass / fail）を受けて `executed_by: human-assisted` で記録する。fail 時は defect 3 点セットを収集する
 - テストランナーで自動実行したかのように偽装しない（executed_by を `test-framework` と誤記しない・結果を捏造しない）
 - **非対話時（対比）**: 人手介在ができないため skipped + reason で返す（詳細は case-08。execution-policy.md 9 章）
 - scope 全件について 1 エントリを返す

@@ -60,7 +60,7 @@ plugins/deep-test/skills/test-run-integration/
 ├── README.md                             # 本ファイル（人間向け）
 ├── references/
 │   └── integration-execution.md          # IT-a/IT-b 実行・スタブ判断・API 補助確認・マスキング
-└── evals/                                # 動作分岐検証ケース（case-01〜06 + README）
+└── evals/                                # 動作分岐検証ケース（case-01〜11 + README・11 ケース）
 ```
 
 ## スコープ外

@@ -21,6 +21,7 @@ worker スキルへの引き渡しは `key=value` の空白区切り文字列で
 | `run-id` | `start-run` が採番した run_id | Phase 5 / 6 / environment の up・down 呼出（任意） |
 | `cases` | 対象ケース ID の CSV | Phase 3（draft 限定レビュー時）/ 5 |
 | `mode` | 実行モード（再テスト時の full / ng-only / ids 等） | Phase 5 / 7 |
+| `manual-sheet` | 生成済み手動手順書（チャーターシート）のパス（非対話縮退用・任意。手動系ケース〔`automation: manual-assist` / `exploratory`〕を含むレベルへの委譲で、オーケストレータの手順書一括生成が成功した場合のみ付与する。実行スキルは skipped の reason にこのパスを転記する。`${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md` 7 章） | Phase 5 |
 | `non-interactive` | `true`（非対話モード時のみ付与） | 全フェーズ |
 
 - パスはオーケストレータが**解決済みの形**で渡す（worker スキル側で target-slug 解決をやり直させない）
@@ -136,7 +137,7 @@ exit code の意味（0 / 1 / 2 / 3）とバリデーション時の stderr 出�
 | オーケストレータの判断 | 使用する出力 |
 |----------------------|-------------|
 | 承認済みケースゲート | `select` の `draft_cases` |
-| 人間承認ゲートの提示項目 | `select` の `cases` 件数 + `details`（level 内訳・timeout_sec 合計・破壊的操作の有無はケース定義の steps / preconditions から判断） |
+| 人間承認ゲートの提示項目 | `select` の `cases` 件数 + `details`（level 内訳・timeout_sec 合計）+ `details[].destructive` の機械集計（破壊的操作件数）+ `details[].automation` の機械集計（手動 manual-assist / exploratory 件数） |
 | MCP ゲートの要否 | `select` の `details[].level`（unit のみなら判定不要） |
 | 一次バリデーション（fail 3 点セット） | `record` の exit code 2 + stderr の欠落フィールド |
 | 中断検知・resume の残ケース | `summary` の `runs[].status`（中断 run の抽出）/ `validate` の `resumable_runs`（未記録ケースの特定。flow.md 5 章） |

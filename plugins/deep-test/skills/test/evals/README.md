@@ -34,6 +34,8 @@
 | 25 | case-25_environment_lifecycle_full_flow.md | 環境統合フルフロー（Phase 1.7 provision → design 移行・全ゲート通過後の up〔Phase 5 手順 0〕→ start-run・Phase 6 PASS 後の down） | フル・対話 |
 | 26 | case-26_environment_keep_on_needs_revision.md | 結果レビュー NEEDS REVISION 時の環境維持（down せず ids 再実行に備える・再実行 PASS 後に down） | フル（Phase 6） |
 | 27 | case-27_resume_environment_recheck.md | resume 時の環境再確認（ps + health 再確認 → healthy 再利用〔再 up 不要〕/ unhealthy down → up） | resume |
+| 28 | case-28_manual_count_in_approval_gate.md | 人間承認ゲートで手動実施ケース件数を提示（select 出力 details.automation の機械集計・manual-assist / exploratory 内訳付き） | フル・対話 |
+| 29 | case-29_non_interactive_manual_sheet_fallback.md | 非対話の手動系ケース縮退（Phase 5 手順 0.5 の手順書一括生成 → manual-sheet= 付与 → skipped reason にパス転記・生成失敗はフェイルオープン） | フル・非対話 |
 
 ## ケースファイルの構成
 
@@ -57,6 +59,7 @@
 - 安全系・解決系の軸: 環境安全（本番既定禁止・破壊的操作。case-12）/ target-slug 解決の対話・非対話対（case-15・17）
 - setup 受領軸: Phase 1 の setup 検出結果の受領（新規 MCP 登録・未ロードは再起動ハンドオフ停止＝case-03 / PARTIAL は停止せず続行〔対話＝case-22 / 非対話＝case-24〕）
 - 環境軸: Phase 1.7 の provision 委譲 → design 移行・up（Phase 5 手順 0）・down（Phase 6 PASS 後）のライフサイクル統合（case-25）/ NEEDS REVISION 時の維持（case-26）/ resume 時の ps + health 再確認による再利用・作り直し（case-27）。環境派生の実務・縮退（applicability・skipped / blocked 材料）は test-environment の evals が担い、本 evals はオーケストレータ側の委譲タイミングと判定のみを扱う
+- 手動 / 探索の軸: 手動系ケース（`automation: manual-assist` / `exploratory`）に対するオーケストレータ側の責務のみを扱う（承認ゲートの件数提示 = case-28 / 非対話の手順書一括生成と manual-sheet= 引き渡し = case-29）。ケース処理の実務（提示 3 要素・聴取・セッション実施）は各実行スキルの evals が担う
 
 各分岐は「主分岐 1 ケース 1 ファイル」を原則とし、対の分岐（run-only の levels 未指定＝case-19、report-only の実績 0 件＝case-20、再テスト full と ids＝case-10 / 21、setup PARTIAL 受領の対話 / 非対話＝case-22 / 24）は独立ファイルに分割して相互に「関連ケース」でリンクする。
 

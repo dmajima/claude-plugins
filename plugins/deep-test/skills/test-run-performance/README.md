@@ -63,7 +63,7 @@ plugins/deep-test/skills/test-run-performance/
 ├── README.md                         # 本ファイル（人間向け）
 ├── references/
 │   └── performance-execution.md      # 計測手順・メトリクス取得コード例・中央値算出・負荷ツール検出・閾値判定・達成チェックリスト
-└── evals/                            # 動作分岐検証ケース（case-01〜04 + README）
+└── evals/                            # 動作分岐検証ケース（case-01〜09 + README・9 ケース）
 ```
 
 ## スコープ外

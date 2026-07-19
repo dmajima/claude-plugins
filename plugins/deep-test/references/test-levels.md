@@ -71,7 +71,7 @@ flowchart LR
 
 - **level 値**は `test-cases.yaml` の `level` フィールドで用いる enum 値（スキーマ詳細は `yaml-schema-cases.md` 参照）
 - **ケース ID** は `TC-{プレフィクス}-{連番}` 形式（例: `TC-UNIT-001`）。ID は改変せず、ケース内容の変更は revision で版管理する（採番規約は `yaml-schema.md` 2.2、revision 規則は `yaml-schema-cases.md` 3 章）
-- **automation 既定値**はケース設計時の初期値であり、ケース単位で上書きできる（例: 人手の確認が不可欠なケースは `manual-assist`）。`manual-assist` ケースの非対話時挙動（skipped）は `execution-policy.md` の非対話既定値表に従う
+- **automation 既定値**はケース設計時の初期値であり、ケース単位で上書きできる（例: 人手の確認が不可欠なケースは `manual-assist`、チャーターベースの人間探索セッションは `exploratory`。exploratory の推奨配置は functional / system / uat〔画面・シナリオ探索が中心のため〕で、担当実行スキルは本表のレベル対応のまま。処理規約は `manual-execution.md`）。`manual-assist` / `exploratory` ケースの非対話時挙動（手順書生成 + skipped）は `execution-policy.md` の非対話既定値表に従う
 - **`playwright-test` のオプトイン**: 本表の automation 既定値は据え置き（変更しない）。`playwright-test` は `fixtures.yaml`（フィクスチャ基盤）が存在するケースで再現可能な `.spec.ts` 実行を選ぶ **オプトイン** の選択肢であり、既定の探索的 MCP フロー（`playwright`）は崩さない（規約は `playwright-test.md`）
 - **入口基準未充足時の記録**: テスト論理上の前提不成立（依存ケース fail・環境未統合等）は `blocked`、実行手段不在（MCP 未ロード・ランナー不在等）は `skipped` として reason 付きで記録する。実行を偽装しない（`execution-policy.md`）
 - **browser 駆動レベルの入口基準の充足手段**: ブラウザ駆動レベルの入口基準「テスト環境にデプロイ済みで到達可能」は、SUT に docker 資産（compose 等）がある場合、test-environment（Phase 1.7 / up）で deep-test 自身が充足できる（テスト用 base URL の出所は `environment.yaml` の `endpoints[]`。スキーマは `yaml-schema-environment.md`）。各レベルの入口基準そのものは変更しない

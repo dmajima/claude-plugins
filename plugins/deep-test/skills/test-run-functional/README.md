@@ -61,7 +61,7 @@ plugins/deep-test/skills/test-run-functional/
 ├── README.md                             # 本ファイル（人間向け）
 ├── references/
 │   └── functional-execution.md           # steps→Playwright 対応・照合方法・エビデンス手順
-└── evals/                                # 動作分岐検証ケース（case-01〜11 + README・11 ケース）
+└── evals/                                # 動作分岐検証ケース（case-01〜14 + README・14 ケース）
 ```
 
 ## スコープ外

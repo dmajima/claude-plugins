@@ -82,7 +82,7 @@ allowed-tools:
 | 単一セッション応答時間（第一線） | 常時実行 | — |
 | 多重同時負荷・スループット（条件付き） | k6 / ab / Locust 等の外部負荷ツールを Bash で検出した場合のみ | 該当ケースを `skipped` + reason（負荷ツール未検出）。単一セッション計測は実施する |
 
-- `automation: manual-assist` のケース: 対話時はユーザーに手動確認を依頼し結果を `executed_by: human-assisted` で記録する。非対話時は skipped + reason 記録（`execution-policy.md` 9 章）
+- `automation: manual-assist` / `exploratory` のケース: 対話時はユーザーに手動確認を依頼し結果を `executed_by: human-assisted` で記録する（提示 3 要素・聴取・エビデンス受領・記録規約は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md` に従う）。非対話時は skipped + reason 記録（`execution-policy.md` 9 章。オーケストレータから `manual-sheet=` で手順書パスを受領した場合は reason に含める）
 
 ## 実行フロー
 
@@ -128,7 +128,7 @@ flowchart TD
 
 本スキル固有の埋め方（フォーマット自体は複製しない）:
 
-- `executed_by`: `playwright-mcp`（応答時間計測）。多重負荷を外部ツールで実施した場合の記録方法は performance-execution.md 参照
+- `executed_by`: `playwright-mcp`（応答時間計測）。多重負荷を外部ツールで実施した場合の記録方法は performance-execution.md 参照。manual-assist / exploratory ケースを人手確認した場合のみ `human-assisted`
 - `actual`: 実測値（中央値）・計測回数・閾値・判定結果を記述する
 - `defect.extras.measured_value`: 実測値（中央値、単位を明記）
 - `defect.extras.threshold`: ケースの閾値

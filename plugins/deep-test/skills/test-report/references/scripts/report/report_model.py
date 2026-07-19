@@ -55,6 +55,16 @@ SCHEMA_VERSION = 1
 
 STATUS_ORDER = ["pass", "fail", "blocked", "skipped", "na"]
 
+# 実行主体（executed_by）の自動 / 手動分類キー（report-format.md 3.2 レベル別集計）。
+# human-assisted（人間の実施・申告に基づく記録）のみ manual、それ以外の enum 4 値
+# （playwright-mcp / playwright-test / test-framework / api）は auto に分類する
+EXECUTION_CLASS_KEYS = ["auto", "manual"]
+
+
+def classify_executed_by(executed_by):
+    """結果レコードの executed_by を自動（auto）/ 手動（manual）に分類する。"""
+    return "manual" if str(executed_by or "") == "human-assisted" else "auto"
+
 # 既知のテストレベル（levels.py の LEVEL_ORDER）以外の level をまとめる集計行のキー。
 # 未知レベルのケースを verdict・レベル別集計から静かに脱落させず、本キーの行に合算する。
 UNKNOWN_LEVEL_KEY = "unknown"
@@ -66,7 +76,7 @@ VERDICT_DESCRIPTIONS = {
     "INCOMPLETE": "fail = 0 だが blocked または skipped が 1 件以上（未確認が残る）",
 }
 
-# report-format.md 6 章 免責注記（5 項目必須。実施有無に関わらず削除しない）
+# report-format.md 6 章 免責注記（6 項目必須。実施有無に関わらず削除しない）
 DISCLAIMERS = [
     ("UAT", "UAT 支援は検証支援であり、受入判断は人間（発注者・業務部門）が実施する。"),
     (
@@ -89,6 +99,11 @@ DISCLAIMERS = [
         "本報告書の『ユニットテスト』はコードレベルの自動テスト、"
         "『単体テスト』は実アプリの画面・機能単位のテストを指す"
         "（本プラグイン独自の区分であり、JSTQB/ISTQB の呼称とは異なる）。",
+    ),
+    (
+        "手動",
+        "executed_by: human-assisted の結果は人間の実施・申告に基づく記録であり、"
+        "機械検証（自動実行）とは実行主体が異なる（実行主体列・サマリ内訳で区別する）。",
     ),
 ]
 
@@ -269,17 +284,39 @@ def apply_secret_masking(latest_detail):
     return masked_ids
 
 
-def evidence_path_note(target):
+def evidence_path_note(target, results_path=None):
     """エビデンス参照パスの基準に関する注記（両形式のサマリ部に必ず出力する）。
 
     報告書の出力先（セッション作業領域）とエビデンス実体（テスト実績データディレクトリ）は
     別ツリーにあるため、報告書からの相対リンクとして解決できないことを明示する。
+
+    基準ディレクトリは results ファイル（test-results.yaml）の実パスから導出する
+    （エビデンスは実績 YAML と同じ {target-slug}/ 直下基準のため。data-locations.md）。
+    これにより非既定 base・home フォールバック配置でも注記と実配置が一致する。
+    results_path 未指定・導出不能時は、既定配置のパス表記に「既定配置の場合」を付す
+    フェイルセーフへ縮退する（従来の第 1 引数のみの呼出シグネチャとも互換）。
     """
+    base_dir = ""
+    if results_path:
+        try:
+            raw = str(results_path).strip()
+            # 呼出時の表記（相対/絶対）を保ったまま親ディレクトリを取る。
+            # ファイル名のみ指定（親が空）の場合は絶対パス経由で解決する
+            base_dir = os.path.dirname(raw) or os.path.dirname(os.path.abspath(raw))
+        except (TypeError, ValueError, OSError):
+            base_dir = ""
+    if base_dir:
+        display = base_dir.replace("\\", "/").rstrip("/") + "/"
+        return (
+            "エビデンス参照はテスト実績データディレクトリ"
+            f"（{display}）基準の相対パスであり、"
+            "本報告書からの相対リンクではない。"
+        )
     slug = str(target).strip() if target else ""
     slug = slug or "{target-slug}"
     return (
         "エビデンス参照はテスト実績データディレクトリ"
-        f"（.claude/.local/plugins/deep-test/{slug}/）基準の相対パスであり、"
+        f"（既定配置の場合 .claude/.local/plugins/deep-test/{slug}/）基準の相対パスであり、"
         "本報告書からの相対リンクではない。"
     )
 
@@ -432,25 +469,35 @@ def build_model(cases_doc, results_doc):
         idx = LEVEL_ORDER.index(level) if level in LEVEL_ORDER else len(LEVEL_ORDER)
         return (idx, str(case_id))
 
-    # レベル別集計（実施レベル = latest に 1 件以上結果があるレベル）
+    # レベル別集計（実施レベル = latest に 1 件以上結果があるレベル）。
+    # あわせて実行主体別内訳（自動 auto / 手動 manual。classify_executed_by）を
+    # latest 採用の実施ケースごとに機械集計する（report-format.md 3.2）
     level_rows = []
     executed_levels = []
-    total = {"target": 0, **{s: 0 for s in STATUS_ORDER}}
+    total = {"target": 0, **{s: 0 for s in STATUS_ORDER}, **{k: 0 for k in EXECUTION_CLASS_KEYS}}
     for level in LEVEL_ORDER:
         level_ids = [c.get("id") for c in active_cases if c.get("level") == level]
         executed_ids = [cid for cid in level_ids if cid in latest_detail]
         if not executed_ids:
             continue
         executed_levels.append(level)
-        row = {"level": level, "target": len(level_ids), **{s: 0 for s in STATUS_ORDER}}
+        row = {
+            "level": level,
+            "target": len(level_ids),
+            **{s: 0 for s in STATUS_ORDER},
+            **{k: 0 for k in EXECUTION_CLASS_KEYS},
+        }
         for cid in executed_ids:
             status = str(latest_detail[cid]["ref"].get("status", ""))
             if status in STATUS_ORDER:
                 row[status] += 1
+            row[classify_executed_by(latest_detail[cid]["result"].get("executed_by"))] += 1
         level_rows.append(row)
         total["target"] += row["target"]
         for s in STATUS_ORDER:
             total[s] += row[s]
+        for k in EXECUTION_CLASS_KEYS:
+            total[k] += row[k]
 
     # 未知レベル（LEVEL_ORDER 以外）の active ケースを集計へ合算する。従来は LEVEL_ORDER のみを
     # 走査していたため、未知レベルの fail が total へ届かず verdict から静かに脱落し（見落とされ）、
@@ -458,7 +505,12 @@ def build_model(cases_doc, results_doc):
     # 反映させる。実施済みケース ID は unknown_level_case_ids として未確認事項に記載させる。
     unknown_level_case_ids = []
     unknown_level_values = set()
-    unknown_row = {"level": UNKNOWN_LEVEL_KEY, "target": 0, **{s: 0 for s in STATUS_ORDER}}
+    unknown_row = {
+        "level": UNKNOWN_LEVEL_KEY,
+        "target": 0,
+        **{s: 0 for s in STATUS_ORDER},
+        **{k: 0 for k in EXECUTION_CLASS_KEYS},
+    }
     for case in active_cases:
         level = case.get("level")
         if level in LEVEL_ORDER:
@@ -471,17 +523,28 @@ def build_model(cases_doc, results_doc):
             status = str(latest_detail[cid]["ref"].get("status", ""))
             if status in STATUS_ORDER:
                 unknown_row[status] += 1
+            unknown_row[classify_executed_by(latest_detail[cid]["result"].get("executed_by"))] += 1
     if unknown_level_case_ids:
         # 実施済み（latest に結果がある）未知レベルケースがある場合のみ集計行として計上する
         level_rows.append(unknown_row)
         total["target"] += unknown_row["target"]
         for s in STATUS_ORDER:
             total[s] += unknown_row[s]
+        for k in EXECUTION_CLASS_KEYS:
+            total[k] += unknown_row[k]
         print(
             "[WARN] 既知のテストレベル（levels.py の LEVEL_ORDER）以外の level を持つ実施済みケースを"
             "集計に含めました（verdict へ反映。報告書の未確認事項に記載します）: "
             + ", ".join(sorted(unknown_level_values))
         )
+
+    # 手動内訳（latest 採用の実施ケースを test-cases.yaml の automation で機械集計。
+    # サマリのレベル別集計表直下の手動内訳注記に使用する。report-format.md 3.2）
+    manual_breakdown = {"manual-assist": 0, "exploratory": 0}
+    for cid in latest_detail:
+        automation = str((case_by_id.get(cid) or {}).get("automation") or "")
+        if automation in manual_breakdown:
+            manual_breakdown[automation] += 1
 
     if total["fail"] > 0:
         verdict = "FAIL"
@@ -566,6 +629,7 @@ def build_model(cases_doc, results_doc):
         "level_rows": level_rows,
         "executed_levels": executed_levels,
         "total": total,
+        "manual_breakdown": manual_breakdown,
         "verdict": verdict,
         "ng_rows": ng_rows,
         "skipped_rows": skipped_rows,
@@ -604,6 +668,58 @@ def truncate_extras_value(value):
     return text
 
 
+# extras 内 list の dict 要素（session_findings の発見事象等）の既知キーの表示ラベル
+# （manual-execution.md 6.5 / yaml-schema-results.md 4 章の session_findings 規約に対応）
+_EXTRAS_ENTRY_KEY_LABELS = {
+    "finding": "事象",
+    "reproducibility": "再現性",
+    "promoted_to_defect": "defect 化",
+}
+
+
+def _format_extras_entry(entry):
+    """extras 内 list の dict 要素 1 件を可読な 1 行へ整形する（情報欠落なし）。
+
+    session_findings の既知キーは日本語ラベルへ置き換え、
+    「事象: …（再現性: …・defect 化: 有/無）」形式にする。
+    既知以外のキーもキー名のまま併記し、値を欠落させない。
+    """
+    parts = []
+    for key, value in entry.items():
+        if key == "finding":
+            continue
+        label = _EXTRAS_ENTRY_KEY_LABELS.get(key, str(key))
+        if key == "promoted_to_defect":
+            value = "有" if value else "無"
+        parts.append(f"{label}: {value}")
+    detail = "・".join(parts)
+    if "finding" in entry:
+        head = f"事象: {entry.get('finding')}"
+        return f"{head}（{detail}）" if detail else head
+    return detail
+
+
+def format_extras_value_lines(value):
+    """defect.extras の値を表示用の行リストへ整形する（表示のみ。記録値は変更しない）。
+
+    session_findings 等の list 値を Python repr（str(list)）のまま転載すると可読性が
+    低いため、要素 1 件 = 1 行へ展開する（dict 要素は _format_extras_entry で整形・
+    dict 以外の要素は従来どおり文字列化）。list 以外の値・空 list は従来どおり
+    文字列化した 1 行を返す。各行に truncate_extras_value の切り詰め規則を適用する。
+    """
+    if isinstance(value, list) and value:
+        lines = []
+        for entry in value:
+            if isinstance(entry, dict):
+                text = _format_extras_entry(entry)
+                # 空 dict 等で整形結果が空になる場合は従来の文字列化へ縮退（欠落させない）
+                lines.append(truncate_extras_value(text if text else entry))
+            else:
+                lines.append(truncate_extras_value(entry))
+        return lines
+    return [truncate_extras_value(value)]
+
+
 def format_duration(value):
     """実行時間の表示整形。0（0.0）は「<0.01」と表示する（記録値は変更しない。report-format.md 3.4）。"""
     if value is None:
@@ -621,6 +737,21 @@ def annotation_target(entry):
 
 def level_label(level):
     return LEVEL_DISPLAY_NAMES.get(level, str(level))
+
+
+def manual_breakdown_note(model):
+    """サマリのレベル別集計表直下に出力する手動内訳注記（両形式共通の定型文）。
+
+    件数は latest 採用の実施ケースを test-cases.yaml の automation で機械集計した値
+    （build_model の manual_breakdown）。human-assisted の結果が人間の実施・申告に
+    基づく記録であることを、集計表の自動 / 手動列と対で明示する（report-format.md 3.2）。
+    """
+    breakdown = model["manual_breakdown"]
+    return (
+        f"手動内訳: manual-assist {breakdown['manual-assist']} 件 / "
+        f"exploratory {breakdown['exploratory']} 件。"
+        "human-assisted の結果は人間の実施・申告に基づく。"
+    )
 
 
 def build_disclaimer_rows(model):

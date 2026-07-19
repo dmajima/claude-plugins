@@ -35,6 +35,8 @@ deep-test プラグインが扱うデータ（テスト計画・ケース定義�
     ├── test-plan.md                   # テスト計画（test-design 生成）
     ├── test-cases.yaml                # テストケース定義（スキーマは yaml-schema-cases.md）
     ├── test-results.yaml              # 実行実績（スキーマは yaml-schema-results.md）
+    ├── manual/                        # 手動実施の手順書・チャーターシート（generate_manual_sheet.py 生成。3 章）
+    │   └── manual-sheet_{yyyyMMdd-HHmmss}.md
     ├── evidence/
     │   └── {run_id}/
     │       ├── environment/           # run 中のサービス別コンテナログ（test-environment の down 時保存先。{service}.log）
@@ -61,6 +63,7 @@ deep-test プラグインが扱うデータ（テスト計画・ケース定義�
 | `test-plan.md` | test-design | テスト計画（対象分析・レベル選定・方針） | — |
 | `test-cases.yaml` | test-design | ケース定義・revision 管理 | `yaml-schema-cases.md` |
 | `test-results.yaml` | オーケストレータ `test`（results_manager.py 経由のみ。LLM 直接編集禁止） | run 履歴 + ケース別結果 + latest 集計 | `yaml-schema-results.md` |
+| `manual/` | オーケストレータ `test`（`generate_manual_sheet.py` 経由） | 手動実施ケース（manual-assist / exploratory）の実施指示書・チャーターシート（test-cases.yaml から再生成可能な派生物。タイムスタンプ命名で上書きしない） | `manual-execution.md` 8 章 |
 | `evidence/{run_id}/{case_id}/` | 実行スキル（test-run-* の移送後処理） | スクリーンショット・ログ・トレース | `evidence-policy.md`（内容要件）・本ファイル 5 章（移送） |
 | `playwright/` | Playwright MCP | raw 出力（移送前の一時置き場） | `playwright-mcp.md`（登録・起動オプション） |
 | 報告書（Excel / Markdown） | test-report | 実績 YAML から生成する最終成果物 | `report-format.md`・本ファイル 6 章（出力先） |

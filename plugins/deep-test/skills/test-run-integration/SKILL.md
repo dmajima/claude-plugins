@@ -81,7 +81,7 @@ allowed-tools:
 | ユーザー直接起動で必須入力（target-slug / run_id / 対象ケース / 対象 URL）が欠落 | 単独 | 実行せず、`/deep-test:test`（run-only モード等）経由の起動を案内する。run_id 採番・実績記録はオーケストレータの責務のため、単独実行では実績が記録されない旨を伝える |
 
 - ケース定義本体が引数で渡されない場合は、`.claude/.local/plugins/deep-test/{target-slug}/test-cases.yaml` から該当ケースを Read で参照する（読み取りのみ）
-- `automation: manual-assist` のケース: 対話時はユーザーに手動確認を依頼し `executed_by: human-assisted` で記録する。非対話時は skipped + reason（非対話既定値表は execution-policy.md）
+- `automation: manual-assist` / `exploratory` のケース: 対話時はユーザーに手動確認を依頼し `executed_by: human-assisted` で記録する（提示 3 要素・聴取・エビデンス受領・記録規約は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md` に従う）。非対話時は skipped + reason（非対話既定値表は execution-policy.md。オーケストレータから `manual-sheet=` で手順書パスを受領した場合は reason に含める）
 - `automation: playwright-test` のケース: fixtures.yaml と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts`）を前提に `npx playwright test`（Bash 実行）で実走する。外部依存（IT-b）は fixtures.yaml のモックフィクスチャ（route.fulfill）で差し替え、実接続なしに再現可能な検証を行う。pass / fail と JUnit / レポートをエビデンス化して `executed_by: playwright-test` で記録し、Playwright・ランナー未導入または fixtures.yaml 不在時は skipped + reason（手順は `${CLAUDE_SKILL_DIR}/references/integration-execution.md` 8 章）。既存の MCP・API 補助確認・manual-assist 経路は不変
 - API 直接確認に認証情報が必要な場合: 対話時は credentials-manager 系スキルの利用を案内する。非対話で認証が解決できない場合は当該確認を実施せず、その旨を actual / reason に記録する（フル値の取り扱い・出力は行わない）
 

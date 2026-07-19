@@ -125,6 +125,8 @@ flowchart TD
 
 Phase 別の要点（内容・委譲先 / 操作の一覧表）は `${CLAUDE_SKILL_DIR}/references/flow.md` 2.1 章へ移管した。各 Phase の具体的な実行コマンド・Skill args・判定手順は同 6 章（実行コマンド集）を参照。
 
+Phase 5 の手動実施ケース（`automation: manual-assist` / `exploratory`）はレベル内で自動実行ケース群の後に処理し、非対話時は start-run 前に手順書を一括生成して skipped + reason（手順書パス）へ縮退する（生成失敗はフェイルオープン。規範は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md`、手順は flow.md 6 章 Phase 5 手順 0.5）。
+
 ## 検証
 
 完了報告の前に以下をすべて確認する。
@@ -135,6 +137,7 @@ Phase 別の要点（内容・委譲先 / 操作の一覧表）は `${CLAUDE_SKI
 - [ ] 報告書がセッション作業領域直下に存在する（report を含むモードのみ）
 - [ ] `{base}/playwright/` に帰属不明の残留ファイルがない（あれば警告して整理する。`${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 5 章）
 - [ ] `{slug}-test` プロジェクトの残存コンテナがない（environment up を実施した場合、down 済みである。維持する場合〔NEEDS REVISION の ids 再実行待ち等〕は理由を明示している）
+- [ ] 非対話時、手動実施ケース（manual-assist / exploratory）の skipped reason に手順書パスが記録されている（手順書生成に失敗した場合は理由のみで可）
 
 ## 引き渡し
 

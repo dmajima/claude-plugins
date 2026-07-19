@@ -91,7 +91,7 @@ scope の security レベルのケースについて、OWASP 観点（`${CLAUDE_
 | セキュリティヘッダ | `browser_network_requests` / Bash `curl -I` |
 | 情報露出 | Playwright（エラーページ・HTML コメント）+ Bash（ディレクトリリスティング確認） |
 
-- `automation: manual-assist` のケース: 対話時はユーザーに手動確認を依頼し結果を `executed_by: human-assisted` で記録する。非対話時は skipped + reason 記録（`execution-policy.md` 9 章）
+- `automation: manual-assist` / `exploratory` のケース: 対話時はユーザーに手動確認を依頼し結果を `executed_by: human-assisted` で記録する（提示 3 要素・聴取・エビデンス受領・記録規約は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md` に従う）。非対話時は skipped + reason 記録（`execution-policy.md` 9 章。オーケストレータから `manual-sheet=` で手順書パスを受領した場合は reason に含める）
 - `automation: playwright-test` のケース: fixtures.yaml の認証フィクスチャ（`type: auth`・storageState）と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts`）を前提に `npx playwright test`（Bash 実行）で実走する。認証済み context（storageState）と未認証 context の挙動差（保護リソースへの到達可否等）を非破壊で検証し、pass / fail と JUnit / レポートをエビデンス化して `executed_by: playwright-test` で記録する。Playwright・ランナー未導入または fixtures.yaml 不在時は skipped + reason（手順は `${CLAUDE_SKILL_DIR}/references/security-execution.md` 7 章）。既存の MCP・`curl` 経路は不変
 
 ## 実行フロー
@@ -134,7 +134,7 @@ flowchart TD
 
 本スキル固有の埋め方（フォーマット自体は複製しない）:
 
-- `executed_by`: `playwright-mcp`（ブラウザ操作主体の場合）。ヘッダ確認等を Bash `curl` で行った場合はその旨を actual に明記する。`automation: playwright-test` のケースを `npx playwright test` で実走した場合は `playwright-test`
+- `executed_by`: `playwright-mcp`（ブラウザ操作主体の場合）。ヘッダ確認等を Bash `curl` で行った場合はその旨を actual に明記する。`automation: playwright-test` のケースを `npx playwright test` で実走した場合は `playwright-test`。manual-assist / exploratory ケースを人手確認した場合のみ `human-assisted`
 - `actual`: 確認した観点と結果（例: 「HSTS ヘッダが未設定」「ログアウト後もセッション Cookie が有効」）。機微情報はマスク値で記述する
 - `defect.extras.owasp_category`: 該当 OWASP カテゴリ（例: A05:2021 Security Misconfiguration）
 - `evidence`: リクエスト/レスポンス記録・スクリーンショット（機微情報マスク済み）

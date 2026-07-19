@@ -1,6 +1,6 @@
 # deep-test
 
-テスト設計→レビュー→実施→結果レビュー→報告→再テストのフルライフサイクルを、テストレベル別特化スキルとマルチエージェントレビューで支援する観点別テストプラグインです。日本の SI 実務で使われる 8 テストレベル（ユニット/単体/内部結合/外部結合/システム/受入(UAT)/性能/セキュリティ）に対応し、Playwright MCP による実アプリ動作・ユーザー目線のテストを重視します。テスト実績は YAML で永続化され、全件・NG のみ・ID 指定の再テストと、Excel / Markdown の 1 ファイル報告書生成ができます。
+テスト設計→レビュー→実施→結果レビュー→報告→再テストのフルライフサイクルを、テストレベル別特化スキルとマルチエージェントレビューで支援する観点別テストプラグインです。日本の SI 実務で使われる 8 テストレベル（ユニット/単体/内部結合/外部結合/システム/受入(UAT)/性能/セキュリティ）に対応し、Playwright MCP による実アプリ動作・ユーザー目線のテストを重視します。テスト実績は YAML で永続化され、全件・NG のみ・ID 指定の再テストと、Excel / Markdown の 1 ファイル報告書生成ができます。人手確認が不可欠なケース（manual-assist）とチャーターベースの探索的テスト（exploratory）も自動実行と同一の実績管理に統合し、対話時は確認・探索セッションを支援、非対話時は手動手順書（チャーターシート）の自動生成に縮退します。報告書では実行主体（自動 / 手動）を区別して集計します。
 
 なお、コードレビュー中の差分限定ユニットテスト実行はコードレビュー系プラグインの責務であり、本プラグインはプロジェクト全体のテストライフサイクル管理を担います。
 
@@ -147,6 +147,8 @@ git checkout main
 | 「テスト対象を解析して」「解析材料を作って」 | `test`（analyze フェーズ）または `test-analyze` |
 | 「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」 | `test`（fixture フェーズ）または `test-fixture` |
 | 「テスト用の Docker 環境を作って」「テスト用コンテナ環境を起動して」「テスト用コンテナ環境を片付けて」 | `test`（environment フェーズ）または `test-environment` |
+| 「手動テストも混ぜて」「目視確認のケースも入れて」 | `test`（フルフロー。`automation: manual-assist` のケースを対話で人手確認・非対話時は手順書生成に縮退） |
+| 「探索的テストをやりたい」「探索セッションで気になるところを見たい」 | `test`（フルフロー。`automation: exploratory` のチャーターベース探索セッションを実施・記録） |
 | 「前回 NG だったテストだけ再実行して」 | `test`（retest ng-only） |
 | 「テスト報告書を Excel で作って」 | `test`（report-only） |
 | 「テストツールチェーンを準備して」 | `test-setup` |
@@ -195,7 +197,7 @@ plugins/deep-test/
 │   ├── user-perspective-reviewer.md
 │   ├── defect-analyst.md
 │   └── evidence-auditor.md
-├── references/                     # プラグイン共通規範（ナビ CLAUDE.md + SSOT 16 ファイル + 人間向け README）+ 共通スクリプト
+├── references/                     # プラグイン共通規範（ナビ CLAUDE.md + SSOT 17 ファイル + 人間向け README）+ 共通スクリプト
 │   ├── CLAUDE.md                   # ナビゲーション
 │   ├── README.md                   # 人間向けインデックス（Claude 動作では不参照）
 │   ├── common-references.md        # worker スキル共通参照インデックス
@@ -209,6 +211,7 @@ plugins/deep-test/
 │   ├── retest-policy.md            # 再テスト規約
 │   ├── data-locations.md           # データ配置規約
 │   ├── execution-policy.md         # 実行共通規範（ゲート・条件付き動的検証）
+│   ├── manual-execution.md         # 手動実行規範（manual-assist / exploratory・探索的セッション・手順書様式）
 │   ├── playwright-mcp.md           # Playwright MCP 利用規約
 │   ├── playwright-test.md          # Playwright Test 実行規約・fixtures.yaml スキーマ（Phase 1.6）
 │   ├── evidence-policy.md          # エビデンス・NG 時提出物規約
@@ -248,7 +251,8 @@ plugins/deep-test/
 | テスト計画 | `.claude/.local/plugins/deep-test/{target-slug}/test-plan.md` | test-design が生成 |
 | テストケース | `.claude/.local/plugins/deep-test/{target-slug}/test-cases.yaml` | revision 管理・review 承認制 |
 | テスト実績 | `.claude/.local/plugins/deep-test/{target-slug}/test-results.yaml` | run 履歴の追記型 + latest 集計 |
-| エビデンス | `.claude/.local/plugins/deep-test/{target-slug}/evidence/{run_id}/{case_id}/` | スクリーンショット・ログ |
+| エビデンス | `.claude/.local/plugins/deep-test/{target-slug}/evidence/{run_id}/{case_id}/` | スクリーンショット・ログ・セッションシート（探索的テスト） |
+| 手動手順書 | `.claude/.local/plugins/deep-test/{target-slug}/manual/` | manual-assist の実施指示書・exploratory のチャーターシート（非対話時・「後で実施」時に自動生成。再生成可能な派生物） |
 | 報告書 | セッション作業領域直下 | Excel / Markdown（実績 YAML から何度でも再生成可能） |
 
 ## カスタマイズ

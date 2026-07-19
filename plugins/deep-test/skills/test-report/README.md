@@ -39,7 +39,7 @@ fail の defect 3 点セット欠落・scope/results 不整合・未マスクの
 
 | シート | 内容 |
 |-------|------|
-| サマリ | 基本情報（エビデンスパス基準注記付き）・run 情報・レベル別集計（latest 採用）・NG 一覧・未確認事項（skipped + ケース定義に存在しない実績 ID）・総合判定（PASS/FAIL/INCOMPLETE）・免責注記 5 項目 |
+| サマリ | 基本情報（エビデンスパス基準注記付き）・run 情報・レベル別集計（latest 採用）・NG 一覧・未確認事項（skipped + ケース定義に存在しない実績 ID）・総合判定（PASS/FAIL/INCOMPLETE）・免責注記 6 項目 |
 | 推移 | run 集計推移（fail 数の推移等）+ ケース別 status 推移マトリクス |
 | レベル別シート | 実施レベルのみ作成（ユニット / 単体 / 内部結合 / 外部結合 / システム / 受入(UAT) / 性能 / セキュリティ）。ケース明細 12 列 + NG 詳細 |
 
@@ -94,7 +94,7 @@ plugins/deep-test/skills/test-report/
 │           ├── report_model.py       # 共通データモデル（読み込み・集計・共通定数の一元化）
 │           ├── generate_excel.py     # Excel 報告書生成（openpyxl 全コード生成方式）
 │           └── generate_markdown.py  # Markdown 報告書生成（GFM・6 章構成）
-└── evals/                            # 動作分岐検証ケース（case-01〜05 + README）
+└── evals/                            # 動作分岐検証ケース（case-01〜09 + README・9 ケース）
 ```
 
 > venv 構築・削除スクリプト（`setup_venv.sh` / `teardown_venv.sh`）と `requirements.txt`（PyYAML / openpyxl・バージョン固定）は

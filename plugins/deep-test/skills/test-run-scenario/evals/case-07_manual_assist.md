@@ -37,3 +37,4 @@ SKILL.md「実行モード判定」の manual-assist 分岐（対話時はユー
 - case-01: Playwright MCP で自動実行される pass ケース（executed_by: playwright-mcp）との対比
 - case-05: MCP 未ロードによる skipped（実行手段不在の別要因）との対比
 - case-03: UAT 観点の検証と受入判断の分離（人手確認でも同じ免責が適用される）
+- case-13: 同じ聴取で「後で実施」を選択した分岐（オンデマンド手順書生成 → skipped + パス転記）

@@ -57,6 +57,7 @@
 | `severity-policy.md` | fail 時の severity 判定 |
 | `yaml-schema-results.md` | 返却する中間結果の status enum・defect フィールド定義・status の使い分け |
 | `data-locations.md` | エビデンス移送手順（run/case 単位フォルダへの move） |
+| `manual-execution.md` | `manual-assist` / `exploratory` ケースの提示・聴取・エビデンス受領・記録規約（手動実行の SSOT） |
 
 ### 3.4 報告時（`test-report`）
 

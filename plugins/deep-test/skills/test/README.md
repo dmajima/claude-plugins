@@ -94,7 +94,7 @@ skills/test/
 │           └── results_manager.py  # 実績 YAML 操作スクリプト（唯一の書き込み経路）
 └── evals/                          # 動作分岐の検証ケース集
     ├── README.md
-    └── case-01 〜 case-06
+    └── case-01 〜 case-29（29 ケース）
 ```
 
 > テストレベル定義・YAML スキーマ・再テスト規約・ゲート定義などの規範はプラグイン共通の `references/`（プラグインルート直下）にあり、全スキルで共有しています。

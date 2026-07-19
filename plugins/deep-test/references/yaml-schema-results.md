@@ -69,6 +69,7 @@ runs[].status の意味:
 | `threshold` | 性能 | 閾値（期待基準） |
 | `owasp_category` | セキュリティ | 該当する OWASP カテゴリ |
 | `stack_trace` | ユニット | 失敗時のスタックトレース |
+| `session_findings` | 探索的セッション（`automation: exploratory`） | セッション中の発見事象の一覧（事象・再現性・defect 化有無）。最重要 1 件は defect 本体に記録し、全発見を本キーとセッションシートに残す（規約は `manual-execution.md` 6 章） |
 
 ```yaml
 # extras の記載例（性能テスト）
