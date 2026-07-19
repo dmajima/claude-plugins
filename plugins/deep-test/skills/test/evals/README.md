@@ -31,6 +31,9 @@
 | 22 | case-22_setup_partial_received.md | Phase 1 で test-setup が PARTIAL を返す（対話）→ 停止せず続行しユーザーへ提示・利用不可項目の影響を実行フェーズへ引き継ぐ | フル・対話 |
 | 23 | case-23_phase7_validate_violation_supplement_rerun.md | Phase 7 最終 validate の scope 突合違反（記録欠落）→ 報告書生成せず Phase 5 復帰・同一 run_id で欠落補完 → finish-run 再確定 → validate 再通過 | フル（Phase 7） |
 | 24 | case-24_setup_partial_received_non_interactive.md | Phase 1 で test-setup が PARTIAL を返す（非対話）→ 提示せず自動続行・skipped 見込みを記録（case-22 の対） | フル・非対話 |
+| 25 | case-25_environment_lifecycle_full_flow.md | 環境統合フルフロー（Phase 1.7 provision → design 移行・全ゲート通過後の up〔Phase 5 手順 0〕→ start-run・Phase 6 PASS 後の down） | フル・対話 |
+| 26 | case-26_environment_keep_on_needs_revision.md | 結果レビュー NEEDS REVISION 時の環境維持（down せず ids 再実行に備える・再実行 PASS 後に down） | フル（Phase 6） |
+| 27 | case-27_resume_environment_recheck.md | resume 時の環境再確認（ps + health 再確認 → healthy 再利用〔再 up 不要〕/ unhealthy down → up） | resume |
 
 ## ケースファイルの構成
 
@@ -53,6 +56,7 @@
 - スクリプト軸: init〜summary の正常系（case-01・02）/ record exit 2 の一次バリデーションと exit 3 / 64 の区別（case-06）/ validate の最終バリデーション違反（scope 突合の記録欠落）による Phase 5 復帰・欠落補完（case-23）/ select の対象判定マトリクス（case-02・10・21・13）
 - 安全系・解決系の軸: 環境安全（本番既定禁止・破壊的操作。case-12）/ target-slug 解決の対話・非対話対（case-15・17）
 - setup 受領軸: Phase 1 の setup 検出結果の受領（新規 MCP 登録・未ロードは再起動ハンドオフ停止＝case-03 / PARTIAL は停止せず続行〔対話＝case-22 / 非対話＝case-24〕）
+- 環境軸: Phase 1.7 の provision 委譲 → design 移行・up（Phase 5 手順 0）・down（Phase 6 PASS 後）のライフサイクル統合（case-25）/ NEEDS REVISION 時の維持（case-26）/ resume 時の ps + health 再確認による再利用・作り直し（case-27）。環境派生の実務・縮退（applicability・skipped / blocked 材料）は test-environment の evals が担い、本 evals はオーケストレータ側の委譲タイミングと判定のみを扱う
 
 各分岐は「主分岐 1 ケース 1 ファイル」を原則とし、対の分岐（run-only の levels 未指定＝case-19、report-only の実績 0 件＝case-20、再テスト full と ids＝case-10 / 21、setup PARTIAL 受領の対話 / 非対話＝case-22 / 24）は独立ファイルに分割して相互に「関連ケース」でリンクする。
 

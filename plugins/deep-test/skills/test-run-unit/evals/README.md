@@ -15,6 +15,7 @@
 | 06 | case-06_standalone_missing_inputs.md | 単独起動で必須入力欠落 → 実行せずオーケストレータ経由を案内 | 単独 |
 | 07 | case-07_manual_assist.md | automation: manual-assist × 対話（人手確認・executed_by: human-assisted で記録） | 委譲 |
 | 08 | case-08_manual_assist_non_interactive.md | automation: manual-assist × 非対話（skipped + reason で返却。case-07 の対） | 委譲 |
+| 09 | case-09_container_exec_run.md | ホストにランナー不在 + environment.yaml の exec_forms[] あり + 環境 up → コンテナ内 exec で実行（代替経路・executed_by: test-framework 不変。case-03 の対） | 委譲 |
 
 ## ケースファイルの構成
 

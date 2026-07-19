@@ -10,6 +10,7 @@ deep-test プラグインが状態管理に用いる `test-cases.yaml`（テス�
 | `yaml-schema-results.md` | test-results.yaml の完全スキーマ（meta / runs[] / results[] / defect / latest / status の使い分け / annotations / 記入例） |
 
 なお、`analysis.yaml`（test-analyze が Phase 1.5 で生成する対象理解の材料）の analysis 系スキーマは、results_manager.py を経由しない**別系統**として `yaml-schema-analysis.md` に定義する（本ハブの分割先 2 ファイルには含めず、共通記述規約は 2 章を継承する）。
+同様に、`environment.yaml`（test-environment が Phase 1.7 で生成するテスト用派生環境のマニフェスト）の environment 系スキーマは、results_manager.py を経由しない**別系統**として `yaml-schema-environment.md` に定義する（本ハブの分割先 2 ファイルには含めず、共通記述規約は 2 章を継承する）。
 
 ---
 
@@ -110,6 +111,7 @@ exit code:
 | `yaml-schema-cases.md` | test-cases.yaml の完全スキーマ（本ファイルからの分割先） |
 | `yaml-schema-results.md` | test-results.yaml の完全スキーマ（本ファイルからの分割先） |
 | `yaml-schema-analysis.md` | `analysis.yaml`（test-analyze が生成する対象理解の材料）の完全スキーマ（本ファイル 2 章の共通記述規約を継承する analysis 系スキーマ。`test-results.yaml` とは別系統で results_manager.py を経由しない） |
+| `yaml-schema-environment.md` | `environment.yaml`（test-environment が生成するテスト用派生環境のマニフェスト）の完全スキーマ（本ファイル 2 章の共通記述規約を継承する environment 系スキーマ。`test-results.yaml` とは別系統で results_manager.py を経由しない） |
 | `severity-policy.md` | `defect.severity` の enum 値・判定基準（唯一の SSOT） |
 | `retest-policy.md` | 再テストモード・status×モード対象判定・latest 採用の集計規則 |
 | `data-locations.md` | 配置パス・target-slug 解決・エビデンス移送 |

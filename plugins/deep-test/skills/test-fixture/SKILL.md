@@ -1,6 +1,6 @@
 ---
 name: test-fixture
-description: Playwright フィクスチャ基盤（認証 storageState・API モック・シード・base）を作成・拡充する Phase 1.6 のフェーズスキル。test-analyze の後・test-design の前に位置し、analysis.yaml を消費して fixtures.yaml と SUT テストコードを生成する。責務外=ケース設計(test-design)・テスト実行(test-run-*)・環境構築(test-setup)。test 委譲時や「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」と依頼された時に使用。
+description: Playwright フィクスチャ基盤（認証 storageState・API モック・シード・base）を作成・拡充する Phase 1.6 のフェーズスキル。test-analyze の後・test-design の前に位置し、analysis.yaml を消費し fixtures.yaml と SUT テストコードを生成。責務外=ケース設計(test-design)・テスト実行(test-run-*)・ツールチェーン検証(test-setup)。test 委譲時や「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」と依頼された時に使用。
 allowed-tools:
   - Read
   - Grep
@@ -43,7 +43,7 @@ Playwright フィクスチャ基盤（認証 storageState・API モック・シ�
 | 実行環境の構築（Playwright MCP 登録・ランナー検出・venv） | `test-setup`（Phase 1） |
 | 対象アプリの一次分析（fixture は analysis.yaml を消費するのみ・逆生成しない） | `test-analyze`（Phase 1.5） |
 | 認証情報のフル値の管理・保存・取得 | `credentials-manager`（fixture は取得方法のみ記述する） |
-| Docker 等のテスト実行環境の構築 | `test-environment`（将来） |
+| Docker 等のテスト実行環境の構築 | `test-environment`（Phase 1.7） |
 
 ## トリガー条件
 
@@ -64,6 +64,7 @@ Playwright フィクスチャ基盤（認証 storageState・API モック・シ�
 - `${CLAUDE_PLUGIN_ROOT}/references/` の共通規範（playwright-test.md / yaml-schema-analysis.md / data-locations.md / agents.md）が存在すること
 - `fixture-architect` エージェント定義がプラグインルート `agents/` に存在すること
 - `analysis.yaml`（`test-analyze` 生成）が存在すれば材料に消費する。無ければ Read/Glob/Grep で軽量補完する（3.2）
+- テスト用接続情報（ホスト・公開ポート）は `test-environment`（Phase 1.7）の `environment.yaml` から env var 名で受領できる（Phase 1.7 以降。seed / globalSetup は実値をハードコードせず env var 参照で書く）
 
 受け取る引数:
 

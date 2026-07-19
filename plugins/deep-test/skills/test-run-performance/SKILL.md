@@ -63,6 +63,7 @@ allowed-tools:
 
 - Playwright MCP が現セッションでロード済み（MCP ゲートはオーケストレータが通過済み。未ロード検出時は偽装せず skipped で返却する）
 - 入力として `target-slug` / `run_id` / 対象ケースリスト / 対象アプリ情報（URL 等）を受領していること
+- 対象アプリ情報（URL 等）は、test-environment（Phase 1.7）が生成する environment.yaml の `endpoints[]` 由来の base URL（テスト用派生環境）として受領する場合がある（受領形・実行手順は不変。出所の注記のみ）
 - 各 performance ケースの expected / `data` に計測対象と閾値が定義されていること（`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` 4.7 入口基準）
 - 対象機能が機能レベルで安定動作していること（計測条件は preconditions で宣言済み）
 - 共通参照は `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` に集約（本スキルは実行時セクション 3.3 を参照）
@@ -133,6 +134,7 @@ flowchart TD
 - `defect.extras.threshold`: ケースの閾値
 - `duration_sec`: 計測に要した時間（応答時間の実測値そのものではない点に注意）
 - 多重負荷ケース未実施: `status: skipped` + `reason`（負荷ツール未検出）
+- コンテナ派生環境（environment.yaml の `endpoints[]` 由来 base URL・`{slug}-test`）で計測した場合: 「コンテナ派生環境での計測であり、本番構成の性能を代表しない」旨の免責注記材料を JSON とあわせて特記事項として明記して返す（オーケストレータが results_manager.py の annotate で登録し、報告書の「所見・注記」へ機械出力される。本スキルは材料の提供まで・手動転記しない）
 
 ## 重要な制約
 

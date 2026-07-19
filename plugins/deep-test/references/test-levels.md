@@ -74,6 +74,7 @@ flowchart LR
 - **automation 既定値**はケース設計時の初期値であり、ケース単位で上書きできる（例: 人手の確認が不可欠なケースは `manual-assist`）。`manual-assist` ケースの非対話時挙動（skipped）は `execution-policy.md` の非対話既定値表に従う
 - **`playwright-test` のオプトイン**: 本表の automation 既定値は据え置き（変更しない）。`playwright-test` は `fixtures.yaml`（フィクスチャ基盤）が存在するケースで再現可能な `.spec.ts` 実行を選ぶ **オプトイン** の選択肢であり、既定の探索的 MCP フロー（`playwright`）は崩さない（規約は `playwright-test.md`）
 - **入口基準未充足時の記録**: テスト論理上の前提不成立（依存ケース fail・環境未統合等）は `blocked`、実行手段不在（MCP 未ロード・ランナー不在等）は `skipped` として reason 付きで記録する。実行を偽装しない（`execution-policy.md`）
+- **browser 駆動レベルの入口基準の充足手段**: ブラウザ駆動レベルの入口基準「テスト環境にデプロイ済みで到達可能」は、SUT に docker 資産（compose 等）がある場合、test-environment（Phase 1.7 / up）で deep-test 自身が充足できる（テスト用 base URL の出所は `environment.yaml` の `endpoints[]`。スキーマは `yaml-schema-environment.md`）。各レベルの入口基準そのものは変更しない
 
 ## 4. 各レベルの定義
 

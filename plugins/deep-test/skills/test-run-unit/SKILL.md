@@ -58,6 +58,7 @@ allowed-tools:
 
 - ケース定義本体が引数で渡されない場合は、`.claude/.local/plugins/deep-test/{target-slug}/test-cases.yaml` から該当ケースを Read で参照する（読み取りのみ。更新は test-design の責務）
 - `automation: manual-assist` のケース: 対話時はユーザーに手動確認を依頼し `executed_by: human-assisted` で記録する。非対話時は skipped + reason（非対話既定値表は execution-policy.md）
+- コンテナ内 exec 実行（代替経路）: ホストにランタイム / テストランナーが無い場合でも、environment.yaml（test-environment・Phase 1.7）の `exec_forms[]` に該当ランナーの実行形があり環境が稼働状態（`status.state: up / healthy`）なら、記録値の実行形によるコンテナ内実行を代替経路として選択できる。ホストにランナーがあれば従来どおりホスト実行が既定。どちらの手段も無ければ従来どおり skipped + reason（手順・優先順位は `${CLAUDE_SKILL_DIR}/references/unit-execution.md` 7 章）
 
 ## 実行フロー
 
@@ -95,6 +96,9 @@ defect 3 点セット（reproduction_steps: 環境情報含む完全な再現手
 ### 7. 返却
 検証チェックリストを通過後、中間結果 JSON を返却する。
 
+### コンテナ内 exec 実行経路（environment.yaml の exec_forms[]・代替経路）
+上記 2 のランナー検出はホスト実行（既定・不変）を第一とする。ホストにランタイム / ランナーが無い場合に限り、environment.yaml の `exec_forms[]`（コンテナ内ランナー実行形）と環境の稼働状態を確認し、成立すればコンテナ内 exec 実行を代替経路として用いる（優先順位・成立条件・skipped / blocked 判定は `${CLAUDE_SKILL_DIR}/references/unit-execution.md` 7 章）。実行形は environment.yaml の記録値をそのまま用い、結果解釈は上記 3〜6 と同一規範。既存のホスト実行・manual-assist 経路と併存し、置き換えない。
+
 ## 検証（チェックリスト）
 
 中間結果 JSON の返却前に以下を確認する。未達項目は解消してから返却する。
@@ -124,6 +128,7 @@ defect 3 点セット（reproduction_steps: 環境情報含む完全な再現手
 
 - `results[]` は 1 ケース 1 エントリ。フィールド定義・必須制約は execution-policy.md 4 章および yaml-schema-results.md を正とする（本書では複製しない）
 - `executed_by` は `test-framework`（manual-assist ケースを人手確認した場合のみ `human-assisted`）
+- コンテナ内 exec 実行（unit-execution.md 7 章の代替経路）でも `executed_by` は `test-framework` のまま変えない（新しい enum 値を追加しない）。実行場所がコンテナ内である旨（用いた実行形・サービス名）は actual / defect の reproduction_steps に記録する
 
 ## 重要な制約
 
@@ -134,6 +139,7 @@ defect 3 点セット（reproduction_steps: 環境情報含む完全な再現手
 - テストランナー・依存パッケージの導入を試みない（環境構築は test-setup の責務）
 - 対象プロジェクトのソースコード・テストコードを修正しない
 - システム環境へのパッケージインストールを行わない（プロジェクト既存環境を尊重する）
+- コンテナ内 exec 実行時は environment.yaml の `exec_forms[].command_template`（lifecycle の `-f` 群 + `-p {slug}-test` を含む完全形）の記録値をそのまま用いる（`-f` 群・`-p`・サービス名を自分で組み立てない）。environment.yaml は読み取りのみとし、environment.yaml・SUT の docker 資産へ書き込まない。環境の up / down も行わない（test-environment の責務）
 
 ## 参照
 
@@ -141,3 +147,4 @@ defect 3 点セット（reproduction_steps: 環境情報含む完全な再現手
 |-------|------|
 | `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス（実行時の共通規範一式はここから到達する） |
 | `${CLAUDE_SKILL_DIR}/references/unit-execution.md` | ランナー別実行・出力解析・ケースマッピング・エビデンス保存の手順（本スキル固有） |
+| `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` | environment.yaml（`exec_forms[]` / `status.state` / `applicability`）のスキーマ SSOT（コンテナ内 exec 代替経路の入力。読み取りのみ・生成は test-environment） |

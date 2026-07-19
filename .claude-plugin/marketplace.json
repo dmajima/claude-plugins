@@ -162,7 +162,7 @@
     {
       "name": "deep-test",
       "source": "./plugins/deep-test",
-      "description": "テスト設計→実施→報告→再テストのライフサイクルを支援。8テストレベル・Playwright実動作・YAML実績管理。コードレビューの差分テストとは別",
+      "description": "テスト設計→環境構築→実施→報告→再テストのライフサイクルを支援。8テストレベル・Playwright実動作・YAML実績管理。コードレビューの差分テストとは別",
       "category": "developer-tools",
       "author": {
         "name": "dmajima"
@@ -186,6 +186,9 @@
         "playwright-mcp",
         "fixture",
         "test-fixture",
+        "docker",
+        "docker-compose",
+        "test-environment",
         "e2e",
         "yaml-results",
         "retest",

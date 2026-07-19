@@ -63,6 +63,7 @@ allowed-tools:
 
 - Playwright MCP が現セッションでロード済み（MCP ゲートはオーケストレータが通過済み。本スキルは初回ブラウザ操作前に未ロードを検出したら偽装せず skipped で返却する）
 - 入力として `target-slug` / `run_id` / 対象ケースリスト / 対象アプリ情報（URL 等）を受領していること
+- 対象アプリ情報（URL 等）は、test-environment（Phase 1.7）が生成する environment.yaml の `endpoints[]` 由来の base URL（テスト用派生環境）として受領する場合がある（受領形・実行手順は不変。出所の注記のみ）
 - 対象は**テスト環境**であること（本番実行は既定で禁止。`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 環境安全）
 - 共通参照は `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` に集約（本スキルは実行時セクション 3.3 を参照）
 

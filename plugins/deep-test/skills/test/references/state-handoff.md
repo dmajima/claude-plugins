@@ -15,9 +15,10 @@ worker スキルへの引き渡しは `key=value` の空白区切り文字列で
 | `base` | 基準ディレクトリ（解決済み。例: `.claude/.local/plugins/deep-test`） | 全フェーズ |
 | `spec` | 仕様書パス（仕様乖離検出の対象。指定時のみ） | Phase 1.5 |
 | `diff` | 変更影響分析の対象差分（git ref / 範囲。指定時のみ） | Phase 1.5 |
-| `project` | SUT のプロジェクトルート（テストコード生成先・既存 playwright.config.ts 検出の起点） | Phase 1.6 |
+| `project` | SUT のプロジェクトルート（Phase 1.6: テストコード生成先・既存 playwright.config.ts 検出の起点 / Phase 1.7: docker 資産探索の起点） | Phase 1.6 / 1.7 |
+| `action` | `provision` / `up` / `down` / `status`（test-environment の動作指定。既定 provision） | Phase 1.7 / environment の up・down 呼出 |
 | `context` | `design` / `results`（test-review の文脈切替） | Phase 3 / 6 |
-| `run-id` | `start-run` が採番した run_id | Phase 5 / 6 |
+| `run-id` | `start-run` が採番した run_id | Phase 5 / 6 / environment の up・down 呼出（任意） |
 | `cases` | 対象ケース ID の CSV | Phase 3（draft 限定レビュー時）/ 5 |
 | `mode` | 実行モード（再テスト時の full / ng-only / ids 等） | Phase 5 / 7 |
 | `non-interactive` | `true`（非対話モード時のみ付与） | 全フェーズ |
@@ -63,7 +64,19 @@ test-fixture は成果物を**ファイルで引き継ぐ**フェーズであり
 - オーケストレータは成果物ファイル（`fixtures.yaml`）のパス存在のみ確認し、Markdown 要約をユーザー報告に用いる（JSON パースは行わない）。`fixtures.yaml` は Phase 2 が単方向に消費する（test-fixture へ戻さない）
 - fixture 不要（no-op）時は空の `fixtures.yaml`（`fixtures: []`）+ 理由を受領し、SUT への書き込みなしで Phase 2 へ進む
 
-### 2.4 Phase 2: test-design → オーケストレータ
+### 2.4 Phase 1.7: test-environment → オーケストレータ
+
+test-environment は成果物を**ファイルで引き継ぐ**フェーズであり、返り値の JSON コードブロックは**免除**する（2.2 / 2.3 と同じファイル引き継ぎ・JSON 免除の型）。成果物はファイル、返り値は Markdown 要約で受け渡す。up / down / status のライフサイクル呼出でも同型（`environment.yaml` の `status` 更新 + Markdown 要約）。
+
+| 引き継ぎ | 形態 | 内容 |
+|---------|------|------|
+| 成果物 | ファイル | `{base}/{target}/environment.yaml`（機械可読・`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 準拠）と派生成果物（`{base}/{target}/environment/compose.test.yml`・`environment/.env.test`）。Phase 2（test-design）が preconditions / 環境前提の材料に、Phase 5（オーケストレータ）が `start-run --environment` の環境文字列の材料に単方向消費する |
+| 返り値 | Markdown 要約 | 環境構築結果サマリ（target-slug・action・applicability・派生成果物・config_validated・project 名・endpoints・status.state・env-architect 自己チェック所見・縮退時は reason）。書式は test-environment SKILL.md「引き渡し」節に準拠 |
+
+- オーケストレータは成果物ファイル（`environment.yaml`）のパス存在のみ確認し、Markdown 要約をユーザー報告に用いる（JSON パースは行わない）。`environment.yaml` は下流が単方向に消費する（test-environment へ戻さない）
+- no-op / 縮退（docker 資産なし・unit のみ・docker 利用不可）時は `applicability: not-applicable | unavailable` + `reason` を受領し、フローを止めずに Phase 2 へ進む（ユーザー起動 URL があれば従来前提が優先）
+
+### 2.5 Phase 2: test-design → オーケストレータ
 
 | フィールド | 型 | 内容 |
 |-----------|-----|------|
@@ -73,7 +86,7 @@ test-fixture は成果物を**ファイルで引き継ぐ**フェーズであり
 | `levels` | string[] | 採用したテストレベル（`test-levels.md` の level 値） |
 | `updated_case_ids` | string[] | 今回新規作成・revision 更新したケース ID（差し戻し修正時は修正対象のみ） |
 
-### 2.5 Phase 3 / 6: test-review → オーケストレータ
+### 2.6 Phase 3 / 6: test-review → オーケストレータ
 
 | フィールド | 型 | 内容 |
 |-----------|-----|------|
@@ -85,7 +98,7 @@ test-fixture は成果物を**ファイルで引き継ぐ**フェーズであり
 
 - NEEDS_REVISION の場合、オーケストレータは `findings` を**要約せずそのまま** test-design（設計文脈）へ、または flow.md 4.2 の遡行方法（結果文脈）へ引き渡す
 
-### 2.6 Phase 5: test-run-* → オーケストレータ（中間結果）
+### 2.7 Phase 5: test-run-* → オーケストレータ（中間結果）
 
 **`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 4 章の中間結果返却フォーマットに従う**（本書では複製しない）。要点のみ:
 
@@ -93,7 +106,7 @@ test-fixture は成果物を**ファイルで引き継ぐ**フェーズであり
 - `run_id` はオーケストレータが引き渡した値をそのまま返させる（実行スキルは採番しない）
 - scope 全ケースについて 1 エントリ必須（実行不能でも skipped / blocked + reason で返す）
 
-### 2.7 Phase 7: test-report → オーケストレータ
+### 2.8 Phase 7: test-report → オーケストレータ
 
 | フィールド | 型 | 内容 |
 |-----------|-----|------|

@@ -72,6 +72,7 @@ flowchart TD
 | Playwright Test ランナー（`npx playwright test` + フィクスチャ） | `automation: playwright-test`（fixture 前提の再現可能テスト） | Playwright / ランナー未導入・fixtures.yaml 不在時 → 対象ケースを skipped + reason（規約は `playwright-test.md`） |
 | テストランナー（pytest / jest / dotnet test 等） | unit | 検出不可 → 対象ケースを skipped + reason |
 | 対象アプリケーション | ブラウザ駆動レベル全般 | 対象 URL 到達不可・起動未確認 → 対象ケースを skipped + reason |
+| Docker デーモン（test-environment 派生環境） | SUT の起動（Phase 1.7 で provision した派生環境の up による base URL 提供） | 従来前提（ユーザー起動 URL）へフォールバック。ユーザー起動 URL も無い場合 → 対象ケースを skipped + reason（縮退の詳細は yaml-schema-environment.md） |
 | 外部負荷ツール（k6 等） | performance の多重負荷 | 検出不可 → 多重負荷ケースのみ skipped。単一セッション応答時間計測は実施する |
 
 - `skipped` / `blocked` の使い分け（status 意味論）・enum 定義は yaml-schema-results.md 6 章、skipped ケースの環境整備後 ng-only 再テスト対象化は retest-policy.md 参照
@@ -187,6 +188,8 @@ results[] 各要素（1 ケース 1 エントリ）:
 | target-slug が複数存在 | エラー中断（自動選択しない） |
 | 報告対象 run（report-only 時） | 最新 run（集計自体は latest 規則で run 横断。retest-policy.md） |
 | MCP ゲートで未ロード | 再起動ハンドオフを出力して停止（非対話でも自動続行しない） |
+| environment up（test-environment の action=up） | 許可（down までのワンサイクル完結を条件とする一時的副作用として自動進行。永続的副作用は作らない） |
+| environment の health 未達（--wait-timeout 超過） | down して対象レベルの blocked 材料として記録（環境を維持したまま放置しない） |
 
 ## 10. 関連 references
 

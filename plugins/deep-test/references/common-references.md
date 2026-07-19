@@ -1,19 +1,19 @@
 # worker スキル共通リファレンス（SSOT）
 
-`deep-test` プラグインの全 worker スキル 12 種が共通参照するリファレンスの集約インデックス。
+`deep-test` プラグインの全 worker スキル 13 種が共通参照するリファレンスの集約インデックス。
 各スキルの SKILL.md は本ファイルを 1 行参照するだけで共通規範一式に到達できる。
 
 > **位置付け**: `${CLAUDE_PLUGIN_ROOT}/references/common-references.md`（プラグイン共通 references）。
-> 対象は worker スキル（フェーズスキル 6 + 実行スキル 6）。オーケストレータ `test` は制御専任のため本ファイルの参照契約の対象外（必要な references を直接参照する）。
+> 対象は worker スキル（フェーズスキル 7 + 実行スキル 6）。オーケストレータ `test` は制御専任のため本ファイルの参照契約の対象外（必要な references を直接参照する）。
 > 本ファイル → 個別スキルへの依存は持たない（適用先スキルを示す一覧の記載は許容）。
 
 ---
 
-## 1. 対象スキル（12 worker スキル）
+## 1. 対象スキル（13 worker スキル）
 
 | 区分 | スキル |
 |------|-------|
-| フェーズスキル（6） | `test-setup` / `test-analyze` / `test-fixture` / `test-design` / `test-review` / `test-report` |
+| フェーズスキル（7） | `test-setup` / `test-analyze` / `test-fixture` / `test-environment` / `test-design` / `test-review` / `test-report` |
 | 実行スキル（6） | `test-run-unit` / `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security` |
 
 ## 2. 全スキル共通（常時参照）
@@ -96,6 +96,16 @@
 | `agents.md` | fixture-architect の起動・プロンプト組み立て |
 | `execution-policy.md` | playwright-test の実行 / SKIPPED 規範・テストデータ分離 |
 
+### 3.8 環境構築時（`test-environment`）
+
+| ファイル | 利用目的 |
+|---------|---------|
+| `yaml-schema-environment.md` | `environment.yaml` の生成・スキーマ遵守（`applicability` 縮退・ライフサイクル状態・コマンド規約形・enum 値） |
+| `yaml-schema-analysis.md` | 材料として消費する `analysis.yaml`（`architecture.build_run` / `dependency_summary.external_dependencies` / `meta.target_type` / `entry_points`）のスキーマ |
+| `data-locations.md` | `environment.yaml` / `environment/` 配下の配置先・target-slug 解決・SUT docker 資産は read-only である旨 |
+| `execution-policy.md` | Docker デーモン利用不可時の縮退（skipped）・非対話既定値（environment up の可否・health 未達時の扱い） |
+| `agents.md` | env-architect の起動・プロンプト組み立て |
+
 ## 4. 実行スキル共通契約（結果の返却）
 
 実行スキル 6 種は以下の共通契約に従う。
@@ -108,5 +118,5 @@
 
 ## 5. 適用契約
 
-本ファイルは worker スキル 12 種が共通参照するリファレンスのインデックスであり、各 SKILL.md からの参照は本ファイル経由の 1 行に集約する。
+本ファイルは worker スキル 13 種が共通参照するリファレンスのインデックスであり、各 SKILL.md からの参照は本ファイル経由の 1 行に集約する。
 規範の改訂は各 SSOT ファイル側で行い、本ファイルは参照先の追加・変更時のみ更新する（SSOT 所有権は `CLAUDE.md` の一覧を参照）。

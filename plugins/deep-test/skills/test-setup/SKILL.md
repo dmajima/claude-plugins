@@ -1,6 +1,6 @@
 ---
 name: test-setup
-description: deep-test のテスト実行環境を構築・検証するフェーズスキル。Playwright MCP の既存登録検出・規約準拠の新規登録・ToolSearch による実利用可否判定・再起動ハンドオフ、テストランナー検出（pytest / jest / vitest / dotnet test 等）、セッション venv の確認・構築を一元化し、環境検証レポートをオーケストレータへ返却する。test オーケストレータから委譲された時、または「テスト環境を準備して」「Playwright MCP をセットアップして」と依頼された時に使用。
+description: deep-test のテストツールチェーン（Playwright MCP・テストランナー・venv）を検証するフェーズスキル。Playwright MCP の既存登録検出・規約準拠の新規登録・ToolSearch による実利用可否判定・再起動ハンドオフ、テストランナー検出（pytest 等）、セッション venv の確認・構築を一元化し、環境検証レポートをオーケストレータへ返却する。責務外=Docker派生環境の構築・起動(test-environment)。test 委譲時や「テストツールチェーンを準備して」「Playwright MCP をセットアップして」と依頼された時に使用。
 allowed-tools:
   - Read
   - Grep
@@ -25,7 +25,8 @@ allowed-tools:
 | 3 | テストランナー検出 | 構成ファイル・テストファイル規約 + ランナー実体・宣言の 3 段規則（`${CLAUDE_SKILL_DIR}/references/setup-procedures.md` 4 章 = SSOT）で pytest / jest / vitest / dotnet test 等を検出し、根拠・実行コマンド例とともに報告する（テストは実行しない） |
 | 4 | venv の確認・構築 | セッション作業領域 `workspace/.venv` の存在を確認し、無ければプラグイン共通の `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/` で構築する |
 | 5 | フィクスチャ基盤の有無検出 | SUT に Playwright Test 基盤（`playwright.config.ts` / `{tests}/fixtures/` の存在）があるかを Glob / Grep で **有無検出**する（構築・拡充はしない）。検出結果は Phase 1.6 の `test-fixture` が新規構築 / 拡充を判断する材料になる |
-| 6 | 環境検証レポート返却 | チェック項目ごとの利用可 / 不可 / 未チェックの一覧と総合判定を返却する |
+| 6 | docker 資産の有無検出 | SUT に docker 資産（compose / Dockerfile）があるかを Glob で **有無検出**し、存在と場所の記録のみ行う（構築・起動はしない = `test-environment` の責務）。検出結果は Phase 1.7 の `test-environment` が派生・起動を判断する材料になる |
+| 7 | 環境検証レポート返却 | チェック項目ごとの利用可 / 不可 / 未チェックの一覧と総合判定を返却する |
 
 ## 責務外（他スキルが担当）
 
@@ -42,7 +43,7 @@ allowed-tools:
 起動するケース:
 
 - オーケストレータ `test` から Skill ツール経由で委譲された場合（フルフローの setup フェーズ、MCP ゲート前の事前検証）
-- 「テスト環境を準備して」「Playwright MCP をセットアップして」「テストランナーを検出して」と依頼された場合
+- 「テストツールチェーンを準備して」「Playwright MCP をセットアップして」「テストランナーを検出して」と依頼された場合
 
 起動しないケース:
 
@@ -123,6 +124,7 @@ allowed-tools:
 | テストランナー | detected / none / not-checked | ランナー・根拠ファイル・実行コマンド例 |
 | venv | ready / created / failed / not-checked | venv パス |
 | フィクスチャ基盤 | detected / none / not-checked | `playwright.config.ts` / `{tests}/fixtures/` の有無検出結果（Phase 1.6 の test-fixture が新規構築 / 拡充を判断する材料。SUT テストコードの生成は test-fixture の責務。総合判定のゲートではなく情報項目） |
+| docker 資産 | detected / none / not-checked | compose（`compose.y*ml` / `docker-compose.y*ml`）・`Dockerfile*` の存在と場所の検出結果（Phase 1.7 の test-environment が派生・起動を判断する材料。構築・起動は test-environment の責務。総合判定のゲートではなく情報項目） |
 
 ### 引き継ぎ事項
 - MCP ゲート（execution-policy.md 1.4 章）の判定材料・再起動ハンドオフの実施有無

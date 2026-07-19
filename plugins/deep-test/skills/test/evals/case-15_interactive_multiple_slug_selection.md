@@ -11,7 +11,7 @@
 
 ## 分岐の根拠
 
-SKILL.md「Phase 別の要点」Phase 0（既存 slug は AskUserQuestion で選択。非対話は唯一の既存 slug・複数はエラー中断）、references/flow.md 6 章 Phase 0 手順 2（既存 `{target-slug}/` があれば AskUserQuestion で既存一覧 +「新規作成」を提示して選択させる）、プラグイン共通 references/data-locations.md 4.1（1 対象 1 slug。同一対象の再テストでは既存 slug を再利用する）・4.2（解決フロー: 既存 1 件以上 × 対話 → AskUserQuestion で既存一覧と「新規作成」を提示 / 既存を選択 → その slug を採用 / 新規作成 → 新規 slug 名を確認して作成）。
+`${CLAUDE_SKILL_DIR}/references/flow.md` 2.1 章「Phase 別の要点」Phase 0（既存 slug は AskUserQuestion で選択。非対話は唯一の既存 slug・複数はエラー中断）、references/flow.md 6 章 Phase 0 手順 2（既存 `{target-slug}/` があれば AskUserQuestion で既存一覧 +「新規作成」を提示して選択させる）、プラグイン共通 references/data-locations.md 4.1（1 対象 1 slug。同一対象の再テストでは既存 slug を再利用する）・4.2（解決フロー: 既存 1 件以上 × 対話 → AskUserQuestion で既存一覧と「新規作成」を提示 / 既存を選択 → その slug を採用 / 新規作成 → 新規 slug 名を確認して作成）。
 
 ## 期待動作
 

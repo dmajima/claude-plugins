@@ -22,6 +22,9 @@ stateDiagram-v2
     Phase1_5 --> Phase1_6: fixture 有効（web-app・認証EP / 外部依存あり）
     Phase1_5 --> Phase2: fixture 不要（unit のみ・非 web・材料なし）でスキップ
     Phase1_6 --> Phase2: fixtures.yaml 生成完了
+    Phase1_6 --> Phase1_7: environment 有効（docker 資産あり）
+    Phase1_5 --> Phase1_7: fixture 不要・environment 有効（docker 資産あり）
+    Phase1_7 --> Phase2: environment.yaml 生成完了（provision。縮退時もフローは止めない）
     Phase2 --> Phase3
     Phase3 --> Phase2: NEEDS REVISION（ループ 3 回まで）
     Phase3 --> Phase4: PASS（design-only はここで完了）
@@ -51,12 +54,31 @@ stateDiagram-v2
 | Phase 1: setup 確認 | target-slug・必要レベルの見込み | `Skill: test-setup` | 環境検出結果（MCP / ランナー / venv） |
 | Phase 1.5: 解析 | target-slug・（`spec=` / `diff=` があれば）仕様 / 差分 | `Skill: test-analyze` | `analysis.yaml` / `target-analysis.md`（read-only の対象理解材料） |
 | Phase 1.6: フィクスチャ基盤（条件付き） | target-slug・`analysis.yaml`（材料）・SUT `project` ルート | `Skill: test-fixture` | `fixtures.yaml`（マニフェスト）+ SUT テストコード（フィクスチャ / config）。fixture 不要時は空マニフェストで no-op |
+| Phase 1.7: 環境（条件付き） | target-slug・`analysis.yaml`（材料）・SUT `project` ルート・見込み `levels` | `Skill: test-environment`（provision。up は Phase 5 手順 0・down は Phase 6 判定後 = 状態機械上は Phase4→Phase5 / Phase6→Phase7 遷移の間に位置する） | `environment.yaml`（マニフェスト）+ 派生成果物（`environment/compose.test.yml`・`environment/.env.test`）。docker 資産なし / unit のみ / docker 不可は no-op（`applicability` + `reason`） |
 | Phase 2: 設計 | 対象説明・要件情報・（差し戻し時）レビュー指摘 | `Skill: test-design` | `test-plan.md` / `test-cases.yaml`（draft） |
 | Phase 3: 設計レビュー | test-cases.yaml のパス・対象説明 | `Skill: test-review`（設計文脈） | PASS / NEEDS REVISION + 指摘リスト |
 | Phase 4: 対象確定 + ゲート | モード・（ids 時）ケース ID | `select` → 3 ゲート判定 | 確定 scope（approved のみ）・ゲート通過記録 |
-| Phase 5: 実行 | scope・run_id・環境情報 | `start-run` → `Skill: test-run-*`（逐次）→ `record` → `finish-run` | 確定 run（test-results.yaml 反映済み） |
+| Phase 5: 実行 | scope・run_id・環境情報（`environment.yaml` があれば project 名・base URL・イメージ情報から組み立てる） | `start-run` → `Skill: test-run-*`（逐次）→ `record` → `finish-run` | 確定 run（test-results.yaml 反映済み） |
 | Phase 6: 結果レビュー | run_id・fail 概要・集計 | `Skill: test-review`（結果文脈） | PASS / NEEDS REVISION + 指摘リスト |
 | Phase 7: 報告 | target-slug・（形式指定があれば）形式 | `validate` → `Skill: test-report` | 報告書パス（セッション作業領域直下） |
+
+### 2.1 Phase 別の要点（委譲・操作の要点）
+
+SKILL.md の実行フロー（mermaid・モード表）に対応する各 Phase の運用要点（SKILL.md「Phase 別の要点」から移管）。具体的な実行コマンド・Skill args・判定手順は 6 章（実行コマンド集）。
+
+| Phase | 内容 | 委譲先 / 操作 |
+|-------|------|-------------|
+| 0: target 解決 | `{base}` 解決 → 既存 slug は **AskUserQuestion** で選択（非対話: 唯一の既存 slug、複数はエラー中断）→ venv 準備 → `init` | results_manager |
+| 1: setup 確認 | run を含むモードで環境未検証の場合のみ。検出結果（MCP ロード状況・ランナー・venv）を受領。新規 MCP 登録時は再起動ハンドオフを出力して**停止**。総合判定 **PARTIAL**（一部チェック失敗 + 一部成功）受領時は、利用可能なレベルは続行し、利用不可レベルに属するケースは実行時に skipped 記録となる旨を確認して進む（詳細な判定は test-setup の検出結果に従う） | Skill: test-setup |
+| 1.5: 解析 | フルフローで対象ソースを read-only 解析し、`analysis.yaml` / `target-analysis.md`（下流消費材料）を生成。決定は行わず提案（hint）に留める。`spec=` / `diff=` 指定時は仕様乖離 / 変更影響も材料化 | Skill: test-analyze |
+| 1.6: フィクスチャ基盤（条件付き） | フルフローで fixture が有効な場合のみ（unit のみ・design-only / run-only / retest / report-only はスキップ）。`analysis.yaml` を消費し、再現可能な Playwright Test 基盤（`fixtures.yaml` + SUT テストコード）を生成 / 拡充。非 web・認証も外部依存もなしは no-op（空マニフェスト） | Skill: test-fixture |
+| 1.7: 環境（条件付き） | フルフローで docker 資産が見込まれる場合のみ委譲（unit のみ・design-only / run-only / retest / report-only はスキップ。run-only / retest / resume は provision 済み `environment.yaml` があれば up / down のライフサイクル呼出のみ）。`analysis.yaml` を消費し、SUT の docker 資産から非破壊でテスト用派生環境（`environment.yaml` + `environment/compose.test.yml`・`.env.test`）を provision。資産なし / docker 不可は no-op（`applicability` + reason）でフローを止めない | Skill: test-environment |
+| 2: 設計 | test-plan.md + test-cases.yaml（全ケース draft）の生成 | Skill: test-design |
+| 3: 設計レビュー | PASS → test-review が approved 化まで実施。NEEDS REVISION → test-design へ差し戻し（**上限 3 回**、超過時は対話=AskUserQuestion / 非対話=エラー中断） | Skill: test-review（design） |
+| 4: 対象確定 + ゲート | `select` で scope を機械確定（LLM 判断禁止）→ 承認済みケースゲート → 人間承認ゲート（**AskUserQuestion**。非対話はスキップ）→ MCP ゲート（ToolSearch 実判定。未ロードは再起動ハンドオフで**停止**、unit のみは判定不要） | results_manager + AskUserQuestion + ToolSearch |
+| 5: 実行 | 手順 0: `environment.yaml` が applicable なら environment up（`action=up`。失敗は縮退でフローを止めない。down は Phase 6 判定後 = PASS → down・NEEDS REVISION → ids 再実行に備え維持）→ `start-run` → レベル順**逐次**で test-run-* を Skill 起動（並列禁止）→ 中間結果を 1 件ずつ `record`（exit 2 は当該実行スキルへ追加取得を指示して再 record）→ `finish-run`（欠落検出時は補完実行後に再確定） | Skill: test-run-* + results_manager + Skill: test-environment（up / down） |
+| 6: 結果レビュー | 欠陥分析・severity 妥当性の検証。NEEDS REVISION の遡行は 4 章（上限 3 回） | Skill: test-review（results） |
+| 7: 報告 | `validate`（違反があれば差し戻して生成しない）→ test-report 起動（形式選択は test-report が実施、非対話既定 Markdown）。報告書はセッション作業領域直下 | results_manager + Skill: test-report |
 
 ## 3. ゲート判定手順（オーケストレータ側の運用）
 
@@ -69,7 +91,7 @@ stateDiagram-v2
 | 人間承認ゲート | `select` 出力の `cases` / `details` | AskUserQuestion で提示（ケース数・レベル別内訳・想定所要時間 = details の timeout_sec 合計を上限とする概算・破壊的操作ケース数 = select 出力の `destructive` 集計）。非対話時はスキップ | 中断（scope・実績は未変更のまま） |
 | MCP ゲート | scope のレベル構成 + ToolSearch 結果 | scope が unit のみ → 判定不要で通過。それ以外 → ToolSearch で `mcp__playwright__` 系を検索（手順・判定基準は `${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 4 章） | 再起動ハンドオフを出力して停止（run 開始前なら start-run しない。run 中の喪失は skipped 記録で継続） |
 
-ゲート判定の順序は固定: `select` → 承認済みケースゲート → 人間承認ゲート → MCP ゲート → `start-run`。
+ゲート判定の順序は固定: `select` → 承認済みケースゲート → 人間承認ゲート → MCP ゲート → environment up（`environment.yaml` が applicable のときのみ実施する Phase 5 手順 0。ゲートではなく、失敗は縮退でフローを止めない）→ `start-run`。
 `start-run` は**全ゲート通過後**にのみ実行する（未実行の run レコードを残さないため）。
 
 ## 4. NEEDS REVISION 時の遡行ループ
@@ -126,18 +148,20 @@ resume 対象・run_id 引き継ぎ・複数中断時の整理の規約は `${CL
 
 4. 中断 run から再開する場合、残ケースを機械的に確定する: `validate` の `resumable_runs` フィールド（`{run_id, status, missing}` の構造化リスト）から当該 run の `missing` を resume scope として採用する（副作用なしで取得できる。`finish-run` の仮実行や件数のみでの推定は行わない）
 5. resume scope に Playwright 必要レベルが含まれる場合は **MCP ゲートを再判定**する（resume の主用途が MCP 未ロード停止からの復帰であるため必須）
-6. **run_id は新規採番しない**。中断 run の run_id をそのまま実行スキルへ引き渡し、残ケースの record を追記する
-7. 全ケース記録後に `finish-run` で `completed` に確定し、Phase 6 → Phase 7 へ進む
+6. `environment.yaml` が存在し `applicability: applicable` の場合は**環境を再確認**する: `docker compose -p {slug}-test ps` + health 再確認（`Skill: test-environment` の `action=status`）で健全なら**再利用**する（再 up 不要）。不健全なら `action=down` → `action=up` で作り直す（呼出例は 6 章）。なお `-p` 単独の `ps` は簡易確認用であり、撤収の権威操作（down）は `environment.yaml` の `lifecycle` 記録（up と同一の `-f` 群 + `-p` の完全形）を用いる
+7. **run_id は新規採番しない**。中断 run の run_id をそのまま実行スキルへ引き渡し、残ケースの record を追記する
+8. 全ケース記録後に `finish-run` で `completed` に確定し、Phase 6 → Phase 7 へ進む
 
 ### 5.2 注意事項
 
 - resume では `start-run` を実行しない（新規 run を作らない）
 - 中断時点までの record 済み結果は永続化済みであり、再実行・再記録しない（重複 record は exit 2 で拒否される）
 - 中断 run が MCP ゲート停止由来か（scope に Playwright 必要レベルが残っているか）を確認してから実行スキルを起動する
+- 中断時に environment が `status.state: up` のまま残っている場合、down は自動実施されていない。`docker compose -p {slug}-test ps`（`-p` 単独は簡易確認用。down の完全形は 5.1 手順 6 の注記のとおり）で残存コンテナを確認し、resume するなら 5.1 手順 6 の環境再確認で再利用 / 作り直しを判定する。resume しない場合は `Skill: test-environment`（`action=down`）による手動 down を案内する
 
 ## 6. 実行コマンド集（Phase 別）
 
-SKILL.md の実行フロー表に対応する具体的な実行コマンド・Skill args。`<venv>` はセッション作業領域の venv、`{base}` は data-locations.md の基準ディレクトリを指す。
+SKILL.md の実行フローおよび 2.1 章「Phase 別の要点」に対応する具体的な実行コマンド・Skill args。`<venv>` はセッション作業領域の venv、`{base}` は data-locations.md の基準ディレクトリを指す。
 
 ### Phase 0: target-slug 解決 + init
 
@@ -171,7 +195,7 @@ Skill(skill: "deep-test:test-analyze", args: "target={target-slug} base={base} �
 
 - `spec=` / `diff=` は指定がある場合のみ付与する（未指定時は仕様乖離検出 / 変更影響分析をスキップ）。`--non-interactive`（モード指定）は非対話時のみ付与する
 - 出力の `analysis.yaml`（機械可読・`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-analysis.md` 準拠）を Phase 2 の `test-design` が消費し、レベル / 技法 / 優先度 / ケースを決定する（材料の単方向消費）
-- test-analyze は決定を行わず read-only の材料生成に徹する（逆呼び出し禁止・2 段委譲を厳守）。将来の `test-fixture`（Phase 1.6）/ `test-environment` も本材料を消費するが、本フェーズでは新設しない
+- test-analyze は決定を行わず read-only の材料生成に徹する（逆呼び出し禁止・2 段委譲を厳守）。`test-fixture`（Phase 1.6）/ `test-environment`（Phase 1.7）も本材料を消費する（材料の単方向消費）
 
 ### Phase 1.6: フィクスチャ基盤（test-fixture・条件付き）
 
@@ -185,6 +209,21 @@ Skill(skill: "deep-test:test-fixture", args: "target={target-slug} base={base} p
 - 出力の `fixtures.yaml`（機械可読・`${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` 1 章準拠）を Phase 2 の `test-design` が消費し、各ケースの `fixtures:` と `automation: playwright-test` を決定する（材料の単方向消費）
 - 起動されても fixture 対象なし（非 web・認証も外部依存もなし）と判断した場合は、SUT に何も書かず空の `fixtures.yaml`（`fixtures: []`）+ 理由を返して正常終了する（no-op。既存の探索的 MCP フローは Phase 1.5 → Phase 2 に直行する）
 - test-fixture は SUT のテストディレクトリにのみ書き込む（プロダクションコード不変・逆呼び出し禁止・2 段委譲を厳守）
+
+### Phase 1.7: 環境（test-environment・条件付き）
+
+フルフローで `test-fixture`（Phase 1.6。スキップ時は `test-analyze`）の後・`test-design`（Phase 2）の前に、docker 資産が見込まれる場合のみ provision を委譲する（見込みレベルが unit のみ、または design-only / run-only / retest / report-only ではスキップ。run-only / retest / resume では provision 済み `environment.yaml` があれば up / down のライフサイクル呼出のみ行う）。SUT の docker 資産から非破壊でテスト用派生環境を生成する:
+
+```text
+Skill(skill: "deep-test:test-environment", args: "target={target-slug} base={base} project={SUT プロジェクトルート} action=provision levels={見込みレベルCSV} --non-interactive")
+```
+
+- `--non-interactive`（モード指定）は非対話時のみ付与する（Phase 1.5 と同じ条件注記。オーケストレータの対話 / 非対話モードを test-environment へ伝播する。Phase 5 手順 0 の `action=up`・Phase 6 判定後の `action=down` の呼出でも同じ）
+- 材料 `analysis.yaml`（`{base}/{target-slug}/analysis.yaml`）は引数で渡さず、test-environment が Read で解決する（非存在時は test-environment 側で軽量補完する）
+- 出力の `environment.yaml`（機械可読・`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 準拠）と派生成果物（`environment/compose.test.yml`・`environment/.env.test`）を、Phase 2 の `test-design` が preconditions / 環境前提の材料に、Phase 5 のオーケストレータが `start-run --environment` の環境文字列の材料に消費する（材料の単方向消費）
+- 起動されても docker 資産なし / docker 利用不可 / unit のみと判断した場合は、SUT に何も書かず no-op マニフェスト（`applicability: not-applicable | unavailable` + `reason`）を返して正常終了する（縮退はフローを止めない。ユーザーが起動済み URL を渡した場合は従来前提が常に優先）
+- test-environment は SUT の docker 資産へ書き込まない（派生は deep-test データ領域のみ・逆呼び出し禁止・2 段委譲を厳守）
+- up は Phase 5 手順 0（全ゲート通過後・`start-run` 直前）・down は Phase 6 判定後に、本節と同形の Skill 呼出（`action=up` / `action=down`）で行う（呼出例は Phase 5 / Phase 6 の節）
 
 ### Phase 2: 設計
 
@@ -223,6 +262,16 @@ Skill(skill: "deep-test:test-review", args: "context=design target={target-slug}
 
 ### Phase 5: 実行（レベル順逐次 → record → finish-run）
 
+0. **手順 0: environment up**（`environment.yaml` が `applicability: applicable` の場合のみ。全ゲート通過後・`start-run` 直前）。失敗は縮退であり、ユーザー起動 URL があれば従来どおり続行し、なければ該当レベルは実行時 skipped の材料とする（フローは止めない）:
+
+   ```text
+   Skill(skill: "deep-test:test-environment", args: "target={target-slug} base={base} action=up --non-interactive")
+   ```
+
+   `--non-interactive`（モード指定）は非対話時のみ付与する（Phase 1.7 と同じ条件注記）
+
+   up 完了後の endpoints（base URL）・project 名（`{slug}-test`）は `environment.yaml` から読み、`--environment` の環境文字列と実行スキルへ渡す対象アプリ情報に用いる
+
 1. run を開始し run_id を取得する:
 
    ```bash
@@ -230,6 +279,7 @@ Skill(skill: "deep-test:test-review", args: "context=design target={target-slug}
    ```
 
    `start-run` は `{run_id, mode, scope_size, active_runs_warning}` の JSON を stdout に出力する。上記のように `run_id` を取り出して以降で使う。`active_runs_warning` が空でなければ未完了の run が残っているため、resume 要否を確認する。
+   `--environment` の環境文字列は自由文字列のまま、`environment.yaml` がある場合（applicable・up 済み）は project 名（`{slug}-test`）・`endpoints[]` の base URL・イメージ情報から組み立てる（例: `"compose project {slug}-test / Chromium headless / http://127.0.0.1:18080（web: nginx:1.27）"`）。無ければ従来どおり実行環境の実情を記録する。
 
 2. scope をレベル別にグループ化し、レベル→実行スキル対応（test-levels.md）に従ってレベル順に逐次 Skill 起動する（並列起動禁止）:
 
@@ -269,7 +319,17 @@ Skill(skill: "deep-test:test-review", args: "context=results target={target-slug
   "<venv>/Scripts/python.exe" "${CLAUDE_SKILL_DIR}/references/scripts/results/results_manager.py" annotate      --base "{base}" --target "{target-slug}" --source test-review/results --text "原因分類・ユーザー影響所見: {総括内容}"
   ```
 
+- performance 実行時に test-environment / 実行スキルから環境免責注記（コンテナ派生環境での計測であり本番構成の性能を代表しない）が返却されている場合は、上記と同様に `annotate`（`--source` は `test-environment` 等の出所）で所見・注記へ登録する（未登録時のみ。報告書へ機械出力される）
+
 - NEEDS REVISION（再現手順不備・severity 不当等）の場合の遡行は 4 章に従う（上限 3 回。分析・所見レベルの指摘も annotate --source test-review/results で登録する）。
+
+- 判定後の environment down（environment が `status.state: up` の場合のみ）: PASS → down して Phase 7 へ進む・NEEDS REVISION → ids 再実行（4.2）に備えて**維持**する（down は再実行完了後の PASS 判定時に実施する）:
+
+  ```text
+  Skill(skill: "deep-test:test-environment", args: "target={target-slug} base={base} action=down run-id={run_id} --non-interactive")
+  ```
+
+  `--non-interactive`（モード指定）は非対話時のみ付与する（Phase 1.7 と同じ条件注記）
 
 ### Phase 7: 報告
 

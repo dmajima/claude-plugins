@@ -50,7 +50,7 @@ allowed-tools:
 | テストケース設計・技法適用・レベル選定・優先度決定 | `test-design` |
 | テスト計画（test-plan.md）の生成 | `test-design` |
 | テストコード基盤（fixture）の構築 | `test-fixture`（将来） |
-| テスト実行環境（Docker）の構築 | `test-environment`（将来） |
+| テスト実行環境（Docker）の構築 | `test-environment`（Phase 1.7） |
 | レビュー判定・承認（`review_status: approved` 化） | `test-review` |
 | テストの実行・**カバレッジの実測** | `test-run-*`（実測は test-run-unit 拡張） |
 | 動的セキュリティ検査 | `test-run-security`（本スキルは静的な攻撃面把握のみ） |

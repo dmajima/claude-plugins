@@ -27,11 +27,17 @@ deep-test プラグインが扱うデータ（テスト計画・ケース定義�
     ├── analysis.yaml                  # 解析材料・機械可読（test-analyze 生成・Phase 1.5・スキーマは yaml-schema-analysis.md）
     ├── target-analysis.md             # 解析材料・人間可読（test-analyze 生成・Phase 1.5）
     ├── fixtures.yaml                  # フィクスチャ基盤マニフェスト（test-fixture 生成・Phase 1.6・スキーマは playwright-test.md）
+    ├── environment.yaml               # テスト用派生環境マニフェスト（test-environment 生成・Phase 1.7・スキーマは yaml-schema-environment.md）
+    ├── environment/                   # 派生環境の成果物一式（test-environment 生成・Phase 1.7）
+    │   ├── compose.test.yml           # 派生 compose（ports !override・127.0.0.1 バインド等）
+    │   ├── .env.test                  # テスト用 env（ダミー値 / credentials-manager 参照形のみ）
+    │   └── logs/                      # run 外の単独 down 時のコンテナログ保存先（run 中は evidence/{run_id}/environment/）
     ├── test-plan.md                   # テスト計画（test-design 生成）
     ├── test-cases.yaml                # テストケース定義（スキーマは yaml-schema-cases.md）
     ├── test-results.yaml              # 実行実績（スキーマは yaml-schema-results.md）
     ├── evidence/
     │   └── {run_id}/
+    │       ├── environment/           # run 中のサービス別コンテナログ（test-environment の down 時保存先。{service}.log）
     │       └── {case_id}/             # ケース単位のエビデンス（移送後の正位置）
     │           ├── step-04-dashboard.png
     │           └── console-log.txt
@@ -39,6 +45,8 @@ deep-test プラグインが扱うデータ（テスト計画・ケース定義�
 ```
 
 > 注記: test-fixture が生成する **SUT のテストコード**（`playwright.config.ts` / `{tests}/fixtures/*.ts` / `auth.setup.ts` / seed 等）は SUT 側のテストディレクトリ（`project=` 配下）に配置され、**deep-test の管理データ領域（本ツリー）とは別**である。deep-test が本ツリーに置くのはフィクスチャの機械可読マニフェスト `fixtures.yaml` のみで、SUT テストコードそのものは deep-test の管理対象外である（SUT テストコードの書き込み境界は `playwright-test.md`）。
+
+> 注記: **SUT の docker 資産**（compose・Dockerfile・`.env` 等）は **read-only** である。test-environment は派生ファイル（`environment/compose.test.yml` / `environment/.env.test`）を本ツリー（deep-test の管理データ領域）に生成し、SUT 側（`project=` 配下）へは一切書き込まない（派生スキーマ・書き込み境界は `yaml-schema-environment.md`）。
 
 ---
 
@@ -49,6 +57,7 @@ deep-test プラグインが扱うデータ（テスト計画・ケース定義�
 | `analysis.yaml` | test-analyze | 解析材料（機械可読・Phase 1.5・read-only 解析の成果） | `yaml-schema-analysis.md` |
 | `target-analysis.md` | test-analyze | 解析材料（人間可読・Phase 1.5・read-only 解析の成果） | — |
 | `fixtures.yaml` | test-fixture | フィクスチャ基盤マニフェスト（機械可読・Phase 1.6。test-design が消費。SUT テストコード本体は管理対象外） | `playwright-test.md` |
+| `environment.yaml` | test-environment | テスト用派生環境マニフェスト（機械可読・Phase 1.7。派生成果物 `environment/` 配下と併せて生成し、endpoints / exec_forms / lifecycle / status を下流へ提供） | `yaml-schema-environment.md` |
 | `test-plan.md` | test-design | テスト計画（対象分析・レベル選定・方針） | — |
 | `test-cases.yaml` | test-design | ケース定義・revision 管理 | `yaml-schema-cases.md` |
 | `test-results.yaml` | オーケストレータ `test`（results_manager.py 経由のみ。LLM 直接編集禁止） | run 履歴 + ケース別結果 + latest 集計 | `yaml-schema-results.md` |

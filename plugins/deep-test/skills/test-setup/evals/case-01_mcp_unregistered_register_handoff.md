@@ -6,7 +6,7 @@ Playwright MCP が未登録の環境で test-setup を起動したケース。�
 
 | 項目 | 内容 |
 |-----|------|
-| 起動フレーズ | 「テスト環境を準備して。Playwright MCP も使えるようにして」 |
+| 起動フレーズ | 「テストツールチェーンを準備して。Playwright MCP も使えるようにして」 |
 | 起動形態 | 単独（ユーザー直接起動） |
 | 前提 | `claude mcp list` に playwright 系サーバーの登録が 1 件もない / テストランナー（pytest）が検出可能 / venv 未構築 |
 

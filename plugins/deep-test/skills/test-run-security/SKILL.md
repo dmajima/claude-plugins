@@ -68,6 +68,7 @@ scope の security レベルのケースについて、OWASP 観点（`${CLAUDE_
 
 - Playwright MCP が現セッションでロード済み（MCP ゲートはオーケストレータが通過済み。未ロード検出時は偽装せず skipped で返却する）
 - 入力として `target-slug` / `run_id` / 対象ケースリスト / 対象アプリ情報（URL 等）を受領していること
+- 対象アプリ情報（URL 等）は、test-environment（Phase 1.7）が生成する environment.yaml の `endpoints[]` 由来の base URL（テスト用派生環境）として受領する場合がある（受領形・実行手順は不変。出所の注記のみ）
 - **対象がテスト環境**であることを確認済み（本番実行は既定で禁止。`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 環境安全）
 - 実行する操作は**承認済みケース（test-cases.yaml）に記載された範囲のみ**（対象システム所有者の合意範囲内）
 - テスト用アカウント・権限パターンが準備済み（`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` 4.8 入口基準）

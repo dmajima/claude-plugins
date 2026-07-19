@@ -76,7 +76,7 @@ allowed-tools:
 
 `test-results.yaml` の追記・集計・抽出・検証はすべて `${CLAUDE_SKILL_DIR}/references/scripts/results/results_manager.py` を Bash + venv で実行して行う（サブコマンド仕様は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema.md` 3 章、Phase 別の実行コマンド例は `${CLAUDE_SKILL_DIR}/references/flow.md` 6 章）。
 
-- サブコマンド: `init` / `start-run` / `record` / `finish-run` / `select` / `validate` / `summary`
+- サブコマンド: `init` / `start-run` / `record` / `finish-run` / `select` / `validate` / `summary` / `annotate`
 - exit code: `0`=正常 / `1`=一般エラー / `2`=バリデーションエラー（欠落フィールドを stderr 出力）/ `3`=ロック競合（.lock 残留時は実行中プロセスがないことを確認して手動削除）/ `64`=引数パースエラー（サブコマンド・オプションの typo）
 
 ## 実行モード判定
@@ -85,7 +85,7 @@ allowed-tools:
 
 | モード | 引数 | フロー |
 |-------|------|-------|
-| フル | （既定） | Phase 0→1→1.5→(1.6)→2→3→4→5→6→7（(1.6) は fixture 有効時のみ） |
+| フル | （既定） | Phase 0→1→1.5→(1.6)→(1.7)→2→3→4→5→6→7（(1.6) は fixture 有効時のみ・(1.7) は environment 有効時のみ） |
 | 再テスト | `retest full` / `retest ng-only` / `retest ids=TC-...` | Phase 0→(1 必要時)→4→5→6→7（実績は既存 YAML へ append マージ） |
 | 部分: design-only | `design-only` | Phase 0→2→3（設計レビューゲートまで。run へ進まない） |
 | 部分: run-only | `run-only levels=<level,...>`（対象レベル指定必須） | Phase 0→(1 必要時)→4→5（select full の結果を指定レベルで絞り込む） |
@@ -107,6 +107,9 @@ flowchart TD
     P15 -->|"fixture 有効"| P16["Phase 1.6: フィクスチャ基盤（条件付き）\nSkill: test-fixture"]
     P15 -->|"fixture 不要（スキップ）"| P2["Phase 2: 設計\nSkill: test-design"]
     P16 --> P2
+    P16 -->|"environment 有効（docker 資産あり）"| P17["Phase 1.7: 環境（条件付き）\nSkill: test-environment（provision）"]
+    P15 -->|"fixture 不要・environment 有効"| P17
+    P17 --> P2
     P2 --> P3["Phase 3: 設計レビュー\nSkill: test-review（設計文脈）"]
     P3 -->|"NEEDS REVISION\n（修正ループ上限 3 回）"| P2
     P3 -->|PASS| P4["Phase 4: run 対象確定 + ゲート\nselect → 承認済みケース → 人間承認 → MCP"]
@@ -120,20 +123,7 @@ flowchart TD
 
 ### Phase 別の要点
 
-| Phase | 内容 | 委譲先 / 操作 |
-|-------|------|-------------|
-| 0: target 解決 | `{base}` 解決 → 既存 slug は **AskUserQuestion** で選択（非対話: 唯一の既存 slug、複数はエラー中断）→ venv 準備 → `init` | results_manager |
-| 1: setup 確認 | run を含むモードで環境未検証の場合のみ。検出結果（MCP ロード状況・ランナー・venv）を受領。新規 MCP 登録時は再起動ハンドオフを出力して**停止**。総合判定 **PARTIAL**（一部チェック失敗 + 一部成功）受領時は、利用可能なレベルは続行し、利用不可レベルに属するケースは実行時に skipped 記録となる旨を確認して進む（詳細な判定は test-setup の検出結果に従う） | Skill: test-setup |
-| 1.5: 解析 | フルフローで対象ソースを read-only 解析し、`analysis.yaml` / `target-analysis.md`（下流消費材料）を生成。決定は行わず提案（hint）に留める。`spec=` / `diff=` 指定時は仕様乖離 / 変更影響も材料化 | Skill: test-analyze |
-| 1.6: フィクスチャ基盤（条件付き） | フルフローで fixture が有効な場合のみ（unit のみ・design-only / run-only / retest / report-only はスキップ）。`analysis.yaml` を消費し、再現可能な Playwright Test 基盤（`fixtures.yaml` + SUT テストコード）を生成 / 拡充。非 web・認証も外部依存もなしは no-op（空マニフェスト） | Skill: test-fixture |
-| 2: 設計 | test-plan.md + test-cases.yaml（全ケース draft）の生成 | Skill: test-design |
-| 3: 設計レビュー | PASS → test-review が approved 化まで実施。NEEDS REVISION → test-design へ差し戻し（**上限 3 回**、超過時は対話=AskUserQuestion / 非対話=エラー中断） | Skill: test-review（design） |
-| 4: 対象確定 + ゲート | `select` で scope を機械確定（LLM 判断禁止）→ 承認済みケースゲート → 人間承認ゲート（**AskUserQuestion**。非対話はスキップ）→ MCP ゲート（ToolSearch 実判定。未ロードは再起動ハンドオフで**停止**、unit のみは判定不要） | results_manager + AskUserQuestion + ToolSearch |
-| 5: 実行 | `start-run` → レベル順**逐次**で test-run-* を Skill 起動（並列禁止）→ 中間結果を 1 件ずつ `record`（exit 2 は当該実行スキルへ追加取得を指示して再 record）→ `finish-run`（欠落検出時は補完実行後に再確定） | Skill: test-run-* + results_manager |
-| 6: 結果レビュー | 欠陥分析・severity 妥当性の検証。NEEDS REVISION の遡行は flow.md 4 章（上限 3 回） | Skill: test-review（results） |
-| 7: 報告 | `validate`（違反があれば差し戻して生成しない）→ test-report 起動（形式選択は test-report が実施、非対話既定 Markdown）。報告書はセッション作業領域直下 | results_manager + Skill: test-report |
-
-各 Phase の具体的な実行コマンド・Skill args・判定手順は `${CLAUDE_SKILL_DIR}/references/flow.md` 6 章（実行コマンド集）を参照。
+Phase 別の要点（内容・委譲先 / 操作の一覧表）は `${CLAUDE_SKILL_DIR}/references/flow.md` 2.1 章へ移管した。各 Phase の具体的な実行コマンド・Skill args・判定手順は同 6 章（実行コマンド集）を参照。
 
 ## 検証
 
@@ -144,6 +134,7 @@ flowchart TD
 - [ ] `validate` が ok（violations 0 件）である
 - [ ] 報告書がセッション作業領域直下に存在する（report を含むモードのみ）
 - [ ] `{base}/playwright/` に帰属不明の残留ファイルがない（あれば警告して整理する。`${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 5 章）
+- [ ] `{slug}-test` プロジェクトの残存コンテナがない（environment up を実施した場合、down 済みである。維持する場合〔NEEDS REVISION の ids 再実行待ち等〕は理由を明示している）
 
 ## 引き渡し
 
@@ -163,6 +154,7 @@ flowchart TD
 
 - MCP ゲート停止: 再起動ハンドオフ（状態保存済みの明示 / 再起動依頼 / `resume` での再開手順）を出力する（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 3 章）
 - その他の中断: 中断位置・test-results.yaml の記録状況・再開手段（resume または該当モード）を報告する
+- environment up 後の中断: down は自動実施されない。残存コンテナの確認手順（`docker compose -p {slug}-test ps`。`-p` 単独は簡易確認用）と手動 down 手順（`Skill: test-environment` の `action=down`。撤収は `environment.yaml` の `lifecycle` 記録〔`-f` 群 + `-p` の完全形〕による）を必ず案内に含める（resume 時は健全なら再利用される。`${CLAUDE_SKILL_DIR}/references/flow.md` 5 章）
 
 ## 重要な制約
 

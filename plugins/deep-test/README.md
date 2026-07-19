@@ -82,6 +82,7 @@ git checkout main
 - Playwright MCP（`test-setup` スキルが `claude mcp add -s local` で登録を案内。登録後は Claude Code の再起動が必要。他ツールが `playwright` 名で MCP 登録済みの場合は test-setup が検出して再利用します〔重複登録しません〕）
 - テストランナー（ユニットテスト実行時のみ。対象プロジェクト側の pytest / jest / vitest / dotnet test 等を自動検出）
 - 負荷計測ツール（性能テストの多重負荷計測時のみ。k6 等を検出した場合に限り使用、なければ該当ケースは skipped 記録）
+- docker CLI / Docker Compose v2（テスト用派生環境の生成・起動時のみ〔Phase 1.7〕に使用する**任意依存**。未導入・利用不可の場合は環境構築を縮退〔no-op 記録〕し、環境前提のケースは skipped 記録の材料になる）
 
 ### 動作確認
 
@@ -95,6 +96,7 @@ git checkout main
 | `test-setup` | スキル | 実行環境の構築・検証（Playwright MCP 登録・テストランナー検出・venv） |
 | `test-analyze` | スキル | テスト対象ソースを read-only で理解し解析材料を生成（analysis.yaml / target-analysis.md・Phase 1.5・test-design の前段） |
 | `test-fixture` | スキル | Playwright フィクスチャ基盤（認証 storageState / API モック / シード / base）の作成・拡充（fixtures.yaml 生成・analysis.yaml 消費・Phase 1.6） |
+| `test-environment` | スキル | Docker 派生テスト環境の provision / up / down / status（SUT の docker 資産から compose.test.yml / .env.test を非破壊生成・environment.yaml 管理・analysis.yaml 消費・Phase 1.7） |
 | `test-design` | スキル | テスト対象分析→テスト計画→テストケース設計（test-cases.yaml 生成・revision 管理） |
 | `test-review` | スキル | テスト成果物の多観点レビュー（設計文脈: 網羅性・実現性・ユーザー目線 / 結果文脈: 欠陥分析・severity 検証） |
 | `test-run-unit` | スキル | ユニットテスト実行（pytest / jest / dotnet test 等の検出・実行・解析） |
@@ -108,8 +110,10 @@ git checkout main
 | `/deep-test:test-retest` | コマンド | 再テスト起動（full / ng-only / ids / resume） |
 | `/deep-test:test-report` | コマンド | 報告書のみ再生成 |
 | `/deep-test:test-fixture` | コマンド | フィクスチャ基盤の単独構築・拡充（Phase 1.6・実行はしない） |
+| `/deep-test:test-environment` | コマンド | テスト用派生環境の単独操作（provision / up / down / status・Phase 1.7・テスト実行はしない） |
 | `source-analyst` | エージェント | 解析材料の網羅性・根拠妥当性の自己チェック |
 | `fixture-architect` | エージェント | フィクスチャ設計の妥当性・再利用性・分離・書き込み境界・認証情報ハードコードの自己チェック |
+| `env-architect` | エージェント | 派生環境の分離妥当性・read-only 境界・秘匿値の非出力・本番誤爆疑義・teardown 完全性の自己チェック |
 | `test-architect` | エージェント | テスト戦略・レベル選定・計画妥当性の評価 |
 | `coverage-reviewer` | エージェント | 網羅性レビュー（要件・境界値・同値分割・異常系） |
 | `feasibility-reviewer` | エージェント | 実行可能性・自動化適合性・環境依存リスクの評価 |
@@ -142,20 +146,22 @@ git checkout main
 | 「テストケースを設計して」 | `test`（design-only）または `test-design` |
 | 「テスト対象を解析して」「解析材料を作って」 | `test`（analyze フェーズ）または `test-analyze` |
 | 「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」 | `test`（fixture フェーズ）または `test-fixture` |
+| 「テスト用の Docker 環境を作って」「テスト用コンテナ環境を起動して」「テスト用コンテナ環境を片付けて」 | `test`（environment フェーズ）または `test-environment` |
 | 「前回 NG だったテストだけ再実行して」 | `test`（retest ng-only） |
 | 「テスト報告書を Excel で作って」 | `test`（report-only） |
-| 「テスト環境をセットアップして」 | `test-setup` |
+| 「テストツールチェーンを準備して」 | `test-setup` |
 
 ### 実行フロー（フルフロー時）
 
 ```text
-setup 確認 → 解析（Phase 1.5） → フィクスチャ基盤（Phase 1.6） → テスト設計 → 設計レビュー（3 エージェント並列）
+setup 確認 → 解析（Phase 1.5） → フィクスチャ基盤（Phase 1.6） → 環境構築（Phase 1.7） → テスト設計 → 設計レビュー（3 エージェント並列）
   → 人間承認ゲート → MCP ゲート
   → テスト実施（レベル順逐次・エビデンス自動収集）
   → 結果レビュー（2 エージェント並列） → 報告書生成
 ```
 
 - 設計レビューで Critical / High 指摘がある場合は実行フェーズをブロックし、修正ループに入ります
+- docker 資産があるプロジェクトでは Phase 1.7 で非破壊のテスト用派生環境（compose.test.yml / .env.test）を provision し、テスト実施の直前に up・結果レビュー PASS 後に down します（資産なし / docker 利用不可の場合は縮退記録のみでフローは止まりません）
 - テスト NG（fail）時は再現手順・検証データ・エビデンスの 3 点セットが必須で、欠落した状態では報告書を生成できません（二段バリデーション）
 - テスト実績は `.claude/.local/plugins/deep-test/{target-slug}/` に YAML で永続化され、再テスト・報告書再生成の基盤になります
 
@@ -177,17 +183,19 @@ plugins/deep-test/
 │   ├── test.md                     # フルフロー起動
 │   ├── test-retest.md              # 再テスト起動
 │   ├── test-report.md              # 報告書再生成
-│   └── test-fixture.md             # フィクスチャ基盤の単独構築・拡充
-├── agents/                         # 共有エージェント（8 種）
+│   ├── test-fixture.md             # フィクスチャ基盤の単独構築・拡充
+│   └── test-environment.md         # テスト用派生環境の単独操作
+├── agents/                         # 共有エージェント（9 種）
 │   ├── source-analyst.md
 │   ├── fixture-architect.md
+│   ├── env-architect.md
 │   ├── test-architect.md
 │   ├── coverage-reviewer.md
 │   ├── feasibility-reviewer.md
 │   ├── user-perspective-reviewer.md
 │   ├── defect-analyst.md
 │   └── evidence-auditor.md
-├── references/                     # プラグイン共通規範（ナビ CLAUDE.md + SSOT 15 ファイル + 人間向け README）+ 共通スクリプト
+├── references/                     # プラグイン共通規範（ナビ CLAUDE.md + SSOT 16 ファイル + 人間向け README）+ 共通スクリプト
 │   ├── CLAUDE.md                   # ナビゲーション
 │   ├── README.md                   # 人間向けインデックス（Claude 動作では不参照）
 │   ├── common-references.md        # worker スキル共通参照インデックス
@@ -196,6 +204,7 @@ plugins/deep-test/
 │   ├── yaml-schema-cases.md        # test-cases.yaml スキーマ
 │   ├── yaml-schema-results.md      # test-results.yaml スキーマ
 │   ├── yaml-schema-analysis.md     # analysis.yaml スキーマ
+│   ├── yaml-schema-environment.md  # environment.yaml スキーマ
 │   ├── severity-policy.md          # 欠陥重要度基準
 │   ├── retest-policy.md            # 再テスト規約
 │   ├── data-locations.md           # データ配置規約
@@ -213,6 +222,7 @@ plugins/deep-test/
     ├── test-setup/
     ├── test-analyze/
     ├── test-fixture/
+    ├── test-environment/
     ├── test-design/
     ├── test-review/
     ├── test-run-unit/
@@ -233,6 +243,8 @@ plugins/deep-test/
 | 解析材料（機械可読） | `.claude/.local/plugins/deep-test/{target-slug}/analysis.yaml` | test-analyze が生成（Phase 1.5） |
 | 解析材料（人間可読） | `.claude/.local/plugins/deep-test/{target-slug}/target-analysis.md` | test-analyze が生成（Phase 1.5） |
 | フィクスチャ基盤マニフェスト | `.claude/.local/plugins/deep-test/{target-slug}/fixtures.yaml` | test-fixture が生成（Phase 1.6） |
+| 派生環境マニフェスト | `.claude/.local/plugins/deep-test/{target-slug}/environment.yaml` | test-environment が生成（Phase 1.7） |
+| 派生環境の成果物 | `.claude/.local/plugins/deep-test/{target-slug}/environment/` | compose.test.yml / .env.test / logs/（test-environment が生成・Phase 1.7） |
 | テスト計画 | `.claude/.local/plugins/deep-test/{target-slug}/test-plan.md` | test-design が生成 |
 | テストケース | `.claude/.local/plugins/deep-test/{target-slug}/test-cases.yaml` | revision 管理・review 承認制 |
 | テスト実績 | `.claude/.local/plugins/deep-test/{target-slug}/test-results.yaml` | run 履歴の追記型 + latest 集計 |

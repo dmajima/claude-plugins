@@ -66,6 +66,7 @@ allowed-tools:
 - scope のケースが `review_status: approved` であること（承認済みケースゲートはオーケストレータで通過済み）
 - MCP ゲート（Playwright MCP の実利用可否判定）をオーケストレータで通過済みであること（本スキルでも二重防御として確認する）
 - 対象機能がテスト環境にデプロイ済みで、対象 URL・起動手段が入力として渡されていること
+- 対象 URL は、test-environment（Phase 1.7）が生成する environment.yaml の `endpoints[]` 由来の base URL（テスト用派生環境）として受領する場合がある（受領形・実行手順は不変。出所の注記のみ。スキーマは `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md`）
 - テストデータ・アカウントが準備済みであること（各ケースの preconditions で宣言）
 - 本番環境ではないことが確認済みであること（本番実行は既定で禁止。execution-policy.md）
 

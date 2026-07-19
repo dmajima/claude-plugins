@@ -11,7 +11,7 @@
 
 ## 分岐の根拠
 
-SKILL.md「Phase 別の要点」Phase 0（非対話: 唯一の既存 slug、複数はエラー中断）、プラグイン共通 references/execution-policy.md 9 章（非対話既定値表: target-slug が複数存在 → エラー中断・自動選択しない）、references/data-locations.md 4.2（非対話時は唯一の既存 slug を採用する。複数存在する場合はエラーで中断する〔誤った対象への実績追記を防ぐため〕・slug の明示指定を案内）・8 章（禁止事項: 非対話時に複数の既存 target-slug がある状態で処理を継続すること）。
+`${CLAUDE_SKILL_DIR}/references/flow.md` 2.1 章「Phase 別の要点」Phase 0（非対話: 唯一の既存 slug、複数はエラー中断）、プラグイン共通 references/execution-policy.md 9 章（非対話既定値表: target-slug が複数存在 → エラー中断・自動選択しない）、references/data-locations.md 4.2（非対話時は唯一の既存 slug を採用する。複数存在する場合はエラーで中断する〔誤った対象への実績追記を防ぐため〕・slug の明示指定を案内）・8 章（禁止事項: 非対話時に複数の既存 target-slug がある状態で処理を継続すること）。
 
 ## 期待動作
 

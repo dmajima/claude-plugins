@@ -11,7 +11,7 @@
 
 ## 分岐の根拠
 
-`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 1.2 章（承認済みケースゲート: scope に `review_status: draft` のケースが含まれる場合、run を開始せず先に test-review〔設計文脈〕を要求。全ケース approved で通過）、`${CLAUDE_SKILL_DIR}/references/flow.md` 1 章の状態遷移図（`Phase4 --> Phase3: 承認済みケースゲート（draft 混入）`）・3 章のゲート判定手順（承認済みケースゲート: `select` 出力の `draft_cases` が非空 → test-review〔設計文脈〕を draft ケースに対して実施〔PASS 時の approved 化は test-review が実施〕→ `select` を再実行して確認。不通過時の遷移は Phase 3〔対象は draft ケースのみ〕）、SKILL.md「Phase 別の要点」Phase 4（承認済みケースゲート）、`${CLAUDE_PLUGIN_ROOT}/references/retest-policy.md` 8 章（select を経ない対象確定の禁止）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md` 3 章（内容変更で revision +1・draft 戻し）。
+`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 1.2 章（承認済みケースゲート: scope に `review_status: draft` のケースが含まれる場合、run を開始せず先に test-review〔設計文脈〕を要求。全ケース approved で通過）、`${CLAUDE_SKILL_DIR}/references/flow.md` 1 章の状態遷移図（`Phase4 --> Phase3: 承認済みケースゲート（draft 混入）`）・3 章のゲート判定手順（承認済みケースゲート: `select` 出力の `draft_cases` が非空 → test-review〔設計文脈〕を draft ケースに対して実施〔PASS 時の approved 化は test-review が実施〕→ `select` を再実行して確認。不通過時の遷移は Phase 3〔対象は draft ケースのみ〕）、`${CLAUDE_SKILL_DIR}/references/flow.md` 2.1 章「Phase 別の要点」Phase 4（承認済みケースゲート）、`${CLAUDE_PLUGIN_ROOT}/references/retest-policy.md` 8 章（select を経ない対象確定の禁止）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md` 3 章（内容変更で revision +1・draft 戻し）。
 
 ## 期待動作
 

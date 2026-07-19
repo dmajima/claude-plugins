@@ -17,6 +17,7 @@
 | 08 | case-08_manual_assist_non_interactive.md | automation: manual-assist × 非対話（skipped + reason で返却。case-07 の対） | 委譲 |
 | 09 | case-09_playwright_test_run.md | automation: playwright-test × `npx playwright test` 実走 pass（.spec.ts を実行し全 pass を記録・executed_by: playwright-test・MCP 経路と併存） | 委譲 |
 | 10 | case-10_playwright_test_skipped.md | automation: playwright-test だが Playwright/ランナー・fixtures.yaml/SUT テストコード不在 → skipped + reason（実走前提の欠如・MCP 未ロード skipped〔case-04〕とは別前提） | 委譲 |
+| 11 | case-11_endpoints_base_url.md | environment.yaml の endpoints[] 由来 base URL を対象アプリ情報として受領して実行（受領形・実行手順は不変・出所の注記のみ。case-01 の対） | 委譲 |
 
 ## ケースファイルの構成
 

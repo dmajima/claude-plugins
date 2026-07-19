@@ -11,7 +11,7 @@
 
 ## 分岐の根拠
 
-SKILL.md「Phase 別の要点」Phase 1（setup 確認。新規 MCP 登録時は再起動ハンドオフで停止）および **Phase 1 の PARTIAL 分岐（追記後）**（PARTIAL 受領時は停止せず続行し、利用不可項目の影響を後続へ引き継ぐ）、`${CLAUDE_SKILL_DIR}/references/flow.md` 2 章 Phase 1 入出力（検出結果〔MCP / ランナー / venv〕を受領）、`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 2 章（実行手段が利用不可の場合、実行を偽装せず skipped + reason・報告書の未確認事項へ転記）・9 章（非対話既定値）、`deep-test:test-setup` の環境検証レポート（総合判定 3 値 READY / RESTART_REQUIRED / PARTIAL は test-setup の SKILL.md「引き渡し」・`setup-procedures.md` 6.2 章が定義元）。
+`${CLAUDE_SKILL_DIR}/references/flow.md` 2.1 章「Phase 別の要点」Phase 1（setup 確認。新規 MCP 登録時は再起動ハンドオフで停止）および **Phase 1 の PARTIAL 分岐（追記後）**（PARTIAL 受領時は停止せず続行し、利用不可項目の影響を後続へ引き継ぐ）、`${CLAUDE_SKILL_DIR}/references/flow.md` 2 章 Phase 1 入出力（検出結果〔MCP / ランナー / venv〕を受領）、`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 2 章（実行手段が利用不可の場合、実行を偽装せず skipped + reason・報告書の未確認事項へ転記）・9 章（非対話既定値）、`deep-test:test-setup` の環境検証レポート（総合判定 3 値 READY / RESTART_REQUIRED / PARTIAL は test-setup の SKILL.md「引き渡し」・`setup-procedures.md` 6.2 章が定義元）。
 
 ## 期待動作
 

@@ -153,7 +153,36 @@ fail 判定の確定直後（次ケースへ進む前）に、以下をその場
 
 ---
 
-## 7. 関連 references
+## 7. コンテナ内 exec 実行経路（environment.yaml の exec_forms[]・ホスト実行と併存）
+
+本章は、ホストにランタイム / テストランナーが無い場合の**代替経路**として、test-environment（Phase 1.7）が environment.yaml に記録した `exec_forms[]`（コンテナ内ランナー実行形）で実行する経路を定める。1〜6 章のホスト実行経路とは**併存**し、既存のホスト実行・manual-assist 経路を置き換えない（environment.yaml のスキーマ SSOT は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md`）。
+
+### 7.1 実行経路の優先順位
+
+| 優先 | 条件 | 経路 |
+|------|------|------|
+| 1（既定・不変） | ホストでランナーを検出・実行可能（1 章） | 従来どおりホスト実行 |
+| 2（代替） | ホストにランタイム / ランナーが無く、environment.yaml（`{base}/{target-slug}/environment.yaml`）の `exec_forms[]` に該当ランナーの実行形（`purpose: unit`。`runner_hint` / ケースのパターン記述と整合）があり、環境が稼働状態（`status.state: up / healthy`） | コンテナ内 exec 実行 |
+| 3 | どちらの手段も無い | 従来どおり skipped + reason（1.4 の判定・意味論・文言のまま） |
+
+- environment.yaml が存在しない、または `meta.applicability` が `applicable` 以外（`not-applicable` / `unavailable`）の場合は、本経路自体が存在しない（従来動作のまま 1.4 で判定する）
+- 環境が未起動（`status.state: provisioned / down / unknown`）の場合は本経路を選択しない（up は test-environment / オーケストレータの責務。本スキルは環境を起動しない）
+- health 未達の環境（`status.state: degraded`）で実行前提が成立しない場合は blocked + reason（環境はあるがテスト論理上の前提不成立。skipped との使い分けは yaml-schema-results.md 6 章・yaml-schema-environment.md 12 章に整合）
+
+### 7.2 実行形（記録値をそのまま用いる）
+
+- `exec_forms[].command_template`（lifecycle の `-f` 群 + `-p {slug}-test` を含む完全形。例: `docker compose -f <SUT compose> -f environment/compose.test.yml -p {slug}-test exec -T <service> <runner コマンド>`）の記録値をそのまま Bash で用い、`<runner コマンド>` 部にランナーの実行引数（対象パターン・機械可読出力オプション）を与える
+- `-f` 群・`-p`・サービス名を自分で組み立て直さない（分離名前空間の破壊・SUT 側 override の自動読込混入を防ぐ）。environment.yaml は読み取りのみとし、environment.yaml / SUT の docker 資産へ書き込まない
+
+### 7.3 結果解釈（ホスト実行と同一規範）
+
+- exit code・出力解析（4 章）・ケースマッピング（2 章）・実行方式とタイムアウト（3 章）・エビデンス保存（5 章）・defect 組み立て（6 章）は**ホスト実行と同一規範**で行う
+- 機械可読出力（junitxml 等）はコンテナ内パスに出力されるため、ボリューム共有で取得できない場合は stdout 経由（`exec -T` の標準出力・リダイレクト）で回収してエビデンス保存する
+- `executed_by` は `test-framework` のまま変えない（新しい enum 値を追加しない）。実行場所がコンテナ内 exec である旨（用いた実行形・サービス名）を actual / defect の reproduction_steps（環境情報）に記録する
+
+---
+
+## 8. 関連 references
 
 | 参照先 | 内容 |
 |-------|------|
@@ -165,3 +194,4 @@ fail 判定の確定直後（次ケースへ進む前）に、以下をその場
 | `${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md` | severity 判定基準（唯一の SSOT） |
 | `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` | エビデンス配置パス・基準ディレクトリ解決 |
 | `${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` | ユニットテストの定義・入口/出口基準（4.1 節） |
+| `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` | environment.yaml（`exec_forms[]` / `status` / `applicability`）のスキーマ SSOT（7 章のコンテナ内 exec 代替経路の入力） |

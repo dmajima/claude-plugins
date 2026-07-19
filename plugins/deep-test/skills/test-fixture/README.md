@@ -89,7 +89,7 @@ plugins/deep-test/skills/test-fixture/
 │   ├── fixture-procedures.md   # 入力解決 → 消費 → 既存検出 → 生成/拡充 → 出力 → 自己チェックの詳細手順
 │   ├── fixture-patterns.md     # 認証/モック/シード/base のパターン集と最小コード例
 │   └── agents.md               # フェーズ定義（fixture-architect の起動フェーズ）
-└── evals/                      # 動作分岐検証ケース（case-01〜06 + README・6 ケース）
+└── evals/                      # 動作分岐検証ケース（case-01〜10 + README・10 ケース）
 ```
 
 > Python は同梱しない（環境構築 setup 不要）。フィクスチャコードは LLM が Write/Edit で直接生成し、SUT のテストディレクトリのみへ書き込む。Playwright のインストール確認や雛形生成に read-only の `npx playwright` を用いる場合がある。
@@ -98,7 +98,7 @@ plugins/deep-test/skills/test-fixture/
 
 - テストケース設計・テストレベル / 技法 / 優先度の決定・テスト計画（`test-design` が担当。本スキルはフィクスチャ下地まで）
 - テストの実行・カバレッジの実測（`test-run-*`。本スキルは実走しない）
-- 実行環境の構築（Playwright MCP 登録・ランナー検出・venv は `test-setup`。Docker は `test-environment`〔将来〕）
+- 実行環境の構築（Playwright MCP 登録・ランナー検出・venv は `test-setup`。Docker は `test-environment`〔Phase 1.7〕）
 - 対象アプリの一次解析（`test-analyze`。本スキルは analysis.yaml を消費するのみ）
 - 認証情報のフル値の保存・取得（`credentials-manager`。本スキルは取得方法のみ記述する）
 
