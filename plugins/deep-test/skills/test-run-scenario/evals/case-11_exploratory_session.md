@@ -32,7 +32,7 @@ SKILL.md「実行モード判定」の manual-assist / exploratory 分岐（対�
 | 区分 | 内容 |
 |-----|------|
 | 生成ファイル | `evidence/R20260719-100000/TC-UAT-006/session-sheet.md`（固定見出しのセッションシート）+ 補助取得したスクリーンショット等（あれば同ディレクトリへ移送）。test-results.yaml へは書き込まない |
-| 標準出力（要約） | 中間結果 JSON（skill: "test-run-scenario" / 受領 run_id / results 1 件・executed_by: human-assisted・evidence に session-sheet.md を含む・fail 時は defect + extras.session_findings） |
+| 標準出力（要約） | 中間結果 JSON（skill: "test-run-scenario" / 受領 run_id / results 1 件・executed_by: human-assisted・evidence に session-sheet.md を含む。主系〔pass〕は results[] 直下の `extras.session_findings` 付き・fail 時は defect + `defect.extras.session_findings`） |
 | 終了状態 | セッション結果を記録して返却（非対話のチャーターシート縮退は case-12） |
 
 ## 関連ケース
