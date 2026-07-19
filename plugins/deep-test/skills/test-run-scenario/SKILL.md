@@ -1,6 +1,6 @@
 ---
 name: test-run-scenario
-description: システムテスト（TC-SYS）・受入テスト（TC-UAT）を Playwright MCP による業務シナリオ E2E で実行する実行スキル。ログインから業務操作・結果確認・ログアウトまでを通しで実行し、結果を中間データとしてオーケストレータへ返却する。UAT は受入判断の材料を揃える検証支援であり、最終受入判断は人間が行う。オーケストレータ test の run フェーズから system / uat レベルのケース実行を委譲された時、複数機能を跨ぐ業務シナリオを通しで検証する場合に使用する。
+description: システムテスト（TC-SYS）・受入テスト（TC-UAT）を Playwright MCP による業務シナリオ E2E で実行する実行スキル。ログインから業務操作・結果確認・ログアウトまでを通しで実行し、結果を中間データとしてオーケストレータへ返却する。UAT は受入判断の材料を揃える検証支援であり、最終受入判断は人間が行う。オーケストレータ test の run フェーズから system / uat レベルのケース実行を委譲された時、複数機能を跨ぐ業務シナリオを通しで検証する場合に使用する。playwright-test のケースは fixtures.yaml（認証・シードフィクスチャ）を前提に npx playwright test（Bash 実行）で system / uat シナリオを再現可能に実走する経路も持つ（既定の MCP 経路と併存）。
 allowed-tools:
   - Read
   - Grep
@@ -81,6 +81,7 @@ allowed-tools:
 | `uat` | 受入観点シナリオ | 上記に加え、業務担当者目線の導線・エラーメッセージ妥当性・業務データでの成立性（`references/scenario-execution.md` の UAT 観点チェックリスト） |
 
 - `automation: manual-assist` のケース: 対話時はユーザーに手動確認を依頼し結果を `executed_by: human-assisted` で記録する。非対話時は skipped + reason 記録（`execution-policy.md` 9 章）
+- `automation: playwright-test` のケース: fixtures.yaml（認証・シードフィクスチャ）と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts`）を前提に `npx playwright test`（Bash 実行）で system / uat シナリオを再現可能に実走し、pass / fail と JUnit / レポートをエビデンス化して `executed_by: playwright-test` で記録する。Playwright・ランナー未導入または fixtures.yaml 不在時は skipped + reason（手順は `${CLAUDE_SKILL_DIR}/references/scenario-execution.md` 7 章）。既存の MCP・manual-assist 経路は不変
 
 ## 実行フロー
 
@@ -109,6 +110,7 @@ flowchart TD
 - エビデンス取得・移送の手順（raw 出力先からの move）は `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 5 章、収集タイミングは `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 7 章に従う
 - シナリオ途中 fail 時の後続ステップ・依存ケースの扱いは `${CLAUDE_SKILL_DIR}/references/scenario-execution.md` を参照
 - ケースタイムアウト（既定 120 秒）超過は当該ケースを blocked + reason（到達ステップ含む）で記録し次ケースへ進む
+- `automation: playwright-test` のケースは、上記 MCP のその場操作ではなく fixtures.yaml（認証・シードフィクスチャ）+ SUT テストコードを前提に `npx playwright test` で system / uat シナリオを実走する。手順・エビデンス化・SKIPPED 判定は `${CLAUDE_SKILL_DIR}/references/scenario-execution.md` 7 章（playwright-test 実走経路）に従う（既存 MCP・manual-assist 経路と併存し置き換えない）
 
 ## 検証（チェックリスト）
 
@@ -127,7 +129,7 @@ flowchart TD
 
 本スキル固有の埋め方（フォーマット自体は複製しない）:
 
-- `executed_by`: `playwright-mcp`（Playwright MCP 実行時）
+- `executed_by`: `playwright-mcp`（Playwright MCP 実行時）。`automation: playwright-test` のケースを `npx playwright test` で実走した場合は `playwright-test`
 - `actual`: シナリオの完遂状況（到達ステップ・完了/中断）を必ず記述する
 - system 途中 fail で依存する後続ケース: `status: blocked` + `reason`（依存元ケース ID とその fail）
 - 中断時の未到達ケース: `status: blocked`（前提未到達）または `skipped`（実行手段喪失）+ `reason`
@@ -146,6 +148,7 @@ flowchart TD
 | 参照先 | 内容 |
 |-------|------|
 | `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス（実行時の共通規範一式はここから到達する） |
-| `${CLAUDE_SKILL_DIR}/references/scenario-execution.md` | シナリオ実行手順・途中 fail 時の後続判断・UAT 観点チェックリスト・達成チェックリスト（本スキル固有） |
+| `${CLAUDE_SKILL_DIR}/references/scenario-execution.md` | シナリオ実行手順・途中 fail 時の後続判断・UAT 観点チェックリスト・達成チェックリスト・playwright-test 実走経路（本スキル固有） |
+| `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | `npx playwright test` + fixtures.yaml（認証・シードフィクスチャ）の実行規約（`automation: playwright-test` 経路。既定の MCP 経路と併存） |
 
 > **正本ツールリストとの同期（同期義務）**: frontmatter の allowed-tools に列挙した `mcp__playwright__browser_*` ツールは、`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 5 章（正本ツールリスト）から同期している。正本リストの改訂時は本スキルの frontmatter へ必ず反映すること。Playwright MCP が `playwright` 以外の名前で登録されている場合のプレフィクス読み替えは同 2 章に従う。

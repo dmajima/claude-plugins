@@ -15,6 +15,7 @@
 | ID | subagent_type | 役割 | 起動スキル（文脈） |
 |----|--------------|------|------------------|
 | src | `deep-test:source-analyst` | 解析材料（analysis.yaml / target-analysis.md）の網羅性・根拠妥当性の自己チェック | `test-analyze`（Phase 1.5） |
+| fix | `deep-test:fixture-architect` | フィクスチャ設計の妥当性・再利用性・分離（認証 / モック / シード）・書き込み境界レビュー | `test-fixture`（Phase 1.6） |
 | arch | `deep-test:test-architect` | テスト戦略・レベル選定・計画の妥当性評価 | `test-design` |
 | cov | `deep-test:coverage-reviewer` | 網羅性レビュー（要件対応・境界値・異常系・同値分割） | `test-review`（設計文脈） |
 | feas | `deep-test:feasibility-reviewer` | 実行可能性・自動化適合性・環境依存リスクの評価 | `test-review`（設計文脈） |
@@ -27,6 +28,7 @@
 | 起動スキル | 文脈 | 起動エージェント | 起動形態 |
 |-----------|------|----------------|---------|
 | `test-analyze` | 解析材料の自己チェック（analysis.yaml / target-analysis.md が対象。Phase 1.5） | source-analyst | 単独 |
+| `test-fixture` | フィクスチャ設計の自己チェック（fixtures.yaml / SUT テストコードが対象。Phase 1.6） | fixture-architect | 単独 |
 | `test-design` | テスト計画・ケース設計の妥当性確認 | test-architect | 単独 |
 | `test-review` | 設計レビュー（test-cases.yaml が対象） | coverage-reviewer / feasibility-reviewer / user-perspective-reviewer | **3 並列** |
 | `test-review` | 結果レビュー（実行結果・欠陥が対象） | defect-analyst / user-perspective-reviewer | **2 並列** |
@@ -78,6 +80,7 @@ Agent({ subagent_type: "deep-test:user-perspective-reviewer", description: "ユ�
 | エージェント | 追加で渡す入力 |
 |------------|---------------|
 | source-analyst | 対象の説明・target-slug・解決済みの `analysis.yaml` / `target-analysis.md` のパス・`target_type` / `source_availability`（解析可能性の縮退状態）・`yaml-schema-analysis.md` の参照指示 |
+| fixture-architect | 対象の説明・target-slug・解決済みの `analysis.yaml` / `fixtures.yaml` のパス・SUT のテストディレクトリ（`project=` 配下）・`playwright-test.md` の参照指示（fixtures.yaml スキーマ・書き込み境界・認証情報のハードコード禁止の観点） |
 | test-architect | 対象分析結果（技術スタック・画面/API 一覧）・要件/仕様情報・想定テストレベルの選定案・破壊的操作を含むケースへの `destructive: true` 付与の妥当性・`test-levels.md` の参照指示 |
 | coverage-reviewer | 要件・仕様への参照（ケースの requirement 対応付け）・`test-levels.md` の主な確認観点の参照指示 |
 | feasibility-reviewer | 実行環境情報（`test-setup` の検出結果: Playwright MCP / テストランナー / 外部接続可否）・`execution-policy.md` の参照指示 |

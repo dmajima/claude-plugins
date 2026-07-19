@@ -61,6 +61,14 @@ expected には「エラーが出る」ではなく**どのエラーがどこに
 - 基準を満たせない確認（主観評価・物理操作・外部システムの直接確認）は `automation: manual-assist` を設定する（非対話実行時は skipped となる。`execution-policy.md` 9 章）
 - API を直接検証するケース（画面を介さない外部 IF 検証等）は `automation: api` を設定する
 
+### 3.1 playwright-test（fixture 前提の再現可能ケース）の設計原則
+
+`fixtures.yaml`（Phase 1.6 の `test-fixture` が生成・SSOT は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md`）が存在する場合、再現可能な自動テスト基盤（`.spec.ts` + フィクスチャ）に載せるケースは `automation: playwright-test` を選ぶ。
+
+- **fixture 前提と使用フィクスチャの明示**: 使用するフィクスチャを `cases[].fixtures` に列挙する（値は `fixtures.yaml` の `fixtures[].name` に実在するもの。捏造しない）。認証済み page・モック済み外部依存・シード済みデータ等の前提はフィクスチャで供給し、再ログイン等の手順を steps に重複させない
+- **playwright-test と playwright の使い分け**: 再現可能基盤（コード化・反復実行可能）に載せるケースは `playwright-test`、その場操作で探索的に確認するケースは従来どおり `playwright`（探索的 MCP）とする。`fixtures.yaml` 非存在・fixture 基盤がないケースは `playwright` を既定にする（既定の探索的フローを崩さない）
+- **実行可能性基準は共通**: steps / expected は 3 章の基準（具体的操作・機械判定可能な expected・条件待機）を満たす。必要なフィクスチャが未整備なら `playwright`（探索的）に落とすか、fixture 基盤の整備（Phase 1.6）を前提として記す
+
 ## 4. 検証データ設計
 
 | 項目 | 原則 |

@@ -2,14 +2,14 @@
 
 ## 目的と範囲
 
-`deep-test` プラグインの全スキル（オーケストレータ `test` / フェーズスキル 5 種 / 実行スキル 6 種）が共通参照する **SSOT 規範群** のナビゲーション。
+`deep-test` プラグインの全スキル（オーケストレータ `test` / フェーズスキル 6 種 / 実行スキル 6 種）が共通参照する **SSOT 規範群** のナビゲーション。
 テストレベル定義・YAML スキーマ・severity 基準・エビデンス要件・再テスト判定・データ配置・Playwright MCP 規約・エージェント運用・実行共通規範を集約する。
 
 ## 原則
 
 - **依存方向は個別スキル → 共通 references の一方向**。共通 references は個別スキルのロジック・手順本体に依存しない（適用先スキルを示すポインタ・適用一覧の記載は許容）
 - 欠陥重要度（severity）の enum 値・判定基準は **`severity-policy.md` が唯一の定義場所**。`yaml-schema-results.md` / `evidence-policy.md` / `report-format.md` は severity-policy.md への片方向参照のみ行い、基準を複製しない
-- 各 worker スキル（11 スキル）の SKILL.md からの共通参照は `common-references.md` への 1 行参照に集約する
+- 各 worker スキル（12 スキル）の SKILL.md からの共通参照は `common-references.md` への 1 行参照に集約する
 - `test-results.yaml` は LLM が Edit/Write で直接編集しない（オーケストレータ `test` の専用スクリプト経由に一元化）。共通規約・操作規約は `yaml-schema.md`、スキーマ本体は `yaml-schema-results.md`、配置は `data-locations.md` を参照
 - 実行手段（Playwright MCP・テストランナー・外部ツール）が利用不可の場合は実行を偽装せず `skipped` + reason で記録する（`execution-policy.md`）
 - 各スキル frontmatter の Playwright MCP ツール列挙は `playwright-mcp.md` の正本ツールリストから同期する（同期義務）
@@ -32,6 +32,7 @@
 | 再テストの対象判定（full / ng-only / ids）・集計規則を確認する | `retest-policy.md` |
 | 実績・エビデンス・報告書の配置パス / target-slug 解決 / エビデンス移送を行う | `data-locations.md` |
 | Playwright MCP の登録・既存登録検出・起動オプション・正本ツールリストを確認する | `playwright-mcp.md` |
+| Playwright Test（`.spec.ts` + フィクスチャ）の実行規約・`fixtures.yaml`（test-fixture 生成・Phase 1.6）のスキーマ・認証/モック/シードのパターンを確認する | `playwright-test.md` |
 | エージェントの選定・起動・プロンプト組み立てを行う | `agents.md` |
 | 実行時の共通規範（MCP ゲート・条件付き動的検証・SKIPPED・タイムアウト・テストデータ分離・非対話既定値）を確認する | `execution-policy.md` |
 | venv を構築・削除する（全スキル共通の requirements.txt を含む） | `scripts/setup/`（`setup_venv.sh` / `teardown_venv.sh` / `requirements.txt`） |
@@ -45,7 +46,7 @@
 | ファイル | SSOT 所有（唯一の定義場所） |
 |---------|--------------------------|
 | `CLAUDE.md` | references ナビゲーション（読み込みガイド） |
-| `common-references.md` | 全 worker スキル（フェーズ 5 + 実行 6 の 11 スキル）共通の参照インデックス |
+| `common-references.md` | 全 worker スキル（フェーズ 6 + 実行 6 の 12 スキル）共通の参照インデックス |
 | `test-levels.md` | 8 テストレベルの定義・入口/出口基準・スキルマッピング・ケース ID プレフィクス・用語注記（ユニット/単体の独自区分）・IT-a/IT-b 入口基準とスタブポリシー・UAT の位置付け・性能/セキュリティのスコープ境界・スキル分割原理 |
 | `yaml-schema.md` | 実績 YAML 共通の記述規約（YAML 記述規約・ID/採番規約）と操作規約（results_manager.py サブコマンド・exit code）。スキーマ定義群のハブ |
 | `yaml-schema-cases.md` | `test-cases.yaml` の完全スキーマ（meta / cases[] / revision・承認・削除の規則） |
@@ -57,6 +58,7 @@
 | `retest-policy.md` | 再テストモード・status×モード対象判定マトリクス・回帰テスト非代替の明記・未承認ケースの扱い・最新 run 採用の集計規則 |
 | `data-locations.md` | 実績・エビデンス・報告書の配置パス規約（`.claude/.local/plugins/deep-test/` 配下）・target-slug 解決フロー・エビデンス移送手順・保持/クリーンアップ方針 |
 | `playwright-mcp.md` | Playwright MCP セットアップ・既存登録検出・起動オプション・出力先規約・正本ツールリスト（各スキル frontmatter の同期元） |
+| `playwright-test.md` | Playwright Test（`.spec.ts` + フィクスチャ）実行規約・`fixtures.yaml` スキーマ（test-fixture 生成・Phase 1.6）・認証(storageState)/モック(route.fulfill)/シード/base(test.extend) のパターン規範 |
 | `agents.md` | エージェント選定表・起動方式・プロンプト組み立て・共通注入事項・並列起動の原則 |
 | `execution-policy.md` | 実行共通規範（MCP ゲート・条件付き動的検証・SKIPPED 記録・タイムアウト・テストデータ分離・環境安全・非対話既定値表） |
 

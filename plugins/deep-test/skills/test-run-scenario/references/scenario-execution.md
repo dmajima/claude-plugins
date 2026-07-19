@@ -122,7 +122,46 @@ uat レベルのケースは system の確認に加え、**業務担当者が実
 [ ] 機微情報（認証情報・個人情報）を actual / reason に生値で書いていない（evidence-policy.md 5 章）
 ```
 
-## 7. 関連 references
+## 7. automation: playwright-test の実走経路（`npx playwright test`・MCP 経路と併存）
+
+本章は `automation: playwright-test` のケースを実走する経路を定める。1〜5 章の Playwright MCP による業務シナリオ E2E（`automation: playwright`）とは**併存**し、既存の MCP・manual-assist 経路を置き換えない。各ケースの `automation` 値で経路を選ぶ。
+
+### 7.1 前提（実走のみ・テストコードは生成しない）
+
+- `fixtures.yaml`（`{base}/{target-slug}/fixtures.yaml`）と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts` / フィクスチャ）が既に存在すること。これらの**生成は test-fixture（Phase 1.6）の責務**であり、本スキルは**実走のみ**を行い SUT テストコードを生成・改変しない
+- system / uat シナリオの前提（ログイン状態・シードデータ）は fixtures.yaml の**認証フィクスチャ（`type: auth`・storageState）**・**シードフィクスチャ（`type: seed`）**で再現する（規約は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md`）
+
+### 7.2 実行（Bash）とシナリオの再現
+
+- `npx playwright test` を Bash で実行する（`--project` / spec パス指定）。Bash 実行の書式は本プラグインの既存 Bash 呼び出し規約に合わせる。Playwright は node/npx 実行であり `run_via_job.sh` ラッパーは不要
+
+```bash
+# SUT の project= ルートで対象シナリオ spec を実走する例（認証済みプロジェクト・JUnit + line レポート）
+cd "<SUT の project= ルート>" && npx playwright test tests/<対象シナリオ>.spec.ts --project=authenticated --reporter=line,junit
+```
+
+- 業務シナリオ（ログイン → 業務操作 → 結果確認 → ログアウト）の通し実行は `.spec.ts` に載っている前提で実走する。ログインは認証フィクスチャの storageState 再利用により毎回再ログインせずに再現する
+- uat レベルの受入観点（4 章の導線・エラーメッセージ妥当性・業務データ成立性）は、`.spec.ts` のアサーションで機械判定できる範囲を実走で確認し、目視が要る観点は MCP 経路または manual-assist に委ねる旨を actual に明記する
+
+### 7.3 結果マッピングとエビデンス化
+
+| runner の結果 | ケース status |
+|--------------|--------------|
+| 対象シナリオが全 pass | `pass`（actual にシナリオ完遂を記録） |
+| シナリオ途中で fail | `fail`（JUnit・トレースから 3 章の後続判断・defect を組み立てる。到達ステップを actual に記録） |
+| 設定エラー等でテスト自体が実行されなかった | `blocked` + reason |
+
+- エビデンス: stdout / stderr ログ・JUnit XML・HTML レポート・失敗時トレース / スクリーンショットを `evidence/{run_id}/{case_id}/` へ保存する（テストランナー実行時のエビデンス収集は `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 7 章に準ずる。命名例: `80_playwright-stdout.txt` / `81_junit.xml`）
+- `executed_by` は `playwright-test` を記録する（`playwright-mcp` と混同しない）
+
+### 7.4 SKIPPED 規範（実行手段不在時・偽装禁止）
+
+- Playwright 本体・テストランナー（`npx playwright test`）が未導入、または `fixtures.yaml` / SUT テストコードが不在の場合は、実行を偽装せず当該ケースを `skipped` + reason で返す（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 2 章・`playwright-test.md`）。「未実施」を「問題なし」と書かない
+- UAT の pass をもって「受入完了」と結論しないのは MCP 経路と同じ（4 章・`test-levels.md` 6 章）。playwright-test 経路の pass も「受入観点シナリオが検証で成立した」ことを示すに留める
+
+---
+
+## 8. 関連 references
 
 | 参照先 | 内容 |
 |-------|------|
@@ -134,3 +173,4 @@ uat レベルのケースは system の確認に加え、**業務担当者が実
 | `${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md` | severity 判定基準 |
 | `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-results.md` | results / defect / status enum |
 | `${CLAUDE_PLUGIN_ROOT}/references/retest-policy.md` | resume（中断 run の再開）判定 |
+| `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | `npx playwright test` + fixtures.yaml（認証・シードフィクスチャ）の実行規約（7 章の playwright-test 実走経路） |

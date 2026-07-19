@@ -1,6 +1,6 @@
 ---
 name: test-run-integration
-description: 内部結合（integration-internal / TC-ITA）・外部結合（integration-external / TC-ITB）の実行スキル。Playwright MCP による画面間・モジュール間の連携フロー確認と Bash（curl）による API 補助確認を行い、ケース単位の中間結果 JSON を返す。外部接続不可時はスタブポリシーに従い判断する。deep-test オーケストレータ（test）の run フェーズから結合レベルのケース実行時に使用する。
+description: 内部結合（integration-internal / TC-ITA）・外部結合（integration-external / TC-ITB）の実行スキル。Playwright MCP による画面間・モジュール間の連携フロー確認と Bash（curl）による API 補助確認を行い、ケース単位の中間結果 JSON を返す。外部接続不可時はスタブポリシーに従い判断する。deep-test オーケストレータ（test）の run フェーズから結合レベルのケース実行時に使用する。playwright-test のケースは fixtures.yaml のモックフィクスチャで外部依存を差し替え npx playwright test（Bash 実行）で再現可能に実走する経路も持つ（既定の MCP 経路と併存）。
 allowed-tools:
   - Read
   - Grep
@@ -81,6 +81,7 @@ allowed-tools:
 
 - ケース定義本体が引数で渡されない場合は、`.claude/.local/plugins/deep-test/{target-slug}/test-cases.yaml` から該当ケースを Read で参照する（読み取りのみ）
 - `automation: manual-assist` のケース: 対話時はユーザーに手動確認を依頼し `executed_by: human-assisted` で記録する。非対話時は skipped + reason（非対話既定値表は execution-policy.md）
+- `automation: playwright-test` のケース: fixtures.yaml と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts`）を前提に `npx playwright test`（Bash 実行）で実走する。外部依存（IT-b）は fixtures.yaml のモックフィクスチャ（route.fulfill）で差し替え、実接続なしに再現可能な検証を行う。pass / fail と JUnit / レポートをエビデンス化して `executed_by: playwright-test` で記録し、Playwright・ランナー未導入または fixtures.yaml 不在時は skipped + reason（手順は `${CLAUDE_SKILL_DIR}/references/integration-execution.md` 8 章）。既存の MCP・API 補助確認・manual-assist 経路は不変
 - API 直接確認に認証情報が必要な場合: 対話時は credentials-manager 系スキルの利用を案内する。非対話で認証が解決できない場合は当該確認を実施せず、その旨を actual / reason に記録する（フル値の取り扱い・出力は行わない）
 
 ## 実行フロー
@@ -134,6 +135,9 @@ defect 3 点セット（reproduction_steps: 環境情報含む完全な再現手
 ### 8. 返却
 検証チェックリストを通過後、中間結果 JSON を返却する。
 
+### playwright-test 実走経路（automation: playwright-test）
+上記 1〜8 は Playwright MCP + API 補助確認の経路（`automation: playwright` / `api`）である。`automation: playwright-test` のケースは、fixtures.yaml + SUT テストコードを前提に `npx playwright test` で実走する（IT-b の外部依存はモックフィクスチャで差し替え、実接続なしに再現可能に検証）。実行手順・エビデンス化・SKIPPED 判定は `${CLAUDE_SKILL_DIR}/references/integration-execution.md` 8 章（playwright-test 実走経路）に従う。既存の MCP・API 補助確認・manual-assist 経路と併存し、置き換えない。
+
 ## 検証（チェックリスト）
 
 中間結果 JSON の返却前に以下を確認する。未達項目は解消してから返却する。
@@ -166,7 +170,7 @@ defect 3 点セット（reproduction_steps: 環境情報含む完全な再現手
 ```
 
 - `results[]` は 1 ケース 1 エントリ。フィールド定義・必須制約は execution-policy.md 4 章および yaml-schema-results.md を正とする（本書では複製しない）
-- `executed_by` はブラウザ経由の確認が主体なら `playwright-mcp`、API 直接検証が主体のケース（`automation: api`）なら `api`（manual-assist ケースを人手確認した場合のみ `human-assisted`）
+- `executed_by` はブラウザ経由の確認が主体なら `playwright-mcp`、API 直接検証が主体のケース（`automation: api`）なら `api`、`automation: playwright-test` のケースを `npx playwright test` で実走した場合は `playwright-test`（manual-assist ケースを人手確認した場合のみ `human-assisted`）
 - スタブ実行・API 補助確認の未実施など、報告書の未確認事項につながる特記事項は JSON とあわせて明記して返す（未確認事項への転記はオーケストレータ / test-report が行う）
 
 ## 重要な制約
@@ -188,6 +192,7 @@ defect 3 点セット（reproduction_steps: 環境情報含む完全な再現手
 |-------|------|
 | `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス（実行時の共通規範一式はここから到達する） |
 | `${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` | IT-a / IT-b の定義・入口基準の違い・スタブポリシー（5 章。判断基準の唯一の定義場所） |
-| `${CLAUDE_SKILL_DIR}/references/integration-execution.md` | IT-a / IT-b の実行手順・スタブ判断の運用・API 補助確認・マスキング手順（本スキル固有） |
+| `${CLAUDE_SKILL_DIR}/references/integration-execution.md` | IT-a / IT-b の実行手順・スタブ判断の運用・API 補助確認・マスキング手順・playwright-test 実走経路（本スキル固有） |
+| `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | `npx playwright test` + fixtures.yaml（モックフィクスチャ）の実行規約（`automation: playwright-test` 経路。既定の MCP 経路と併存） |
 
 > **正本ツールリストとの同期（同期義務）**: frontmatter の allowed-tools に列挙した `mcp__playwright__browser_*` ツールは、`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 5 章（正本ツールリスト）から同期している。正本リストの改訂時は本スキルの frontmatter へ必ず反映すること。Playwright MCP が `playwright` 以外の名前で登録されている場合のプレフィクス読み替えは同 2 章に従う。

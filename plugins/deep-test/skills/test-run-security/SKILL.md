@@ -1,6 +1,6 @@
 ---
 name: test-run-security
-description: セキュリティテスト（TC-SEC）を Playwright MCP + Bash で OWASP 観点の動的チェックとして実行する実行スキル。認証・セッション管理・入力検証・セキュリティヘッダ・情報露出を承認済みケースの範囲でのみ確認し、結果を中間データとして返却する。ペネトレーションテスト・SCA・SAST の代替ではなく破壊的攻撃は行わない。オーケストレータ test の run フェーズから security レベルのケース実行を委譲された時、OWASP 観点の動的セキュリティチェックを行う場合に使用する。
+description: セキュリティテスト（TC-SEC）を Playwright MCP + Bash で OWASP 観点の動的チェックとして実行する実行スキル。認証・セッション管理・入力検証・セキュリティヘッダ・情報露出を承認済みケースの範囲でのみ確認し、結果を中間データとして返却する。ペネトレーションテスト・SCA・SAST の代替ではなく破壊的攻撃は行わない。オーケストレータ test の run フェーズから security レベルのケース実行を委譲された時、OWASP 観点の動的セキュリティチェックを行う場合に使用する。playwright-test のケースは fixtures.yaml の認証フィクスチャ（storageState）で認証済み/未認証を切替え npx playwright test（Bash 実行）で再現可能に実走する経路も持つ（既定の MCP 経路と併存）。
 allowed-tools:
   - Read
   - Grep
@@ -91,6 +91,7 @@ scope の security レベルのケースについて、OWASP 観点（`${CLAUDE_
 | 情報露出 | Playwright（エラーページ・HTML コメント）+ Bash（ディレクトリリスティング確認） |
 
 - `automation: manual-assist` のケース: 対話時はユーザーに手動確認を依頼し結果を `executed_by: human-assisted` で記録する。非対話時は skipped + reason 記録（`execution-policy.md` 9 章）
+- `automation: playwright-test` のケース: fixtures.yaml の認証フィクスチャ（`type: auth`・storageState）と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts`）を前提に `npx playwright test`（Bash 実行）で実走する。認証済み context（storageState）と未認証 context の挙動差（保護リソースへの到達可否等）を非破壊で検証し、pass / fail と JUnit / レポートをエビデンス化して `executed_by: playwright-test` で記録する。Playwright・ランナー未導入または fixtures.yaml 不在時は skipped + reason（手順は `${CLAUDE_SKILL_DIR}/references/security-execution.md` 7 章）。既存の MCP・`curl` 経路は不変
 
 ## 実行フロー
 
@@ -112,6 +113,7 @@ flowchart TD
 
 - 破壊的攻撃・承認範囲外の操作は実行しない。禁止操作に該当する検証は実施せず、その旨を actual / reason に記録する（`references/security-execution.md` の実行してよい操作/禁止操作の境界）
 - ケースタイムアウト（既定 120 秒）超過は当該ケースを blocked + reason で記録し次ケースへ進む
+- `automation: playwright-test` のケースは、fixtures.yaml の認証フィクスチャ（storageState）で認証済み/未認証を切替え `npx playwright test` で実走する。手順・エビデンス化・SKIPPED 判定は `${CLAUDE_SKILL_DIR}/references/security-execution.md` 7 章（playwright-test 実走経路）に従う（既存 MCP・`curl`・manual-assist 経路と併存し置き換えない・非破壊の範囲は不変）
 
 ## 検証（チェックリスト）
 
@@ -131,7 +133,7 @@ flowchart TD
 
 本スキル固有の埋め方（フォーマット自体は複製しない）:
 
-- `executed_by`: `playwright-mcp`（ブラウザ操作主体の場合）。ヘッダ確認等を Bash `curl` で行った場合はその旨を actual に明記する
+- `executed_by`: `playwright-mcp`（ブラウザ操作主体の場合）。ヘッダ確認等を Bash `curl` で行った場合はその旨を actual に明記する。`automation: playwright-test` のケースを `npx playwright test` で実走した場合は `playwright-test`
 - `actual`: 確認した観点と結果（例: 「HSTS ヘッダが未設定」「ログアウト後もセッション Cookie が有効」）。機微情報はマスク値で記述する
 - `defect.extras.owasp_category`: 該当 OWASP カテゴリ（例: A05:2021 Security Misconfiguration）
 - `evidence`: リクエスト/レスポンス記録・スクリーンショット（機微情報マスク済み）
@@ -152,6 +154,7 @@ flowchart TD
 | 参照先 | 内容 |
 |-------|------|
 | `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス（実行時の共通規範一式はここから到達する） |
-| `${CLAUDE_SKILL_DIR}/references/security-execution.md` | 観点別チェック手順・確認コマンド例・マスキング手順・実行してよい操作/禁止操作の境界・達成チェックリスト（本スキル固有） |
+| `${CLAUDE_SKILL_DIR}/references/security-execution.md` | 観点別チェック手順・確認コマンド例・マスキング手順・実行してよい操作/禁止操作の境界・達成チェックリスト・playwright-test 実走経路（本スキル固有） |
+| `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | `npx playwright test` + fixtures.yaml（認証フィクスチャ storageState）の実行規約（`automation: playwright-test` 経路。既定の MCP 経路と併存） |
 
 > **正本ツールリストとの同期（同期義務）**: frontmatter の allowed-tools に列挙した `mcp__playwright__browser_*` ツールは、`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 5 章（正本ツールリスト）から同期している。正本リストの改訂時は本スキルの frontmatter へ必ず反映すること。Playwright MCP が `playwright` 以外の名前で登録されている場合のプレフィクス読み替えは同 2 章に従う。

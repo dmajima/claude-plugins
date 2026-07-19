@@ -94,6 +94,7 @@ git checkout main
 | `test` | スキル | オーケストレータ。ライフサイクル全体の制御（モード判定・フェーズ委譲・ゲート判定・実績記録・再テスト対象選択） |
 | `test-setup` | スキル | 実行環境の構築・検証（Playwright MCP 登録・テストランナー検出・venv） |
 | `test-analyze` | スキル | テスト対象ソースを read-only で理解し解析材料を生成（analysis.yaml / target-analysis.md・Phase 1.5・test-design の前段） |
+| `test-fixture` | スキル | Playwright フィクスチャ基盤（認証 storageState / API モック / シード / base）の作成・拡充（fixtures.yaml 生成・analysis.yaml 消費・Phase 1.6） |
 | `test-design` | スキル | テスト対象分析→テスト計画→テストケース設計（test-cases.yaml 生成・revision 管理） |
 | `test-review` | スキル | テスト成果物の多観点レビュー（設計文脈: 網羅性・実現性・ユーザー目線 / 結果文脈: 欠陥分析・severity 検証） |
 | `test-run-unit` | スキル | ユニットテスト実行（pytest / jest / dotnet test 等の検出・実行・解析） |
@@ -106,7 +107,9 @@ git checkout main
 | `/deep-test:test` | コマンド | フルフロー起動（設計→レビュー→実施→結果レビュー→報告） |
 | `/deep-test:test-retest` | コマンド | 再テスト起動（full / ng-only / ids / resume） |
 | `/deep-test:test-report` | コマンド | 報告書のみ再生成 |
+| `/deep-test:test-fixture` | コマンド | フィクスチャ基盤の単独構築・拡充（Phase 1.6・実行はしない） |
 | `source-analyst` | エージェント | 解析材料の網羅性・根拠妥当性の自己チェック |
+| `fixture-architect` | エージェント | フィクスチャ設計の妥当性・再利用性・分離・書き込み境界・認証情報ハードコードの自己チェック |
 | `test-architect` | エージェント | テスト戦略・レベル選定・計画妥当性の評価 |
 | `coverage-reviewer` | エージェント | 網羅性レビュー（要件・境界値・同値分割・異常系） |
 | `feasibility-reviewer` | エージェント | 実行可能性・自動化適合性・環境依存リスクの評価 |
@@ -138,6 +141,7 @@ git checkout main
 | 「このアプリのテストをして」「テスト計画から報告まで一式お願い」 | `test`（フルフロー） |
 | 「テストケースを設計して」 | `test`（design-only）または `test-design` |
 | 「テスト対象を解析して」「解析材料を作って」 | `test`（analyze フェーズ）または `test-analyze` |
+| 「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」 | `test`（fixture フェーズ）または `test-fixture` |
 | 「前回 NG だったテストだけ再実行して」 | `test`（retest ng-only） |
 | 「テスト報告書を Excel で作って」 | `test`（report-only） |
 | 「テスト環境をセットアップして」 | `test-setup` |
@@ -145,7 +149,7 @@ git checkout main
 ### 実行フロー（フルフロー時）
 
 ```text
-setup 確認 → 解析（Phase 1.5） → テスト設計 → 設計レビュー（3 エージェント並列）
+setup 確認 → 解析（Phase 1.5） → フィクスチャ基盤（Phase 1.6） → テスト設計 → 設計レビュー（3 エージェント並列）
   → 人間承認ゲート → MCP ゲート
   → テスト実施（レベル順逐次・エビデンス自動収集）
   → 結果レビュー（2 エージェント並列） → 報告書生成
@@ -172,16 +176,18 @@ plugins/deep-test/
 ├── commands/
 │   ├── test.md                     # フルフロー起動
 │   ├── test-retest.md              # 再テスト起動
-│   └── test-report.md              # 報告書再生成
-├── agents/                         # 共有エージェント（7 種）
+│   ├── test-report.md              # 報告書再生成
+│   └── test-fixture.md             # フィクスチャ基盤の単独構築・拡充
+├── agents/                         # 共有エージェント（8 種）
 │   ├── source-analyst.md
+│   ├── fixture-architect.md
 │   ├── test-architect.md
 │   ├── coverage-reviewer.md
 │   ├── feasibility-reviewer.md
 │   ├── user-perspective-reviewer.md
 │   ├── defect-analyst.md
 │   └── evidence-auditor.md
-├── references/                     # プラグイン共通規範（ナビ CLAUDE.md + SSOT 14 ファイル + 人間向け README）+ 共通スクリプト
+├── references/                     # プラグイン共通規範（ナビ CLAUDE.md + SSOT 15 ファイル + 人間向け README）+ 共通スクリプト
 │   ├── CLAUDE.md                   # ナビゲーション
 │   ├── README.md                   # 人間向けインデックス（Claude 動作では不参照）
 │   ├── common-references.md        # worker スキル共通参照インデックス
@@ -195,6 +201,7 @@ plugins/deep-test/
 │   ├── data-locations.md           # データ配置規約
 │   ├── execution-policy.md         # 実行共通規範（ゲート・条件付き動的検証）
 │   ├── playwright-mcp.md           # Playwright MCP 利用規約
+│   ├── playwright-test.md          # Playwright Test 実行規約・fixtures.yaml スキーマ（Phase 1.6）
 │   ├── evidence-policy.md          # エビデンス・NG 時提出物規約
 │   ├── report-format.md            # 報告書フォーマット
 │   ├── agents.md                   # エージェント運用定義
@@ -205,6 +212,7 @@ plugins/deep-test/
     ├── test/                       # オーケストレータ（+ references/scripts/results/results_manager.py）
     ├── test-setup/
     ├── test-analyze/
+    ├── test-fixture/
     ├── test-design/
     ├── test-review/
     ├── test-run-unit/
@@ -224,6 +232,7 @@ plugins/deep-test/
 |-------|------|------|
 | 解析材料（機械可読） | `.claude/.local/plugins/deep-test/{target-slug}/analysis.yaml` | test-analyze が生成（Phase 1.5） |
 | 解析材料（人間可読） | `.claude/.local/plugins/deep-test/{target-slug}/target-analysis.md` | test-analyze が生成（Phase 1.5） |
+| フィクスチャ基盤マニフェスト | `.claude/.local/plugins/deep-test/{target-slug}/fixtures.yaml` | test-fixture が生成（Phase 1.6） |
 | テスト計画 | `.claude/.local/plugins/deep-test/{target-slug}/test-plan.md` | test-design が生成 |
 | テストケース | `.claude/.local/plugins/deep-test/{target-slug}/test-cases.yaml` | revision 管理・review 承認制 |
 | テスト実績 | `.claude/.local/plugins/deep-test/{target-slug}/test-results.yaml` | run 履歴の追記型 + latest 集計 |

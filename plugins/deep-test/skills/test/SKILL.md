@@ -85,7 +85,7 @@ allowed-tools:
 
 | モード | 引数 | フロー |
 |-------|------|-------|
-| フル | （既定） | Phase 0→1→1.5→2→3→4→5→6→7 |
+| フル | （既定） | Phase 0→1→1.5→(1.6)→2→3→4→5→6→7（(1.6) は fixture 有効時のみ） |
 | 再テスト | `retest full` / `retest ng-only` / `retest ids=TC-...` | Phase 0→(1 必要時)→4→5→6→7（実績は既存 YAML へ append マージ） |
 | 部分: design-only | `design-only` | Phase 0→2→3（設計レビューゲートまで。run へ進まない） |
 | 部分: run-only | `run-only levels=<level,...>`（対象レベル指定必須） | Phase 0→(1 必要時)→4→5（select full の結果を指定レベルで絞り込む） |
@@ -95,6 +95,7 @@ allowed-tools:
 
 - 再テストのモード定義・対象判定マトリクス・resume 規約は `${CLAUDE_PLUGIN_ROOT}/references/retest-policy.md` が SSOT
 - ng-only は回帰テストの代替ではない（同 3 章）。ng-only 実行時はその旨を引き渡しと報告書に必ず含める
+- Phase 1.6（`test-fixture`）はフルフローでのみ・条件付きで委譲する（`analysis.yaml` で web-app かつ 認証 EP / 外部依存ありのとき）。見込みレベルが unit のみ、または design-only / run-only / retest / report-only ではスキップする。委譲されても非 web・認証も外部依存もなしと判断された場合は test-fixture 側で no-op（空 `fixtures.yaml`）となり、既存の探索的 MCP フロー（`automation: playwright`）は不変（`${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md`）
 
 ## 実行フロー
 
@@ -103,7 +104,9 @@ flowchart TD
     P0["Phase 0: target-slug 解決 + init"] --> P1["Phase 1: setup 確認（必要時）\nSkill: test-setup"]
     P1 -->|"新規 MCP 登録あり"| HANDOFF1["再起動ハンドオフを出力して停止\n（再起動後 resume）"]
     P1 --> P15["Phase 1.5: 解析\nSkill: test-analyze"]
-    P15 --> P2["Phase 2: 設計\nSkill: test-design"]
+    P15 -->|"fixture 有効"| P16["Phase 1.6: フィクスチャ基盤（条件付き）\nSkill: test-fixture"]
+    P15 -->|"fixture 不要（スキップ）"| P2["Phase 2: 設計\nSkill: test-design"]
+    P16 --> P2
     P2 --> P3["Phase 3: 設計レビュー\nSkill: test-review（設計文脈）"]
     P3 -->|"NEEDS REVISION\n（修正ループ上限 3 回）"| P2
     P3 -->|PASS| P4["Phase 4: run 対象確定 + ゲート\nselect → 承認済みケース → 人間承認 → MCP"]
@@ -122,6 +125,7 @@ flowchart TD
 | 0: target 解決 | `{base}` 解決 → 既存 slug は **AskUserQuestion** で選択（非対話: 唯一の既存 slug、複数はエラー中断）→ venv 準備 → `init` | results_manager |
 | 1: setup 確認 | run を含むモードで環境未検証の場合のみ。検出結果（MCP ロード状況・ランナー・venv）を受領。新規 MCP 登録時は再起動ハンドオフを出力して**停止**。総合判定 **PARTIAL**（一部チェック失敗 + 一部成功）受領時は、利用可能なレベルは続行し、利用不可レベルに属するケースは実行時に skipped 記録となる旨を確認して進む（詳細な判定は test-setup の検出結果に従う） | Skill: test-setup |
 | 1.5: 解析 | フルフローで対象ソースを read-only 解析し、`analysis.yaml` / `target-analysis.md`（下流消費材料）を生成。決定は行わず提案（hint）に留める。`spec=` / `diff=` 指定時は仕様乖離 / 変更影響も材料化 | Skill: test-analyze |
+| 1.6: フィクスチャ基盤（条件付き） | フルフローで fixture が有効な場合のみ（unit のみ・design-only / run-only / retest / report-only はスキップ）。`analysis.yaml` を消費し、再現可能な Playwright Test 基盤（`fixtures.yaml` + SUT テストコード）を生成 / 拡充。非 web・認証も外部依存もなしは no-op（空マニフェスト） | Skill: test-fixture |
 | 2: 設計 | test-plan.md + test-cases.yaml（全ケース draft）の生成 | Skill: test-design |
 | 3: 設計レビュー | PASS → test-review が approved 化まで実施。NEEDS REVISION → test-design へ差し戻し（**上限 3 回**、超過時は対話=AskUserQuestion / 非対話=エラー中断） | Skill: test-review（design） |
 | 4: 対象確定 + ゲート | `select` で scope を機械確定（LLM 判断禁止）→ 承認済みケースゲート → 人間承認ゲート（**AskUserQuestion**。非対話はスキップ）→ MCP ゲート（ToolSearch 実判定。未ロードは再起動ハンドオフで**停止**、unit のみは判定不要） | results_manager + AskUserQuestion + ToolSearch |

@@ -17,6 +17,8 @@
 | 08 | case-08_timeout_blocked.md | ケースタイムアウト超過 → blocked + reason（次ケースへ継続） | タイムアウト |
 | 09 | case-09_manual_assist.md | automation: manual-assist × 対話（人手確認・executed_by: human-assisted で記録・機微情報マスキング） | 人手確認 |
 | 10 | case-10_manual_assist_non_interactive.md | automation: manual-assist × 非対話（skipped + reason で返却。case-09 の対） | 人手確認 |
+| 11 | case-11_auth_fixture_storagestate_switch.md | automation: playwright-test × `npx playwright test` 実走 pass（認証フィクスチャ storageState で認証済み/未認証を切替え到達可否の挙動差を非破壊検証し pass 記録・executed_by: playwright-test・MCP 経路と併存） | 認証 / セッション管理 |
+| 12 | case-12_playwright_test_skipped.md | automation: playwright-test だが Playwright/ランナー・fixtures.yaml（認証フィクスチャ）/SUT テストコード不在 → skipped + reason（実走前提の欠如・MCP 未ロード skipped〔case-05〕とは別前提） | 認証 / セッション管理 |
 
 ## ケースファイルの構成
 
@@ -35,3 +37,4 @@
 - 本スキルの実行結果は中間データとして返却するのみで、`test-results.yaml` への書き込みはオーケストレータ `test` が行う
 - 実行は承認済みケースの範囲・非破壊操作に限定し、破壊的攻撃・対象外領域（ペネトレーションテスト・SCA・SAST）は行わない
 - evals は「返却する中間結果 JSON の内容」と「操作境界・マスキングの遵守」を検証対象とする
+- `automation: playwright-test`（`npx playwright test` 実走）経路は case-11（認証フィクスチャ storageState 切替の全 pass）/ case-12（実走前提不在の skipped）で扱い、MCP・`curl` 経路と併存する（0 章の非破壊境界は不変）

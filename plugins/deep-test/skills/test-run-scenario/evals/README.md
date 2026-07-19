@@ -15,6 +15,8 @@
 | 06 | case-06_standalone_missing_inputs.md | 単独起動で必須入力欠落 → 実行せずオーケストレータ経由を案内 | 単独 |
 | 07 | case-07_manual_assist.md | automation: manual-assist × 対話（人手確認・executed_by: human-assisted で記録） | system / uat |
 | 08 | case-08_manual_assist_non_interactive.md | automation: manual-assist × 非対話（skipped + reason で返却。case-07 の対） | system / uat |
+| 09 | case-09_playwright_test_run.md | automation: playwright-test × `npx playwright test` 実走 pass（認証・シードフィクスチャで system シナリオを再現可能に実走し全 pass を記録・executed_by: playwright-test・MCP 経路と併存） | system / uat |
+| 10 | case-10_playwright_test_skipped.md | automation: playwright-test だが Playwright/ランナー・fixtures.yaml/SUT テストコード不在 → skipped + reason（実走前提の欠如・MCP 未ロード skipped〔case-05〕とは別前提） | system / uat |
 
 ## ケースファイルの構成
 
@@ -32,3 +34,4 @@
 
 - 本スキルの実行結果は中間データとして返却するのみで、`test-results.yaml` への書き込みはオーケストレータ `test` が行う。evals は「返却する中間結果 JSON の内容」と「実行中の判断」を検証対象とする
 - 対話/非対話モードの確認・実績記録・ゲート判定はオーケストレータの責務のため、実行スキル単体の evals では扱わない
+- `automation: playwright-test`（`npx playwright test` 実走）経路は case-09（全 pass）/ case-10（実走前提不在の skipped）で扱い、MCP 経路（`automation: playwright`）と併存する分岐を検証する

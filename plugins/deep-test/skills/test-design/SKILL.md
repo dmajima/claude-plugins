@@ -23,7 +23,7 @@ allowed-tools:
 
 | # | 責務 | 概要 |
 |---|------|------|
-| 1 | 解析材料の消費（対象理解） | Phase 1.5 の `test-analyze` が生成した `analysis.yaml`（`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-analysis.md` 準拠）を消費し、機能・画面・API・外部 IF 構成・リスク・ホットスポットを設計へ反映する。未生成時のみ軽量な補完分析を行う（Read / Glob / Grep。大規模時は調査エージェントへ委譲可）。二重分析を避け、対象理解の SSOT は analysis.yaml に一元化する |
+| 1 | 解析材料の消費（対象理解） | Phase 1.5 の `test-analyze` が生成した `analysis.yaml`（`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-analysis.md` 準拠）を消費し、機能・画面・API・外部 IF 構成・リスク・ホットスポットを設計へ反映する。未生成時のみ軽量な補完分析を行う（Read / Glob / Grep。大規模時は調査エージェントへ委譲可）。二重分析を避け、対象理解の SSOT は analysis.yaml に一元化する。加えて Phase 1.6 の `test-fixture` が生成した `fixtures.yaml`（存在時・`${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` 準拠）も参照し、各ケースの `fixtures:` と `automation: playwright-test` 指定の材料にする（非存在時は従来どおり `automation: playwright`＝探索的 MCP を既定とする） |
 | 2 | テストレベル選定 | 8 テストレベル（`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md`）から対象レベルを選定する。未指定時は分析結果から提案し、対話時は AskUserQuestion で確定する |
 | 3 | test-plan.md 生成 | 対象概要・テスト方針・レベル別スコープ・環境前提・データ方針・スケジュール目安を記載した計画を `{target-slug}/` 直下に生成する |
 | 4 | test-cases.yaml 生成・更新 | `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema.md`（共通規約）と `yaml-schema-cases.md`（ケーススキーマ）に完全準拠でケースを生成する。既存ファイルの更新は revision 規則（+1・draft 戻し・deprecated 論理削除）を遵守する |
@@ -92,7 +92,7 @@ Phase 1.5 の `test-analyze` が生成した `analysis.yaml` を消費し、機�
 6 セクション構成で生成する。
 
 ### 5. test-cases.yaml 生成・更新
-新規は全ケース `revision: 1` / `review_status: draft`、更新は revision 規則を遵守する。破壊的操作（データ削除・本番接続・外部送信等）を含むケースには `destructive: true` を付与する（`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md`）。
+新規は全ケース `revision: 1` / `review_status: draft`、更新は revision 規則を遵守する。破壊的操作（データ削除・本番接続・外部送信等）を含むケースには `destructive: true` を付与する（`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md`）。`fixtures.yaml` が存在する場合、fixture 基盤を前提とする再現可能ケースには `fixtures:`（使用フィクスチャ名 = `fixtures.yaml` の `fixtures[].name`）と `automation: playwright-test` を指定する（fixture 基盤がないケースは従来の `automation: playwright`＝探索的 MCP のまま。使い分けは `${CLAUDE_SKILL_DIR}/references/case-design-principles.md`）。
 
 ### 6. 自己チェック
 test-architect による自己チェックを実施し、重大指摘を計画・ケースへ反映する。
@@ -150,3 +150,4 @@ test-architect による自己チェックを実施し、重大指摘を計画�
 | `${CLAUDE_SKILL_DIR}/references/design-procedures.md` | 分析 → 計画 → ケース設計 → 自己チェックの詳細手順 |
 | `${CLAUDE_SKILL_DIR}/references/case-design-principles.md` | ケース設計原則（設計技法・レベル別観点・Playwright 実行可能性基準・検証データ設計） |
 | `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-analysis.md` | Phase 1.5 の `test-analyze` が生成する `analysis.yaml`（責務#1 で消費する対象理解の材料）のスキーマ SSOT |
+| `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | Phase 1.6 の `test-fixture` が生成する `fixtures.yaml`（責務#1 で参照）のスキーマ SSOT・`automation: playwright-test` / `cases[].fixtures` の使い分け規範 |

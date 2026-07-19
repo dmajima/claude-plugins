@@ -15,6 +15,7 @@ worker スキルへの引き渡しは `key=value` の空白区切り文字列で
 | `base` | 基準ディレクトリ（解決済み。例: `.claude/.local/plugins/deep-test`） | 全フェーズ |
 | `spec` | 仕様書パス（仕様乖離検出の対象。指定時のみ） | Phase 1.5 |
 | `diff` | 変更影響分析の対象差分（git ref / 範囲。指定時のみ） | Phase 1.5 |
+| `project` | SUT のプロジェクトルート（テストコード生成先・既存 playwright.config.ts 検出の起点） | Phase 1.6 |
 | `context` | `design` / `results`（test-review の文脈切替） | Phase 3 / 6 |
 | `run-id` | `start-run` が採番した run_id | Phase 5 / 6 |
 | `cases` | 対象ケース ID の CSV | Phase 3（draft 限定レビュー時）/ 5 |
@@ -23,6 +24,7 @@ worker スキルへの引き渡しは `key=value` の空白区切り文字列で
 
 - パスはオーケストレータが**解決済みの形**で渡す（worker スキル側で target-slug 解決をやり直させない）
 - worker スキルは受け取った `base` / `target` から `{base}/{target}/...` 配下のパスを組み立てる（配置規約は `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md`）
+- Phase 1.6（`test-fixture`）が材料にする `analysis.yaml` は引数で渡さず、test-fixture が `{base}/{target}/analysis.yaml` を Read で解決する（非存在時は軽量補完）。成果物 `fixtures.yaml` + SUT テストコードはファイルで引き継ぐ（返却規約は 2.3）
 
 ## 2. worker スキルからの返却規約
 
@@ -49,7 +51,19 @@ test-analyze は解析材料を**ファイルで引き継ぐ**フェーズであ
 
 - オーケストレータは成果物ファイルのパス存在のみ確認し、Markdown 要約をユーザー報告に用いる（JSON パースは行わない）。材料は Phase 2 が単方向に消費する（test-analyze へ戻さない）
 
-### 2.3 Phase 2: test-design → オーケストレータ
+### 2.3 Phase 1.6: test-fixture → オーケストレータ
+
+test-fixture は成果物を**ファイルで引き継ぐ**フェーズであり、返り値の JSON コードブロックは**免除**する（2.2 の test-analyze と同じファイル引き継ぎ・JSON 免除の先例に倣う）。成果物はファイル、返り値は Markdown 要約で受け渡す。
+
+| 引き継ぎ | 形態 | 内容 |
+|---------|------|------|
+| 成果物 | ファイル | `{base}/{target}/fixtures.yaml`（機械可読・`${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` 1 章準拠）と SUT のテストコード（`playwright.config.ts` / フィクスチャ / setup / シード）。Phase 2（test-design）が `fixtures.yaml` を単方向消費する |
+| 返り値 | Markdown 要約 | フィクスチャ基盤サマリ（target-slug・生成 / 拡充した `fixtures[].name` と type・status・SUT 書き込み先・fixture-architect 自己チェック所見・no-op 時は理由）。書式は test-fixture SKILL.md「引き渡し」節に準拠 |
+
+- オーケストレータは成果物ファイル（`fixtures.yaml`）のパス存在のみ確認し、Markdown 要約をユーザー報告に用いる（JSON パースは行わない）。`fixtures.yaml` は Phase 2 が単方向に消費する（test-fixture へ戻さない）
+- fixture 不要（no-op）時は空の `fixtures.yaml`（`fixtures: []`）+ 理由を受領し、SUT への書き込みなしで Phase 2 へ進む
+
+### 2.4 Phase 2: test-design → オーケストレータ
 
 | フィールド | 型 | 内容 |
 |-----------|-----|------|
@@ -59,7 +73,7 @@ test-analyze は解析材料を**ファイルで引き継ぐ**フェーズであ
 | `levels` | string[] | 採用したテストレベル（`test-levels.md` の level 値） |
 | `updated_case_ids` | string[] | 今回新規作成・revision 更新したケース ID（差し戻し修正時は修正対象のみ） |
 
-### 2.4 Phase 3 / 6: test-review → オーケストレータ
+### 2.5 Phase 3 / 6: test-review → オーケストレータ
 
 | フィールド | 型 | 内容 |
 |-----------|-----|------|
@@ -71,7 +85,7 @@ test-analyze は解析材料を**ファイルで引き継ぐ**フェーズであ
 
 - NEEDS_REVISION の場合、オーケストレータは `findings` を**要約せずそのまま** test-design（設計文脈）へ、または flow.md 4.2 の遡行方法（結果文脈）へ引き渡す
 
-### 2.5 Phase 5: test-run-* → オーケストレータ（中間結果）
+### 2.6 Phase 5: test-run-* → オーケストレータ（中間結果）
 
 **`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 4 章の中間結果返却フォーマットに従う**（本書では複製しない）。要点のみ:
 
@@ -79,7 +93,7 @@ test-analyze は解析材料を**ファイルで引き継ぐ**フェーズであ
 - `run_id` はオーケストレータが引き渡した値をそのまま返させる（実行スキルは採番しない）
 - scope 全ケースについて 1 エントリ必須（実行不能でも skipped / blocked + reason で返す）
 
-### 2.6 Phase 7: test-report → オーケストレータ
+### 2.7 Phase 7: test-report → オーケストレータ
 
 | フィールド | 型 | 内容 |
 |-----------|-----|------|

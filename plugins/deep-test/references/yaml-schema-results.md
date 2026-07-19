@@ -45,7 +45,7 @@ runs[].status の意味:
 | `run_id` | string | 必須 | この結果が属する run |
 | `status` | enum | 必須 | `pass` / `fail` / `blocked` / `skipped` / `na`（使い分けは 6 章） |
 | `reason` | string | 条件付き必須 | `blocked` / `skipped` / `na` の場合は**必須**（判定理由） |
-| `executed_by` | enum | 必須 | 実行主体。`playwright-mcp` / `test-framework` / `api` / `human-assisted` |
+| `executed_by` | enum | 必須 | 実行主体。`playwright-mcp` / `playwright-test` / `test-framework` / `api` / `human-assisted` |
 | `duration_sec` | number | 任意 | 実行時間（秒）。計測可能な場合は記録する |
 | `actual` | string | 条件付き必須 | 実際の結果。`pass` / `fail` では必須。`blocked` / `skipped` / `na` では省略可（`reason` で代替） |
 | `evidence` | list[string] | 条件付き必須 | エビデンスの相対パス（`{target-slug}/` 直下基準）。**`fail` 時は 1 件以上必須**（`execution-policy.md` 4 章。`defect.evidence` とは別の結果レベルのエビデンス）。取得・内容要件は `evidence-policy.md` 参照 |

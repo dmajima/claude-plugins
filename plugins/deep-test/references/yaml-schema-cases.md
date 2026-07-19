@@ -34,12 +34,13 @@
 | `data` | string または map | 任意 | 検証データ（入力値・期待値）。fail 時の `defect.test_data` の基礎になる |
 | `postconditions` | list[string] | 任意 | 事後処理・データクリーンアップ。`preconditions` で宣言した状態変更を伴う場合は必ず復元手順を記載する |
 | `depends_on` | list[string] | 任意 | 依存ケース ID のリスト。依存先が fail の場合、本ケースを `blocked` と判定する根拠になる（`yaml-schema-results.md` 6 章） |
-| `automation` | enum | 必須 | 実行手段。`playwright` / `test-framework` / `api` / `manual-assist` |
+| `automation` | enum | 必須 | 実行手段。`playwright` / `playwright-test` / `test-framework` / `api` / `manual-assist` |
+| `fixtures` | list[string] | 任意 | 使用するフィクスチャ名（`fixtures.yaml` の `fixtures[].name` を参照）。`automation: playwright-test` のケースで指定する（fixtures.yaml スキーマは `playwright-test.md`） |
 | `timeout_sec` | integer | 任意（既定 `120`） | ケース単位の実行タイムアウト秒。超過時は `blocked` 記録（規約は `execution-policy.md`） |
 | `destructive` | boolean | 任意（既定 `false`） | データ削除・更新・本番接続・外部システムへの送信等の破壊的操作を含むケースは `true`（4 章参照） |
 | `deprecated` | boolean | 任意（既定 `false`） | 論理削除フラグ。`true` のケースは以後の実行・集計対象外（物理削除禁止。3 章参照） |
 
-`automation` と実行実績側 `executed_by` の対応: `playwright` → `playwright-mcp`、`test-framework` → `test-framework`、`api` → `api`、`manual-assist` → `human-assisted`。
+`automation` と実行実績側 `executed_by` の対応: `playwright` → `playwright-mcp`、`playwright-test` → `playwright-test`、`test-framework` → `test-framework`、`api` → `api`、`manual-assist` → `human-assisted`。
 
 `destructive: true` のケースは設計時に破壊的操作を明示し（`steps` / `preconditions` に記載）、人間承認ゲートで件数を機械集計して提示する。本番環境への実行時は scope から除外する（環境安全規約は `execution-policy.md` 1.3・6 章）。
 

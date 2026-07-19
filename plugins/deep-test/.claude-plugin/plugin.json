@@ -1,6 +1,6 @@
 {
   "name": "deep-test",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "テスト設計→実施→報告→再テストのライフサイクルを支援。8テストレベル・Playwright実動作・YAML実績管理。コードレビューの差分テストとは別",
   "license": "MIT",
   "author": {
@@ -23,6 +23,8 @@
     "security-test",
     "playwright",
     "playwright-mcp",
+    "fixture",
+    "test-fixture",
     "e2e",
     "yaml-results",
     "retest",

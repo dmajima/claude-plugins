@@ -15,6 +15,8 @@
 | 06 | case-06_standalone_missing_inputs.md | 単独起動で必須入力欠落 → 実行せずオーケストレータ経由を案内 | 単独 |
 | 07 | case-07_manual_assist.md | automation: manual-assist × 対話（人手確認・executed_by: human-assisted で記録） | 委譲 |
 | 08 | case-08_manual_assist_non_interactive.md | automation: manual-assist × 非対話（skipped + reason で返却。case-07 の対） | 委譲 |
+| 09 | case-09_playwright_test_run.md | automation: playwright-test × `npx playwright test` 実走 pass（.spec.ts を実行し全 pass を記録・executed_by: playwright-test・MCP 経路と併存） | 委譲 |
+| 10 | case-10_playwright_test_skipped.md | automation: playwright-test だが Playwright/ランナー・fixtures.yaml/SUT テストコード不在 → skipped + reason（実走前提の欠如・MCP 未ロード skipped〔case-04〕とは別前提） | 委譲 |
 
 ## ケースファイルの構成
 
@@ -32,4 +34,5 @@
 
 実行スキルはオーケストレータ `test` からの委譲起動が標準のため、本 evals の主軸は **実行手段（Playwright MCP・対象アプリ）の可否と結果 status の分岐**（pass / fail / blocked / skipped）である。
 特に blocked と skipped の使い分け（skipped = 実行手段不在 / blocked = 前提不成立・タイムアウト等のテスト論理上のブロック。yaml-schema-results.md 6 章）を case-03〜05 で検証する。
+`automation: playwright-test`（`npx playwright test` 実走）経路は case-09（全 pass）/ case-10（実走前提不在の skipped）で扱い、MCP 経路（`automation: playwright`）と併存する分岐を検証する。
 起動形態の軸（委譲 / 単独）は case-06 のみで扱う。

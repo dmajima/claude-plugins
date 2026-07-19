@@ -69,6 +69,7 @@ flowchart TD
 | 実行手段 | 主な利用箇所 | 利用不可時の扱い |
 |---------|-------------|----------------|
 | Playwright MCP | unit 以外の 7 レベル | run 前: MCP ゲートで停止（セクション 1.4）。run 中の喪失: 以降の未実行ケースを skipped + reason |
+| Playwright Test ランナー（`npx playwright test` + フィクスチャ） | `automation: playwright-test`（fixture 前提の再現可能テスト） | Playwright / ランナー未導入・fixtures.yaml 不在時 → 対象ケースを skipped + reason（規約は `playwright-test.md`） |
 | テストランナー（pytest / jest / dotnet test 等） | unit | 検出不可 → 対象ケースを skipped + reason |
 | 対象アプリケーション | ブラウザ駆動レベル全般 | 対象 URL 到達不可・起動未確認 → 対象ケースを skipped + reason |
 | 外部負荷ツール（k6 等） | performance の多重負荷 | 検出不可 → 多重負荷ケースのみ skipped。単一セッション応答時間計測は実施する |
@@ -129,7 +130,7 @@ results[] 各要素（1 ケース 1 エントリ）:
 | `case_revision` | int | 必須 | 実行したケースの revision（監査トレーサビリティ） |
 | `status` | string | 必須 | pass / fail / blocked / skipped / na |
 | `reason` | string / null | blocked・skipped・na 時必須 | 未実施・対象外の理由（evidence-policy.md） |
-| `executed_by` | string | 必須 | playwright-mcp / test-framework / api / human-assisted |
+| `executed_by` | string | 必須 | playwright-mcp / playwright-test / test-framework / api / human-assisted |
 | `duration_sec` | number / null | 推奨 | 実行時間（秒） |
 | `actual` | string | pass・fail 時必須 | 実際の結果 |
 | `evidence` | string[] | fail 時 1 件以上必須 | エビデンス相対パスのリスト（**移送後**の evidence/ 配下パス） |

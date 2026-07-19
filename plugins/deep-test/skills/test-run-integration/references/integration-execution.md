@@ -164,7 +164,46 @@ fail 判定の確定直後（次ケースへ進む前）に、以下をその場
 
 ---
 
-## 8. 関連 references
+## 8. automation: playwright-test の実走経路（`npx playwright test`・MCP 経路と併存）
+
+本章は `automation: playwright-test` のケースを実走する経路を定める。1〜7 章の Playwright MCP + API 補助確認の経路（`automation: playwright` / `api`）とは**併存**し、既存の MCP・API 補助確認・manual-assist 経路を置き換えない。各ケースの `automation` 値で経路を選ぶ。
+
+### 8.1 前提（実走のみ・テストコードは生成しない）
+
+- `fixtures.yaml`（`{base}/{target-slug}/fixtures.yaml`）と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts` / フィクスチャ）が既に存在すること。これらの**生成は test-fixture（Phase 1.6）の責務**であり、本スキルは**実走のみ**を行い SUT テストコードを生成・改変しない
+- ケースの `fixtures:` が参照する `fixtures.yaml` の `fixtures[].name` が実在すること（スキーマ・実行規約は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md`）
+
+### 8.2 IT-a / IT-b の再現可能実走
+
+- **IT-a（内部結合）**: 複数画面にまたがる遷移・データ受け渡しの検証を `.spec.ts` として実走する。シード / 認証フィクスチャ（fixtures.yaml の `seed` / `auth`）で前提データ・ログイン状態を再現する
+- **IT-b（外部結合）**: 外部依存を fixtures.yaml の**モックフィクスチャ**（`type: mock`・`route.fulfill` / network interception）で差し替え、実外部接続なしに再現可能な連携検証を行う。成功 / 失敗 / タイムアウト応答をモックで切り替え、自システムのエラーハンドリングを検証する（3 章のスタブ判断は MCP 経路の運用。playwright-test 経路ではモックフィクスチャがその役割を担う）
+- モックで差し替えた IT-b は**実接続を検証していない**ため、実疎通・契約整合の検証が目的のケースは MCP 経路 + 実接続、またはモック未整備として `skipped` + reason とする（実接続検証をモック pass で代替しない。test-levels.md 5 章の趣旨を継承）
+
+### 8.3 実行（Bash）とエビデンス化
+
+- `npx playwright test` を Bash で実行する（`--project` / spec パス指定）。Bash 実行の書式は既存 Bash 呼び出し規約（4 章の `curl` 補助確認等）に合わせる。Playwright は node/npx 実行であり `run_via_job.sh` ラッパーは不要
+
+```bash
+# SUT の project= ルートで対象 spec を実走する例（モックフィクスチャ利用・JUnit + line レポート）
+cd "<SUT の project= ルート>" && npx playwright test tests/<対象>.spec.ts --project=authenticated --reporter=line,junit
+```
+
+| runner の結果 | ケース status |
+|--------------|--------------|
+| 対象テストが全 pass | `pass`（IT-b がモック実行なら actual に「モック応答・実接続未検証」を明記） |
+| 対象テストに fail が含まれる | `fail`（JUnit・トレースから 7 章の 3 点セットを組み立てる） |
+| 設定エラー等でテスト自体が実行されなかった | `blocked` + reason |
+
+- エビデンス: stdout / stderr ログ・JUnit XML・HTML レポート・失敗時トレースを `evidence/{run_id}/{case_id}/` へ保存する（テストランナー実行時のエビデンス収集は `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 7 章に準ずる。命名例: `80_playwright-stdout.txt` / `81_junit.xml`）。API レスポンスをログに含む場合は保存前に機微情報をマスクする（4.4）
+- `executed_by` は `playwright-test` を記録する（`playwright-mcp` / `api` と混同しない）
+
+### 8.4 SKIPPED 規範（実行手段不在時・偽装禁止）
+
+- Playwright 本体・テストランナー（`npx playwright test`）が未導入、または `fixtures.yaml` / SUT テストコードが不在の場合は、実行を偽装せず当該ケースを `skipped` + reason で返す（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 2 章・`playwright-test.md`）。「未実施」を「問題なし」と書かない
+
+---
+
+## 9. 関連 references
 
 | 参照先 | 内容 |
 |-------|------|
@@ -176,3 +215,4 @@ fail 判定の確定直後（次ケースへ進む前）に、以下をその場
 | `${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md` | severity 判定基準（唯一の SSOT） |
 | `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-results.md` | status enum・defect フィールド定義 |
 | `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md` | automation と executed_by の対応 |
+| `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | `npx playwright test` + fixtures.yaml（モックフィクスチャ）の実行規約（8 章の playwright-test 実走経路） |

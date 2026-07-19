@@ -3,6 +3,8 @@
 `deep-test` プラグインが実動作テストに用いる Playwright MCP のセットアップ・既存登録検出・実利用可否判定・正本ツールリスト・エビデンス出力の規約 SSOT。
 セットアップ実務は `test-setup` スキル、実行時利用は各実行スキルが本規約に従う。
 
+> 2 モードの棲み分け: 本ファイルは **探索的モード**（Playwright MCP でその場操作する正本。`automation: playwright` / `executed_by: playwright-mcp`）を規定する。一方、**再現可能モード**（`.spec.ts` + フィクスチャを `npx playwright test` で反復実行する。`automation: playwright-test`）の正本は `playwright-test.md`（fixtures.yaml スキーマ・Playwright Test 実行規約・認証/モック/シードのパターン規範）である。両者は補完関係であり、本ファイルの正本ツールリスト等の規定は不変。
+
 ---
 
 ## 1. 登録手順（新規登録時）

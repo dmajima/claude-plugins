@@ -16,6 +16,8 @@
 | 07 | case-07_mcp_unavailable_skipped.md | MCP ツール不可 → IT-a/IT-b 混在 scope 全件 skipped（二重防御） | 委譲 |
 | 08 | case-08_manual_assist.md | automation: manual-assist × 対話（人手確認・executed_by: human-assisted で記録） | 委譲 |
 | 09 | case-09_manual_assist_non_interactive.md | automation: manual-assist × 非対話（skipped + reason で返却。case-08 の対） | 委譲 |
+| 10 | case-10_playwright_test_run.md | automation: playwright-test × `npx playwright test` 実走 pass（IT-b をモックフィクスチャで差し替え再現可能に実走し全 pass を記録・executed_by: playwright-test・MCP 経路と併存） | 委譲 |
+| 11 | case-11_playwright_test_skipped.md | automation: playwright-test だが Playwright/ランナー・fixtures.yaml/SUT テストコード不在 → skipped + reason（実走前提の欠如・MCP 未ロード skipped〔case-07〕とは別前提） | 委譲 |
 
 ## ケースファイルの構成
 
@@ -33,4 +35,5 @@
 
 実行スキルはオーケストレータ `test` からの委譲起動が標準のため、本 evals の主軸は **担当 2 レベル（IT-a / IT-b）の実行分岐**である。
 IT-a はデータ受け渡し突合（pass / fail）、IT-b は外部接続可否とスタブポリシー判断（スタブ実行 / skipped）・API 補助確認（マスキング・認証情報の取り扱い）を検証する。
+`automation: playwright-test`（`npx playwright test` 実走）経路は case-10（モックフィクスチャで IT-b を再現可能に実走する全 pass）/ case-11（実走前提不在の skipped）で扱い、MCP 経路（`automation: playwright`）と併存する。
 起動形態の軸（委譲 / 単独）は case-06 のみで扱う。

@@ -26,6 +26,7 @@ deep-test プラグインが扱うデータ（テスト計画・ケース定義�
 └── {target-slug}/                     # テスト対象ごとのデータ一式
     ├── analysis.yaml                  # 解析材料・機械可読（test-analyze 生成・Phase 1.5・スキーマは yaml-schema-analysis.md）
     ├── target-analysis.md             # 解析材料・人間可読（test-analyze 生成・Phase 1.5）
+    ├── fixtures.yaml                  # フィクスチャ基盤マニフェスト（test-fixture 生成・Phase 1.6・スキーマは playwright-test.md）
     ├── test-plan.md                   # テスト計画（test-design 生成）
     ├── test-cases.yaml                # テストケース定義（スキーマは yaml-schema-cases.md）
     ├── test-results.yaml              # 実行実績（スキーマは yaml-schema-results.md）
@@ -37,6 +38,8 @@ deep-test プラグインが扱うデータ（テスト計画・ケース定義�
     └── archive/                       # 手動クリーンアップ時のアーカイブ置き場（7 章）
 ```
 
+> 注記: test-fixture が生成する **SUT のテストコード**（`playwright.config.ts` / `{tests}/fixtures/*.ts` / `auth.setup.ts` / seed 等）は SUT 側のテストディレクトリ（`project=` 配下）に配置され、**deep-test の管理データ領域（本ツリー）とは別**である。deep-test が本ツリーに置くのはフィクスチャの機械可読マニフェスト `fixtures.yaml` のみで、SUT テストコードそのものは deep-test の管理対象外である（SUT テストコードの書き込み境界は `playwright-test.md`）。
+
 ---
 
 ## 3. 各データの役割と生成・更新主体
@@ -45,6 +48,7 @@ deep-test プラグインが扱うデータ（テスト計画・ケース定義�
 |-------|--------------|------|---------|
 | `analysis.yaml` | test-analyze | 解析材料（機械可読・Phase 1.5・read-only 解析の成果） | `yaml-schema-analysis.md` |
 | `target-analysis.md` | test-analyze | 解析材料（人間可読・Phase 1.5・read-only 解析の成果） | — |
+| `fixtures.yaml` | test-fixture | フィクスチャ基盤マニフェスト（機械可読・Phase 1.6。test-design が消費。SUT テストコード本体は管理対象外） | `playwright-test.md` |
 | `test-plan.md` | test-design | テスト計画（対象分析・レベル選定・方針） | — |
 | `test-cases.yaml` | test-design | ケース定義・revision 管理 | `yaml-schema-cases.md` |
 | `test-results.yaml` | オーケストレータ `test`（results_manager.py 経由のみ。LLM 直接編集禁止） | run 履歴 + ケース別結果 + latest 集計 | `yaml-schema-results.md` |

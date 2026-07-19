@@ -153,7 +153,55 @@ curl -sk -I "https://localhost:5001/" | grep -iE '^(content-security-policy|x-fr
 [ ] test-results.yaml を直接編集していない（返却のみ）
 ```
 
-## 7. 関連 references
+## 7. automation: playwright-test の実走経路（認証フィクスチャ storageState・MCP 経路と併存）
+
+本章は `automation: playwright-test` のケースを実走する経路を定める。0〜6 章の Playwright MCP + `curl` による動的チェック（`automation: playwright`）とは**併存**し、既存の MCP・`curl`・manual-assist 経路を置き換えない。0 章の実行してよい操作 / 禁止操作の境界（非破壊のみ）は playwright-test 経路でも**不変**で適用する。各ケースの `automation` 値で経路を選ぶ。
+
+### 7.1 前提（実走のみ・テストコードは生成しない）
+
+- `fixtures.yaml`（`{base}/{target-slug}/fixtures.yaml`）と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts` / フィクスチャ）が既に存在すること。これらの**生成は test-fixture（Phase 1.6）の責務**であり、本スキルは**実走のみ**を行い SUT テストコードを生成・改変しない
+- 認証状態別の検証には fixtures.yaml の**認証フィクスチャ（`type: auth`・storageState）**を用いる（規約は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` 3.1）
+
+### 7.2 認証フィクスチャ（storageState）を用いた認証済み / 未認証の切替テスト
+
+`playwright.config.ts` の `projects` を用いて、同一のセキュリティ観点テストを**認証済み context** と**未認証 context** の 2 状態で実走し、挙動差を検証する。
+
+| context | 構成 | 用途 |
+|---------|------|------|
+| 認証済み | 本体プロジェクトの `use.storageState`（auth フィクスチャが `auth.setup.ts` で保存した storageState を再利用） | 認証前提の機能が正しく利用でき、権限境界が保たれるか |
+| 未認証 | storageState を与えないプロジェクト（新規 context・ログインなし） | 保護リソースへ未認証で到達できてしまわないか（認可不備の検出） |
+
+- **未認証アクセス制御**（2.1）: 未認証 context で保護 URL へアクセスし、到達できず（リダイレクト / 401 / 403 等）が期待どおりか検証する。認証済み context では正しく到達できることを対で確認する。**到達可否の観察に留め、到達後にデータを改変しない**（0.2 禁止操作は不変）
+- **セッション無効化**（2.2）: storageState を意図的に無効化（期限切れ / ログアウト相当）した context で保護 URL への再アクセスが遮断されるかを検証する
+- ロール別（admin / general 等）storageState が fixtures.yaml にある場合は、権限に応じた到達可否の差（水平 / 垂直権限境界）を context を切替えて確認する。**他者データの実際の窃取・改変は行わず、到達可否の確認に留める**（0.2）
+- storageState は**セッショントークンを含む機微情報**。エビデンス・reproduction_steps では値をマスクし、生値を書かない（5 章）
+
+### 7.3 実行（Bash）とエビデンス化
+
+- `npx playwright test` を Bash で実行する。認証済み / 未認証は `--project` で切替える。Bash 実行の書式は本プラグインの既存 Bash 呼び出し規約（2.2 / 2.4 の `curl` 観察等）に合わせる。Playwright は node/npx 実行であり `run_via_job.sh` ラッパーは不要
+
+```bash
+# 認証済みプロジェクトと未認証プロジェクトで同一の保護アクセス確認 spec を実走する例（JUnit + line レポート）
+cd "<SUT の project= ルート>" && npx playwright test tests/<対象>.spec.ts --project=authenticated --project=unauthenticated --reporter=line,junit
+```
+
+| runner の結果 | ケース status |
+|--------------|--------------|
+| 期待どおりの認可挙動（未認証は遮断・認証済みは到達）で全 pass | `pass` |
+| 未認証で保護リソースに到達等の欠陥を検出 | `fail`（`extras.owasp_category` を記録・severity は severity-policy.md 4.2・JUnit / トレースから 3 点セットを組み立てる） |
+| 設定エラー等でテスト自体が実行されなかった | `blocked` + reason |
+
+- エビデンス: stdout / stderr ログ・JUnit XML・HTML レポート・失敗時トレース / スクリーンショットを `evidence/{run_id}/{case_id}/` へ保存する（テストランナー実行時のエビデンス収集は `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 7 章に準ずる。命名例: `80_playwright-stdout.txt` / `81_junit.xml`）。保存前に storageState 値・トークン・Set-Cookie 等の機微情報をマスクする（5 章）
+- `executed_by` は `playwright-test` を記録する（`playwright-mcp` と混同しない）
+
+### 7.4 SKIPPED 規範（実行手段不在時・偽装禁止）
+
+- Playwright 本体・テストランナー（`npx playwright test`）が未導入、または `fixtures.yaml`（認証フィクスチャ）/ SUT テストコードが不在の場合は、実行を偽装せず当該ケースを `skipped` + reason で返す（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 2 章・`playwright-test.md`）。「未実施」を「問題なし」と書かない
+- 対象外領域（ペネトレーションテスト・SCA・SAST）を playwright-test 経路の pass で「問題なし」と結論しないのは MCP 経路と同じ（3 章・`test-levels.md` 8 章）
+
+---
+
+## 8. 関連 references
 
 | 参照先 | 内容 |
 |-------|------|
@@ -164,3 +212,4 @@ curl -sk -I "https://localhost:5001/" | grep -iE '^(content-security-policy|x-fr
 | `${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` | browser_network_requests / browser_handle_dialog・エビデンス出力 |
 | `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` | エビデンス移送（5 章）・パス規約 |
 | `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-results.md` | results / defect / extras（owasp_category） |
+| `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | `npx playwright test` + fixtures.yaml（認証フィクスチャ storageState）の実行規約（7 章の playwright-test 実走経路） |

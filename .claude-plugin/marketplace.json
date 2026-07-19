@@ -184,6 +184,8 @@
         "security-test",
         "playwright",
         "playwright-mcp",
+        "fixture",
+        "test-fixture",
         "e2e",
         "yaml-results",
         "retest",

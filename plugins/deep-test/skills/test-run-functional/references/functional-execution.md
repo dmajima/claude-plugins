@@ -92,7 +92,45 @@ fail 判定の確定直後（次ケースへ進む前）に、以下をその場
 
 ---
 
-## 7. 関連 references
+## 7. automation: playwright-test の実走経路（`npx playwright test`・MCP 経路と併存）
+
+本章は `automation: playwright-test` のケースを実走する経路を定める。1〜6 章の Playwright MCP 経路（`automation: playwright`）とは**併存**し、既存の MCP・manual-assist 経路を置き換えない。各ケースの `automation` 値で経路を選ぶ。
+
+### 7.1 前提（実走のみ・テストコードは生成しない）
+
+- `fixtures.yaml`（`{base}/{target-slug}/fixtures.yaml`）と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts` / フィクスチャ）が既に存在すること。これらの**生成は test-fixture（Phase 1.6）の責務**であり、本スキルは**実走のみ**を行う。SUT のテストコード・`playwright.config.ts` を生成・改変しない
+- ケースの `fixtures:` が参照する `fixtures.yaml` の `fixtures[].name` が実在すること（スキーマ・実行規約は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md`）
+
+### 7.2 実行（Bash）
+
+- `npx playwright test` を Bash で実行する。対象の絞り込みはプロジェクト単位で `--project`、単一ケースは末尾に `.spec.ts` のパス（必要に応じ `-g <title>`）を指定する
+
+```bash
+# SUT の project= ルートで対象 spec を実走する例（認証済みプロジェクト・JUnit + line レポート）
+cd "<SUT の project= ルート>" && npx playwright test tests/<対象>.spec.ts --project=authenticated --reporter=line,junit
+```
+
+- ヘッドレス・`ignoreHTTPSErrors`・`baseURL`・`storageState` 等は fixtures 基盤側の `playwright.config.ts` で定義済みの前提（playwright-test.md 2 章）。本スキルはこれらを上書きしない
+- Bash 実行の書式は本プラグインの既存 Bash 呼び出し規約（4 章の `curl` 補助確認等）に合わせる。Playwright は node/npx 実行であり Python 子プロセスではないため `run_via_job.sh` ラッパーは不要
+
+### 7.3 結果マッピングとエビデンス化
+
+| runner の結果 | ケース status |
+|--------------|--------------|
+| 対象テストが全 pass | `pass` |
+| 対象テストに fail が含まれる | `fail`（defect 3 点セットは 4 章に準じて JUnit / トレースから組み立てる） |
+| 設定エラー等でテスト自体が実行されなかった | `blocked` + reason（原因を記録） |
+
+- エビデンス: `npx playwright test` の stdout / stderr ログ・JUnit XML・HTML レポート（`playwright-report/`）・失敗時のトレース / スクリーンショットを `evidence/{run_id}/{case_id}/` へ保存する（テストランナー実行時のエビデンス収集は `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 7 章に準ずる。命名例: `80_playwright-stdout.txt` / `81_junit.xml`）
+- `executed_by` は `playwright-test` を記録する（`playwright-mcp` と混同しない）。`duration_sec` は runner の実行時間を用いる
+
+### 7.4 SKIPPED 規範（実行手段不在時・偽装禁止）
+
+- Playwright 本体・テストランナー（`npx playwright test`）が未導入、または `fixtures.yaml` / SUT テストコードが不在の場合は、実行を偽装せず当該ケースを `skipped` + reason で返す（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 2 章・`playwright-test.md`）。「未実施」を「問題なし」と書かない
+
+---
+
+## 8. 関連 references
 
 | 参照先 | 内容 |
 |-------|------|
@@ -103,3 +141,4 @@ fail 判定の確定直後（次ケースへ進む前）に、以下をその場
 | `${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md` | severity 判定基準（唯一の SSOT） |
 | `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-results.md` | status enum・defect フィールド定義 |
 | `${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` | 単体テストの定義・入口/出口基準・主な確認観点（4.2 節） |
+| `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | `npx playwright test` + fixtures.yaml の実行規約・認証/モック/シードのパターン（7 章の playwright-test 実走経路） |
