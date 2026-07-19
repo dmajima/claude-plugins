@@ -227,8 +227,8 @@ Skill(skill: "deep-test:test-environment", args: "target={target-slug} base={bas
   "<venv>/Scripts/python.exe" -c "import sys; sys.stdout.reconfigure(encoding='utf-8'); import yaml; yaml.safe_load(open(sys.argv[1], encoding='utf-8')); print('environment.yaml parse OK')" "{base}/{target-slug}/environment.yaml"
   ```
 
-  - parse 失敗時は test-environment へ provision の再委譲を **1 回だけ** 試み（失敗内容を args の依頼文脈に含める）、再失敗時は環境なし前提（従来フロー）へ縮退して続行する（フローを止めない。縮退した旨を進捗と報告材料に記録する）
-  - venv 未構築の時点で受領した場合（通常は Phase 0 で構築済みのため稀）は機械検証をスキップし、Read による目視確認（yaml-schema-environment.md の必須キー存在）に縮退する
+  - parse 失敗時は test-environment へ provision の再委譲を **1 回だけ** 試み（失敗内容を args の依頼文脈に含める）、再委譲の受領後は本検証を再適用する。それでも parse 失敗の場合は環境なし前提（従来フロー）へ縮退して続行する（フローを止めない。縮退した旨を進捗と報告材料に記録する）
+  - venv 未構築の時点で受領した場合（通常は Phase 0 で構築済みのため稀）は機械検証をスキップし、Read によるファイルの存在・可読性の目視確認に縮退する（パーサ不在時の粗い代替であり、値・キーの妥当性は判定しない。test-environment の自己チェックを代替しない）
 - 起動されても docker 資産なし / docker 利用不可 / unit のみと判断した場合は、SUT に何も書かず no-op マニフェスト（`applicability: not-applicable | unavailable` + `reason`）を返して正常終了する（縮退はフローを止めない。ユーザーが起動済み URL を渡した場合は従来前提が常に優先）
 - test-environment は SUT の docker 資産へ書き込まない（派生は deep-test データ領域のみ・逆呼び出し禁止・2 段委譲を厳守）
 - up は Phase 5 手順 0（全ゲート通過後・`start-run` 直前）・down は Phase 6 判定後に、本節と同形の Skill 呼出（`action=up` / `action=down`）で行う（呼出例は Phase 5 / Phase 6 の節）
