@@ -51,7 +51,7 @@
 |------|--------------|
 | 結果聴取（manual-assist 共通） | 質問「TC-XXX-nnn の手動確認結果を選択してください（手順・判断基準は直前提示）」。選択肢: **pass**（期待どおり。actual に確認内容を記録）/ **fail**（期待と不一致。続けて実際の結果・再現状況・エビデンスを伺う）/ **blocked**（前提不成立で確認不能。理由を伺う）/ **後で実施**（手順書を生成し skipped で記録・後日 ng-only 再テスト対象） |
 | fail 時の追加聴取 | 自由記述で (1) 実際に観察された結果（`actual` / `reproduction_steps` の材料）(2) 使用した入力値（`test_data` の材料）(3) エビデンスの所在（スクリーンショット等のパス。受領できない場合は 4 章の代替手順） |
-| performance の実測値聴取 | 計測方法・閾値を提示のうえ実測値を数値で聴取する。pass（閾値内）時の実測値は `actual` に記録する（`extras` は fail 時の `defect` 配下のみ存在可能。`yaml-schema-results.md` 4 章）。fail（閾値超過）時は `defect.extras.measured_value` / `defect.extras.threshold` に記録する |
+| performance の実測値聴取 | 計測方法・閾値を提示のうえ実測値を数値で聴取する。実測値・閾値は status を問わず results[] 直下の `extras`（`measured_value` / `threshold`）に記録する（pass 時も含む。`yaml-schema-results.md` 4 章）。fail（閾値超過）時に `defect.extras.measured_value` / `defect.extras.threshold` へ併記するのは従来互換として任意 |
 | security の聴取 | 承認済みケース記載範囲のみ確認を依頼し、聴取内容・エビデンスにマスキング（`evidence-policy.md` 5 章）を適用する |
 | exploratory セッション開始 | チャーター（`steps`）・タイムボックス（`timeout_sec`）・記録方法を提示し、開始可否を確認する。選択肢: **開始** / **後で実施**（チャーターシート縮退。7 章）/ **中止** |
 | exploratory セッション終了 | (1) セッションノート（何を試したか）(2) 発見事象（バグ・気付き。件数分）(3) PROOF 観点の振り返り（Past / Results / Obstacles / Outlook / Feelings）を聴取してセッションシートへ整理し、総合結果を選択肢で確定する: **pass**（重大発見なし・完遂）/ **fail**（欠陥発見）/ **blocked**（探索不能） |
@@ -122,6 +122,7 @@
 |-------|------|
 | `defect`（総合結果 fail 時） | 最重要の発見 **1 件**を 3 点セット（`evidence-policy.md`。severity は `severity-policy.md`）で記録する |
 | `defect.extras.session_findings`（list） | セッション中の**全発見事象**（事象・再現性・defect 化有無）を記録する（`yaml-schema-results.md` 4 章） |
+| `extras.session_findings`（results[] 直下・list） | defect 化する発見がないセッション（fail に至らない場合）の全発見事象を記録する（記録構造は `defect.extras.session_findings` と同一。`yaml-schema-results.md` 4 章） |
 | セッションシート | 発見事象一覧（再現手順メモ付き）を残す |
 | 再現ケースの起票（推奨規範） | 発見事象ごとに再現用の通常ケース（`review_status: draft`）の起票を**推奨**する（起票は test-design の責務・revision 規則の既存経路） |
 

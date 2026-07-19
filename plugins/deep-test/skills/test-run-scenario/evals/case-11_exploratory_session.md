@@ -22,7 +22,7 @@ SKILL.md「実行モード判定」の manual-assist / exploratory 分岐（対�
 - **タイムボックス**: 満了しても blocked にしない（満了 = セッション正常終了として結果判定へ進む。execution-policy.md 8 章の適用除外）。セッション開始不能（対象未起動等の前提不成立）のみ blocked + reason
 - **セッション終了聴取**: (1) セッションノート（何を試したか）(2) 発見事象（バグ・気付き。件数分）(3) PROOF 観点（Past / Results / Obstacles / Outlook / Feelings）の振り返りを聴取し、総合結果を選択肢で確定する（pass = 重大発見なし・完遂 / fail = 欠陥発見 / blocked = 探索不能）
 - **セッションシート**: 聴取内容を固定見出し（チャーター / タイムボックス実績 / セッションノート / 発見事象一覧 / PROOF 振り返り / 総合結果）で Markdown 整形し、`evidence/{run_id}/{case_id}/session-sheet.md` へ保存して結果の `evidence` に含める
-- **記録**: `executed_by: human-assisted` で返却する（playwright-mcp と誤記しない）。人間の申告を脚色・補完しない（聴取していない実測値・結果をでっち上げない）。fail 時は最重要の発見 1 件を defect 3 点セットに記録し、全発見を `defect.extras.session_findings`（list）に含める
+- **記録**: `executed_by: human-assisted` で返却する（playwright-mcp と誤記しない）。人間の申告を脚色・補完しない（聴取していない実測値・結果をでっち上げない）。fail 時は最重要の発見 1 件を defect 3 点セットに記録し、全発見を `defect.extras.session_findings`（list）に含める。defect 化する発見がないセッション（fail に至らない）の発見事象は results[] 直下の `extras.session_findings` に記録する（manual-execution.md 6.5）
 - uat ケースを人手セッションで pass にしても「受入完了」と結論しない（最終受入判断は人間の責務）
 - scope 全件について 1 エントリを返す
 - test-results.yaml を Edit / Write しない（返却のみ）

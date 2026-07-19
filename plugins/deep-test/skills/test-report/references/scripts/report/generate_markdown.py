@@ -66,6 +66,7 @@ LEVEL_TABLE_HEADERS = [
     "実行時間(秒)",
     "エビデンス参照",
     "NG 詳細",
+    "補足情報（extras）",
 ]
 
 
@@ -112,6 +113,26 @@ def format_test_data_lines(test_data, indent="  "):
     if test_data is None:
         return []
     return [f"{indent}- {sanitize(str(test_data))}"]
+
+
+def format_extras_cell(extras):
+    """結果直下 extras（result.extras）をレベル別表のセル文字列へ整形する（defect.extras と同型）。
+
+    dict でない・空 dict は空文字。list 値（session_findings 等）は format_extras_value_lines で
+    要素ごとの箇条書き行へ展開する（長大値は切り詰め）。改行は md_cell が <br> へ変換する。
+    """
+    if not isinstance(extras, dict) or not extras:
+        return ""
+    lines = []
+    for key, value in extras.items():
+        value_lines = format_extras_value_lines(value)
+        if isinstance(value, list) and value:
+            lines.append(f"{key}:")
+            for item in value_lines:
+                lines.append(f"- {item}")
+        else:
+            lines.append(f"{key}: {value_lines[0]}")
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -277,6 +298,7 @@ def build_markdown(model, generated_on):
                     format_duration(duration),
                     md_evidence_paths(result.get("evidence")),
                     ng_summary,
+                    format_extras_cell(result.get("extras")),
                 )
             )
         lines += md_table(LEVEL_TABLE_HEADERS, rows)

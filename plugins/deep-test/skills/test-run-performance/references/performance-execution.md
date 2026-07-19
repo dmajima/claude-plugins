@@ -75,8 +75,8 @@ flowchart TD
 
 | 条件 | 判定 |
 |------|------|
-| 実測値（中央値）≦ 閾値 | `pass`（actual に実測値・閾値・計測回数を記述） |
-| 実測値（中央値）> 閾値 | `fail`（defect に extras.measured_value / threshold を記録） |
+| 実測値（中央値）≦ 閾値 | `pass`（results[].extras に measured_value / threshold を記録し、actual に実測値・閾値・計測回数を記述） |
+| 実測値（中央値）> 閾値 | `fail`（results[].extras に measured_value / threshold を記録。fail 時は defect.extras への併記も従来互換として任意） |
 | 応答不能・タイムアウト（計測不能） | 業務継続不能なら `fail`（severity は 3.2 の critical 行）。ハングで計測自体が完了しない場合は `blocked` + reason（タイムアウト）とし切り分けを actual に記す |
 
 - 閾値・単位はケースの expected / `data` から取得する。単位を実測値と揃えてから比較する
@@ -89,7 +89,7 @@ flowchart TD
 超過率 = （実測値 − 閾値）÷ 閾値
 ```
 
-- 実測値・閾値・超過率・（補正した場合は理由）を defect に記録する（severity-policy.md 4.1 の 1 段階補正を行った場合は理由必須）
+- 実測値・閾値は results[].extras に記録し、超過率・（補正した場合は理由）は defect に記録する（severity-policy.md 4.1 の 1 段階補正を行った場合は理由必須。fail 時に実測値・閾値を defect.extras へ併記するのは従来互換として任意）
 
 ## 4. 条件付き多重負荷（外部負荷ツール検出時のみ）
 

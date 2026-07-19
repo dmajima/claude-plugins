@@ -245,6 +245,9 @@ def _mask_result_fields(result):
                 result[key] = masked
                 count += n
     count += _mask_str_list(result.get("evidence"))
+    extras = result.get("extras")
+    if isinstance(extras, dict):
+        count += _mask_mapping_values(extras)
     defect = result.get("defect")
     if isinstance(defect, dict):
         count += _mask_str_list(defect.get("reproduction_steps"))
@@ -271,7 +274,7 @@ def apply_secret_masking(latest_detail):
     （defense-in-depth）** であり、evidence-auditor（LLM によるエビデンス監査）の
     代替ではない（未知パターン・文脈依存の機微情報は本関数では検出できない）。
 
-    対象フィールド: actual / reason / evidence 表記 / defect.reproduction_steps /
+    対象フィールド: actual / reason / evidence 表記 / extras 値 / defect.reproduction_steps /
     defect.test_data / defect.evidence 表記 / defect.extras 値。
     マスク適用が発生したケースは stdout に [MASKED] を出力し、呼び出し元（build_model）が
     masked_case_ids としてモデルへ載せ、報告書の未確認事項に記載させる。

@@ -12,12 +12,12 @@
 
 ## 分岐の根拠
 
-`references/performance-execution.md` 3.1（fail 判定）・3.2（超過率算出）、`${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md` 4.1（閾値超過率バンド: 実測値が閾値の 2 倍以上 → high）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-results.md` 4 章（defect.extras の measured_value / threshold）、`${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md` 1 章（fail 時 defect 3 点セット）。
+`references/performance-execution.md` 3.1（fail 判定）・3.2（超過率算出）、`${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md` 4.1（閾値超過率バンド: 実測値が閾値の 2 倍以上 → high）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-results.md` 4 章（extras の measured_value / threshold と使い分け: results[] 直下が第一記録先・fail 時の defect.extras 併記は従来互換）、`${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md` 1 章（fail 時 defect 3 点セット）。
 
 ## 期待動作
 
 - 3 回計測の中央値（4.8 秒）が閾値（2.0 秒）を超過するため `status: fail` とする（performance-execution.md 3.1）
-- `defect.extras.measured_value: 4.8`（単位明記）/ `defect.extras.threshold: 2.0` を記録する（yaml-schema-results.md 4 章）
+- 実測値・閾値を results[] 直下の `extras.measured_value: 4.8`（単位明記）/ `extras.threshold: 2.0` に記録する（fail 時の defect.extras への併記は従来互換として任意。yaml-schema-results.md 4 章）
 - 超過率 =（4.8 − 2.0）÷ 2.0 = 1.4（140%）で、実測値が閾値の 2 倍以上のため severity を `high` と判定する（severity-policy.md 4.1）。SSOT の基準に照らして判定し、本ファイルにバンドを複製しない
 - defect 3 点セット（reproduction_steps〔環境・計測条件含む〕/ test_data〔計測対象・入力〕/ evidence〔計測値生データ・スクリーンショット〕）を収集する（evidence-policy.md 1 章）
 - 業務重要度に応じて 1 段階補正を行った場合は理由を defect に記録する（severity-policy.md 4.1）

@@ -134,6 +134,7 @@ results[] 各要素（1 ケース 1 エントリ）:
 | `executed_by` | string | 必須 | playwright-mcp / playwright-test / test-framework / api / human-assisted |
 | `duration_sec` | number / null | 推奨 | 実行時間（秒） |
 | `actual` | string | pass・fail 時必須 | 実際の結果 |
+| `extras` | object / null | 任意 | 結果自体に付随する構造化情報（実測値等。代表キー・使い分けは yaml-schema-results.md 4 章） |
 | `evidence` | string[] | fail 時 1 件以上必須 | エビデンス相対パスのリスト（**移送後**の evidence/ 配下パス） |
 | `defect` | object / null | fail 時必須 | severity / reproduction_steps / test_data / evidence / extras。3 点セット要件は evidence-policy.md、severity 判定基準は severity-policy.md 参照 |
 

@@ -130,8 +130,8 @@ flowchart TD
 
 - `executed_by`: `playwright-mcp`（応答時間計測）。多重負荷を外部ツールで実施した場合の記録方法は performance-execution.md 参照。manual-assist / exploratory ケースを人手確認した場合のみ `human-assisted`
 - `actual`: 実測値（中央値）・計測回数・閾値・判定結果を記述する
-- `defect.extras.measured_value`: 実測値（中央値、単位を明記）
-- `defect.extras.threshold`: ケースの閾値
+- `extras.measured_value`（results[] 直下）: 実測値（中央値、単位を明記）。**status を問わず**記録する（fail 時の `defect.extras.measured_value` への併記は従来互換として任意）
+- `extras.threshold`（results[] 直下）: ケースの閾値。**status を問わず**記録する（fail 時の `defect.extras.threshold` への併記は従来互換として任意）
 - `duration_sec`: 計測に要した時間（応答時間の実測値そのものではない点に注意）
 - 多重負荷ケース未実施: `status: skipped` + `reason`（負荷ツール未検出）
 - コンテナ派生環境（environment.yaml の `endpoints[]` 由来 base URL・`{slug}-test`）で計測した場合: 「コンテナ派生環境での計測であり、本番構成の性能を代表しない」旨の免責注記材料を JSON とあわせて特記事項として明記して返す（オーケストレータが results_manager.py の annotate で登録し、報告書の「所見・注記」へ機械出力される。本スキルは材料の提供まで・手動転記しない）

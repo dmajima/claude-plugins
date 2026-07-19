@@ -48,6 +48,7 @@ runs[].status の意味:
 | `executed_by` | enum | 必須 | 実行主体。`playwright-mcp` / `playwright-test` / `test-framework` / `api` / `human-assisted` |
 | `duration_sec` | number | 任意 | 実行時間（秒）。計測可能な場合は記録する |
 | `actual` | string | 条件付き必須 | 実際の結果。`pass` / `fail` では必須。`blocked` / `skipped` / `na` では省略可（`reason` で代替） |
+| `extras` | map | 任意 | 結果自体に付随する構造化情報（pass / fail を問わず記録可能。代表キーと使い分けは 4 章） |
 | `evidence` | list[string] | 条件付き必須 | エビデンスの相対パス（`{target-slug}/` 直下基準）。**`fail` 時は 1 件以上必須**（`execution-policy.md` 4 章。`defect.evidence` とは別の結果レベルのエビデンス）。取得・内容要件は `evidence-policy.md` 参照 |
 | `defect` | map | 条件付き必須 | `status: fail` の場合は**必須**（4 章参照） |
 
@@ -59,9 +60,9 @@ runs[].status の意味:
 | `reproduction_steps` | list[string] | 必須 | 環境情報を含む完全な再現手順（第三者が単独で再現できる粒度） |
 | `test_data` | string または map | 必須 | 欠陥を再現させる検証データ（入力値・期待値） |
 | `evidence` | list[string] | 必須 | スクリーンショット・ログ・トレースの相対パス |
-| `extras` | map | 任意 | テストレベル別の拡張情報（下表） |
+| `extras` | map | 任意 | 欠陥診断の文脈情報（stack_trace 等。代表キーは下表・results[] 直下と共通） |
 
-`extras` の代表キー（レベルごとに必要なキーを snake_case で追加してよい）:
+`extras` の代表キー（**results[] 直下・defect 配下で共通**。レベルごとに必要なキーを snake_case で追加してよい）:
 
 | キー | 主な利用レベル | 内容 |
 |------|--------------|------|
@@ -69,10 +70,16 @@ runs[].status の意味:
 | `threshold` | 性能 | 閾値（期待基準） |
 | `owasp_category` | セキュリティ | 該当する OWASP カテゴリ |
 | `stack_trace` | ユニット | 失敗時のスタックトレース |
-| `session_findings` | 探索的セッション（`automation: exploratory`） | セッション中の発見事象の一覧（事象・再現性・defect 化有無）。最重要 1 件は defect 本体に記録し、全発見を本キーとセッションシートに残す（規約は `manual-execution.md` 6 章） |
+| `session_findings` | 探索的セッション（`automation: exploratory`） | セッション中の発見事象の一覧（事象・再現性・defect 化有無）。最重要 1 件は defect 本体に記録し、全発見を本キーとセッションシートに残す（規約は `manual-execution.md` 6 章）。defect 化する発見がないセッション（fail に至らない）の発見事象は results[] 直下の `extras.session_findings` に記録する |
+
+`extras` の使い分け（レベルを問わず共通）:
+
+- **results[].extras**（結果自体の情報）: 性能の `measured_value` / `threshold` は status を問わずこちらを第一記録先とする
+- **defect.extras**（欠陥診断の文脈情報）: `stack_trace` など、欠陥の診断に付随する情報
+- fail 時に `measured_value` / `threshold` を defect.extras へ併記する従来形は互換として許容する
 
 ```yaml
-# extras の記載例（性能テスト）
+# extras の記載例（性能テスト・results[] 直下。status を問わず記録可能）
 extras:
   measured_value: 4.8   # 実測 4.8 秒
   threshold: 2.0        # 閾値 2.0 秒

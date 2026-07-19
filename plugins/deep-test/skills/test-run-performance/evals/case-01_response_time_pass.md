@@ -12,13 +12,14 @@
 
 ## 分岐の根拠
 
-SKILL.md「実行フロー」（単一セッション応答時間・3 回計測・中央値・閾値判定）、`references/performance-execution.md` 1 章（メトリクス取得コード）・2 章（複数回計測と中央値）・3.1（pass / fail 判定）、`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` 4.7（性能テストの主な確認観点）。
+SKILL.md「実行フロー」（単一セッション応答時間・3 回計測・中央値・閾値判定）、`references/performance-execution.md` 1 章（メトリクス取得コード）・2 章（複数回計測と中央値）・3.1（pass / fail 判定・results[].extras への記録）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-results.md` 4 章（extras の代表キーと使い分け: 実測値・閾値は status を問わず results[] 直下が第一記録先）、`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` 4.7（性能テストの主な確認観点・出口基準の results[].extras 記録）。
 
 ## 期待動作
 
 - `browser_navigate` の所要時間と `browser_evaluate` による Performance API メトリクス（TTFB・DOMContentLoaded・load・LCP）を取得する（performance-execution.md 1.1）
 - 同一計測を既定 3 回繰り返し、主指標の**中央値**を実測値として採用する（performance-execution.md 2 章）
 - 中央値 ≦ 閾値（3 秒）のため `status: pass` とし、`actual` に実測値（中央値）・閾値・計測回数を記述する（performance-execution.md 3.1）
+- 実測値と閾値を results[] 直下の `extras.measured_value` / `extras.threshold` に構造化記録する（**pass でも記録する** = status を問わず。yaml-schema-results.md 4 章 / test-levels.md 4.7 出口基準）
 - 計測値の生データ（各回の値・中央値・平均・最小/最大・閾値・判定）を JSON で evidence/ に保存し move する（performance-execution.md 5 章 / data-locations.md 5 章）
 - 単位を実測値と閾値で揃えて比較する（ms/秒の換算。performance-execution.md 1.1）
 - 中間結果 JSON に `status: pass` / `executed_by: playwright-mcp` / `evidence` を埋めて返却する（execution-policy.md 4 章）
@@ -29,7 +30,7 @@ SKILL.md「実行フロー」（単一セッション応答時間・3 回計測�
 | 区分 | 内容 |
 |-----|------|
 | 生成ファイル | 計測値生データ(JSON: 各回の値・中央値・平均・最小/最大・閾値・判定)・スクリーンショットを evidence/{run_id}/{case_id}/ へ移送。test-results.yaml へは書き込まない |
-| 標準出力（要約） | 中間結果 JSON（skill: "test-run-performance" / 受領 run_id / 当該ケース pass・executed_by: playwright-mcp・evidence 付き） |
+| 標準出力（要約） | 中間結果 JSON（skill: "test-run-performance" / 受領 run_id / 当該ケース pass・executed_by: playwright-mcp・`extras.measured_value` / `threshold`・evidence 付き） |
 | 終了状態 | 3 回計測の中央値が閾値（3 秒）内のため当該ケースを pass で返却 |
 
 ## 関連ケース

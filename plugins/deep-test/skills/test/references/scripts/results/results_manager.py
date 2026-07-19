@@ -678,6 +678,10 @@ def validate_record_payload(payload, run, existing_results):
         entry["duration_sec"] = duration_sec
     if isinstance(actual, str) and actual.strip():
         entry["actual"] = actual.strip()
+    # 結果自体に付随する構造化情報（status を問わず任意の map。空・非 dict は記録しない）
+    extras = payload.get("extras")
+    if isinstance(extras, dict) and extras:
+        entry["extras"] = extras
     if evidence:
         entry["evidence"] = evidence
 
@@ -701,7 +705,7 @@ def validate_record_payload(payload, run, existing_results):
 
     known_keys = {
         "case_id", "case_revision", "run_id", "status", "reason", "executed_by",
-        "duration_sec", "actual", "evidence", "defect", "skill",
+        "duration_sec", "actual", "extras", "evidence", "defect", "skill",
     }
     unknown_keys = [k for k in payload.keys() if k not in known_keys]
     if unknown_keys:
@@ -1100,6 +1104,29 @@ def cmd_validate(args):
                     "detail": ["runs に存在しない run_id を参照しています"],
                 }
             )
+        # extras（結果直下 / defect 配下）は存在する場合マップであること（yaml-schema-results.md）
+        extras = res.get("extras")
+        if extras is not None and not isinstance(extras, dict):
+            violations.append(
+                {
+                    "type": "extras_invalid",
+                    "run_id": rid,
+                    "case_id": cid,
+                    "detail": ["results[].extras はマップ（dict）である必要があります"],
+                }
+            )
+        defect = res.get("defect")
+        if isinstance(defect, dict):
+            extras = defect.get("extras")
+            if extras is not None and not isinstance(extras, dict):
+                violations.append(
+                    {
+                        "type": "extras_invalid",
+                        "run_id": rid,
+                        "case_id": cid,
+                        "detail": ["defect.extras はマップ（dict）である必要があります"],
+                    }
+                )
 
     # 2) run ごとの scope vs results 突合 + resume 用の構造化出力（resumable_runs）
     resumable_runs = []

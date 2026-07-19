@@ -15,7 +15,7 @@
 | 06 | case-06_standalone_invocation.md | 単独起動（target-slug 自己解決・形式選択とも AskUserQuestion） | 単独・対話 |
 | 07 | case-07_generation_script_failure.md | 生成スクリプトの非 0 終了 → エラー提示して中断（握りつぶし・空報告書禁止） | 対話 / 非対話共通 |
 | 08 | case-08_evidence_audit_failure.md | validate 通過 + evidence-auditor 監査不合格（実体欠落・マスク不備）→ 生成中断・差し戻し | 対話 / 非対話共通 |
-| 09 | case-09_mixed_execution_report.md | 自動 / 手動混在実績の報告生成（実行主体列〔13 列〕・サマリの自動 / 手動列 + 手動内訳注記・免責 6 項目） | 対話 / 非対話共通 |
+| 09 | case-09_mixed_execution_report.md | 自動 / 手動混在実績の報告生成（実行主体列〔明細 14 列〕・サマリの自動 / 手動列 + 手動内訳注記・免責 6 項目） | 対話 / 非対話共通 |
 
 ## ケースファイルの構成
 
