@@ -61,7 +61,7 @@ plugins/deep-test/skills/test-run-security/
 ├── README.md                       # 本ファイル（人間向け）
 ├── references/
 │   └── security-execution.md       # 観点別チェック手順・確認コマンド例・マスキング手順・実行してよい操作/禁止操作の境界・達成チェックリスト
-└── evals/                          # 動作分岐検証ケース（case-01〜12 + README・12 ケース）
+└── evals/                          # 動作分岐検証ケース（case-01〜13 + README・13 ケース）
 ```
 
 ## スコープ外

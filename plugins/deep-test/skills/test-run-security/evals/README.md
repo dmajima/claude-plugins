@@ -19,6 +19,7 @@
 | 10 | case-10_manual_assist_non_interactive.md | automation: manual-assist × 非対話（skipped + reason で返却。case-09 の対） | 人手確認 |
 | 11 | case-11_auth_fixture_storagestate_switch.md | automation: playwright-test × `npx playwright test` 実走 pass（認証フィクスチャ storageState で認証済み/未認証を切替え到達可否の挙動差を非破壊検証し pass 記録・executed_by: playwright-test・MCP 経路と併存） | 認証 / セッション管理 |
 | 12 | case-12_playwright_test_skipped.md | automation: playwright-test だが Playwright/ランナー・fixtures.yaml（認証フィクスチャ）/SUT テストコード不在 → skipped + reason（実走前提の欠如・MCP 未ロード skipped〔case-05〕とは別前提） | 認証 / セッション管理 |
+| 13 | case-13_endpoints_base_url.md | environment.yaml の endpoints[] 由来 base URL を対象として受領して観点別チェック（操作境界・範囲限定・マスキングは不変） | 対象受領（テスト用派生環境） |
 
 ## ケースファイルの構成
 

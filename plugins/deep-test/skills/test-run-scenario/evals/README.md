@@ -21,6 +21,7 @@
 | 12 | case-12_exploratory_non_interactive.md | automation: exploratory × 非対話（実行せず skipped + reason に manual-sheet= 受領のチャーターシートパスを転記。case-11 の対） | uat |
 | 13 | case-13_manual_assist_defer_to_sheet.md | automation: manual-assist × 対話で「後で実施」選択（オンデマンド手順書生成〔オーケストレータの責務〕→ skipped + reason に手順書パス転記） | system / uat |
 | 14 | case-14_exploratory_blocked_or_defer.md | automation: exploratory × 対話でセッション開始不能 → blocked + reason（副分岐: 「後で実施」= チャーターシート縮退 / 「中止」= 実施せず記録もしない） | uat |
+| 15 | case-15_endpoints_base_url.md | environment.yaml の endpoints[] 由来 base URL を対象アプリ情報として受領してシナリオ実行（受領形・実行手順は不変・出所の注記のみ） | system |
 
 ## ケースファイルの構成
 
