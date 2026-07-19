@@ -77,7 +77,7 @@ deep-test プラグインの Phase 1.6（フィクスチャ基盤の構築 → �
 | フィクスチャのパターン（認証/モック/シード/base の実装方針）を調整する | `references/fixture-patterns.md` |
 | 消費 → 検出 → 生成/拡充 → 出力の手順を調整する | `references/fixture-procedures.md` |
 | 自己チェックの起動フェーズ・エージェント構成を変更する | `references/agents.md` と plugin references の `agents.md` |
-| 実ログインフロー探索に Playwright MCP を使う | SKILL.md frontmatter の `allowed-tools` に `mcp__playwright__*` を追加する（既定は追加しない・R11 設計 11 章 Q2(a)） |
+| 実ログインフロー探索に Playwright MCP を使う | SKILL.md frontmatter の `allowed-tools` に `mcp__playwright__*` を追加する（既定は追加しない。実ログインフロー探索が必要な対象のみオプトインで追加する方針） |
 
 ## ファイル構成
 

@@ -12,7 +12,7 @@
 
 ## 分岐の根拠
 
-SKILL.md「実行フロー」3（要否判定＝不要 → 空 fixtures.yaml + 理由で正常終了）・「重要な制約」（no-op 条件: 非 web / unit のみ / 認証も外部依存もなしなら SUT に何も書かず空 fixtures.yaml + 理由）、`${CLAUDE_SKILL_DIR}/references/fixture-procedures.md` 4 章（fixture 要否判定の no-op 分岐・迷う場合は「作らない」を既定）、`${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` 0 章（playwright-test は fixture 基盤があるケースのオプトイン経路であり既定の探索的フローを崩さない）、R11 設計 2.2 章（test-fixture 側の自己限定＝空 fixtures.yaml で正常終了する非破壊パターン）。
+SKILL.md「実行フロー」3（要否判定＝不要 → 空 fixtures.yaml + 理由で正常終了）・「重要な制約」（no-op 条件: 非 web / unit のみ / 認証も外部依存もなしなら SUT に何も書かず空 fixtures.yaml + 理由）、`${CLAUDE_SKILL_DIR}/references/fixture-procedures.md` 4 章（fixture 要否判定の no-op 分岐・迷う場合は「作らない」を既定）、`${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` 0 章（playwright-test は fixture 基盤があるケースのオプトイン経路であり既定の探索的フローを崩さない）。test-fixture 側の自己限定（＝空 fixtures.yaml で正常終了する非破壊パターン）は前掲 fixture-procedures.md 4 章と SKILL.md「重要な制約」に規定。
 
 ## 期待動作
 

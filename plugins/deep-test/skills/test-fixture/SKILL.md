@@ -10,7 +10,7 @@ allowed-tools:
   - Bash(date *)
   - Bash(npx playwright *)
   - Agent(deep-test:fixture-architect)
-  # MCP（mcp__playwright__*）は既定で足さない。実ログインフロー探索が要る対象のみオプトインで追加する（R11 設計 11 章 Q2(a)）
+  # MCP（mcp__playwright__*）は既定で足さない。実ログインフロー探索が要る対象のみオプトインで追加する
 ---
 <!-- TEST-FIXTURE-SKILL-SENTINEL-v1 -->
 

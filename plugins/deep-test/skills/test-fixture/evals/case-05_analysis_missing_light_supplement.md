@@ -12,7 +12,7 @@
 
 ## 分岐の根拠
 
-SKILL.md「前提」（analysis.yaml が無ければ Read/Glob/Grep で軽量補完する）・「実行フロー」2（非存在時は 3.2 の軽量補完）・「重要な制約」（捏造禁止: 補完時は analysis_consumed: false と confidence を下げ推定を確定情報として書かない・能動プローブしない）、`${CLAUDE_SKILL_DIR}/references/fixture-procedures.md` 3.2 章（未生成時の軽量補完・能動プローブ禁止・MCP 追加は既定しない）、`${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` 1.1 章（`analysis_consumed: false` は軽量補完・confidence を下げる）、R11 設計 3.2 章（未生成時の軽量補完・推定を確定情報として書かない）。
+SKILL.md「前提」（analysis.yaml が無ければ Read/Glob/Grep で軽量補完する）・「実行フロー」2（非存在時は 3.2 の軽量補完）・「重要な制約」（捏造禁止: 補完時は analysis_consumed: false と confidence を下げ推定を確定情報として書かない・能動プローブしない）、`${CLAUDE_SKILL_DIR}/references/fixture-procedures.md` 3.2 章（未生成時の軽量補完・能動プローブ禁止・MCP 追加は既定しない）、`${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` 1.1 章（`analysis_consumed: false` は軽量補完・confidence を下げる）。
 
 ## 期待動作
 
