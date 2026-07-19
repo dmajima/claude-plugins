@@ -59,7 +59,7 @@ plugins/deep-test/skills/test-run-unit/
 ├── README.md                             # 本ファイル（人間向け）
 ├── references/
 │   └── unit-execution.md                 # ランナー別実行・出力解析・マッピング手順
-└── evals/                                # 動作分岐検証ケース（case-01〜09 + README・9 ケース）
+└── evals/                                # 動作分岐検証ケース（case-01〜10 + README・10 ケース）
 ```
 
 ## スコープ外

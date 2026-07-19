@@ -16,6 +16,7 @@
 | 07 | case-07_manual_assist.md | automation: manual-assist × 対話（人手確認・executed_by: human-assisted で記録） | 委譲 |
 | 08 | case-08_manual_assist_non_interactive.md | automation: manual-assist × 非対話（skipped + reason で返却。case-07 の対） | 委譲 |
 | 09 | case-09_container_exec_run.md | ホストにランナー不在 + environment.yaml の exec_forms[] あり + 環境 up → コンテナ内 exec で実行（代替経路・executed_by: test-framework 不変。case-03 の対） | 委譲 |
+| 10 | case-10_env_down_skipped.md | ホストにランナー不在 + exec_forms[] あり + 環境 down → 代替経路を選択せず skipped（環境を起動しない。case-09 の対） | 委譲 |
 
 ## ケースファイルの構成
 
