@@ -51,6 +51,14 @@ flowchart LR
 UAT レベルの pass は「受入観点シナリオが検証で成立した」ことを意味し、**「受入完了」を意味しません**。
 最終受入判断（顧客・業務担当者のサインオフ）は人間が行います（`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` 6 章）。
 
+## カスタマイズ・拡張
+
+| 拡張対象 | 方法 |
+|---------|------|
+| シナリオ実行・途中 fail 判断の手順変更 | `references/scenario-execution.md`（2 章 実行手順・3 章 途中 fail 時の後続判断）を更新する |
+| UAT 観点チェックリストの追加・変更 | `references/scenario-execution.md` 4 章を更新する（受入判断は人間の責務である旨は維持する） |
+| 動作分岐の検証ケース追加 | `evals/` に `case-NN_<slug>.md` を追加し、`evals/README.md` の一覧表を更新する |
+
 ## ファイル構成
 
 ```

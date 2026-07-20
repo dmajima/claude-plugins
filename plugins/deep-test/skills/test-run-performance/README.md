@@ -55,6 +55,14 @@ flowchart TD
 負荷ツールがあれば多重負荷も見て
 ```
 
+## カスタマイズ・拡張
+
+| 拡張対象 | 方法 |
+|---------|------|
+| 計測手順・中央値算出・閾値判定の変更 | `references/performance-execution.md`（1〜3 章）を更新する |
+| 負荷ツールの追加・多重負荷手順の変更 | `references/performance-execution.md` 4 章（条件付き多重負荷）を更新する（「専用負荷試験の代替ではない」スコープ境界は維持する） |
+| 動作分岐の検証ケース追加 | `evals/` に `case-NN_<slug>.md` を追加し、`evals/README.md` の一覧表を更新する |
+
 ## ファイル構成
 
 ```
