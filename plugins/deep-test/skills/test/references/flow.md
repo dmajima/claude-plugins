@@ -148,7 +148,7 @@ resume 対象・run_id 引き継ぎ・複数中断時の整理の規約は `${CL
 
 4. 中断 run から再開する場合、残ケースを機械的に確定する: `validate` の `resumable_runs` フィールド（`{run_id, status, missing}` の構造化リスト）から当該 run の `missing` を resume scope として採用する（副作用なしで取得できる。`finish-run` の仮実行や件数のみでの推定は行わない）
 5. resume scope に Playwright 必要レベルが含まれる場合は **MCP ゲートを再判定**する（resume の主用途が MCP 未ロード停止からの復帰であるため必須）
-6. `environment.yaml` が存在し `applicability: applicable` の場合は**環境を再確認**する: `docker compose -p {slug}-test ps` + health 再確認（`Skill: test-environment` の `action=status`）で健全なら**再利用**する（再 up 不要）。不健全なら `action=down` → `action=up` で作り直す（呼出例は 6 章）。なお `-p` 単独の `ps` は簡易確認用であり、撤収の権威操作（down）は `environment.yaml` の `lifecycle` 記録（up と同一の `-f` 群 + `-p` の完全形）を用いる
+6. `environment.yaml` が存在する場合は、まず 6 章 Phase 1.7 節と同形の parse 検証を行う（段 2 の parse 失敗は再委譲 1 回 → それでも不能なら環境なし縮退・段 1 失敗/venv 不在は目視縮退。中断中に破損した `environment.yaml` を applicable 判定にそのまま用いないため）。parse 可能かつ `applicability: applicable` の場合は**環境を再確認**する: `docker compose -p {slug}-test ps` + health 再確認（`Skill: test-environment` の `action=status`）で健全なら**再利用**する（再 up 不要）。不健全なら `action=down` → `action=up` で作り直す（呼出例は 6 章）。なお `-p` 単独の `ps` は簡易確認用であり、撤収の権威操作（down）は `environment.yaml` の `lifecycle` 記録（up と同一の `-f` 群 + `-p` の完全形）を用いる
 7. **run_id は新規採番しない**。中断 run の run_id をそのまま実行スキルへ引き渡し、残ケースの record を追記する
 8. 全ケース記録後に `finish-run` で `completed` に確定し、Phase 6 → Phase 7 へ進む
 
@@ -221,14 +221,17 @@ Skill(skill: "deep-test:test-environment", args: "target={target-slug} base={bas
 - `--non-interactive`（モード指定）は非対話時のみ付与する（Phase 1.5 と同じ条件注記。オーケストレータの対話 / 非対話モードを test-environment へ伝播する。Phase 5 手順 0 の `action=up`・Phase 6 判定後の `action=down` の呼出でも同じ）
 - 材料 `analysis.yaml`（`{base}/{target-slug}/analysis.yaml`）は引数で渡さず、test-environment が Read で解決する（非存在時は test-environment 側で軽量補完する）
 - 出力の `environment.yaml`（機械可読・`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 準拠）と派生成果物（`environment/compose.test.yml`・`environment/.env.test`）を、Phase 2 の `test-design` が preconditions / 環境前提の材料に、Phase 5 のオーケストレータが `start-run --environment` の環境文字列の材料に消費する（材料の単方向消費）
-- **受領後の parse 検証**: provision 受領後、`environment.yaml` が YAML として parse 可能であることを venv の Python で機械確認する（PyYAML は共通 requirements.txt に固定済み。確認するのは parse 可能性のみ・値の解釈やスキーマ妥当性の再判定はしない〔生成品質は test-environment の自己チェックの責務〕）:
+- **受領後の parse 検証**: provision 受領後、`environment.yaml` が YAML として parse 可能であることを venv の Python で 2 段確認する（PyYAML は共通 requirements.txt に固定済み。確認するのは parse 可能性のみ・値の解釈やスキーマ妥当性の再判定はしない〔生成品質は test-environment の自己チェックの責務〕）:
 
   ```bash
-  "<venv>/Scripts/python.exe" -c "import sys; sys.stdout.reconfigure(encoding='utf-8'); import yaml; yaml.safe_load(open(sys.argv[1], encoding='utf-8')); print('environment.yaml parse OK')" "{base}/{target-slug}/environment.yaml"
+  # 段 1: PyYAML の可用性（壊れた venv の切り分け）。ここでの失敗は parse 失敗ではなく「検証不能」
+  "<venv>/Scripts/python.exe" -c "import yaml"
+  # 段 2: parse 可能性の確認
+  "<venv>/Scripts/python.exe" -c "import sys, yaml; sys.stdout.reconfigure(encoding='utf-8'); yaml.safe_load(open(sys.argv[1], encoding='utf-8')); print('environment.yaml parse OK')" "{base}/{target-slug}/environment.yaml"
   ```
 
-  - parse 失敗時は test-environment へ provision の再委譲を **1 回だけ** 試み（失敗内容を args の依頼文脈に含める）、再委譲の受領後は本検証を再適用する。それでも parse 失敗の場合は環境なし前提（従来フロー）へ縮退して続行する（フローを止めない。縮退した旨を進捗と報告材料に記録する）
-  - venv 未構築の時点で受領した場合（通常は Phase 0 で構築済みのため稀）は機械検証をスキップし、Read によるファイルの存在・可読性の目視確認に縮退する（パーサ不在時の粗い代替であり、値・キーの妥当性は判定しない。test-environment の自己チェックを代替しない）
+  - **段 2 が失敗（parse 失敗）**: test-environment へ provision の再委譲を **1 回だけ** 試み（失敗内容を args の依頼文脈に含める）、再委譲の受領後は本検証を再適用する。それでも parse 失敗の場合は環境なし前提（従来フロー）へ縮退して続行する（フローを止めない。縮退した旨を進捗と報告材料に記録する）
+  - **段 1 が失敗（PyYAML 欠落の壊れた venv・稀）、または venv 未構築の時点で受領した場合**（通常は Phase 0 で構築済みのため稀）: 機械検証を行えないため、Read によるファイルの存在・可読性の目視確認に縮退する（parse 失敗〔再委譲〕とは振り分けを分ける = 検証不能を再委譲の無限誘発に使わない。目視は値・キーの妥当性を判定しない粗い代替であり、test-environment の自己チェックを代替しない）
 - 起動されても docker 資産なし / docker 利用不可 / unit のみと判断した場合は、SUT に何も書かず no-op マニフェスト（`applicability: not-applicable | unavailable` + `reason`）を返して正常終了する（縮退はフローを止めない。ユーザーが起動済み URL を渡した場合は従来前提が常に優先）
 - test-environment は SUT の docker 資産へ書き込まない（派生は deep-test データ領域のみ・逆呼び出し禁止・2 段委譲を厳守）
 - up は Phase 5 手順 0（全ゲート通過後・`start-run` 直前）・down は Phase 6 判定後に、本節と同形の Skill 呼出（`action=up` / `action=down`）で行う（呼出例は Phase 5 / Phase 6 の節）
