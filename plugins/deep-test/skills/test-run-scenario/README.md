@@ -67,7 +67,7 @@ plugins/deep-test/skills/test-run-scenario/
 ├── README.md                      # 本ファイル（人間向け）
 ├── references/
 │   └── scenario-execution.md      # シナリオ実行手順・途中 fail 判断・UAT 観点チェックリスト・達成チェックリスト
-└── evals/                         # 動作分岐検証ケース（case-01〜16 + README・16 ケース）
+└── evals/                         # 動作分岐検証ケース（case-01〜17 + README・17 ケース）
 ```
 
 ## スコープ外

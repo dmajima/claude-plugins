@@ -37,6 +37,7 @@ SKILL.md「実行モード判定」の manual-assist / exploratory 分岐（対�
 
 - case-11: 同じ exploratory ケースの対話主系（セッション開始が成立して pass 終端へ至る側。開始不能分岐は本ケース）
 - case-16: セッションは成立しタイムボックス満了で正常終了する分岐（満了 = 正常終了であり、本ケースの開始不能 blocked とは別事象）
+- case-17: セッション**開始後**の探索続行不能による blocked（本ケースの開始**前**の前提不成立 blocked とは検出タイミングが異なる同 status の対比）
 - case-12: exploratory × 非対話（チャーターシート縮退の非対話側。「後で実施」の対話縮退と同型機構）
 - case-13: manual-assist ×「後で実施」選択（個別ケース側の同型縮退）
 - case-05: MCP 未ロードによる skipped（実行手段不在。テスト論理起因の blocked との使い分けの対比）

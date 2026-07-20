@@ -23,6 +23,7 @@
 | 14 | case-14_exploratory_blocked_or_defer.md | automation: exploratory × 対話でセッション開始不能 → blocked + reason（副分岐: 「後で実施」= チャーターシート縮退 / 「中止」= 実施せず記録もしない） | uat |
 | 15 | case-15_endpoints_base_url.md | environment.yaml の endpoints[] 由来 base URL を対象アプリ情報として受領してシナリオ実行（受領形・実行手順は不変・出所の注記のみ） | system |
 | 16 | case-16_exploratory_timebox_expiry.md | automation: exploratory × タイムボックス満了で正常終了 → 結果判定（blocked を適用しない・execution-policy 8 章。開始不能 blocked〔case-14〕との使い分け） | uat |
+| 17 | case-17_exploratory_blocked_midway.md | automation: exploratory × 開始後の探索続行不能 → 総合結果 blocked（探索不能・manual-execution 3 章。開始不能 blocked〔case-14〕・満了正常終了〔case-16〕との検出タイミング区別） | uat |
 
 ## ケースファイルの構成
 
@@ -41,5 +42,5 @@
 - 本スキルの実行結果は中間データとして返却するのみで、`test-results.yaml` への書き込みはオーケストレータ `test` が行う。evals は「返却する中間結果 JSON の内容」と「実行中の判断」を検証対象とする
 - 対話/非対話モードの確認・実績記録・ゲート判定はオーケストレータの責務のため、実行スキル単体の evals では扱わない
 - `automation: playwright-test`（`npx playwright test` 実走）経路は case-09（全 pass）/ case-10（実走前提不在の skipped）で扱い、MCP 経路（`automation: playwright`）と併存する分岐を検証する
-- 手動 / 探索の軸: `automation: manual-assist`（case-07 / 08 / 13）と `exploratory`（チャーターベース人間セッション。case-11 / 12 / 14）は対話 = human-assisted 記録・非対話 = 手順書（チャーターシート）縮退の skipped を対で検証する（規範は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md`）。対話の「後で実施」縮退は case-13（manual-assist）と case-14 副分岐（exploratory）が扱う
-- exploratory の結果終端はスキル横断で対応する（pass = case-11 / fail = test-run-functional evals case-12 / blocked = case-14）
+- 手動 / 探索の軸: `automation: manual-assist`（case-07 / 08 / 13）と `exploratory`（チャーターベース人間セッション。case-11 / 12 / 14 / 16 / 17）は対話 = human-assisted 記録・非対話 = 手順書（チャーターシート）縮退の skipped を対で検証する（規範は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md`）。対話の「後で実施」縮退は case-13（manual-assist）と case-14 副分岐（exploratory）が扱う
+- exploratory の結果終端はスキル横断で対応する（pass = case-11〔時間内完了〕/ case-16〔タイムボックス満了→正常終了〕、fail = test-run-functional evals case-12、blocked = case-14〔開始不能〕/ case-17〔開始後の探索不能〕）

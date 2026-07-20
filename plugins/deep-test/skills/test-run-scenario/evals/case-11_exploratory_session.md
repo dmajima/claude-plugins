@@ -43,3 +43,4 @@ SKILL.md「実行モード判定」の manual-assist / exploratory 分岐（対�
 - case-01: Playwright MCP で AI が自動実行する pass ケース（executed_by: playwright-mcp。automation: playwright の「AI 探索」との用語区別は manual-execution.md 1.3）
 - case-14: セッション開始が不成立（blocked）、または開始聴取で「後で実施」/「中止」が選択された分岐
 - case-16: セッションは成立するがタイムボックス満了で正常終了する分岐（本ケースは時間内完了）
+- case-17: セッションは成立するが開始後に探索続行不能となり blocked になる分岐（本ケースは完遂 pass）

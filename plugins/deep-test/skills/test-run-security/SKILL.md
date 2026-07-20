@@ -1,6 +1,6 @@
 ---
 name: test-run-security
-description: セキュリティテスト（TC-SEC）を Playwright MCP + Bash で OWASP 観点の動的チェックを行う実行スキル。認証・セッション・入力検証・ヘッダ・情報露出を承認済みケースの範囲で確認し中間データを返す。オーケストレータ test の run フェーズから security レベルのケース実行を委譲された時に使用する。ペネトレーション・SCA・SAST の代替ではなく破壊的攻撃は行わない。playwright-test のケースは認証フィクスチャ（storageState）で npx playwright test を実走する経路も持つ（MCP 併存）。
+description: セキュリティテスト（TC-SEC）を Playwright MCP + Bash で OWASP 観点の動的チェックを行う実行スキル。認証・セッション・入力検証・ヘッダ・情報露出を承認済みケースの範囲でのみ確認し中間データを返す。オーケストレータ test の run フェーズから security レベルのケース実行を委譲された時に使用する。ペネトレーション・SCA・SAST の代替ではなく破壊的攻撃は行わない。playwright-test のケースは認証フィクスチャ（storageState）で npx playwright test を実走する経路も持つ（MCP 併存）。
 allowed-tools:
   - Read
   - Grep

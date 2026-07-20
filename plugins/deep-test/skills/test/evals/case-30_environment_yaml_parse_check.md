@@ -12,7 +12,7 @@ Phase 1.7 で test-environment の provision を受領した直後に、オー�
 
 ## 分岐の根拠
 
-`${CLAUDE_SKILL_DIR}/references/flow.md` 6 章 Phase 1.7 節「受領後の parse 検証」（venv Python での safe_load 機械確認・parse 可能性のみ〔値の解釈・スキーマ妥当性の再判定はしない = 生成品質は test-environment の自己チェックの責務〕・失敗は再委譲 1 回〔受領後に本検証を再適用〕→ 環境なし縮退・venv 不在は存在・可読性の目視縮退）・2.1 節 Phase 1.7 行、SKILL.md「権限ポリシー」（Bash の用途に environment.yaml の parse 検証を含む）、`${CLAUDE_SKILL_DIR}/references/state-handoff.md` 2.4（Phase 1.7 受領時の確認・縮退の受け渡し規約）。
+`${CLAUDE_SKILL_DIR}/references/flow.md` 6 章 Phase 1.7 節「受領後の parse 検証」（venv Python の **2 段確認**〔段 1: `import yaml` の可用性→失敗は目視縮退・段 2: `safe_load` での parse 可能性→失敗は再委譲 1 回〕・parse 可能性のみ〔値の解釈・スキーマ妥当性の再判定はしない = 生成品質は test-environment の自己チェックの責務〕・段 1 失敗/venv 不在は存在・可読性の目視縮退）・**5.1 節手順 6**（resume 時も applicable 判定前に同形適用）・2.1 節 Phase 1.7 行、SKILL.md「権限ポリシー」（Bash の用途に environment.yaml の parse 検証を含む）、`${CLAUDE_SKILL_DIR}/references/state-handoff.md` 2.4（Phase 1.7 受領時の確認・縮退の受け渡し規約）。
 
 ## 期待動作
 

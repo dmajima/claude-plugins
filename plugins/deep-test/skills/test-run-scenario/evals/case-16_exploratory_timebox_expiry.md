@@ -37,4 +37,5 @@ SKILL.md「実行モード判定」の manual-assist / exploratory 分岐（対�
 
 - case-11: 同じ exploratory ケースの対話主系（時間内に探索完了して pass 終端。本ケースは満了で打ち切る側）
 - case-14: セッション**開始不能**による blocked（前提不成立のテスト論理起因。満了の正常終了とは別事象の対比）
+- case-17: セッション開始後の**探索続行不能**による blocked（本ケースの満了正常終了とは異なり、満了前に探索前提が崩れる分岐）
 - test-run-functional evals case-12: exploratory の fail 終端（発見事象の defect 化）との対比
