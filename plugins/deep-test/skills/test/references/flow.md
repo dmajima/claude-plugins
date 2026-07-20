@@ -148,7 +148,7 @@ resume 対象・run_id 引き継ぎ・複数中断時の整理の規約は `${CL
 
 4. 中断 run から再開する場合、残ケースを機械的に確定する: `validate` の `resumable_runs` フィールド（`{run_id, status, missing}` の構造化リスト）から当該 run の `missing` を resume scope として採用する（副作用なしで取得できる。`finish-run` の仮実行や件数のみでの推定は行わない）
 5. resume scope に Playwright 必要レベルが含まれる場合は **MCP ゲートを再判定**する（resume の主用途が MCP 未ロード停止からの復帰であるため必須）
-6. `environment.yaml` が存在する場合は、まず 6 章 Phase 1.7 節と同形の parse 検証を行う（段 2 の parse 失敗は再委譲 1 回 → それでも不能なら環境なし縮退・段 1 失敗/venv 不在は目視縮退。中断中に破損した `environment.yaml` を applicable 判定にそのまま用いないため）。parse 可能かつ `applicability: applicable` の場合は**環境を再確認**する: `docker compose -p {slug}-test ps` + health 再確認（`Skill: test-environment` の `action=status`）で健全なら**再利用**する（再 up 不要）。不健全なら `action=down` → `action=up` で作り直す（呼出例は 6 章）。なお `-p` 単独の `ps` は簡易確認用であり、撤収の権威操作（down）は `environment.yaml` の `lifecycle` 記録（up と同一の `-f` 群 + `-p` の完全形）を用いる
+6. `environment.yaml` が存在する場合は、まず 6 章 Phase 1.7 節と同形の parse 検証を行う（段 2 の parse 失敗は破損マニフェストの修復に限り再委譲 1 回〔resume では通常 provision を再委譲しない原則〔本節冒頭・Phase 1.7〕の例外〕 → それでも不能なら環境なし縮退・段 1 失敗/venv 不在は目視縮退。中断中に破損した `environment.yaml` を applicable 判定にそのまま用いないため）。parse 可能かつ `applicability: applicable` の場合は**環境を再確認**する: `docker compose -p {slug}-test ps` + health 再確認（`Skill: test-environment` の `action=status`）で健全なら**再利用**する（再 up 不要）。不健全なら `action=down` → `action=up` で作り直す（呼出例は 6 章）。なお `-p` 単独の `ps` は簡易確認用であり、撤収の権威操作（down）は `environment.yaml` の `lifecycle` 記録（up と同一の `-f` 群 + `-p` の完全形）を用いる
 7. **run_id は新規採番しない**。中断 run の run_id をそのまま実行スキルへ引き渡し、残ケースの record を追記する
 8. 全ケース記録後に `finish-run` で `completed` に確定し、Phase 6 → Phase 7 へ進む
 
