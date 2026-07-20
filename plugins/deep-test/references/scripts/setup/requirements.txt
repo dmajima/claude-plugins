@@ -1,0 +1,14 @@
+# deep-test プラグイン共通 依存パッケージ（完全固定: pip install で同一バージョンを強制）
+#
+# プラグイン内の全 Python スクリプトが共有する単一の venv 定義（プラグイン単位で一元管理）。
+#
+# - PyYAML   : 実績 YAML（test-results.yaml / test-cases.yaml）の読み書き
+#              （test スキルの results_manager.py / generate_manual_sheet.py / test-report スキルの報告書生成スクリプトが使用）
+# - openpyxl : Excel 報告書の全コード生成（テンプレートファイル不使用。
+#              test-report スキルの generate_excel.py が使用）
+#
+# バージョン更新時は results_manager.py の全サブコマンド通し実行と
+# generate_excel.py / generate_markdown.py の動作確認のうえ pin を更新する。
+
+PyYAML==6.0.3
+openpyxl==3.1.5

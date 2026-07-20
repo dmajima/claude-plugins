@@ -160,6 +160,44 @@
       ]
     },
     {
+      "name": "deep-test",
+      "source": "./plugins/deep-test",
+      "description": "テスト設計→環境構築→実施→報告→再テストを支援。8レベル・Playwright実動作・手動/探索的・YAML実績管理。コードレビューの差分テストとは別",
+      "category": "developer-tools",
+      "author": {
+        "name": "dmajima"
+      },
+      "keywords": [
+        "test",
+        "testing",
+        "multi-agent",
+        "multi-skill",
+        "test-design",
+        "test-review",
+        "test-execution",
+        "test-report",
+        "unit-test",
+        "integration-test",
+        "system-test",
+        "uat",
+        "performance-test",
+        "security-test",
+        "playwright",
+        "playwright-mcp",
+        "fixture",
+        "test-fixture",
+        "docker",
+        "docker-compose",
+        "test-environment",
+        "e2e",
+        "manual-testing",
+        "exploratory-testing",
+        "yaml-results",
+        "retest",
+        "excel-report"
+      ]
+    },
+    {
       "name": "extension-toolkit",
       "source": "./plugins/extension-toolkit",
       "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援",
