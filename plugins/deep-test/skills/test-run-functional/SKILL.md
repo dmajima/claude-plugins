@@ -1,6 +1,6 @@
 ---
 name: test-run-functional
-description: "単体テスト（level: functional / TC-FUNC）の実行スキル。Playwright MCP により画面・機能単位の実動作をブラウザ操作で確認し、ステップごとのスクリーンショットをエビデンスとして収集してケース単位の中間結果 JSON を返す。deep-test オーケストレータ（test）の run フェーズから functional レベルのケース実行時に使用する。MCP ツール不可時は skipped として返す。automation: playwright-test のケースは fixtures.yaml と SUT テストコードを前提に npx playwright test（Bash 実行）で .spec.ts を実走する経路も持つ（既定の MCP 経路と併存。ランナー / fixtures 不在時は skipped）。"
+description: "単体テスト（level: functional / TC-FUNC）の実行スキル。Playwright MCP で画面・機能単位の実動作を確認し、ステップごとのスクショを収集して中間結果 JSON を返す。deep-test オーケストレータ（test）の run フェーズから functional レベルのケース実行時に使用する。MCP 不可時は skipped を返す。automation: playwright-test のケースは fixtures.yaml と SUT テストコードを前提に npx playwright test で .spec.ts を実走する（MCP 併存）。"
 allowed-tools:
   - Read
   - Grep

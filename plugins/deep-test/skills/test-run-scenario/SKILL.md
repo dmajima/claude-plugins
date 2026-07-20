@@ -1,6 +1,6 @@
 ---
 name: test-run-scenario
-description: システムテスト（TC-SYS）・受入テスト（TC-UAT）を Playwright MCP による業務シナリオ E2E で実行する実行スキル。ログインから業務操作・結果確認・ログアウトまでを通しで実行し、結果を中間データとしてオーケストレータへ返却する。UAT は受入判断の材料を揃える検証支援であり、最終受入判断は人間が行う。オーケストレータ test の run フェーズから system / uat レベルのケース実行を委譲された時、複数機能を跨ぐ業務シナリオを通しで検証する場合に使用する。playwright-test のケースは fixtures.yaml（認証・シードフィクスチャ）を前提に npx playwright test（Bash 実行）で system / uat シナリオを再現可能に実走する経路も持つ（既定の MCP 経路と併存）。
+description: システムテスト（TC-SYS）・受入テスト（TC-UAT）を Playwright MCP の業務シナリオ E2E で実行する実行スキル。ログインから業務操作・結果確認・ログアウトまで通しで実行し中間データを返す。オーケストレータ test の run フェーズから system / uat レベルのケース実行を委譲された時に使用する。UAT の最終受入判断は人間が行う（本スキルは材料を揃える支援）。playwright-test のケースは fixtures.yaml（認証・シード）を前提に npx playwright test を実走する経路も持つ（MCP 併存）。
 allowed-tools:
   - Read
   - Grep

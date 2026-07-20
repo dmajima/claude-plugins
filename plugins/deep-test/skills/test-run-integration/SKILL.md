@@ -1,6 +1,6 @@
 ---
 name: test-run-integration
-description: 内部結合（integration-internal / TC-ITA）・外部結合（integration-external / TC-ITB）の実行スキル。Playwright MCP による画面間・モジュール間の連携フロー確認と Bash（curl）による API 補助確認を行い、ケース単位の中間結果 JSON を返す。外部接続不可時はスタブポリシーに従い判断する。deep-test オーケストレータ（test）の run フェーズから結合レベルのケース実行時に使用する。playwright-test のケースは fixtures.yaml のモックフィクスチャで外部依存を差し替え npx playwright test（Bash 実行）で再現可能に実走する経路も持つ（既定の MCP 経路と併存）。
+description: 内部結合（integration-internal / TC-ITA）・外部結合（integration-external / TC-ITB）の実行スキル。Playwright MCP で画面間・モジュール間の連携と Bash（curl）の API を確認し、中間結果 JSON を返す。外部接続不可時はスタブポリシーに従う。オーケストレータ test の run フェーズから結合レベルのケース実行時に使用する。playwright-test のケースは fixtures.yaml のモックで外部依存を差し替え npx playwright test を実走する（MCP 併存）。
 allowed-tools:
   - Read
   - Grep
