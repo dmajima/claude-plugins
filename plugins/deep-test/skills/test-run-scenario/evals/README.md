@@ -22,6 +22,7 @@
 | 13 | case-13_manual_assist_defer_to_sheet.md | automation: manual-assist × 対話で「後で実施」選択（オンデマンド手順書生成〔オーケストレータの責務〕→ skipped + reason に手順書パス転記） | system / uat |
 | 14 | case-14_exploratory_blocked_or_defer.md | automation: exploratory × 対話でセッション開始不能 → blocked + reason（副分岐: 「後で実施」= チャーターシート縮退 / 「中止」= 実施せず記録もしない） | uat |
 | 15 | case-15_endpoints_base_url.md | environment.yaml の endpoints[] 由来 base URL を対象アプリ情報として受領してシナリオ実行（受領形・実行手順は不変・出所の注記のみ） | system |
+| 16 | case-16_exploratory_timebox_expiry.md | automation: exploratory × タイムボックス満了で正常終了 → 結果判定（blocked を適用しない・execution-policy 8 章。開始不能 blocked〔case-14〕との使い分け） | uat |
 
 ## ケースファイルの構成
 

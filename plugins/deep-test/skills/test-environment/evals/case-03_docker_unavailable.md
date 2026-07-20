@@ -36,5 +36,5 @@ SKILL.md「責務 1」（docker 不可なら縮退）・「重要な制約」（
 
 - case-01: 資産なし（not-applicable）との使い分け（対象外 vs 手段不在）
 - case-14: v1 のみ検出の警告付き best-effort（`compose_command: "docker-compose"`。試行失敗時は本ケースと同じ unavailable 扱い）
-- case-05: 手段はあるが up が失敗する縮退（skipped 材料の同列ケース）
+- case-05: 手段はあるが up が失敗する縮退（skipped 材料の同列ケース。provision 時点では疎通確認できたが、後続の up〔Phase 5 手順 0〕時点でデーモンが不通/停止した場合の up 失敗もここで扱う。本ケースは provision 時点での不通・case-05 は up 時点での失敗という時系列の違い）
 - case-06: 起動はしたが health 未達（blocked 材料との使い分け）
