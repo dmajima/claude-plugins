@@ -12,7 +12,7 @@
     {
       "name": "coding",
       "source": "./plugins/coding",
-      "description": "多言語対応の実装・設計ワークフロープラグイン（言語スキル8種+SSOT規約管理・自動検出・プロジェクト規約優先）",
+      "description": "対象リポジトリの言語・フレームワークを自動検出し、プロジェクト規約準拠の実装・設計を統括する多言語対応プラグイン。",
       "category": "developer-tools",
       "author": {
         "name": "dmajima"
@@ -34,7 +34,9 @@
         "language-profile",
         "framework-detection",
         "self-review",
-        "orchestration"
+        "orchestration",
+        "design",
+        "design-workflow"
       ]
     },
     {
@@ -125,7 +127,7 @@
     {
       "name": "deep-code-review",
       "source": "./plugins/deep-code-review",
-      "description": "Azure DevOps/オンプレTFS・GitHub PR 対応の観点別マルチエージェントコードレビュー（Anthropic公式 code-review とは別）。8言語+主要FW・信頼度スコアで多角レビューし統合サマリと判定を返す",
+      "description": "観点別マルチエージェントでコード変更・PR をレビューするプラグイン（Anthropic 公式 code-review とは別）",
       "category": "developer-tools",
       "author": {
         "name": "dmajima"
@@ -162,7 +164,7 @@
     {
       "name": "deep-test",
       "source": "./plugins/deep-test",
-      "description": "テスト設計→環境構築→実施→報告→再テストを支援。8レベル・Playwright実動作・手動/探索的・YAML実績管理。コードレビューの差分テストとは別",
+      "description": "テスト設計→環境構築→実施→報告→再テストを支援するプラグイン。コードレビューの差分テスト（deep-code-review）とは別",
       "category": "developer-tools",
       "author": {
         "name": "dmajima"
