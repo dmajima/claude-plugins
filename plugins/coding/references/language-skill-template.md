@@ -18,7 +18,7 @@ skills/coding-{lang}/
 追加手順:
 
 1. `conventions.md` を下記テンプレートの章構成で作成する
-2. `SKILL.md` を既存言語スキル（例: `skills/coding-python/SKILL.md`）と同じセクション構成で作成する。必須セクション: 責務 / 責務外 / 前提 / 利用モード / **実行モード判定**（`--non-interactive` の非対話分岐を含む）/ トリガー条件 / 実行フロー（単独実行モード）/ 重要な制約 / 参照
+2. `SKILL.md` を既存言語スキル（例: `skills/coding-python/SKILL.md`）と同じセクション構成で作成する。必須セクション（ai-readability 正典順）: 責務 / 責務外 / トリガー条件 / 前提 / 利用モード / **実行モード判定**（`--non-interactive` の非対話分岐を含む）/ 実行フロー（単独実行モード）/ 重要な制約 / 参照
 3. `evals/` を作成する（最低: 単独実行モードの基本フロー + スコープエスカレーションの 2 ケース。既存言語スキルの evals を雛形にする）
 4. [skill-index.md](skill-index.md) の言語スキル一覧に検出マーカーとともに登録する
 5. 複数言語で共有する FW プロファイルは言語スキル内ではなく SSOT の [frameworks/](frameworks/) に配置する

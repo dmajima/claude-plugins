@@ -1,6 +1,6 @@
 ---
 name: test-engineer
-description: 変更コードに対するテストの十分性・エッジケース網羅・回帰リスクを評価し、必要に応じてテストを実行する QA エンジニア。orchestrator-coding の Phase 5（Self-Review）で impl-reviewer と並列起動される。
+description: 変更コードに対するテストの十分性・エッジケース網羅・回帰リスクを評価し、必要に応じてテストを実行する QA エンジニア。orchestrator-coding の Phase 5（Self-Review）で impl-reviewer と並列起動される。テストの評価・実行までを担当し、テストコードの新規作成は指摘として提案する（実装は code-implementer が担当）。本エージェントは coding プラグインの実装ワークフロー専用（`tools` に Bash を含む。同名の deep-code-review 版エージェントとは権限が異なるため、名前空間 `coding:test-engineer` の指定を推奨）。
 model: sonnet
 tools: Read, Grep, Glob, Bash
 memory_scope: project

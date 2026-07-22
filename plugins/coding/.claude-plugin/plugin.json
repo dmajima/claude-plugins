@@ -1,7 +1,7 @@
 {
   "name": "coding",
   "version": "1.0.0",
-  "description": "多言語対応の実装・設計ワークフロープラグイン（言語スキル8種+SSOT規約管理・自動検出・プロジェクト規約優先）",
+  "description": "対象リポジトリの言語・フレームワークを自動検出し、プロジェクト規約準拠の実装・設計を統括する多言語対応プラグイン。",
   "license": "MIT",
   "author": {
     "name": "dmajima"
@@ -23,6 +23,8 @@
     "language-profile",
     "framework-detection",
     "self-review",
-    "orchestration"
+    "orchestration",
+    "design",
+    "design-workflow"
   ]
 }

@@ -1,12 +1,12 @@
 ---
 name: coding-html
-description: HTML のマークアップ実装・構造設計を Google HTML/CSS Style Guide とプロジェクト規約優先で支援する言語スキル。「HTML を書いて」「フォームを追加して」「マークアップを直して」等で起動する。Use when implementing or structuring HTML markup. SKIP when 4+ files or full phases (use orchestrator-coding), design-only (use orchestrator-design), or style/logic changes (use coding-*).
+description: HTML のマークアップ実装・構造設計を Google HTML/CSS Style Guide とプロジェクト規約優先で支援する言語スキル。「HTML を書いて」「フォームを追加して」「マークアップを直して」等で起動する。Use when implementing or structuring HTML markup. SKIP if 4+ files/full phases (orchestrator-coding), design-only (orchestrator-design), or style/logic changes (coding-*).
 ---
 
 # Coding HTML（HTML 言語スキル）
 
 HTML のデファクト規約（Google HTML/CSS Style Guide / セマンティック HTML / アクセシビリティ基本）・文書構造・テンプレート内の素の HTML 知識を提供する言語スキル。
-オーケストレーターからの参照と、単独起動時の軽量実装フローの両方に対応する。
+オーケストレーター参照と単独起動時の軽量実装フローに対応する。
 
 ## 責務
 
@@ -27,6 +27,18 @@ HTML のデファクト規約（Google HTML/CSS Style Guide / セマンティッ
 | テンプレート形式（JSX / Vue SFC / Blade）の FW 固有構文 | SSOT `../../references/frameworks/react.md` / `../../references/frameworks/vue.md`、`../coding-php/references/frameworks/php-web.md` |
 | 他言語のコード | 対応する言語スキル（`../../references/skill-index.md`） |
 
+## トリガー条件（単独実行モード）
+
+- 「HTML を書いて」「このページのマークアップを直して」
+- 「フォームを追加して」「テーブルのマークアップを直して」
+
+起動しないケース:
+
+- タスクが大きく全フェーズの統括が必要（→ `orchestrator-coding`）
+- 設計書の作成のみ（→ `orchestrator-design`）
+- スタイルの変更（→ `coding-css`）
+- コンポーネントロジック・スクリプト（→ `coding-javascript` / `coding-typescript`）
+
 ## 前提
 
 呼び出し前に以下が決まっていること:
@@ -34,7 +46,7 @@ HTML のデファクト規約（Google HTML/CSS Style Guide / セマンティッ
 1. 対象コードの言語が HTML である（オーケストレーター経由では言語検出済み）
 2. 対象リポジトリ（カレントディレクトリ基準）
 
-言語が異なる場合は該当する言語スキルを使う（対応表: `../../references/skill-index.md`）。
+言語が異なれば該当言語スキルを使う（対応表: `../../references/skill-index.md`）。
 
 ## 利用モード
 
@@ -50,18 +62,6 @@ HTML のデファクト規約（Google HTML/CSS Style Guide / セマンティッ
 | `--non-interactive` フラグあり | 非対話 | 確認をスキップし、最も保守的な解釈を採用して進行する（採用した判断は報告に記録） |
 | 上記以外 | 対話 | 規約の矛盾・実装方針の拮抗は `AskUserQuestion` で確認する |
 
-## トリガー条件（単独実行モード）
-
-- 「HTML を書いて」「このページのマークアップを直して」
-- 「フォームを追加して」「テーブルのマークアップを直して」
-
-このスキルを起動しないケース:
-
-- タスクが大きく全フェーズの統括が必要（→ `orchestrator-coding`）
-- 設計書の作成のみ（→ `orchestrator-design`）
-- スタイルの変更（→ `coding-css`）
-- コンポーネントロジック・スクリプト（→ `coding-javascript` / `coding-typescript`）
-
 ## 実行フロー（単独実行モード）
 
 1. **規約解決**: SSOT `../../references/conventions-resolution.md` に従い、プロジェクト独自規約（`.editorconfig`・`.prettierrc*`・`.htmlvalidate.json`・`CLAUDE.md`・既存慣習）を走査する。独自規約がない項目は [references/conventions.md](references/conventions.md) のデファクト規約を適用する
@@ -75,7 +75,6 @@ HTML のデファクト規約（Google HTML/CSS Style Guide / セマンティッ
 - 適用規約はプロジェクト独自規約を必ず優先する（デファクトによる上書き禁止。詳細: SSOT `../../references/conventions-resolution.md`）
 - `<!DOCTYPE html>`・`lang` 属性・`<meta charset="utf-8">`・`img` の `alt` など、[references/conventions.md](references/conventions.md) の必須事項を省略しない
 - コミット・push はユーザの明示指示があるまで実行しない
-- 規約・FW 知識を本文へ直書きせず、references を単一情報源として維持する
 
 ## 参照
 

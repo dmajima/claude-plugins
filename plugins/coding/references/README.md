@@ -1,6 +1,6 @@
 # references/ ディレクトリ（人間向けインデックス）
 
-coding プラグインのプラグイン共通リソース（SSOT）の人間向けインデックス。本ファイルはエージェント動作では使用されない。
+coding プラグインのプラグイン共通リソース（SSOT）の人間向けインデックス。本ファイルはエージェント動作では使用されない（エージェント向けの原則・ナビゲーションは [`CLAUDE.md`](CLAUDE.md) が正典。各サブディレクトリの詳細は [`frameworks/CLAUDE.md`](frameworks/CLAUDE.md) / [`template/CLAUDE.md`](template/CLAUDE.md) を参照）。
 
 ## 構成
 

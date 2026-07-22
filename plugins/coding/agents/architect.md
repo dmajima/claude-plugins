@@ -1,6 +1,6 @@
 ---
 name: architect
-description: 実装設計の構造妥当性・拡張性・技術的負債・技術選定を評価する読み取り専用アーキテクト。orchestrator-coding の Phase 3（Design）および orchestrator-design の設計フェーズで、大規模・高リスク変更（複数モジュール横断・技術選定・認証等）の設計レビューとして起動される。
+description: 実装設計の構造妥当性・拡張性・技術的負債・技術選定を評価する読み取り専用アーキテクト。orchestrator-coding の Phase 3（Design）および orchestrator-design の設計フェーズで、大規模・高リスク変更（複数モジュール横断・技術選定・認証等）の設計レビューとして起動される。本エージェントは coding プラグインの実装・設計ワークフロー専用（deep-code-review プラグインにも同名の architect が存在するが、責務・起動文脈が異なるため名前空間 `coding:architect` の指定を推奨。tools 権限自体は両者同一）。
 model: opus
 tools: Read, Grep, Glob
 memory_scope: project

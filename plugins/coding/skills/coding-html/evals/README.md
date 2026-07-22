@@ -13,3 +13,11 @@
 |-------|-------------|
 | [case-01_standalone-basic.md](case-01_standalone-basic.md) | 小規模・言語明確 → 単独実行モードの軽量フロー |
 | [case-02_scope-escalation.md](case-02_scope-escalation.md) | 変更見込み 4 ファイル以上 → orchestrator-coding 切替提案 |
+| [case-03_non-interactive.md](case-03_non-interactive.md) | 非対話モード（--non-interactive）での単独実行 |
+| [case-04_convention-conflict.md](case-04_convention-conflict.md) | 対話モードで検出規約とユーザ指示が矛盾 → AskUserQuestion 発火 |
+| [case-05_language-boundary.md](case-05_language-boundary.md) | スタイル変更 → coding-css へルーティング |
+| [case-06_framework-template.md](case-06_framework-template.md) | Vue SFC（`.vue`）検出 → テンプレート素 HTML のみ担当・FW 構文は vue.md 参照 |
+
+## 実行確認方法
+
+各ケースの「入力」セクションのフレーズで Claude Code を起動し、「期待動作」「期待出力」と一致することを目視確認する。

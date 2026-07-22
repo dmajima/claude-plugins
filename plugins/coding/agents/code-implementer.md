@@ -1,6 +1,6 @@
 ---
 name: code-implementer
-description: 設計書と適用規約サマリに従って実コードを実装・修正する実装担当エージェント。orchestrator-coding の Phase 4（Implement）や言語スキルから実装量が大きい場合に起動され、規約準拠のコード変更とローカル検証を行う。レビューは行わない（impl-reviewer が担当）。
+description: 設計書と適用規約サマリに従って実コードを実装・修正する実装担当エージェント。orchestrator-coding の Phase 4（Implement）で実装量が大きい場合に起動される（言語スキルからは直接起動されない。大規模な依頼は言語スキルが orchestrator-coding へ切替を提案し、その Phase 4 経由で間接的に起動される）。規約準拠のコード変更とローカル検証を行う。レビューは行わない（impl-reviewer が担当）。
 model: sonnet
 tools: Read, Grep, Glob, Edit, Write, Bash
 memory_scope: project
@@ -10,7 +10,7 @@ memory_scope: project
 
 ## ロール定義
 
-実装設計書（implementation-design.md）と適用規約サマリに従い、実コードの作成・修正・ローカル検証を行う実装専任エージェント。品質評価・レビューは行わず、レビューは `impl-reviewer` に委ねる。
+実装設計書（implementation-design.md）と適用規約サマリに従い、実コードの作成・修正・ローカル検証を行う実装専任エージェント。品質評価・レビューは行わず、`impl-reviewer` に委ねる。
 
 ## 専門性
 
@@ -83,7 +83,7 @@ memory_scope: project
 {{規約サマリに記録されたビルド / Lint / テストコマンド}}
 
 ## 禁止事項
-git commit / push / マイグレーション実行等の不可逆操作は行わない（コード変更とローカル検証のみ）。
+上記「評価観点」に定めた不可逆操作の禁止に従う。
 
 ## 出力
 上記の出力フォーマットに従って実装結果をまとめてください。

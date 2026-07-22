@@ -1,11 +1,11 @@
 ---
 name: orchestrator-design
-description: 対象リポジトリの設計業務（実装なし）を 4 フェーズで統括する多言語オーケストレーター。言語検出で言語スキル 8 種の構造知識を参照し、設計原則 SSOT に基づく設計書を作成する。「設計して」「設計書を作って」「実装方針を検討して」等で起動する。Use when the user requests design documents without coding. SKIP when implementation is requested (use orchestrator-coding).
+description: 対象リポジトリの設計業務（実装なし）を 4 フェーズで統括する多言語オーケストレーター。言語検出で言語スキル 8 種の構造知識を参照し、設計原則 SSOT に基づく設計書を作成する。「設計して」「設計書を作って」「実装方針を検討して」等で起動する。Use when the user requests design documents without coding. SKIP if implementation is requested (orchestrator-coding) or single-language structure only (coding-*).
 ---
 
 # Orchestrator Design（設計ワークフロー統括）
 
-実装を伴わない設計業務（設計書作成・実装方針の検討・技術選定の整理）を 4 フェーズで統括するオーケストレータースキル。設計観点・リスクヘッジ・データフローは SSOT（[design-principles.md](../../references/design-principles.md)）に、言語のコード構造は言語スキル（`coding-{lang}`）に委ねる。
+実装を伴わない設計業務（設計書作成・実装方針の検討・技術選定の整理）を 4 フェーズで統括する。設計観点・リスクヘッジ・データフローは SSOT（[design-principles.md](../../references/design-principles.md)）に、言語のコード構造は言語スキル（`coding-{lang}`）に委ねる。
 
 ## 責務
 
@@ -29,7 +29,7 @@ description: 対象リポジトリの設計業務（実装なし）を 4 フェ�
 - 「実装方針を検討して」「どう作るべきか整理して」
 - 「技術選定の比較をして」（コード変更を伴わない）
 
-このスキルを起動しないケース:
+起動しないケース:
 
 - 実装まで求められている（→ `orchestrator-coding`。設計は Phase 3 として実施される）
 - 既存コードのレビューのみ（→ レビュー系スキル / エージェント）
@@ -98,7 +98,7 @@ description: 対象リポジトリの設計業務（実装なし）を 4 フェ�
 ## 重要な制約
 
 - **コードの変更を行わない**（設計のみ。実装が必要なら orchestrator-coding へ引き継ぐ）
-- 言語・FW 固有の構造判断は必ず言語スキルの references に基づく（本文への直書き禁止）
+- 言語・FW 固有の構造判断は必ず言語スキルの references に基づく
 - 未対応言語では言語スキル不在をユーザに明示する
 - ユーザに選択を求める場合は `AskUserQuestion` を使用する
 

@@ -18,3 +18,8 @@
 | [case-09_architect-design-review.md](case-09_architect-design-review.md) | 大規模判定 → architect 設計レビュー → Phase 5 設計 × 実装指摘の競合裁定 |
 | [case-10_backtrack-phase5-to-phase4.md](case-10_backtrack-phase5-to-phase4.md) | 実装バグ起因の High → Phase 4 遡行（遡行テーブル主経路） |
 | [case-11_backtrack-early-phases.md](case-11_backtrack-early-phases.md) | 前段フェーズの遡行共通挙動（Phase 2 → Phase 1 主／Phase 3→2・4→3・6→該当） |
+| [case-12_secret-masking.md](case-12_secret-masking.md) | 成果物への機密情報混入 → Phase 6 マスク経路 |
+
+## 実行確認方法
+
+各ケースの「入力」セクションのフレーズで Claude Code を起動し、「期待動作」「期待出力」と一致することを目視確認する。

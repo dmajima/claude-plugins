@@ -25,7 +25,7 @@
 
 ### Phase 3: Design
 - 実装方針・変更ファイルリスト・リスクを `implementation-design.md` に記録
-- 変更見込みが 5 ファイル未満・単一モジュールのため architect レビューは非該当
+- 単一モジュール内に閉じた変更（複数モジュール横断ではない）のため、design-principles.md 節 2.3 の architect 起動条件「5 ファイル以上かつ複数モジュール横断」（AND 条件）に該当せず architect レビューは非該当
 - 実装方針が拮抗する場合は推奨案を添えて `AskUserQuestion` で確認する（本ケースでは方針が一意のため非発火）
 
 ### Phase 4: Implement
