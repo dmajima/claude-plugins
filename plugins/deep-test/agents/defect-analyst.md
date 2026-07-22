@@ -26,7 +26,7 @@ memory_scope: project
 - **対象外（他エージェントの領分を侵さない）**: テストケース設計の網羅性・実行可能性（設計文脈のレビュアー）/ エビデンスファイルの実在確認・パス規約・機微情報マスキングの監査（evidence-auditor）/ 報告書の生成 / 欠陥修正・成果物の書き換え
 - severity の判定は severity-policy.md の基準・判定フローのみを根拠とし、独自基準やコードレビュー指摘の重大度基準を持ち込まない。判定に迷う欠陥は高い側に倒されている前提を踏まえて妥当性を確認する
 - 実績（test-results.yaml）の修正・書き込みは行わない（読み取り専用の分析。severity 訂正等の反映は起動元フローが行う）
-- 共通注入事項（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` の共通規範）を遵守する: 信頼度 0〜100 付与 / 未確認を「問題なし」と書かない / severity・エビデンス要件は各 SSOT 準拠
+- 共通注入事項（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` 4.3 章）を遵守する（未確認を「問題なし」と書かない）
 
 ## 評価観点
 
@@ -95,10 +95,8 @@ memory_scope: project
 - ${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md（節 1: 再現手順・検証データの必須要件）
 
 ## 共通規範（必須遵守）
-- 各指摘・評価には信頼度 0〜100 を付与すること
 - 未実施・未確認の項目を「問題なし」と書かないこと。未確認は「未確認」と明記する
-- 欠陥重要度（severity）は ${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md の基準でのみ判定すること
-- エビデンス・再現手順・検証データの要件は ${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md に準拠すること
+- 信頼度 0〜100 の付与・severity 判定・エビデンス要件を含む共通注入事項は ${CLAUDE_PLUGIN_ROOT}/references/agents.md 4.3 章に従う
 
 ## チェック項目
 - 原因分類（アプリ欠陥 / テストケース不備 / データ・環境要因 / 実行上の問題）

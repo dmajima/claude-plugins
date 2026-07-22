@@ -9,6 +9,12 @@ fail の defect 3 点セット欠落・scope/results 不整合・未マスクの
 このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。
 スキルが実行時に参照するのは `SKILL.md` と `references/` 配下、およびプラグイン共通 `references/`（`report-format.md` 等）です。
 
+## 導入手順
+
+本スキル `test-report` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
+
+- **起動トリガー**: オーケストレータ `test` の report フェーズ・report-only モード（`/deep-test:test-report`）からの委譲、または「テスト報告書を作成して」「テスト結果を Excel にまとめて」等の自然言語依頼での単独起動
+
 ## 使い方
 
 ### トリガーフレーズ例

@@ -17,6 +17,7 @@
 | 08 | case-08_manual_assist_non_interactive.md | automation: manual-assist × 非対話（skipped + reason で返却。case-07 の対） | 委譲 |
 | 09 | case-09_container_exec_run.md | ホストにランナー不在 + environment.yaml の exec_forms[] あり + 環境 up → コンテナ内 exec で実行（代替経路・executed_by: test-framework 不変。case-03 の対） | 委譲 |
 | 10 | case-10_env_down_skipped.md | ホストにランナー不在 + exec_forms[] あり + 環境 down → 代替経路を選択せず skipped（環境を起動しない。case-09 の対） | 委譲 |
+| 11 | case-11_dependency_fail_blocked.md | depends_on 依存先 fail → 後続ケース blocked（依存元 fail の後続を pass 採用せず blocked・依存先 ID と結果を reason に記録。functional case-05 の同型） | 委譲 |
 
 ## ケースファイルの構成
 

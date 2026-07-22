@@ -1,6 +1,6 @@
 ---
 name: test-run-security
-description: セキュリティテスト（TC-SEC）を Playwright MCP + Bash で OWASP 観点の動的チェックを行う実行スキル。認証・セッション・入力検証・ヘッダ・情報露出を承認済みケースの範囲でのみ確認し中間データを返す。オーケストレータ test の run フェーズから security レベルのケース実行を委譲された時に使用する。ペネトレーション・SCA・SAST の代替ではなく破壊的攻撃は行わない。playwright-test のケースは認証フィクスチャ（storageState）で npx playwright test を実走する経路も持つ（MCP 併存）。
+description: セキュリティテスト（TC-SEC）を Playwright MCP + Bash で OWASP 動的チェックをするスキル。認証・セッション・入力検証・ヘッダを承認範囲で確認し中間データ返す。deep-test の test の run から security 委譲や「セキュリティテストを実行して」「OWASP 観点で動的チェックして」で起動。入力不足なら非実行。ペネトレーション・SCA・SAST やコード静的レビュー（deep-code-review:code-review-security）の代替ではなく破壊的攻撃はしない。Use when doing security checks.
 allowed-tools:
   - Read
   - Grep
@@ -114,7 +114,7 @@ flowchart TD
 
 - 破壊的攻撃・承認範囲外の操作は実行しない。禁止操作に該当する検証は実施せず、その旨を actual / reason に記録する（`references/security-execution.md` の実行してよい操作/禁止操作の境界）
 - ケースタイムアウト（既定 120 秒）超過は当該ケースを blocked + reason で記録し次ケースへ進む
-- `automation: playwright-test` のケースは、fixtures.yaml の認証フィクスチャ（storageState）で認証済み/未認証を切替え `npx playwright test` で実走する。手順・エビデンス化・SKIPPED 判定は `${CLAUDE_SKILL_DIR}/references/security-execution.md` 7 章（playwright-test 実走経路）に従う（既存 MCP・`curl`・manual-assist 経路と併存し置き換えない・非破壊の範囲は不変）
+- `automation: playwright-test` のケースは `npx playwright test` で実走する（手順・エビデンス化・SKIPPED 判定は `${CLAUDE_SKILL_DIR}/references/security-execution.md` 7 章）。既存 MCP・`curl`・manual-assist 経路と併存・置き換えない・非破壊の範囲は不変
 
 ## 検証（チェックリスト）
 
@@ -154,8 +154,8 @@ flowchart TD
 
 | 参照先 | 内容 |
 |-------|------|
-| `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス（実行時の共通規範一式はここから到達する） |
+| `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス |
 | `${CLAUDE_SKILL_DIR}/references/security-execution.md` | 観点別チェック手順・確認コマンド例・マスキング手順・実行してよい操作/禁止操作の境界・達成チェックリスト・playwright-test 実走経路（本スキル固有） |
 | `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | `npx playwright test` + fixtures.yaml（認証フィクスチャ storageState）の実行規約（`automation: playwright-test` 経路。既定の MCP 経路と併存） |
 
-> **正本ツールリストとの同期（同期義務）**: frontmatter の allowed-tools に列挙した `mcp__playwright__browser_*` ツールは、`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 5 章（正本ツールリスト）から同期している。正本リストの改訂時は本スキルの frontmatter へ必ず反映すること。Playwright MCP が `playwright` 以外の名前で登録されている場合のプレフィクス読み替えは同 2 章に従う。
+> **正本ツールリストとの同期（同期義務）**: frontmatter の `mcp__playwright__browser_*` は正本リスト（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 5 章）の改訂時に必ず frontmatter へ反映する。`playwright` 以外の登録名でのプレフィクス読み替えは同 2 章に従う。

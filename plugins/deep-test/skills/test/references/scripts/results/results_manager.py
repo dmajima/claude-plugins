@@ -12,7 +12,7 @@ summary）の区別は、呼び出すサブコマンドの制約によって担�
 - スキーマの SSOT: <plugin>/references/yaml-schema.md
 - 再テスト対象判定マトリクスの SSOT: <plugin>/references/retest-policy.md
 - 中間結果フォーマット（record の JSON 入力）の SSOT: <plugin>/references/execution-policy.md 4 章
-- テストレベル定数の SSOT: <plugin>/references/scripts/lib/levels.py（散文は references/test-levels.md）
+- テストレベル定数の SSOT: <plugin>/references/scripts/common/levels.py（散文は references/test-levels.md）
 
 サブコマンド:
   init        {base}/{target}/ を初期化（test-results.yaml 骨格・evidence/ 生成）
@@ -66,15 +66,15 @@ except ImportError:
     )
     sys.exit(1)
 
-# テストレベル定数の共有モジュール（<plugin>/references/scripts/lib/levels.py）を import する。
+# テストレベル定数の共有モジュール（<plugin>/references/scripts/common/levels.py）を import する。
 # 本ファイル（skills/test/references/scripts/results/）からプラグインルート直下の
-# references/scripts/lib/ までの相対深度は 5 階層（../ を 5 個）。
+# references/scripts/common/ までの相対深度は 5 階層（../ を 5 個）。
 sys.path.insert(
     0,
     os.path.normpath(
         os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "..", "..", "..", "..", "..", "references", "scripts", "lib",
+            "..", "..", "..", "..", "..", "references", "scripts", "common",
         )
     ),
 )

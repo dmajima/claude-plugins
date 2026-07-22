@@ -27,7 +27,7 @@ memory_scope: project
 - 監査は入力された validate 結果・実ファイルパス一覧と、Read / Glob による実ファイル確認を根拠とする。確認できなかったファイルを「実在する」と見なさない
 - 機微情報を発見した場合、**発見報告に生の値を転記しない**（位置・種別・マスク要否のみを報告する）
 - 実績・エビデンス・報告書の修正・書き込みは行わない（読み取り専用の監査。差し戻し対応は起動元フローが行う）
-- 共通注入事項（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` の共通規範）を遵守する: 信頼度 0〜100 付与 / 未確認を「問題なし」と書かない / severity・エビデンス要件は各 SSOT 準拠
+- 共通注入事項（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` 4.3 章）を遵守する（未確認を「問題なし」と書かない）
 
 ## 評価観点
 
@@ -100,10 +100,8 @@ memory_scope: project
 - ${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md（3 点セット・reason 必須・命名/配置規約・マスク形式/対象/タイミング・pass エビデンス要件）
 
 ## 共通規範（必須遵守）
-- 各指摘・評価には信頼度 0〜100 を付与すること
 - 未実施・未確認の項目を「問題なし」と書かないこと。未確認は「未確認」と明記する
-- 欠陥重要度（severity）は ${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md の基準でのみ判定すること
-- エビデンス・再現手順・検証データの要件は ${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md に準拠すること
+- 信頼度 0〜100 の付与・severity 判定・エビデンス要件を含む共通注入事項は ${CLAUDE_PLUGIN_ROOT}/references/agents.md 4.3 章に従う
 
 ## チェック項目
 - fail 全件の 3 点セット完全性（再現手順の要素・検証データの 3 値を含む）

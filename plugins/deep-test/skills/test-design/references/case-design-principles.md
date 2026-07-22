@@ -1,7 +1,7 @@
 # ケース設計原則
 
 `test-design` スキルがテストケース（test-cases.yaml の cases[]）を設計する際の原則集。
-フィールド定義・enum 値は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md`（共通規約は同 `yaml-schema.md`）、レベル定義・確認観点は同 `test-levels.md` が SSOT であり、本書は「それらをどうケースに落とすか」の設計知識のみを定義する。
+フィールド定義・enum 値は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md`（共通規約は同 `yaml-schema.md`）、レベル定義・確認観点は同 `test-levels.md` が SSOT。本書は「それらをどうケースに落とすか」の設計知識のみ定義する。
 
 ---
 
@@ -11,9 +11,9 @@
 |------|------|
 | ユーザー目線シナリオ重視 | 実際の利用者の操作列・業務の文脈でケースを組む。内部実装の都合ではなく「ユーザーが何をして何を得るか」を title / steps / expected に表す |
 | 実行可能性優先 | `automation: playwright` のケースは 3 章の実行可能性基準を満たす具体度で書く。満たせないケースは automation を見直す |
-| 正常系だけで終わらせない | 各機能に対し正常系・境界値・異常系をセットで検討する（2 章の技法を適用） |
-| requirement トレーサビリティ | 全ケースの `requirement` に要件 ID・仕様書の節番号等の参照を設定する（網羅性レビューの突合先になる） |
-| 順序非依存とデータ分離 | どの順で実行しても同じ結果になるよう preconditions で前提を自己完結させ、postconditions で復元する（`execution-policy.md` 5 章）。依存が不可避な場合のみ depends_on を設定する |
+| 正常系だけで終わらせない | 各機能に対し正常系・境界値・異常系をセットで検討（2 章の技法を適用） |
+| requirement トレーサビリティ | 全ケースの `requirement` に要件 ID・仕様書の節番号等の参照を設定（網羅性レビューの突合先になる） |
+| 順序非依存とデータ分離 | どの順で実行しても同じ結果になるよう preconditions で前提を自己完結させ、postconditions で復元する（`execution-policy.md` 5 章）。依存が不可避な場合のみ depends_on を設定 |
 | 1 ケース 1 検証意図 | 1 つのケースで複数の独立した検証をしない（fail 時の切り分けを容易にする） |
 
 ## 2. 設計技法
@@ -58,14 +58,14 @@ expected には「エラーが出る」ではなく**どのエラーがどこに
 | 5 | steps は環境非依存の表現とし、環境固有値（URL・アカウント）は preconditions / data 側で宣言する（yaml-schema-cases.md 2 章の steps 規約） | 手順の再利用性と再現手順への転用性を保つ |
 | 6 | 操作対象が画面から特定できる表現である（ラベル・見出し・ボタン名で指す。内部 ID・実装詳細で指さない） | 良: 「登録ボタンを押下する」 |
 
-- 基準を満たせない確認（主観評価・物理操作・外部システムの直接確認）は `automation: manual-assist` を設定する（非対話実行時は skipped となる。`execution-policy.md` 9 章）
-- API を直接検証するケース（画面を介さない外部 IF 検証等）は `automation: api` を設定する
+- 基準を満たせない確認（主観評価・物理操作・外部システムの直接確認）は `automation: manual-assist` を設定（非対話実行時は skipped となる。`execution-policy.md` 9 章）
+- API を直接検証するケース（画面を介さない外部 IF 検証等）は `automation: api` を設定
 
 ### 3.1 playwright-test（fixture 前提の再現可能ケース）の設計原則
 
 `fixtures.yaml`（Phase 1.6 の `test-fixture` が生成・SSOT は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md`）が存在する場合、再現可能な自動テスト基盤（`.spec.ts` + フィクスチャ）に載せるケースは `automation: playwright-test` を選ぶ。
 
-- **fixture 前提と使用フィクスチャの明示**: 使用するフィクスチャを `cases[].fixtures` に列挙する（値は `fixtures.yaml` の `fixtures[].name` に実在するもの。捏造しない）。認証済み page・モック済み外部依存・シード済みデータ等の前提はフィクスチャで供給し、再ログイン等の手順を steps に重複させない
+- **fixture 前提と使用フィクスチャの明示**: 使用するフィクスチャを `cases[].fixtures` に列挙（値は `fixtures.yaml` の `fixtures[].name` に実在するもの。捏造しない）。認証済み page・モック済み外部依存・シード済みデータ等の前提はフィクスチャで供給し、再ログイン等の手順を steps に重複させない
 - **playwright-test と playwright の使い分け**: 再現可能基盤（コード化・反復実行可能）に載せるケースは `playwright-test`、その場操作で探索的に確認するケースは従来どおり `playwright`（探索的 MCP）とする。`fixtures.yaml` 非存在・fixture 基盤がないケースは `playwright` を既定にする（既定の探索的フローを崩さない）
 - **実行可能性基準は共通**: steps / expected は 3 章の基準（具体的操作・機械判定可能な expected・条件待機）を満たす。必要なフィクスチャが未整備なら `playwright`（探索的）に落とすか、fixture 基盤の整備（Phase 1.6）を前提として記す
 
@@ -73,11 +73,11 @@ expected には「エラーが出る」ではなく**どのエラーがどこに
 
 | 項目 | 原則 |
 |------|------|
-| data の書き方 | **入力値と期待値**を対で明記する（fail 時の defect.test_data の基礎。`evidence-policy.md` 1 章）。境界値ケースは境界値そのものを data に書く |
-| preconditions | 必要なマスタ・アカウント・初期状態・投入データを宣言する。「〜が存在すること」の形式で検証可能に書く |
+| data の書き方 | **入力値と期待値**を対で明記（fail 時の defect.test_data の基礎。`evidence-policy.md` 1 章）。境界値ケースは境界値そのものを data に書く |
+| preconditions | 必要なマスタ・アカウント・初期状態・投入データを宣言。「〜が存在すること」の形式で検証可能に書く |
 | postconditions | preconditions・steps で作成 / 変更した状態の復元手順を書く（共有環境の汚染防止。`execution-policy.md` 5 章） |
 | 機微情報 | パスワード・トークン・個人情報の実値を書かない。「環境設定の有効値を使用」「テスト用アカウント（格納場所）」の形式で取得方法を書く（`evidence-policy.md` 5 章） |
-| 破壊的操作 | データ削除・更新・外部送信を含むケースは steps / preconditions にその旨を明示する（実行前の人間承認ゲートの提示対象。`execution-policy.md` 6 章） |
+| 破壊的操作 | データ削除・更新・外部送信を含むケースは steps / preconditions にその旨を明示（実行前の人間承認ゲートの提示対象。`execution-policy.md` 6 章） |
 
 ## 5. レベル別のケース設計観点
 
@@ -89,10 +89,10 @@ expected には「エラーが出る」ではなく**どのエラーがどこに
 | `functional` | 1 画面・1 機能単位。入力バリデーションは 2 章の境界値・同値分割を適用。エラーメッセージの文言・表示位置まで expected に書く |
 | `integration-internal` | 「登録 → 参照」「更新 → 反映」の**対**でデータ整合を突合するケースを組む。画面遷移時のパラメータ引き継ぎ・状態遷移を明示的に確認点へ入れる |
 | `integration-external` | 正常応答・異常応答・タイムアウトの 3 系統を揃える。スタブ実行の可能性があるケースは、検証目的（自システム側処理か疎通そのものか）を title / requirement で判別できるよう書く（スタブポリシーは test-levels.md 5 章） |
-| `system` | 業務シナリオ 1 本を 1 ケースとし、シナリオの開始条件・完遂条件を明確化する。代替フロー・例外フローは別ケースに分ける |
+| `system` | 業務シナリオ 1 本を 1 ケースとし、シナリオの開始条件・完遂条件を明確化。代替フロー・例外フローは別ケースに分ける |
 | `uat` | 受入基準を requirement に 1:1 で対応付ける。業務担当者の実利用手順・帳票 / 出力物の確認を含める。受入判断の代替ではない位置付け（test-levels.md 6 章）を踏まえ、判断材料が揃う expected にする |
-| `performance` | 計測対象操作と**閾値**を data に定義する（実行時に extras.threshold と対応。`yaml-schema-results.md` 4 章）。計測条件（キャッシュ・並行の前提）を preconditions に宣言する。多重負荷ケースは外部ツール検出時のみ実行される前提を踏まえ、単一セッション計測ケースと分けて設計する（test-levels.md 7 章） |
-| `security` | OWASP 観点（認証・セッション・入力検証・ヘッダ・情報露出）ごとにケースを分割し、extras.owasp_category を記録できる粒度にする。テスト環境限定・攻撃的操作の範囲をステップで明示する（スコープ境界は test-levels.md 8 章） |
+| `performance` | 計測対象操作と**閾値**を data に定義（実行時に extras.threshold と対応。`yaml-schema-results.md` 4 章）。計測条件（キャッシュ・並行の前提）を preconditions に宣言。多重負荷ケースは外部ツール検出時のみ実行される前提を踏まえ、単一セッション計測ケースと分けて設計する（test-levels.md 7 章） |
+| `security` | OWASP 観点（認証・セッション・入力検証・ヘッダ・情報露出）ごとにケースを分割し、extras.owasp_category を記録できる粒度にする。テスト環境限定・攻撃的操作の範囲をステップで明示（スコープ境界は test-levels.md 8 章） |
 
 ## 6. priority / depends_on / timeout_sec の付与基準
 
@@ -101,17 +101,17 @@ expected には「エラーが出る」ではなく**どのエラーがどこに
 | `priority: high` | 主要業務・要件必須・欠陥時の影響が大きい機能。pass 時もエビデンス必須になる（`evidence-policy.md` 6 章） |
 | `priority: medium` | 通常機能・準主要な異常系 |
 | `priority: low` | 補助機能・表示系の軽微な確認 |
-| `depends_on` | 真に前提となるケースのみ設定する（例: ログイン成立が前提の画面ケース）。深い依存チェーン（3 段以上）は設計を見直す。依存なしは `[]` |
-| `timeout_sec` | 既定 120 を基本とし、長時間処理（バッチ・大量データ・帳票生成）のみ根拠とともに上書きする（`execution-policy.md` 8 章） |
+| `depends_on` | 真に前提となるケースのみ設定（例: ログイン成立が前提の画面ケース）。深い依存チェーン（3 段以上）は設計を見直す。依存なしは `[]` |
+| `timeout_sec` | 既定 120 を基本とし、長時間処理（バッチ・大量データ・帳票生成）のみ根拠とともに上書き（`execution-policy.md` 8 章） |
 
 ## 7. アンチパターン
 
 | アンチパターン | 問題 | 是正 |
 |--------------|------|------|
-| expected が「正しく動作する」「問題ないこと」 | 機械判定不能・レビュー不能 | 表示・遷移・データ状態を具体化する（3 章基準 2） |
-| 1 ケースに複数の独立した検証を詰め込む | fail 時に何が壊れたか判別不能 | 検証意図ごとにケースを分割する |
-| steps に環境固有値（URL・実アカウント）を直書き | 環境が変わると全ケース修正 | preconditions / data へ分離する |
-| 正常系のみでレベルを構成する | 欠陥検出力が低い | 2 章の技法で境界値・異常系を必ず併設する |
+| expected が「正しく動作する」「問題ないこと」 | 機械判定不能・レビュー不能 | 表示・遷移・データ状態を具体化（3 章基準 2） |
+| 1 ケースに複数の独立した検証を詰め込む | fail 時に何が壊れたか判別不能 | 検証意図ごとにケースを分割 |
+| steps に環境固有値（URL・実アカウント）を直書き | 環境が変わると全ケース修正 | preconditions / data へ分離 |
+| 正常系のみでレベルを構成する | 欠陥検出力が低い | 2 章の技法で境界値・異常系を必ず併設 |
 | postconditions なしでデータ作成 | 環境汚染・他ケースへの干渉 | 復元手順を必ず書く |
 | ほぼ全ケースを depends_on で連結 | 1 件の fail で大量 blocked | 順序非依存に再設計し、依存は最小限にする |
 | 削除要求に対する物理削除・ID 再利用 | 過去実績の参照破壊 | deprecated 論理削除のみ（`yaml-schema-cases.md` 3 章） |

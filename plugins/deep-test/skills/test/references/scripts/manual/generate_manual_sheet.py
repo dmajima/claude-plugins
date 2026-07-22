@@ -17,7 +17,7 @@ test-cases.yaml の手動系ケース（automation: manual-assist / exploratory�
 - ケーススキーマの SSOT: <plugin>/references/yaml-schema-cases.md
 - 機微情報マスキング形式の SSOT: <plugin>/references/evidence-policy.md 5 章
   （検出パターン群は test-report の report_model.py と同一。変更時は両方を同期すること）
-- テストレベル表示名の SSOT: <plugin>/references/scripts/lib/levels.py
+- テストレベル表示名の SSOT: <plugin>/references/scripts/common/levels.py
 
 生成物は record による実績記録の代替ではない（本書への記入は実績記録ではない。記入結果は
 deep-test へ回付し record 経由で記録する）。deprecated: true のケースは常に対象外。
@@ -51,15 +51,15 @@ except ImportError:
     )
     sys.exit(1)
 
-# テストレベル表示名の共有モジュール（<plugin>/references/scripts/lib/levels.py）を import する。
+# テストレベル表示名の共有モジュール（<plugin>/references/scripts/common/levels.py）を import する。
 # 本ファイル（skills/test/references/scripts/manual/）からプラグインルート直下の
-# references/scripts/lib/ までの相対深度は 5 階層（../ を 5 個。results_manager.py と同じ）。
+# references/scripts/common/ までの相対深度は 5 階層（../ を 5 個。results_manager.py と同じ）。
 sys.path.insert(
     0,
     os.path.normpath(
         os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "..", "..", "..", "..", "..", "references", "scripts", "lib",
+            "..", "..", "..", "..", "..", "references", "scripts", "common",
         )
     ),
 )

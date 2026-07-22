@@ -44,7 +44,7 @@
 
 `destructive: true` のケースは設計時に破壊的操作を明示し（`steps` / `preconditions` に記載）、人間承認ゲートで件数を機械集計して提示する。本番環境への実行時は scope から除外する（環境安全規約は `execution-policy.md` 1.3・6 章）。
 
-`automation: exploratory`（チャーターベースの人間探索セッション。**1 チャーター = 1 ケース**）では、フィールド構造は不変のまま意味論を次のとおり読み替える: `title` = チャーター名 / `steps` = **探索指針（チャーター文の展開。手順書式ではない）** / `expected` = **発見目標・完了条件** / `data` = 探索に使う検証データ / `requirement` = 対応する要件・リスク領域 / `timeout_sec` = **セッションのタイムボックス（計画時間。超過 = blocked の既存規約は適用しない）**。セッションの進め方・記録・非対話縮退は `manual-execution.md` 参照。なお既存の `automation: playwright`（AI による MCP そのば操作）も探索的と呼ばれるが別概念である（`playwright` = AI 探索・`executed_by: playwright-mcp` / `exploratory` = 人間探索セッション・`executed_by: human-assisted`）。
+`automation: exploratory`（チャーターベースの人間探索セッション。**1 チャーター = 1 ケース**）では、フィールド構造は不変のまま意味論を次のとおり読み替える: `title` = チャーター名 / `steps` = **探索指針（チャーター文の展開。手順書式ではない）** / `expected` = **発見目標・完了条件** / `data` = 探索に使う検証データ / `requirement` = 対応する要件・リスク領域 / `timeout_sec` = **セッションのタイムボックス（計画時間。超過 = blocked の既存規約は適用しない）**。セッションの進め方・記録・非対話縮退は `manual-execution.md` 参照。既存の `automation: playwright`（AI による MCP そのば操作）も探索的と呼ばれるが別概念である（`playwright` = AI 探索・`executed_by: playwright-mcp` / `exploratory` = 人間探索セッション・`executed_by: human-assisted`）。
 
 ## 3. revision・承認・削除の規則
 

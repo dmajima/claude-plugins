@@ -1,6 +1,6 @@
 ---
 name: test-run-scenario
-description: システムテスト（TC-SYS）・受入テスト（TC-UAT）を Playwright MCP の業務シナリオ E2E で実行する実行スキル。ログインから業務操作・結果確認・ログアウトまで通しで実行し中間データを返す。オーケストレータ test の run フェーズから system / uat レベルのケース実行を委譲された時に使用する。UAT の最終受入判断は人間が行う（本スキルは材料を揃える支援）。playwright-test のケースは fixtures.yaml（認証・シード）を前提に npx playwright test を実走する経路も持つ（MCP 併存）。
+description: システムテスト(TC-SYS)・受入テスト(TC-UAT)を Playwright MCP の業務シナリオ E2E で実行。ログインから業務操作・結果確認・ログアウトまで通し実行し中間データ返す。deep-test の test の run から system/uat 実行委譲や「システムテストを実行して」「業務シナリオを通しで検証して」で起動。入力不足なら非実行。UAT の最終受入判断は人間が行う（材料を揃える支援）。Use when running system/UAT E2E. SKIP when component (test-run-functional/integration).
 allowed-tools:
   - Read
   - Grep
@@ -111,7 +111,7 @@ flowchart TD
 - エビデンス取得・移送の手順（raw 出力先からの move）は `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 5 章、収集タイミングは `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 7 章に従う
 - シナリオ途中 fail 時の後続ステップ・依存ケースの扱いは `${CLAUDE_SKILL_DIR}/references/scenario-execution.md` を参照
 - ケースタイムアウト（既定 120 秒）超過は当該ケースを blocked + reason（到達ステップ含む）で記録し次ケースへ進む
-- `automation: playwright-test` のケースは、上記 MCP のその場操作ではなく fixtures.yaml（認証・シードフィクスチャ）+ SUT テストコードを前提に `npx playwright test` で system / uat シナリオを実走する。手順・エビデンス化・SKIPPED 判定は `${CLAUDE_SKILL_DIR}/references/scenario-execution.md` 7 章（playwright-test 実走経路）に従う（既存 MCP・manual-assist 経路と併存し置き換えない）
+- `automation: playwright-test` のケースは fixtures.yaml（認証・シードフィクスチャ）+ SUT テストコードを前提に `npx playwright test` で system / uat シナリオを実走する（手順・エビデンス化・SKIPPED 判定は `${CLAUDE_SKILL_DIR}/references/scenario-execution.md` 7 章）。既存 MCP・manual-assist 経路と併存し置き換えない
 
 ## 検証（チェックリスト）
 
@@ -148,7 +148,7 @@ flowchart TD
 
 | 参照先 | 内容 |
 |-------|------|
-| `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス（実行時の共通規範一式はここから到達する） |
+| `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス |
 | `${CLAUDE_SKILL_DIR}/references/scenario-execution.md` | シナリオ実行手順・途中 fail 時の後続判断・UAT 観点チェックリスト・達成チェックリスト・playwright-test 実走経路（本スキル固有） |
 | `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | `npx playwright test` + fixtures.yaml（認証・シードフィクスチャ）の実行規約（`automation: playwright-test` 経路。既定の MCP 経路と併存） |
 

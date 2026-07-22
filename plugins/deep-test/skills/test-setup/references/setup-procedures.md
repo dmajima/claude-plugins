@@ -1,8 +1,8 @@
 # test-setup 詳細手順（検出・登録・判定・ハンドオフ）
 
-`test-setup` スキルの実行手順の詳細。SKILL.md の実行フローから参照される。
+`test-setup` スキルの実行手順詳細。SKILL.md 実行フローから参照。
 Playwright MCP に関する規範（登録コマンド・検出条件・実判定手順・ハンドオフ文面）の SSOT は
-`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` であり、本書はその適用手順のみを定義する（規範本文は複製しない）。
+`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md`。本書は適用手順のみ定義する（規範本文は複製しない）。
 
 ---
 
@@ -41,14 +41,14 @@ flowchart TD
 | `levels=` 指定あり | `playwright`: レベル別 MCP 要否表（`execution-policy.md` 1.4 章）で必要と判定される場合のみ / `runner`: `unit` を含む場合のみ / `venv`: 常に対象 |
 | いずれも未指定 | 全チェック（playwright + runner + venv） |
 
-- 例: `levels=unit` のみ → playwright チェックは対象外（unit は MCP 不要）。runner と venv をチェックする
+- 例: `levels=unit` のみ → playwright チェックは対象外（unit は MCP 不要）。runner と venv をチェック
 - チェック対象外の項目は、レポートで状態 `not-checked` として明示する（省略しない）
 
 ## 3. Step 2: Playwright MCP チェック
 
 ### 3.1 既存登録の検出
 
-1. `claude mcp list` を実行する
+1. `claude mcp list` を実行
 2. 出力から playwright 系サーバーを特定する。検出条件（登録名が `playwright`、または起動コマンドに Playwright MCP を含む）は `playwright-mcp.md` 2 章に従う
 3. 検出結果ごとの対応:
 
@@ -71,7 +71,7 @@ flowchart TD
 登録を実施する場合:
 
 1. `playwright-mcp.md` 1 章の規約コマンドを**そのまま**実行する（オプションの追加・省略・変更をしない）
-2. `claude mcp list` を再実行し、登録されたことを確認する
+2. `claude mcp list` を再実行し、登録されたことを確認
 3. 結果の記録:
 
 | 結果 | 登録状態 | 備考 |
@@ -83,7 +83,7 @@ flowchart TD
 
 `playwright-mcp.md` 4 章の実判定手順に従う。
 
-1. ToolSearch で `mcp__playwright__` 系ツールを検索する（例: `select:mcp__playwright__browser_snapshot`）。登録名が `playwright` 以外の場合は実プレフィクスに読み替える（同 2 章の注記）
+1. ToolSearch で `mcp__playwright__` 系ツールを検索（例: `select:mcp__playwright__browser_snapshot`）。登録名が `playwright` 以外の場合は実プレフィクスに読み替える（同 2 章の注記）
 2. スキーマが取得できた → `loaded`（利用可）
 3. 1 件もマッチしない → `not-loaded`（未ロード。再起動が必要）
 
@@ -132,9 +132,9 @@ flowchart TD
 
 ### 4.3 手順と状態値
 
-1. 4.2 の構成ファイル群を Glob で探索する（モノレポを考慮しサブディレクトリも対象。`node_modules` / `.venv` / `bin` / `obj` 等の生成物ディレクトリは除外する）
+1. 4.2 の構成ファイル群を Glob で探索（モノレポを考慮しサブディレクトリも対象。`node_modules` / `.venv` / `bin` / `obj` 等の生成物ディレクトリは除外する）
 2. (1) で検出できない場合は (2) を評価する: テストファイル規約を Glob で探索し、該当があれば（(3) の宣言も参考に）ランナー実体を起動確認する
-3. 検出結果を整理する。複数ランナー検出（モノレポ・多言語構成）はすべて列挙する
+3. 検出結果を整理。複数ランナー検出（モノレポ・多言語構成）はすべて列挙する
 
 | 状態 | 意味 |
 |------|------|

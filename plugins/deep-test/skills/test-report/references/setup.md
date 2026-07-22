@@ -5,14 +5,7 @@ venv スクリプト・依存定義はプラグイン共通の `${CLAUDE_PLUGIN_
 
 ## 依存パッケージ
 
-プラグイン共通の `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt` で完全固定する。
-
-| パッケージ | 用途 |
-|-----------|------|
-| PyYAML | 実績 YAML（test-results.yaml / test-cases.yaml）の読み込み |
-| openpyxl | Excel 報告書の全コード生成（テンプレートファイル不使用） |
-
-これ以外は標準ライブラリのみを使用する。
+依存パッケージ（PyYAML / openpyxl）はプラグイン共通の `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt` で完全固定。これ以外は標準ライブラリのみを使用する。
 
 ## スクリプト一覧
 
@@ -23,19 +16,18 @@ venv スクリプト・依存定義はプラグイン共通の `${CLAUDE_PLUGIN_
 
 ## venv 構築（Bash ツール経由）
 
-venv はセッション作業領域の `workspace/.venv` に作成する（配置規約: `.claude/.local/work/{yyyyMMdd_nn_summary}/workspace/.venv`）。
+venv はセッション作業領域の `workspace/.venv`（`.claude/.local/work/{yyyyMMdd_nn_summary}/workspace/.venv`）に作成。同一セッションで構築済み（PyYAML / openpyxl 導入済み）なら再構築せず再利用する。
 
 ```bash
 SESSION_DIR=".claude/.local/work/{yyyyMMdd_nn_summary}"
 bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" "$SESSION_DIR/workspace"
 ```
 
-- 既に同一セッションで venv が構築済み（PyYAML / openpyxl 導入済み）の場合は再構築せず再利用する
-- venv の Python は明示指定で使用する: `$SESSION_DIR/workspace/.venv/Scripts/python.exe`（Windows）/ `$SESSION_DIR/workspace/.venv/bin/python`（Unix）
+- venv の Python は明示指定で使用: `$SESSION_DIR/workspace/.venv/Scripts/python.exe`（Windows）/ `$SESSION_DIR/workspace/.venv/bin/python`（Unix）
 
 ## venv 削除（タスク完了後）
 
-同一セッションで後続タスクが Python を使わない場合のみ削除する。
+後続タスクが Python を使わない場合のみ削除。
 
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/teardown_venv.sh" "$SESSION_DIR/workspace"

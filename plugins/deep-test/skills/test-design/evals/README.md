@@ -15,6 +15,8 @@
 | 06 | case-06_non_interactive_auto_adoption.md | 非対話モード × 既存 slug 1 件（slug とレベル提案を自動採用・採用根拠を明記して設計完遂） | 委譲・非対話 |
 | 07 | case-07_target_unspecified.md | テスト対象（対象説明= / 位置引数）が完全未指定 × 対話（AskUserQuestion で確認。target-slug 解決の case-05/06 とは別軸） | 委譲・単独 |
 | 08 | case-08_target_unspecified_non_interactive.md | テスト対象が完全未指定 × 非対話（AskUserQuestion 不可でエラー中断・明示指定を案内。case-07 の対） | 委譲・単独 |
+| 09 | case-09_target_slug_existing_interactive.md | 対話 × 既存 target-slug 1 件以上 → AskUserQuestion で既存一覧+新規作成を提示し選択で分岐（非対話 case-05/06 の対話版。test-analyze case-14 の様式） | 単独・対話 |
+| 10 | case-10_target_slug_zero_non_interactive.md | 非対話 × 既存 target-slug 0 件 → 対象名から kebab-case 自動生成（サブA）/ 特定不可はエラー中断（サブB・捏造回避。test-analyze case-13 の様式） | 委譲・非対話 |
 
 ## ケースファイルの構成
 
@@ -32,5 +34,5 @@
 
 本スキルの evals は「委譲（オーケストレータ `test` 経由）/ 単独」と「対話 / 非対話」の 2 軸で分岐を検証する。
 委譲時は target-slug 等が引数で確定済みのため確認が減り、単独時は本スキル自身が target-slug 解決（data-locations.md 4 章）を行う。
-入力欠落の分岐は 2 種を区別する: **target-slug 解決**（どの既存テストデータ領域を使うか。case-05 / 06、data-locations.md 4.2 章）と、**テスト対象の不在**（何をテスト対象とするか＝対象説明の不在。対話 = case-07 / 非対話 = case-08、design-procedures.md 2 章）。
+入力欠落の分岐は 2 種を区別する: **target-slug 解決**（どの既存テストデータ領域を使うか。非対話の複数 = case-05 / 1 件 = case-06 / 0 件 = case-10、対話の既存選択 = case-09、data-locations.md 4.2 章）と、**テスト対象の不在**（何をテスト対象とするか＝対象説明の不在。対話 = case-07 / 非対話 = case-08、design-procedures.md 2 章）。
 どの分岐でも共通する不変条件: 生成・変更したケースは常に `review_status: draft`、test-architect の自己チェックを経てから返却、test-results.yaml へは書き込まない。

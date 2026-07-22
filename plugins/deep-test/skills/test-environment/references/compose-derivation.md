@@ -1,10 +1,10 @@
 <!-- TEST-ENVIRONMENT-DERIVATION-SENTINEL-v1 -->
 # compose 派生パターン集（ports !override・volume・network・profiles・.env.test・本番誤爆突合）
 
-`test-environment` が生成する派生成果物（`environment/compose.test.yml` / `environment/.env.test`）の実装パターン。SKILL.md・`environment-procedures.md` 6 章から参照される。
-スキーマ・コマンド規約形の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md`（特に 10.1）であり、本書はその**派生ファイル側の書き方**を補完する（規範本文は複製しない）。
+`test-environment` が生成する派生成果物（`environment/compose.test.yml` / `environment/.env.test`）の実装パターン。SKILL.md・`environment-procedures.md` 6 章から参照。
+スキーマ・コマンド規約形の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md`（特に 10.1）。本書はその**派生ファイル側の書き方**を補完する（規範本文は複製しない）。
 
-- 各例は**最小の骨子**であり、SUT の compose 構成（`analysis.yaml` の `build_run` / `external_dependencies`）に合わせて調整する
+- 各例は**最小の骨子**であり、SUT の compose 構成（`analysis.yaml` の `build_run` / `external_dependencies`）に合わせて調整
 - 派生ファイルは deep-test データ領域（`{base}/{target-slug}/environment/`）に置き、SUT の既存 docker 資産は一切変更しない（read-only 境界）
 - 全ファイルを明示 `-f` で渡す（SUT 内に `compose.override.y*ml` があっても、明示 `-f` 指定時は自動読込されないため混入しない）
 - コマンド規約形（共通プレフィクス）: `docker compose -f <SUT compose> -f environment/compose.test.yml -p {slug}-test --env-file environment/.env.test <verb>`
@@ -25,7 +25,7 @@ services:
 
 - `127.0.0.1:HOST:CONTAINER` の short syntax で **ループバック限定公開**にする（`0.0.0.0` バインド禁止）
 - HOST ポートは開発側と重ならない番号（例: 8080 → 18080）を選ぶ。テスト実行中に開発環境が並走しても衝突しない
-- `!override` タグの受理可否は環境の compose 版数に依存し得るため、`config --quiet`（procedures 6 章）で必ず静的検証する
+- `!override` タグの受理可否は環境の compose 版数に依存し得るため、`config --quiet`（procedures 6 章）で必ず静的検証
 - 参考: `!reset` は属性の削除（空化）、`!override` は置換。ports の付替は `!override` を使う
 
 ## 2. volume の分離（bind mount の `ro` 化 / named volume 再定義）
@@ -58,7 +58,7 @@ volumes:
 
 ## 4. profiles によるモック系サービスの切替
 
-コアサービスは profiles 無印（常時有効）、モック / スタブ系サービスを profiles 配下に定義し、派生時に選択的に有効化する。
+コアサービスは profiles 無印（常時有効）、モック / スタブ系サービスを profiles 配下に定義し、派生時に選択的に有効化。
 
 ```yaml
 # environment/compose.test.yml（抜粋）
@@ -71,7 +71,7 @@ services:
 ```
 
 - 有効化する profiles は environment.yaml の `project.profiles`（例: `["mock"]`）に記録し、up 時に `--profile` / `COMPOSE_PROFILES` で有効化する
-- モック対象は `analysis.yaml` の `external_dependencies[]` から選定する（本番誤爆疑義のある外部依存を優先的にモックへ差し替える）
+- モック対象は `analysis.yaml` の `external_dependencies[]` から選定（本番誤爆疑義のある外部依存を優先的にモックへ差し替える）
 - SUT 側アプリの接続先切替は `.env.test` の環境変数（5 章）で行う（SUT のソース・compose は変更しない）
 
 ## 5. `.env.test` の書き方（ダミー値 / credentials-manager 参照形）
@@ -92,7 +92,7 @@ EXTERNAL_API_URL=http://127.0.0.1:18081   # モックへ差替（profiles: mock 
 ```
 
 - 実在の認証情報・トークン・パスワードのフル値を書かない（credentials-management ルール MANDATORY。実値の管理は credentials-manager の責務）
-- 変数名の網羅は `config --quiet` の警告（未定義変数）で確認する（値を stdout に展開しないこと）
+- 変数名の網羅は `config --quiet` の警告（未定義変数）で確認（値を stdout に展開しないこと）
 - `--env-file environment/.env.test` の明示指定で既定 `.env` の読込位置を差し替える（interpolation〔`${VAR}`〕の解決元の差替）
 - **【必須の区別】CLI の `--env-file` は interpolation 用であり、サービス定義の `env_file:` 属性によるコンテナへの読込は無効化しない**。SUT compose がサービスに `env_file: .env` を直指定している場合、`--env-file` 差替だけでは SUT の `.env` の実値（本番接続先・秘匿値）がテストコンテナへ読み込まれる。派生 compose で必ず遮断する:
 
@@ -110,7 +110,7 @@ services:
 
 ## 6. 本番誤爆突合の手順
 
-派生環境から**本番資源へ誤接続しない**ことを config 検証前に確認する。
+派生環境から**本番資源へ誤接続しない**ことを config 検証前に確認。
 
 1. `analysis.yaml` の `dependency_summary.external_dependencies[]` から外部接続（API・DB・メール・キュー等）の一覧を得る
 2. SUT compose の interpolation 変数名・`.env.test` に書いた URL / ホスト名と突合し、**本番らしき接続先**（本番ドメイン・SaaS 実 URL・社内本番 DB ホスト等）がコンテナへ渡る疑義を洗い出す
@@ -120,7 +120,7 @@ services:
    - **env_file 遮断**: SUT がサービスに `env_file:` を直指定している場合は派生側で `env_file: !reset []` + `environment:` 注入（5 章の遮断パターン）により SUT `.env` の実値到達そのものを断つ
    - **明示確認（対話時）**: 差替できない・判断がつかない接続はユーザーへ AskUserQuestion で確認する
    - **非対話時**: ダミー値 / モックへ差替する。差替不能な疑義が残る場合は up へ進まず理由を返す（安全側。`execution-policy.md` 6 章の本番既定禁止に整合）
-4. 突合の結果（差替した接続・残した接続と根拠）を environment.yaml の `services[].overrides` / `status.notes` に記録する
+4. 突合の結果（差替した接続・残した接続と根拠）を environment.yaml の `services[].overrides` / `status.notes` に記録
 
 ## 7. 相対パス解決の基準（最初の `-f`）
 

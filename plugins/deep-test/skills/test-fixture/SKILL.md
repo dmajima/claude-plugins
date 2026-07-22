@@ -1,6 +1,6 @@
 ---
 name: test-fixture
-description: Playwright フィクスチャ基盤（認証 storageState・API モック・シード・base）を作成・拡充する Phase 1.6 のフェーズスキル。test-analyze の後・test-design の前に位置し、analysis.yaml を消費し fixtures.yaml と SUT テストコードを生成。責務外=ケース設計(test-design)・テスト実行(test-run-*)・ツールチェーン検証(test-setup)。test 委譲時や「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」と依頼された時に使用。
+description: Playwright フィクスチャ基盤（storageState・API モック・シード・base）を作成・拡充する Phase 1.6 スキル。analysis.yaml を消費し fixtures.yaml と SUT テストコードを生成。責務外=ケース設計(test-design)・テスト実行(test-run-*)・ツールチェーン検証(test-setup)。test 委譲時や「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」と依頼時に使用。Use when building deep-test fixtures.
 allowed-tools:
   - Read
   - Grep
@@ -16,23 +16,21 @@ allowed-tools:
 
 # test-fixture スキル
 
-Playwright フィクスチャ基盤（認証 storageState・API モック・シード・base フィクスチャ）を作成・拡充する Phase 1.6 のフェーズスキル。
-`test-analyze` が生成した `analysis.yaml` を材料に、再現可能テスト（`.spec.ts` + フィクスチャ）の**下地**を用意する。生成物は SUT のテストコードと、機械可読の `fixtures.yaml`（`test-design` が Phase 2 で消費）である。
-**ケースの定義・実行・記録には関与しない**（材料を受け取り、下地を産出して止まるのが本スキルの境界）。
+Playwright フィクスチャ基盤（認証 storageState・API モック・シード・base）を作成・拡充する Phase 1.6 フェーズスキル。`test-analyze` の `analysis.yaml` を材料に、再現可能テスト（`.spec.ts` + フィクスチャ）の**下地**を用意する。生成物は SUT のテストコードと機械可読 `fixtures.yaml`（`test-design` が Phase 2 で消費）。**ケースの定義・実行・記録には関与しない**（材料を受け取り下地を産出して止まるのが境界）。
 
 ## 責務
 
 | # | 責務 | 概要 |
 |---|------|------|
-| 1 | フィクスチャ要否の判定 | `analysis.yaml`（target_type・認証 EP・外部依存）から再現可能 Playwright Test 基盤が有効かを判定する。不要（unit のみ / 非 web / 認証も外部依存もなし）なら空マニフェストで no-op を返す |
-| 2 | 既存基盤の検出 | SUT の `playwright.config.ts` / `{tests}/fixtures/` / `auth.setup.ts` / storageState を Read/Glob/Grep で検出し、新規作成か拡充かを分岐する |
-| 3 | 認証フィクスチャ | `auth.setup.ts`（ログイン → storageState 保存）と config の projects で storageState を再利用する構成を生成する。認証情報は実値を書かず取得方法のみ記述する |
-| 4 | モックフィクスチャ | 外部 API/決済/メール等を `route.fulfill` / network interception で差し替える `test.extend` を生成する |
-| 5 | シードデータ | テスト前提データの投入・クリーンアップ（globalSetup / seed スクリプト）を生成する |
-| 6 | ベースフィクスチャ | `test.extend()` によるカスタムフィクスチャ（認証済み page・モック済み context 等）を生成する |
-| 7 | 既存基盤の拡充 | 既存 config/fixtures を壊さず不足分（未カバー認証パターン・未モック外部依存）を非破壊で追加する |
-| 8 | fixtures.yaml マニフェスト出力 | 作成・拡充したフィクスチャ一覧（種別・名前・提供内容・artifact パス・status）を `{base}/{target-slug}/fixtures.yaml` に出力する |
-| 9 | 自己チェック | `fixture-architect` エージェントで設計の妥当性・再利用性・分離・書き込み境界・認証情報ハードコードを単独レビューし、重大指摘を反映してから返却する |
+| 1 | フィクスチャ要否の判定 | `analysis.yaml`（target_type・認証 EP・外部依存）から再現可能 Playwright Test 基盤が有効かを判定。不要（unit のみ / 非 web / 認証も外部依存もなし）なら空マニフェストで no-op を返す |
+| 2 | 既存基盤の検出 | SUT の `playwright.config.ts` / `{tests}/fixtures/` / `auth.setup.ts` / storageState を Read/Glob/Grep で検出し、新規作成か拡充かを分岐 |
+| 3 | 認証フィクスチャ | `auth.setup.ts`（ログイン → storageState 保存）と config の projects で storageState を再利用する構成を生成。認証情報は実値を書かず取得方法のみ記述する |
+| 4 | モックフィクスチャ | 外部 API/決済/メール等を `route.fulfill` / network interception で差し替える `test.extend` を生成 |
+| 5 | シードデータ | テスト前提データの投入・クリーンアップ（globalSetup / seed スクリプト）を生成 |
+| 6 | ベースフィクスチャ | `test.extend()` によるカスタムフィクスチャ（認証済み page・モック済み context 等）を生成 |
+| 7 | 既存基盤の拡充 | 既存 config/fixtures を壊さず不足分（未カバー認証パターン・未モック外部依存）を非破壊で追加 |
+| 8 | fixtures.yaml マニフェスト出力 | 作成・拡充したフィクスチャ一覧（種別・名前・提供内容・artifact パス・status）を `{base}/{target-slug}/fixtures.yaml` に出力 |
+| 9 | 自己チェック | `fixture-architect` エージェントで設計の妥当性・再利用性・分離・書き込み境界・認証情報ハードコードを単独レビューし、重大指摘を反映してから返却 |
 
 ## 責務外（他スキルが担当）
 
@@ -47,23 +45,23 @@ Playwright フィクスチャ基盤（認証 storageState・API モック・シ�
 
 ## トリガー条件
 
-起動するケース:
+起動する:
 
-- オーケストレータ `test` から Skill ツール経由で委譲された場合（フルフローの Phase 1.6・fixture 有効判定時）
-- 「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」「テストの下地を拡充して」と依頼された場合
+- オーケストレータ `test` から Skill ツール経由で委譲（フルフローの Phase 1.6・fixture 有効判定時）
+- 「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」「テストの下地を拡充して」と依頼された
 
-起動しないケース:
+起動しない:
 
-- テストケース・テスト計画の設計を求められた場合（`test-design` の責務）
-- テストの実行・カバレッジ実測を求められた場合（`test-run-*` の責務）
-- Playwright MCP 登録・ランナー検出等の環境構築を求められた場合（`test-setup` の責務）
-- 対象アプリの一次解析（analysis.yaml 生成）を求められた場合（`test-analyze` の責務）
+- テストケース・テスト計画の設計を求められた（`test-design` の責務）
+- テストの実行・カバレッジ実測を求められた（`test-run-*` の責務）
+- Playwright MCP 登録・ランナー検出等の環境構築を求められた（`test-setup` の責務）
+- 対象アプリの一次解析（analysis.yaml 生成）を求められた（`test-analyze` の責務）
 
 ## 前提
 
-- `${CLAUDE_PLUGIN_ROOT}/references/` の共通規範（playwright-test.md / yaml-schema-analysis.md / data-locations.md / agents.md）が存在すること
-- `fixture-architect` エージェント定義がプラグインルート `agents/` に存在すること
-- `analysis.yaml`（`test-analyze` 生成）が存在すれば材料に消費する。無ければ Read/Glob/Grep で軽量補完する（3.2）
+- `${CLAUDE_PLUGIN_ROOT}/references/` の共通規範（playwright-test.md / yaml-schema-analysis.md / data-locations.md / agents.md）が存在する
+- `fixture-architect` エージェント定義がプラグインルート `agents/` に存在する
+- `analysis.yaml`（`test-analyze` 生成）が存在すれば材料に消費。無ければ Read/Glob/Grep で軽量補完する（3.2）
 - テスト用接続情報（ホスト・公開ポート）は `test-environment`（Phase 1.7）の `environment.yaml` から env var 名で受領できる（Phase 1.7 以降。seed / globalSetup は実値をハードコードせず env var 参照で書く）
 
 受け取る引数:
@@ -82,33 +80,33 @@ Playwright フィクスチャ基盤（認証 storageState・API モック・シ�
 
 | 判定条件 | モード | 動作 |
 |---------|-------|------|
-| 引数に `--non-interactive` を含む（委譲時はオーケストレータが付与） | 非対話 | 曖昧確認をせず進行する。target-slug は `data-locations.md` 4.2 章の非対話規則（唯一の既存 slug 採用・複数はエラー中断）に従う。`.gitignore` 追記は提案に留める |
-| 上記以外 | 対話 | 不足情報（target-slug・対象・`.gitignore` 追記可否）をユーザーに確認する。委譲時は target-slug / base / project 受領済みのため確認は不要 |
+| 引数に `--non-interactive` を含む（委譲時はオーケストレータが付与） | 非対話 | 曖昧確認せず進行。target-slug は `data-locations.md` 4.2 章の非対話規則（唯一の既存 slug 採用・複数はエラー中断）に従う。`.gitignore` 追記は提案に留める |
+| 上記以外 | 対話 | 不足情報（target-slug・対象・`.gitignore` 追記可否）をユーザーに確認。委譲時は target-slug / base / project 受領済みのため確認は不要 |
 
 ## 実行フロー
 
 詳細手順は `${CLAUDE_SKILL_DIR}/references/fixture-procedures.md`、パターン集は `${CLAUDE_SKILL_DIR}/references/fixture-patterns.md`、エージェント運用は `${CLAUDE_SKILL_DIR}/references/agents.md` に従う。本スキルは deep-test ライフサイクルの **Phase 1.6**（`test-analyze` の後・`test-design` の前）に位置する。
 
 ### 1. 入力解決・target-slug 確定
-引数を解釈し、`project=` と target-slug を確定する（委譲時は受領値、単独時は解決フロー）。`{base}/{target-slug}/analysis.yaml` の存在を Read で確認する。
+引数を解釈し `project=` と target-slug を確定（委譲時は受領値、単独時は解決フロー）。`{base}/{target-slug}/analysis.yaml` の存在を Read で確認。
 
 ### 2. analysis.yaml 消費（材料受領）
 存在時は `entry_points`（auth）→ 認証、`dependency_summary.external_dependencies` → モック、`attack_surface_summary` → 認証切替、`meta.target_type` → 要否判定の材料に用いる。非存在時は 3.2 の軽量補完（`analysis_consumed: false`・confidence を下げる）。
 
 ### 3. 要否判定（no-op 分岐）
-非 web / unit のみ / 認証も外部依存もなしと判断したら、SUT に何も書かず **空の fixtures.yaml（`fixtures: []`）+ 理由** を出力して正常終了する（非破壊 no-op）。
+非 web / unit のみ / 認証も外部依存もなしと判断したら、SUT に何も書かず **空の fixtures.yaml（`fixtures: []`）+ 理由** を出力し正常終了（非破壊 no-op）。
 
 ### 4. 既存基盤の検出
-`project=` を起点に `playwright.config.ts` / `{tests}/fixtures/` / `auth.setup.ts` / storageState を Glob/Grep で検出し、新規作成（無）か拡充（有）かを分岐する。
+`project=` を起点に `playwright.config.ts` / `{tests}/fixtures/` / `auth.setup.ts` / storageState を Glob/Grep で検出し、新規作成（無）か拡充（有）かを分岐。
 
 ### 5. 生成 or 拡充
-`fixture-patterns.md` に従い、認証 / モック / シード / base のフィクスチャと config を生成（無）または非破壊で不足分を追加（有）する。書き込みは **SUT のテストディレクトリのみ**。
+`fixture-patterns.md` に従い、認証 / モック / シード / base のフィクスチャと config を生成（無）または非破壊で不足分を追加（有）。書き込みは **SUT のテストディレクトリのみ**。
 
 ### 6. fixtures.yaml マニフェスト出力
-作成・拡充結果を `{base}/{target-slug}/fixtures.yaml`（`playwright-test.md` スキーマ）に Write する。`status`（created/extended/existing）でトレースする。
+作成・拡充結果を `{base}/{target-slug}/fixtures.yaml`（`playwright-test.md` スキーマ）に Write。`status`（created/extended/existing）でトレースする。
 
 ### 7. 自己チェック
-`fixture-architect` エージェントを単独起動し、設計の妥当性・再利用性・分離・書き込み境界・認証情報ハードコードをレビューさせる。重大指摘を反映する（反映は本スキルが行い、エージェントには修正させない）。
+`fixture-architect` エージェントを単独起動し、設計の妥当性・再利用性・分離・書き込み境界・認証情報ハードコードをレビューさせる。重大指摘を反映（反映は本スキルが行い、エージェントには修正させない）。
 
 ## 検証
 

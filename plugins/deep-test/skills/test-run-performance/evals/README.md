@@ -17,6 +17,7 @@
 | 08 | case-08_manual_assist.md | automation: manual-assist × 対話（人手確認・executed_by: human-assisted で記録） |
 | 09 | case-09_manual_assist_non_interactive.md | automation: manual-assist × 非対話（skipped + reason で返却。case-08 の対） |
 | 10 | case-10_endpoints_base_url.md | environment.yaml の endpoints[] 由来 base URL で計測（計測手順は不変・コンテナ派生環境の免責注記材料を特記事項として返す） |
+| 11 | case-11_dependency_fail_blocked.md | depends_on 依存先 fail → 後続ケース blocked（計測せず・measured_value 捏造なし・依存先 ID と結果を reason に記録。functional case-05 の同型） |
 
 ## ケースファイルの構成
 

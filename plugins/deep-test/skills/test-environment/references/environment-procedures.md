@@ -1,10 +1,10 @@
 <!-- TEST-ENVIRONMENT-PROCEDURES-SENTINEL-v1 -->
 # test-environment 詳細手順（検出 → 消費 → 派生 → 検証 → up / down / status）
 
-`test-environment` スキルの実行手順の詳細。SKILL.md の実行フローから参照される。
-`environment.yaml` のスキーマ・enum・コマンド規約形（10.1）の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md`、消費する `analysis.yaml` の完全スキーマは同 `yaml-schema-analysis.md`、配置・target-slug 解決・SUT docker 資産の read-only 注記は同 `data-locations.md`、縮退（skipped）・非対話既定値は同 `execution-policy.md`、エージェント運用は同 `agents.md` および `${CLAUDE_SKILL_DIR}/references/agents.md` である。本書はそれらの適用手順のみを定義し、規範本文は複製しない。派生ファイルの書き方は `${CLAUDE_SKILL_DIR}/references/compose-derivation.md` を参照する。
+`test-environment` スキルの実行手順詳細。SKILL.md 実行フローから参照。
+`environment.yaml` のスキーマ・enum・コマンド規約形（10.1）の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md`、消費する `analysis.yaml` の完全スキーマは同 `yaml-schema-analysis.md`、配置・target-slug 解決・SUT docker 資産の read-only 注記は同 `data-locations.md`、縮退（skipped）・非対話既定値は同 `execution-policy.md`、エージェント運用は同 `agents.md` および `${CLAUDE_SKILL_DIR}/references/agents.md`。本書は適用手順のみ定義し、規範本文は複製しない。派生ファイルの書き方は `${CLAUDE_SKILL_DIR}/references/compose-derivation.md` を参照。
 
-> **環境構築（setup）について**: 本スキルは Python を同梱しないため `scripts/setup/`（venv）を持たない。docker 操作は Bash 直実行（docker CLI の単発呼出）で完結し、`environment.yaml` / 派生成果物は LLM が Write で直接生成する。タイムスタンプは `date` で ISO8601 を取得する。
+> **環境構築（setup）について**: 本スキルは Python 非同梱で `scripts/setup/`（venv）を持たない。docker 操作は Bash 直実行で完結し、`environment.yaml` / 派生成果物は LLM が Write で直接生成。タイムスタンプは `date` で ISO8601 を取得。
 
 ---
 
@@ -36,12 +36,12 @@ flowchart TD
 
 | 起動形態 | target-slug の確定方法 |
 |---------|----------------------|
-| 委譲（`target=` 受領） | 受領値をそのまま使用する（解決はオーケストレータ済み） |
+| 委譲（`target=` 受領） | 受領値をそのまま使用（解決はオーケストレータ済み） |
 | 単独起動 | `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 4 章の解決フローに従う（非対話時は唯一の既存 slug 採用・複数はエラー中断） |
 
-- `base=` は委譲時に受領、単独時は data-locations.md 1 章で解決する（同一セッション中は切り替えない）
+- `base=` は委譲時に受領、単独時は data-locations.md 1 章で解決（同一セッション中は切り替えない）
 - `project=`（SUT のプロジェクトルート）は docker 資産探索の起点。未指定時はカレント作業ディレクトリを起点とする
-- `action=` の既定は `provision`。up / down / status では既存 `{base}/{target-slug}/environment.yaml` を Read で確認し、非存在なら「先に provision が必要」と案内して終了する（推定でコマンドを組み立てない）
+- `action=` の既定は `provision`。up / down / status では既存 `{base}/{target-slug}/environment.yaml` を Read で確認し、非存在なら「先に provision が必要」と案内して終了（推定でコマンドを組み立てない）
 - `run-id=` は up / down 時に任意で受領し、logs 保存先（8 章）と `status.last_run_id` に使う。未受領なら run 外の単独操作として扱う
 
 ## 3. 資産検出・v2 疎通（provision）
@@ -58,7 +58,7 @@ flowchart TD
 
 コマンド疎通の確認:
 
-1. `docker compose version` — 成功なら v2 系。`compose_command: "docker compose"` を記録する
+1. `docker compose version` — 成功なら v2 系。`compose_command: "docker compose"` を記録
 2. v2 が失敗し `docker-compose --version` のみ成功する場合 — v1 のみ検出。`compose_command: "docker-compose"` + `status.notes` に警告を記録し **best-effort で続行**する（v1 は EOL 済み。試行失敗時は unavailable と同じ縮退）
 3. どちらも失敗 / docker CLI 不在 — `applicability: unavailable` の縮退（9 章）
 
@@ -73,11 +73,11 @@ test-environment は対象を**再解析しない**。`{base}/{target-slug}/anal
 | `meta.target_type` | web-app / api / batch / library 等 | 環境要否判定（5 章）・endpoints の purpose（browser / api） |
 | `entry_points[]` | 公開 EP・ポート・認証 | `endpoints[].base_url` / `purpose` の当たり付け・healthcheck 補助ポーリングの対象パス |
 
-- 非存在時（単独起動・analyze スキップ運用）は Read/Glob/Grep で compose 内サービス構成から**軽量補完**し、`meta.analysis_consumed: false` を記録する（推定を確定情報として書かない）
+- 非存在時（単独起動・analyze スキップ運用）は Read/Glob/Grep で compose 内サービス構成から**軽量補完**し、`meta.analysis_consumed: false` を記録（推定を確定情報として書かない）
 
 ## 5. 要否判定（provision・no-op 分岐）
 
-以下のいずれかに該当する場合、派生を行わず **no-op / 縮退マニフェスト**（`applicability` + `reason`）を出力して正常終了する（9 章の縮退表が正）。
+以下のいずれかに該当する場合、派生を行わず **no-op / 縮退マニフェスト**（`applicability` + `reason`）を出力して正常終了（9 章の縮退表が正）。
 
 - docker 資産なし（compose / Dockerfile とも不在）→ `not-applicable`。従来前提（ユーザー起動 URL）を案内する
 - `levels=` が unit のみ → 環境不要。委譲前にオーケストレータでも抑制されるが、起動された場合も `not-applicable` で no-op（MCP ゲートの「unit のみ判定不要」と同型）
@@ -89,7 +89,7 @@ test-environment は対象を**再解析しない**。`{base}/{target-slug}/anal
 
 1. `${CLAUDE_SKILL_DIR}/references/compose-derivation.md` の各パターンに従い、`{base}/{target-slug}/environment/compose.test.yml` と `environment/.env.test` を Write する（SUT 側へは書かない）
 2. 本番誤爆突合（compose-derivation.md 6 章）を実施する。疑義はモック / ダミー値へ差替（非対話）or ユーザーへ明示確認（対話）
-3. コマンド規約形（yaml-schema-environment.md 10.1 の共通プレフィクス）で静的検証する:
+3. コマンド規約形（yaml-schema-environment.md 10.1 の共通プレフィクス）で静的検証:
 
 ```bash
 docker compose -f <SUT compose> -f environment/compose.test.yml -p {slug}-test --env-file environment/.env.test config --quiet
@@ -102,7 +102,7 @@ docker compose -f <SUT compose> -f environment/compose.test.yml -p {slug}-test -
 ## 7. environment.yaml 出力 → 自己チェック（provision）
 
 1. `yaml-schema-environment.md` に完全準拠して `{base}/{target-slug}/environment.yaml` を Write する。`provisioned_at` / `updated_at` は `date` の ISO8601。`endpoints[].health` は up 前のため `unknown`（healthy を捏造しない）。`lifecycle.up_command` / `down_command` は 10.1 の規約形を実パスで実体化する
-2. 自由記述値（`overrides` / `notes` / `reason`）・URL・コマンド文字列・ポート表記は**ダブルクォート**する（同 2.1 の YAML 記法遵守）。生成後に読み返して parse 可能性を自己確認する
+2. 自由記述値（`overrides` / `notes` / `reason`）・URL・コマンド文字列・ポート表記は**ダブルクォート**する（同 2.1 の YAML 記法遵守）。生成後に読み返して parse 可能性を自己確認
 3. `env-architect` を単独起動して自己チェックする（`${CLAUDE_SKILL_DIR}/references/agents.md`）。重大指摘（read-only 境界逸脱・秘匿値の混入・分離不備・本番誤爆疑義の未解消）は成果物へ反映してから返却する
    - `env-architect` が Agent として解決できない環境（プラグイン未インストールのセッション等）では、`agents.md` の評価観点を読み込んで**同じ観点で自己チェックを自分で実施**し、代替実施した旨を返却の env-architect 所見に明記する（自己チェックの省略は不可）
 

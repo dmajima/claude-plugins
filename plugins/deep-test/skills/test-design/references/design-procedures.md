@@ -1,8 +1,8 @@
 # test-design 詳細手順（分析 → 計画 → ケース設計）
 
-`test-design` スキルの実行手順の詳細。SKILL.md の実行フローから参照される。
-スキーマ・レベル定義・エージェント運用の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/`（yaml-schema.md / test-levels.md / agents.md）であり、本書はその適用手順のみを定義する（規範本文は複製しない）。
-ケース内容の設計原則（技法・レベル別観点・実行可能性基準）は `${CLAUDE_SKILL_DIR}/references/case-design-principles.md` を併読する。
+`test-design` スキルの実行手順詳細。SKILL.md 実行フローから参照。
+スキーマ・レベル定義・エージェント運用の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/`（yaml-schema.md / test-levels.md / agents.md）。本書は適用手順のみ定義（規範本文は複製しない）。
+ケース内容の設計原則（技法・レベル別観点・実行可能性基準）は `${CLAUDE_SKILL_DIR}/references/case-design-principles.md` を併読。
 
 ---
 
@@ -34,23 +34,23 @@ flowchart TD
 
 | 起動形態 | target-slug の確定方法 |
 |---------|----------------------|
-| 委譲（`target-slug=` 受領） | 受領値をそのまま使用する（解決はオーケストレータ済み） |
-| 単独起動 | `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 4 章の解決フローに従う（既存一覧の提示 → 選択 or 新規作成。非対話時は唯一の既存 slug 採用・複数はエラー中断） |
+| 委譲（`target-slug=` 受領） | 受領値をそのまま使用（解決はオーケストレータ済み） |
+| 単独起動 | `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 4 章の解決フローに従う（既存一覧提示 → 選択 or 新規作成。非対話時は唯一の既存 slug 採用・複数はエラー中断） |
 
-- 配置先は基準ディレクトリ配下の `.claude/.local/plugins/deep-test/{target-slug}/`（基準ディレクトリの解決は data-locations.md 1 章）
-- テスト対象（`対象説明=` または位置引数）が未指定の場合: 対話時は AskUserQuestion で確認し、非対話時はエラーで中断する（誤対象への設計を防ぐ）
+- 配置先は基準ディレクトリ配下の `.claude/.local/plugins/deep-test/{target-slug}/`（基準ディレクトリ解決は data-locations.md 1 章）
+- テスト対象（`対象説明=` または位置引数）未指定時: 対話は AskUserQuestion で確認、非対話はエラー中断（誤対象への設計を防ぐ）
 
 ## 3. 対象分析の手順
 
-分析の目的は、(1) レベル選定の根拠、(2) ケースの requirement 対応付け、(3) 画面・API 操作手順の具体化材料を得ること。
+分析の目的: (1) レベル選定の根拠、(2) ケースの requirement 対応付け、(3) 画面・API 操作手順の具体化材料の獲得。
 
 ### 3.1 入力別の分析方法
 
 | 入力 | 分析方法 |
 |------|---------|
-| `spec=` 仕様書あり | Read で読解し、要件 ID・機能一覧・画面一覧・API 一覧・受入基準を抽出する。ディレクトリ指定時は Glob で対象ファイルを列挙してから読む |
-| リポジトリパス | Glob / Grep でルーティング・画面・API 定義を探索する（探索の当たり: ルーティング定義、`controllers` / `pages` / `views` / `api` / `routes` 系ディレクトリ、OpenAPI 定義、DB スキーマ定義） |
-| アプリ URL のみ | 提供された情報（URL・ユーザーの説明）の範囲で分析する。設計フェーズではブラウザアクセスによる探索は行わない（実動作確認は実行フェーズの責務）。不明点は未確認事項に列挙する |
+| `spec=` 仕様書あり | Read で読解し、要件 ID・機能一覧・画面一覧・API 一覧・受入基準を抽出。ディレクトリ指定時は Glob で対象ファイルを列挙してから読む |
+| リポジトリパス | Glob / Grep でルーティング・画面・API 定義を探索（探索の当たり: ルーティング定義、`controllers` / `pages` / `views` / `api` / `routes` 系ディレクトリ、OpenAPI 定義、DB スキーマ定義） |
+| アプリ URL のみ | 提供された情報（URL・ユーザーの説明）の範囲で分析。設計フェーズではブラウザアクセスによる探索は行わない（実動作確認は実行フェーズの責務）。不明点は未確認事項に列挙 |
 
 - 分析量が大きい場合（多数ファイルの横断読解が必要）、調査をエージェントへ委譲してよい（結果は要約で受け取る）
 - 分析で確認できなかった事項は推測で補わず「未確認事項」として保持し、返却に含める
@@ -82,8 +82,8 @@ flowchart TD
 
 | モード | 確定方法 |
 |-------|---------|
-| 対話 | AskUserQuestion（複数選択）で提案レベルを提示して確定する。各選択肢に「そのレベルで何を確認するか」の 1 行説明を付ける |
-| 非対話 | 提案を自動採用し、採用根拠（上表のどの判定に該当したか）を返却に明記する |
+| 対話 | AskUserQuestion（複数選択）で提案レベルを提示して確定。各選択肢に「そのレベルで何を確認するか」の 1 行説明を付ける |
+| 非対話 | 提案を自動採用し、採用根拠（上表のどの判定に該当したか）を返却に明記 |
 
 - `levels=` 指定時も、明らかな不整合（例: 外部 IF が存在しないのに `integration-external` 指定）は警告を返却に含める（指定自体は尊重する）
 - 選定しなかったレベルとその理由も test-plan.md のレベル別スコープに記録する（「未実施レベルの明示」が報告時の未確認事項の基礎になる）
@@ -101,16 +101,16 @@ flowchart TD
 | 5. データ方針 | テストデータの準備方法・preconditions / postconditions による分離と復元の方針（execution-policy.md 5 章）・機微情報の扱い（実値を書かない） |
 | 6. スケジュール目安 | レベル別の想定所要（ケース数 × ケースタイムアウト上限からの概算）・実行順序（レベル順の逐次） |
 
-- 図解が必要な場合は mermaid 記法を使用する。セクション記号（U+00A7）は使用しない
+- 図解が必要な場合は mermaid 記法を使用。セクション記号（U+00A7）は使用しない
 
 ## 6. test-cases.yaml の生成手順（新規）
 
 スキーマ・必須フィールド・enum 値は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md` が SSOT。以下は生成時の作業手順のみを定める。
 
-1. `meta` を作成する（target / created_at / updated_at / schema_version: 1）。日時は `date` コマンドで取得した ISO8601（タイムゾーンオフセット付き）を用いる
-2. レベルごとにケースを設計する（設計原則は case-design-principles.md）
-3. ID を採番する: `TC-{LEVEL}-{3桁連番}`。LEVEL トークンと level 値の対応・連番規則は yaml-schema.md 2.2 章に従う（レベルごとに 001 から昇順）
-4. 各ケースに必須フィールドを漏れなく設定する（フィールド定義は yaml-schema-cases.md 2 章）:
+1. `meta` を作成（target / created_at / updated_at / schema_version: 1）。日時は `date` コマンドで取得した ISO8601（タイムゾーンオフセット付き）を用いる
+2. レベルごとにケースを設計（設計原則は case-design-principles.md）
+3. ID を採番: `TC-{LEVEL}-{3桁連番}`。LEVEL トークンと level 値の対応・連番規則は yaml-schema.md 2.2 章に従う（レベルごとに 001 から昇順）
+4. 各ケースに必須フィールドを漏れなく設定（フィールド定義は yaml-schema-cases.md 2 章）:
    - `id` / `revision: 1` / `review_status: draft` / `created_at` / `updated_at` / `level` / `title` / `priority` / `requirement` / `steps` / `expected` / `automation`
    - 任意フィールドも原則設定する: `preconditions` / `data` / `postconditions` / `depends_on`（依存なしは `[]`） / `timeout_sec`（既定 120。長時間ケースのみ上書き）
 5. `automation` の初期値は test-levels.md 3 章の automation 既定値に従い、ケース単位で上書きする（人手確認が不可欠なケースは `manual-assist`）
@@ -120,8 +120,8 @@ flowchart TD
 
 revision・承認・削除の規則は yaml-schema-cases.md 3 章が SSOT。以下は適用手順。
 
-1. 既存ファイルを Read し、既存ケースの ID・revision・review_status・内容を把握する
-2. 変更要求と突き合わせ、ケースごとに分類する:
+1. 既存ファイルを Read し、既存ケースの ID・revision・review_status・内容を把握
+2. 変更要求と突き合わせ、ケースごとに分類:
 
 | 分類 | 操作 |
 |------|------|
@@ -130,7 +130,7 @@ revision・承認・削除の規則は yaml-schema-cases.md 3 章が SSOT。以�
 | 追加 | 当該レベルの既存最大連番 +1 で採番（deprecated の ID も最大値の対象に含める）。`revision: 1` / `review_status: draft` |
 | 変更なし | 一切変更しない（approved のケースの承認状態を維持する） |
 
-3. `meta.updated_at` を更新する
+3. `meta.updated_at` を更新
 4. revision のインクリメントは**設計セッションでの内容確定時に 1 回**とする（自己チェック反映等でセッション内の編集を重ねても、確定内容と更新前内容の比較で +1 は 1 回のみ）
 
 ## 8. test-architect 自己チェック

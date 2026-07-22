@@ -1,6 +1,6 @@
 ---
 name: test-run-unit
-description: "ユニットテスト（level: unit / TC-UNIT）の実行スキル。プロジェクトのテストランナー（pytest・jest・vitest・dotnet test 等）を検出して Bash で実行し、出力を解析してケース単位の中間結果 JSON をオーケストレータへ返す。deep-test オーケストレータ（test）の run フェーズから unit レベルのケース実行時に使用する。ランナー不在・テストコード不在時は skipped として返す。"
+description: "ユニットテスト（コード実行。level: unit / TC-UNIT）の実行スキル。テストランナー（pytest・jest 等）を検出し Bash 実行、出力解析して中間結果 JSON を返す。画面操作の「単体テスト」は test-run-functional の担当（本スキルはコードのユニットテスト）。deep-test の test の run から unit 実行時や「ユニットテストレベルのケースを実行して」で起動。入力不足なら案内し非実行。ランナー・コード不在時は skipped。Use when running unit tests in deep-test."
 allowed-tools:
   - Read
   - Grep
@@ -10,7 +10,7 @@ allowed-tools:
 
 # test-run-unit スキル
 
-ユニットテスト（`level: unit` / `TC-UNIT`）を、テストフレームワーク実行機構（pytest / jest / vitest / dotnet test 等）で実施する実行スキル。
+ユニットテスト（`level: unit` / `TC-UNIT`）を、テストフレームワーク（pytest / jest / vitest / dotnet test 等）で実施する実行スキル。
 オーケストレータ `test` から受領した scope をテストランナーで実行し、出力を解析してケース単位の中間結果 JSON を返却する（実績 YAML への書き込みは行わない）。
 
 ## 責務
@@ -82,7 +82,7 @@ target-slug / run_id / 対象ケースリスト（unit）/ 対象プロジェク
 `${CLAUDE_SKILL_DIR}/references/unit-execution.md` 1 章の検出表に従う。ランナー不在・テストコード不在・実行不能の場合は scope 全ケースを skipped + reason で返却する（条件付き動的検証。実行を偽装しない）。
 
 ### 3. ケース実行
-共通手順（preconditions 確認 → steps 実行 → expected と実際の照合 → postconditions 実行 → 結果組み立て）に従う。本スキルでは steps 実行 = ランナー実行、照合 = 実行結果とケースの突合として行う。実行方式（一括 / ケース別）・出力解析・マッピングの詳細は unit-execution.md 2〜4 章。
+共通手順（preconditions 確認 → steps 実行 → expected と実際の照合 → postconditions 実行 → 結果組み立て）に従う。本スキルでは steps 実行 = ランナー実行、照合 = 実行結果とケースの突合。実行方式（一括 / ケース別）・出力解析・マッピングの詳細は unit-execution.md 2〜4 章。
 
 ### 4. fail 時
 defect 3 点セット（reproduction_steps: 環境情報含む完全な再現手順 / test_data / evidence）を**その場で**収集し、severity を判定（severity-policy.md）、スタックトレースを `defect.extras.stack_trace` に記録する（unit-execution.md 6 章）。
@@ -97,11 +97,11 @@ defect 3 点セット（reproduction_steps: 環境情報含む完全な再現手
 検証チェックリストを通過後、中間結果 JSON を返却する。
 
 ### コンテナ内 exec 実行経路（environment.yaml の exec_forms[]・代替経路）
-上記 2 のランナー検出はホスト実行（既定・不変）を第一とする。ホストにランタイム / ランナーが無い場合に限り、environment.yaml の `exec_forms[]`（コンテナ内ランナー実行形）と環境の稼働状態を確認し、成立すればコンテナ内 exec 実行を代替経路として用いる（優先順位・成立条件・skipped / blocked 判定は `${CLAUDE_SKILL_DIR}/references/unit-execution.md` 7 章）。実行形は environment.yaml の記録値をそのまま用い、結果解釈は上記 3〜6 と同一規範。既存のホスト実行・manual-assist 経路と併存し、置き換えない。
+ステップ 2 のランナー検出はホスト実行（既定・不変）が第一。ホストにランタイム / ランナーが無い場合に限り、environment.yaml の `exec_forms[]` と環境の稼働状態を確認し、成立すればコンテナ内 exec 実行を代替経路として用いる（優先順位・成立条件・skipped / blocked 判定は `${CLAUDE_SKILL_DIR}/references/unit-execution.md` 7 章）。実行形は environment.yaml の記録値をそのまま用い、結果解釈は上記 3〜6 と同一規範。既存のホスト実行・manual-assist 経路と併存し置き換えない。
 
 ## 検証（チェックリスト）
 
-中間結果 JSON の返却前に以下を確認する。未達項目は解消してから返却する。
+中間結果 JSON の返却前に以下を確認し、未達項目は解消してから返却する。
 
 ```
 [ ] scope 全ケースについて 1 エントリずつ結果を返している（欠落なし。finish-run 突合の前提）
@@ -145,6 +145,6 @@ defect 3 点セット（reproduction_steps: 環境情報含む完全な再現手
 
 | 参照先 | 内容 |
 |-------|------|
-| `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス（実行時の共通規範一式はここから到達する） |
+| `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス |
 | `${CLAUDE_SKILL_DIR}/references/unit-execution.md` | ランナー別実行・出力解析・ケースマッピング・エビデンス保存の手順（本スキル固有） |
 | `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` | environment.yaml（`exec_forms[]` / `status.state` / `applicability`）のスキーマ SSOT（コンテナ内 exec 代替経路の入力。読み取りのみ・生成は test-environment） |

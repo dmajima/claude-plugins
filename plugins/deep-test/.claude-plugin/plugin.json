@@ -1,7 +1,7 @@
 {
   "name": "deep-test",
   "version": "1.4.1",
-  "description": "テスト設計→環境構築→実施→報告→再テストを支援。8レベル・Playwright実動作・手動/探索的・YAML実績管理。コードレビューの差分テストとは別",
+  "description": "テスト設計→環境構築→実施→報告→再テストを支援するプラグイン。コードレビューの差分テスト（deep-code-review）とは別",
   "license": "MIT",
   "author": {
     "name": "dmajima"

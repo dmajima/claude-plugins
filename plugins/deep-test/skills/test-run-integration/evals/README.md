@@ -19,6 +19,7 @@
 | 10 | case-10_playwright_test_run.md | automation: playwright-test × `npx playwright test` 実走 pass（IT-b をモックフィクスチャで差し替え再現可能に実走し全 pass を記録・executed_by: playwright-test・MCP 経路と併存） | 委譲 |
 | 11 | case-11_playwright_test_skipped.md | automation: playwright-test だが Playwright/ランナー・fixtures.yaml/SUT テストコード不在 → skipped + reason（実走前提の欠如・MCP 未ロード skipped〔case-07〕とは別前提） | 委譲 |
 | 12 | case-12_endpoints_base_url.md | environment.yaml の endpoints[] 由来 base URL を IT-a の対象 URL として受領して実行（受領形・実行手順は不変・出所の注記のみ） | 委譲 |
+| 13 | case-13_dependency_fail_blocked.md | depends_on 依存先 fail → 後続ケース blocked（IT-a・依存先 ID と結果を reason に記録・後続を強行実行しない。functional case-05 / scenario case-02 の同型） | 委譲 |
 
 ## ケースファイルの構成
 

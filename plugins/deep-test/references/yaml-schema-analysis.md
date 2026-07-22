@@ -2,7 +2,7 @@
 # analysis.yaml スキーマ（yaml-schema-analysis）
 
 `analysis.yaml`（test-analyze が生成するテスト対象理解の材料）の完全スキーマを定義する SSOT である（`yaml-schema.md` のスキーマ定義群ハブから参照される analysis 系スキーマ）。
-`analysis.yaml` は test-analyze（Phase 1.5）が対象ソースの read-only 静的理解の結果として生成する **機械可読の材料（evidence）** であり、下流スキル（test-design / test-fixture〔将来〕 / test-review〔coverage-reviewer〕 / test-run-security / test-run-unit ほか / test-report）が **単方向に消費** する。
+`analysis.yaml` は test-analyze（Phase 1.5）が対象ソースを read-only 静的理解して生成する **機械可読の材料（evidence）** であり、下流スキル（test-design / test-fixture〔将来〕 / test-review〔coverage-reviewer〕 / test-run-security / test-run-unit ほか / test-report）が **単方向に消費** する。
 生成主体は test-analyze の LLM（Write で直接生成）であり、`test-results.yaml`（results_manager.py 経由）とは別系統である。test-analyze は `test-results.yaml` / `test-cases.yaml` に一切書き込まない。
 共通の YAML 記述規約（UTF-8・スペース 2・ISO8601 等）は `yaml-schema.md` 2.1 を継承する。フィールド・enum 値の追加・変更・改廃は本ファイルを起点に行い、他 references・スキルへは参照のみで内容を複製しない。
 

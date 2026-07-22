@@ -16,7 +16,7 @@
 
 ### 1.1 メトリクス取得コード（browser_evaluate で実行する JavaScript）
 
-対象ページへ遷移し描画が安定した後（`browser_wait_for` で主要要素の出現を待機）に、`browser_evaluate` で以下の JavaScript を実行してメトリクスを取得する。
+対象ページへ遷移し描画安定後（`browser_wait_for` で主要要素の出現を待機）、`browser_evaluate` で以下の JavaScript を実行しメトリクスを取得する。
 
 ```javascript
 // browser_evaluate に渡す関数。Navigation Timing Level 2 + Paint/LCP を 1 回分まとめて返す

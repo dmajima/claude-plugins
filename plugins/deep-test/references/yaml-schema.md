@@ -1,7 +1,7 @@
 # YAML スキーマ定義（test-cases.yaml / test-results.yaml）
 
-deep-test プラグインが状態管理に用いる `test-cases.yaml`（テストケース定義）と `test-results.yaml`（実行実績）のスキーマ定義群の入口（ハブ）である。
-本ファイルは両ファイル共通の記述規約（YAML 記述規約・ID/採番規約）と操作規約を SSOT として定義し、ファイル別の完全スキーマは以下の 2 ファイルに分割して定義する。
+deep-test プラグインが状態管理に用いる `test-cases.yaml`（テストケース定義）と `test-results.yaml`（実行実績）のスキーマ定義群の入口（ハブ）。
+本ファイルは両ファイル共通の記述規約（YAML 記述規約・ID/採番規約）と操作規約を SSOT として定義し、ファイル別の完全スキーマは以下の 2 ファイルに分割する。
 フィールド・enum 値の追加・変更・改廃は必ず本ファイル群（本ファイル + 分割先 2 ファイル）を起点に行い、他の references やスキルへは参照のみで内容を複製しない。
 
 | スキーマ本体（分割先） | 内容 |
@@ -9,8 +9,8 @@ deep-test プラグインが状態管理に用いる `test-cases.yaml`（テス�
 | `yaml-schema-cases.md` | test-cases.yaml の完全スキーマ（meta / cases[] フィールド / revision・承認・削除の規則 / 記入例） |
 | `yaml-schema-results.md` | test-results.yaml の完全スキーマ（meta / runs[] / results[] / defect / latest / status の使い分け / annotations / 記入例） |
 
-なお、`analysis.yaml`（test-analyze が Phase 1.5 で生成する対象理解の材料）の analysis 系スキーマは、results_manager.py を経由しない**別系統**として `yaml-schema-analysis.md` に定義する（本ハブの分割先 2 ファイルには含めず、共通記述規約は 2 章を継承する）。
-同様に、`environment.yaml`（test-environment が Phase 1.7 で生成するテスト用派生環境のマニフェスト）の environment 系スキーマは、results_manager.py を経由しない**別系統**として `yaml-schema-environment.md` に定義する（本ハブの分割先 2 ファイルには含めず、共通記述規約は 2 章を継承する）。
+`analysis.yaml`（test-analyze が Phase 1.5 で生成する対象理解の材料）の analysis 系スキーマは、results_manager.py を経由しない**別系統**として `yaml-schema-analysis.md` に定義する（本ハブの分割先 2 ファイルには含めず、共通記述規約は 2 章を継承する）。
+`environment.yaml`（test-environment が Phase 1.7 で生成するテスト用派生環境のマニフェスト）の environment 系スキーマも、results_manager.py を経由しない**別系統**として `yaml-schema-environment.md` に定義する（本ハブの分割先 2 ファイルには含めず、共通記述規約は 2 章を継承する）。
 
 ---
 

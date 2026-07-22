@@ -76,7 +76,7 @@ runs[].status の意味:
 
 - **results[].extras**（結果自体の情報）: 性能の `measured_value` / `threshold` は status を問わずこちらを第一記録先とする
 - **defect.extras**（欠陥診断の文脈情報）: `stack_trace` など、欠陥の診断に付随する情報
-- fail 時に `measured_value` / `threshold` を defect.extras へ併記する従来形は互換として許容する（既存記録の読み取り互換。新規記録では results[].extras へ記録し、同一値の重複併記を要しない）
+- fail 時に `measured_value` / `threshold` を defect.extras へ併記する従来形も許容する（既存記録の読み取り互換。新規記録では results[].extras へ記録し、同一値の重複併記を要しない）
 
 ```yaml
 # extras の記載例（性能テスト・results[] 直下。status を問わず記録可能）

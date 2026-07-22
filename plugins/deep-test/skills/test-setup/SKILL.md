@@ -1,6 +1,6 @@
 ---
 name: test-setup
-description: deep-test のテストツールチェーン（Playwright MCP・テストランナー・venv）を検証するフェーズスキル。Playwright MCP の既存登録検出・規約準拠の新規登録・ToolSearch による実利用可否判定・再起動ハンドオフ、テストランナー検出（pytest 等）、セッション venv の確認・構築を一元化し、環境検証レポートをオーケストレータへ返却する。責務外=Docker派生環境の構築・起動(test-environment)。test 委譲時や「テストツールチェーンを準備して」「Playwright MCP をセットアップして」と依頼された時に使用。
+description: deep-test のテストツールチェーン（Playwright MCP・ランナー・venv）を検証するスキル。既存登録検出・規約準拠の新規登録・ToolSearch 実利用判定・再起動ハンドオフ・ランナー検出（pytest 等）・venv 構築を一元化し検証レポート返却。責務外=Docker 派生環境の構築・起動（test-environment）。deep-test の test 委譲時や「deep-test のテストツールチェーンを準備して」「Playwright MCP をセットアップして」と依頼時に使用。Use when preparing deep-test toolchain.
 allowed-tools:
   - Read
   - Grep
@@ -13,20 +13,19 @@ allowed-tools:
 
 # test-setup スキル
 
-テスト実行環境（Playwright MCP・テストランナー・venv）の構築と検証を一元化するフェーズスキル。
-チェック結果を環境検証レポートとして返却し、後続の MCP ゲート判定・実行スキル委譲の判定材料を提供する。
+テスト実行環境（Playwright MCP・テストランナー・venv）の構築と検証を一元化するフェーズスキル。チェック結果を環境検証レポートとして返却し、後続の MCP ゲート判定・実行スキル委譲の判定材料を提供する。
 
 ## 責務
 
 | # | 責務 | 概要 |
 |---|------|------|
-| 1 | Playwright MCP のセットアップ | `claude mcp list` で既存登録を検出し、未登録なら登録要否の判断分岐（levels の Playwright 必要レベル有無・対話 / 非対話）を経て規約コマンド（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 1 章）で新規登録する。登録した場合は再起動ハンドオフ（同 3 章）を添えて停止する |
+| 1 | Playwright MCP のセットアップ | `claude mcp list` で既存登録を検出し、未登録なら登録要否の判断分岐（levels の Playwright 必要レベル有無・対話 / 非対話）を経て規約コマンド（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 1 章）で新規登録。登録した場合は再起動ハンドオフ（同 3 章）を添えて停止 |
 | 2 | Playwright MCP の実利用可否判定 | 登録済みの場合、ToolSearch による実判定（同 4 章）でロード済み / 未ロードを判定する |
-| 3 | テストランナー検出 | 構成ファイル・テストファイル規約 + ランナー実体・宣言の 3 段規則（`${CLAUDE_SKILL_DIR}/references/setup-procedures.md` 4 章 = SSOT）で pytest / jest / vitest / dotnet test 等を検出し、根拠・実行コマンド例とともに報告する（テストは実行しない） |
-| 4 | venv の確認・構築 | セッション作業領域 `workspace/.venv` の存在を確認し、無ければプラグイン共通の `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/` で構築する |
-| 5 | フィクスチャ基盤の有無検出 | SUT に Playwright Test 基盤（`playwright.config.ts` / `{tests}/fixtures/` の存在）があるかを Glob / Grep で **有無検出**する（構築・拡充はしない）。検出結果は Phase 1.6 の `test-fixture` が新規構築 / 拡充を判断する材料になる |
-| 6 | docker 資産の有無検出 | SUT に docker 資産（compose / Dockerfile）があるかを Glob で **有無検出**し、存在と場所の記録のみ行う（構築・起動はしない = `test-environment` の責務）。検出結果は Phase 1.7 の `test-environment` が派生・起動を判断する材料になる |
-| 7 | 環境検証レポート返却 | チェック項目ごとの利用可 / 不可 / 未チェックの一覧と総合判定を返却する |
+| 3 | テストランナー検出 | 構成ファイル・テストファイル規約 + ランナー実体・宣言の 3 段規則（`${CLAUDE_SKILL_DIR}/references/setup-procedures.md` 4 章 = SSOT）で pytest / jest / vitest / dotnet test 等を検出し、根拠・実行コマンド例とともに報告（テストは実行しない） |
+| 4 | venv の確認・構築 | セッション作業領域 `workspace/.venv` の存在を確認し、無ければプラグイン共通の `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/` で構築 |
+| 5 | フィクスチャ基盤の有無検出 | SUT に Playwright Test 基盤（`playwright.config.ts` / `{tests}/fixtures/` の存在）があるかを Glob / Grep で **有無検出**（構築・拡充はしない）。検出結果は Phase 1.6 の `test-fixture` が新規構築 / 拡充を判断する材料になる |
+| 6 | docker 資産の有無検出 | SUT に docker 資産（compose / Dockerfile）があるかを Glob で **有無検出**し、存在と場所の記録のみ（構築・起動はしない = `test-environment` の責務）。検出結果は Phase 1.7 の `test-environment` が派生・起動を判断する材料になる |
+| 7 | 環境検証レポート返却 | チェック項目ごとの利用可 / 不可 / 未チェックの一覧と総合判定を返却 |
 
 ## 責務外（他スキルが担当）
 
@@ -40,20 +39,20 @@ allowed-tools:
 
 ## トリガー条件
 
-起動するケース:
+起動する:
 
-- オーケストレータ `test` から Skill ツール経由で委譲された場合（フルフローの setup フェーズ、MCP ゲート前の事前検証）
-- 「テストツールチェーンを準備して」「Playwright MCP をセットアップして」「テストランナーを検出して」と依頼された場合
+- オーケストレータ `test` から Skill ツール経由で委譲（フルフローの setup フェーズ、MCP ゲート前の事前検証）
+- 「テストツールチェーンを準備して」「Playwright MCP をセットアップして」「テストランナーを検出して」と依頼された
 
-起動しないケース:
+起動しない:
 
-- テストの実行そのものを求められた場合（`test-run-*` の責務）
-- deep-test の実行環境と無関係な一般的開発環境の構築を求められた場合
+- テストの実行そのものを求められた（`test-run-*` の責務）
+- deep-test の実行環境と無関係な一般的開発環境の構築を求められた
 
 ## 前提
 
-- `${CLAUDE_PLUGIN_ROOT}/references/` の共通規範（playwright-mcp.md / data-locations.md / execution-policy.md）が存在すること
-- `claude` CLI が利用可能であること（MCP の登録・検出に使用）
+- `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` 3.5（セットアップ時）が参照する共通規範一式が存在する
+- `claude` CLI が利用可能である（MCP の登録・検出に使用）
 
 受け取る引数（すべて任意）:
 
@@ -71,30 +70,30 @@ allowed-tools:
 
 | 判定条件 | モード | 動作 |
 |---------|-------|------|
-| 引数に `--non-interactive` を含む（委譲時はオーケストレータが付与） | 非対話 | 確認なしで検出・判定を進行する。未登録時の新規登録は行わず `not-registered` とする（永続的副作用を非対話で作らない。`${CLAUDE_SKILL_DIR}/references/setup-procedures.md` 3.2 章）。登録済み・未ロードで再起動が必要な場合は自動続行せず、ハンドオフを添えて停止する（`execution-policy.md` 非対話既定値表の「MCP ゲートで未ロード」と同趣旨） |
-| 上記以外 | 対話 | 通常は確認なしで進行し、曖昧な状況（playwright 系登録が複数見つかる等）のみ AskUserQuestion で確認する |
+| 引数に `--non-interactive` を含む（委譲時はオーケストレータが付与） | 非対話 | 確認なしで検出・判定を進行。未登録時の新規登録は行わず `not-registered` とする（永続的副作用を非対話で作らない。`${CLAUDE_SKILL_DIR}/references/setup-procedures.md` 3.2 章）。登録済み・未ロードで再起動が必要な場合は自動続行せず、ハンドオフを添えて停止（`execution-policy.md` 非対話既定値表の「MCP ゲートで未ロード」と同趣旨） |
+| 上記以外 | 対話 | 通常は確認なしで進行し、曖昧な状況（playwright 系登録が複数見つかる等）のみ AskUserQuestion で確認 |
 
 ## 実行フロー
 
 詳細手順は `${CLAUDE_SKILL_DIR}/references/setup-procedures.md` に従う。
 
 ### 1. チェック対象確定
-引数を解釈し、チェック対象（playwright / runner / venv）を確定する。
+引数を解釈し、チェック対象（playwright / runner / venv）を確定。
 
 ### 2. Playwright MCP チェック
-既存登録を検出し、未登録なら登録要否の判断分岐（setup-procedures.md 3.2 章。levels に Playwright 必要レベルが含まれない場合・対話での否認時・非対話時は登録せず `not-registered` を記録）を経て新規登録し、登録済みなら ToolSearch で実利用可否を判定する。
+既存登録を検出し、未登録なら登録要否の判断分岐（setup-procedures.md 3.2 章。levels に Playwright 必要レベルが含まれない場合・対話での否認時・非対話時は登録せず `not-registered` を記録）を経て新規登録し、登録済みなら ToolSearch で実利用可否を判定。
 
 ### 3. テストランナー検出
-3 段の検出規則（setup-procedures.md 4 章）でランナーを検出し、根拠・実行コマンド例を整理する（構成ファイルなし + ランナー実体なしの場合のセッション venv への導入可否は同 4.4 章）。
+3 段の検出規則（setup-procedures.md 4 章）でランナーを検出し、根拠・実行コマンド例を整理（構成ファイルなし + ランナー実体なしの場合のセッション venv への導入可否は同 4.4 章）。
 
 ### 4. venv チェック
-`workspace/.venv` を確認し、無ければオーケストレータの setup スクリプトで構築する。
+`workspace/.venv` を確認し、無ければオーケストレータの setup スクリプトで構築。
 
 ### 5. レポート組み立て
-環境検証レポートを組み立て、総合判定（READY / RESTART_REQUIRED / PARTIAL）を確定する。
+環境検証レポートを組み立て、総合判定（READY / RESTART_REQUIRED / PARTIAL）を確定。
 
 ### 6. 再起動判定
-再起動が必要な場合（新規登録・未ロード検知）は、レポートに再起動ハンドオフを添えて返却し停止する。
+再起動が必要な場合（新規登録・未ロード検知）は、レポートに再起動ハンドオフを添えて返却し停止。
 
 ## 検証
 

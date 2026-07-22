@@ -13,7 +13,7 @@
 
 ## 分岐の根拠
 
-SKILL.md「責務 1」（`levels=` が unit のみなら no-op）・「前提」の引数表（`levels=` は環境要否判定の材料）、`${CLAUDE_SKILL_DIR}/references/environment-procedures.md` 5 章（unit のみ → 環境不要。MCP ゲートの「unit のみ判定不要」と同型）・9 章縮退表 2 行目（委譲前にオーケストレータでも抑制・生成しない or not-applicable）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 12 章（levels=unit のみ = 影響なし）。オーケストレータ側の抑制は `${CLAUDE_PLUGIN_ROOT}/skills/test/references/flow.md` 6 章 Phase 1.7 節（フルフローで docker 資産が見込まれる場合のみ委譲・見込みレベルが unit のみ / design-only / run-only / retest / report-only ではスキップ）。
+SKILL.md「責務 1」（`levels=` が unit のみなら no-op）・「前提」の引数表（`levels=` は環境要否判定の材料）、`${CLAUDE_SKILL_DIR}/references/environment-procedures.md` 5 章（unit のみ → 環境不要。MCP ゲートの「unit のみ判定不要」と同型）・9 章縮退表 2 行目（委譲前にオーケストレータでも抑制・生成しない or not-applicable）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 12 章（levels=unit のみ = 影響なし）。オーケストレータ側の抑制は `${CLAUDE_PLUGIN_ROOT}/skills/test/references/flow-resume.md` 6 章 Phase 1.7 節（フルフローで docker 資産が見込まれる場合のみ委譲・見込みレベルが unit のみ / design-only / run-only / retest / report-only ではスキップ）。
 
 ## 期待動作
 

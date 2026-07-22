@@ -1,10 +1,10 @@
 <!-- TEST-FIXTURE-PROCEDURES-SENTINEL-v1 -->
 # test-fixture 詳細手順（入力解決 → 消費 → 既存検出 → 生成/拡充 → 出力 → 自己チェック）
 
-`test-fixture` スキルの実行手順の詳細。SKILL.md の実行フローから参照される。
-`fixtures.yaml` のスキーマ・enum・Playwright Test 実行規約・認証/モック/シード/base のパターン規範・**書き込み境界**の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md`、消費する `analysis.yaml` の完全スキーマは同 `yaml-schema-analysis.md`、配置・target-slug 解決は同 `data-locations.md`、エージェント運用は同 `agents.md` および `${CLAUDE_SKILL_DIR}/references/agents.md` である。本書はそれらの適用手順のみを定義し、規範本文は複製しない。パターン別の最小コード例は `${CLAUDE_SKILL_DIR}/references/fixture-patterns.md` を参照する。
+`test-fixture` スキルの実行手順詳細。SKILL.md 実行フローから参照。
+`fixtures.yaml` のスキーマ・enum・Playwright Test 実行規約・認証/モック/シード/base のパターン規範・**書き込み境界**の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md`、消費する `analysis.yaml` の完全スキーマは同 `yaml-schema-analysis.md`、配置・target-slug 解決は同 `data-locations.md`、エージェント運用は同 `agents.md` および `${CLAUDE_SKILL_DIR}/references/agents.md`。本書は適用手順のみ定義し、規範本文は複製しない。パターン別の最小コード例は `${CLAUDE_SKILL_DIR}/references/fixture-patterns.md` を参照。
 
-> **環境構築（setup）について**: 本スキルは Python を同梱しないため `scripts/setup/`（venv）を持たない。フィクスチャコードは LLM が Write/Edit で直接生成し、`fixtures.yaml` は Write で直接生成する。Playwright のインストール確認・雛形生成に read-only の `npx playwright` を用いる場合がある（ブラウザの実インストール等の環境構築は `test-setup` の責務であり、本スキルでは行わない）。
+> **環境構築（setup）について**: 本スキルは Python 非同梱で `scripts/setup/`（venv）を持たない。フィクスチャコード・`fixtures.yaml` は LLM が Write/Edit で直接生成。雛形生成に read-only の `npx playwright` を用いる場合がある（ブラウザの実インストール等の環境構築は `test-setup` の責務で本スキルでは行わない）。
 
 ---
 
@@ -34,7 +34,7 @@ flowchart TD
 
 | 起動形態 | target-slug の確定方法 |
 |---------|----------------------|
-| 委譲（`target-slug=` 受領） | 受領値をそのまま使用する（解決はオーケストレータ済み） |
+| 委譲（`target-slug=` 受領） | 受領値をそのまま使用（解決はオーケストレータ済み） |
 | 単独起動 | `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 4 章の解決フローに従う（非対話時は唯一の既存 slug 採用・複数はエラー中断） |
 
 - `base=` は委譲時に受領、単独時は data-locations.md 1 章で解決する（同一セッション中は切り替えない）
@@ -114,8 +114,8 @@ test-fixture は対象アプリを**再分析しない**。`analysis.yaml` か�
 
 `{base}/{target-slug}/fixtures.yaml` を Write で生成する。`${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` 1 章のスキーマに完全準拠する。
 
-1. `meta` を作成する（`target` / `target_slug` / `created_at`・`updated_at`〔`date` の ISO8601〕 / `schema_version: 1` / `analysis_consumed` / `test_root` / `config_artifact`〔無ければ `null`〕）
-2. `fixtures[]` を作成する（`name` / `type`〔auth|mock|seed|base〕 / `provides` / `artifact`〔SUT 内相対パス〕 / `usage`〔任意〕 / `depends_on`〔任意〕 / `source_refs`〔任意・消費した EP/EXT ID〕 / `status`〔created|extended|existing〕 / `confidence`〔high|medium|low〕）
+1. `meta` を作成（`target` / `target_slug` / `created_at`・`updated_at`〔`date` の ISO8601〕 / `schema_version: 1` / `analysis_consumed` / `test_root` / `config_artifact`〔無ければ `null`〕）
+2. `fixtures[]` を作成（`name` / `type`〔auth|mock|seed|base〕 / `provides` / `artifact`〔SUT 内相対パス〕 / `usage`〔任意〕 / `depends_on`〔任意〕 / `source_refs`〔任意・消費した EP/EXT ID〕 / `status`〔created|extended|existing〕 / `confidence`〔high|medium|low〕）
 3. 拡充時は `meta.updated_at` を更新する。既存検出のみのフィクスチャは `status: existing`
 4. **fixtures.yaml は妥当な（parse 可能な）YAML でなければならない**。自由記述値（`provides` / `usage` 等）で `:`・`` ` ``・`<` `>` `#` `[` `]` `{` `}` を含む、または先頭が `-` / `?` / `@` で始まるものは**ダブルクォートで囲む**（`usage` はコード断片を含むため原則クォートする）
 5. 生成後に fixtures.yaml を自分で読み返し、全ての自由記述値が 4 の規則でクォートされているか自己確認する（`playwright-test.md` 1.4）

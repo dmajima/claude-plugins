@@ -1,6 +1,6 @@
 ---
 name: test-design
-description: Phase 1.5 の test-analyze が生成した解析材料（analysis.yaml）を消費し、テスト計画（test-plan.md）とテストケース（test-cases.yaml）を設計・決定するフェーズスキル。8 テストレベルから対象レベルを選定し、境界値・同値分割・異常系を含む Playwright 実行可能なケースを yaml-schema 準拠で生成し、test-architect で自己チェックする。更新は revision 規則で版管理する。test オーケストレータから委譲された時、または「テスト計画を作って」「テストケースを設計して」と依頼された時に使用。
+description: analysis.yaml（test-analyze 生成）を消費し計画 test-plan.md・ケース test-cases.yaml を設計。8 レベルから境界値/同値/異常系の Playwright ケースを生成・test-architect 自己チェック・revision 管理。test 委譲や「テスト計画を作って」「テストケースを設計して」で起動（単独時 draft のみ・承認ループなし）。Use when designing cases/plan. SKIP when running (test-run-*) or review (test-review).
 allowed-tools:
   - Read
   - Grep
@@ -16,18 +16,25 @@ allowed-tools:
 
 # test-design スキル
 
-テスト対象を分析し、テスト計画（test-plan.md）・対象レベル選定・テストケース設計（test-cases.yaml）までを一貫して行うフェーズスキル。
-生成したケースはすべて `review_status: draft` であり、`test-review`（設計文脈）の承認を経てはじめて実行対象になる。
+テスト対象を分析し、テスト計画（test-plan.md）・対象レベル選定・テストケース設計（test-cases.yaml）までを一貫して行うフェーズスキル。生成ケースはすべて `review_status: draft` で、`test-review`（設計文脈）の承認を経て実行対象になる。
 
 ## 責務
 
 | # | 責務 | 概要 |
 |---|------|------|
-| 1 | 解析材料の消費（対象理解） | Phase 1.5 の `test-analyze` が生成した `analysis.yaml`（`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-analysis.md` 準拠）を消費し、機能・画面・API・外部 IF 構成・リスク・ホットスポットを設計へ反映する。未生成時のみ軽量な補完分析を行う（Read / Glob / Grep。大規模時は調査エージェントへ委譲可）。二重分析を避け、対象理解の SSOT は analysis.yaml に一元化する。加えて Phase 1.6 の `test-fixture` が生成した `fixtures.yaml`（存在時・`${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` 準拠）も参照し、各ケースの `fixtures:` と `automation: playwright-test` 指定の材料にする（非存在時は従来どおり `automation: playwright`＝探索的 MCP を既定とする）。さらに Phase 1.7 の `test-environment` が生成した `environment.yaml`（存在時・`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 準拠）も参照し、preconditions / 環境前提（テスト用 base URL・compose プロジェクト名・サービス構成）の材料にする（非存在時は従来どおりユーザー提供の環境情報を前提とする） |
-| 2 | テストレベル選定 | 8 テストレベル（`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md`）から対象レベルを選定する。未指定時は分析結果から提案し、対話時は AskUserQuestion で確定する |
-| 3 | test-plan.md 生成 | 対象概要・テスト方針・レベル別スコープ・環境前提・データ方針・スケジュール目安を記載した計画を `{target-slug}/` 直下に生成する（環境前提は `environment.yaml`〔存在時〕の endpoints / project 名と紐付けて記載する） |
-| 4 | test-cases.yaml 生成・更新 | `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema.md`（共通規約）と `yaml-schema-cases.md`（ケーススキーマ）に完全準拠でケースを生成する。既存ファイルの更新は revision 規則（+1・draft 戻し・deprecated 論理削除）を遵守する |
-| 5 | 自己チェック | test-architect エージェント（`${CLAUDE_PLUGIN_ROOT}/references/agents.md`）で計画・レベル選定・ケースの妥当性を確認し、重大指摘を反映してから返却する |
+| 1 | 解析材料の消費（対象理解） | Phase 1.5〜1.7 が生成する材料（`analysis.yaml` / `fixtures.yaml` / `environment.yaml`）を消費して設計に反映する（材料別の消費内容は下表）。いずれも非存在時は従来既定にフォールバックする（各スキーマ SSOT は「参照」表） |
+| 2 | テストレベル選定 | 8 テストレベル（`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md`）から対象レベルを選定。未指定時は分析結果から提案し、対話時は AskUserQuestion で確定 |
+| 3 | test-plan.md 生成 | 対象概要・テスト方針・レベル別スコープ・環境前提・データ方針・スケジュール目安を記載した計画を `{target-slug}/` 直下に生成（環境前提は `environment.yaml`〔存在時〕の endpoints / project 名と紐付けて記載） |
+| 4 | test-cases.yaml 生成・更新 | `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema.md`（共通規約）と `yaml-schema-cases.md`（ケーススキーマ）に完全準拠でケースを生成。既存ファイルの更新は revision 規則（+1・draft 戻し・deprecated 論理削除）を遵守 |
+| 5 | 自己チェック | test-architect エージェント（`${CLAUDE_PLUGIN_ROOT}/references/agents.md`）で計画・レベル選定・ケースの妥当性を確認し、重大指摘を反映してから返却 |
+
+### 消費する解析材料（責務#1 の材料別内訳）
+
+| 材料（生成元 Phase） | 消費内容 | 非存在時の既定 |
+|---|---|---|
+| `analysis.yaml`（Phase 1.5 `test-analyze`） | 機能・画面・API・外部 IF・リスク・ホットスポットを設計へ反映 | 未生成時のみ軽量補完 |
+| `fixtures.yaml`（Phase 1.6 `test-fixture`） | 各ケースの `fixtures:` / `automation: playwright-test` の材料 | `automation: playwright`（探索的 MCP） |
+| `environment.yaml`（Phase 1.7 `test-environment`） | preconditions / 環境前提（base URL・compose project 名）の材料 | ユーザー提供の環境情報 |
 
 ## 責務外（他スキルが担当）
 
@@ -41,21 +48,21 @@ allowed-tools:
 
 ## トリガー条件
 
-起動するケース:
+起動する:
 
-- オーケストレータ `test` から Skill ツール経由で委譲された場合（フルフローの design フェーズ、design-only モード、設計レビュー NEEDS REVISION 後の修正）
-- 「テスト計画を作って」「テストケースを設計して」「テストケースを追加・更新して」と依頼された場合
+- オーケストレータ `test` から Skill ツール経由で委譲（フルフローの design フェーズ、design-only モード、設計レビュー NEEDS REVISION 後の修正）
+- 「テスト計画を作って」「テストケースを設計して」「テストケースを追加・更新して」と依頼された
 
-起動しないケース:
+起動しない:
 
-- 設計済みケースのレビュー・承認を求められた場合（`test-review` の責務）
-- テストの実行・再テストを求められた場合（`test-run-*` / オーケストレータの責務）
-- ユニットテストのテストコード実装を求められた場合（本スキルはケース定義の設計であり、テストコードの実装は対象外）
+- 設計済みケースのレビュー・承認を求められた（`test-review` の責務）
+- テストの実行・再テストを求められた（`test-run-*` / オーケストレータの責務）
+- ユニットテストのテストコード実装を求められた（本スキルはケース定義の設計であり、テストコードの実装は対象外）
 
 ## 前提
 
-- `${CLAUDE_PLUGIN_ROOT}/references/` の共通規範（test-levels.md / yaml-schema.md / yaml-schema-analysis.md / agents.md / execution-policy.md / data-locations.md）が存在すること
-- test-architect エージェント定義がプラグインルート `agents/` に存在すること
+- `${CLAUDE_PLUGIN_ROOT}/references/` の共通規範（test-levels.md / yaml-schema.md / yaml-schema-analysis.md / agents.md / execution-policy.md / data-locations.md）が存在する
+- test-architect エージェント定義がプラグインルート `agents/` に存在する
 
 受け取る引数:
 
@@ -73,32 +80,32 @@ allowed-tools:
 | 判定条件 | モード | 動作 |
 |---------|-------|------|
 | 引数に `--non-interactive` を含む（委譲時はオーケストレータが付与） | 非対話 | レベル未指定時は分析提案を自動採用（採用根拠を返却に明記）。target-slug 解決は `data-locations.md` 4.2 章の非対話規則（複数既存 slug はエラー中断）に従う |
-| 上記以外 | 対話 | レベル選定を AskUserQuestion（複数選択）で確定する。target-slug・対象の不足情報も AskUserQuestion で確認する |
+| 上記以外 | 対話 | レベル選定を AskUserQuestion（複数選択）で確定。target-slug・対象の不足も AskUserQuestion で確認 |
 
 ## 実行フロー
 
 詳細手順は `${CLAUDE_SKILL_DIR}/references/design-procedures.md`、ケース設計の原則は `${CLAUDE_SKILL_DIR}/references/case-design-principles.md` に従う。
 
 ### 1. 引数解釈・target-slug 確定
-引数を解釈し、target-slug を確定する（委譲時は受領値、単独時は解決フロー）。
+引数を解釈し target-slug を確定（委譲時は受領値、単独時は解決フロー）。
 
 ### 2. 対象分析
 Phase 1.5 の `test-analyze` が生成した `analysis.yaml` を消費し、機能・画面・API・外部 IF・リスク・ホットスポットを設計材料として取り込む。未生成時のみ仕様書・リポジトリ・提供情報から機能・画面・API・外部 IF・データ構成を軽量に補完する（二重分析を避け、対象理解の SSOT は analysis.yaml に置く）。
 
 ### 3. テストレベル選定
-`levels=` 指定があれば採用（明らかな不整合は警告）。無ければ提案を作成し、対話時は AskUserQuestion で確定、非対話時は自動採用する。
+`levels=` 指定があれば採用（明らかな不整合は警告）。無ければ提案を作成し、対話時は AskUserQuestion で確定、非対話時は自動採用。
 
 ### 4. test-plan.md 生成
-6 セクション構成で生成する。
+6 セクション構成で生成。
 
 ### 5. test-cases.yaml 生成・更新
-新規は全ケース `revision: 1` / `review_status: draft`、更新は revision 規則を遵守する。破壊的操作（データ削除・本番接続・外部送信等）を含むケースには `destructive: true` を付与する（`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md`）。`fixtures.yaml` が存在する場合、fixture 基盤を前提とする再現可能ケースには `fixtures:`（使用フィクスチャ名 = `fixtures.yaml` の `fixtures[].name`）と `automation: playwright-test` を指定する（fixture 基盤がないケースは従来の `automation: playwright`＝探索的 MCP のまま。使い分けは `${CLAUDE_SKILL_DIR}/references/case-design-principles.md`）。
+新規は全ケース `revision: 1` / `review_status: draft`、更新は revision 規則を遵守。破壊的操作（データ削除・本番接続・外部送信等）を含むケースに `destructive: true` を付与（`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-cases.md`）。`fixtures.yaml` が存在する場合、fixture 基盤を前提とする再現可能ケースに `fixtures:`（使用フィクスチャ名 = `fixtures.yaml` の `fixtures[].name`）と `automation: playwright-test` を指定（fixture 基盤がないケースは従来の `automation: playwright`＝探索的 MCP のまま。使い分けは `${CLAUDE_SKILL_DIR}/references/case-design-principles.md`）。
 
 ### 6. 自己チェック
-test-architect による自己チェックを実施し、重大指摘を計画・ケースへ反映する。
+test-architect による自己チェックを実施し重大指摘を計画・ケースへ反映。
 
 ### 7. 返却
-検証チェックリストを通過させ、設計結果を返却する。
+検証チェックリストを通過させ設計結果を返却。
 
 ## 検証
 
