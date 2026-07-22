@@ -40,7 +40,7 @@ memory_scope: project
 
 ## 言語別レビュー観点プロファイル（O10）
 
-プロンプトで指定された検出言語・FW の観点プロファイルを Read し、担当観点を評価に使用する: `${CLAUDE_PLUGIN_ROOT}/references/languages/sql.md`（方言 MySQL / SQL Server / PostgreSQL 対応）+ `frameworks/orm.md`（Prisma / EF Core / SQLAlchemy / Eloquent）。プロジェクト独自規約が最優先で、プロファイルのデファクト規約はプロジェクト規約が無い項目のみに適用する（`${CLAUDE_PLUGIN_ROOT}/references/conventions-resolution.md`）。プロファイル未収録の言語は汎用観点のみで評価し、その旨を制約事項に明記する。
+プロンプトで指定された検出言語・FW の観点プロファイルを Read し、担当観点を評価に使用する: `${CLAUDE_PLUGIN_ROOT}/references/languages/sql.md`（方言 MySQL / SQL Server / PostgreSQL 対応）+ `frameworks/orm.md`（Prisma / EF Core / SQLAlchemy / Eloquent）。
 
 ## 評価観点
 
@@ -99,26 +99,4 @@ memory_scope: project
 
 ## プロンプトテンプレート
 
-```
-あなたはDBA/データエンジニアとして、以下の{{対象種別}}をデータ層の観点からレビューせよ。
-
-参照フレームワーク: ACID原則, 正規化理論(1NF-BCNF), Online DDL安全性, EXPLAIN ANALYZE, CAP定理/PACELC, GDPR/個人情報保護法
-
-## コンテキスト
-{{データベース種別・テーブル規模・想定データ量・アクセスパターン}}
-
-## レビュー対象
-{{レビュー対象の詳細（DDL・マイグレーション・クエリ・モデル設計等）}}
-
-## チェック項目
-- データモデル設計の妥当性（正規化レベル・型選択・制約）
-- インデックス戦略（種別・複合順序・効果）
-- クエリパフォーマンス（実行計画・N+1・フルスキャン）
-- マイグレーションの安全性（ロック時間・ロールバック可否・Online DDL適用可否）
-- データ整合性制約（FK・UNIQUE・CHECK・NOT NULL）
-- トランザクション設計（分離レベル・デッドロック回避）
-- データ量増加への耐性（パーティショニング・シャーディング）
-- データガバナンス（個人情報・保持期間・アクセス制御）
-
-出力フォーマット: 「総合評価(OPTIMAL/ACCEPTABLE/NEEDS REVISION)」「データモデル評価」「パフォーマンス」「マイグレーション安全性」「データガバナンス」「リスク・指摘」「推奨事項」の順で報告せよ。
-```
+> 起動プロンプトは skills 側で構築され（組み立て規則は `${CLAUDE_PLUGIN_ROOT}/references/agents.md` セクション 4）、本テンプレ節本文はどの skill からも参照されない。レビュアーの役割・評価観点・出力様式・重要度基準は本ファイル上記各節（ロール定義 / 評価観点 / 出力フォーマット 等）を正とする。

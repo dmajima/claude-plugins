@@ -4,6 +4,8 @@
 
 コード変更（ブランチ差分・プルリクエスト・特定ファイル）を **観点別レビュースキル群** で多角的にレビューし、優先度付きの統合サマリと最終判定（`Ready to Merge` / `Needs Attention` / `Needs Work`）を返す協業型コードレビュープラグイン。
 
+> **関連プラグイン**: テストの実行・検証（8 レベルの動的テスト・実施・報告・再テスト）は `deep-test` プラグインが担当します（本プラグインはコード変更・PR のレビューに特化し、テスト実行そのものは行いません）。
+
 > **対応環境**: 現バージョンは **Windows 環境を主想定**（外部依存ツールのインストールに `winget` を使用）。macOS / Linux は将来対応予定。
 
 ## このドキュメントについて
@@ -98,6 +100,163 @@ D-1 実施済みなら、メインプラグインのインストール（上記�
 /plugin install typescript-lsp@claude-plugins-official
 /plugin install microsoft-docs@claude-plugins-official
 ```
+
+## 使い方
+
+### トリガーフレーズ例
+
+```
+このブランチをレビューして
+PR #123 をレビューして
+https://dev.azure.com/org/project/_git/repo/pullrequest/45 をレビュー
+セキュリティ観点だけレビューして                     # → code-review-security 単独実行
+フロントエンドの変更を見て                           # → code-review-frontend 単独実行
+PR #123 の未解決コメントを確認して                   # → pr-review 内の解消判定
+仕様書 docs/specs/order.md と整合性を確認して        # → spec 引数経由で仕様整合性チェック
+```
+
+### モードの違い（観点別スキル粒度）
+
+| モード | 動員観点別スキル | 内訳エージェント（権限なければ SKIPPED） | 用途 |
+|--------|----------------|-----------------------------------------|------|
+| 標準 | 5種：impl / testing / security / architecture / frontend（差分内容により architecture / frontend は省略可） | 最大10種：impl + linter + perf + test + runner + sec + dep + arch + dba + web | 通常のコードレビュー（既定） |
+| 簡易 | 3種：impl / testing / security の必須トリオ | 最大7種：impl + linter + perf + test + runner + sec + dep | 軽微な修正・時間 / コスト制約 |
+
+> **粒度の注意**: モード判断は **観点別スキル単位**。各観点別スキル内のエージェント（例: `code-review-implementation` 内の linter / perf）は通常通り並列起動される。動的検証は対応する Bash 権限がなければ SKIPPED として記録される（「未実施 ≠ 問題なし」）。
+
+非対話モード（CI/CD・SDK 経由）では **標準モード**。
+
+### PR レビューの流れ
+
+1. `pr-review` スキルが PR 識別子（URL or ID）を受領しホスト判定
+2. 必要な外部ツール（gh / az / azure-devops 拡張）の存在確認、不足時は `env-setup` 経由でインストール
+3. PR メタ情報・差分・スレッド取得
+4. 未解決コメントの **解消判定 → ネイティブステータス更新**（GitHub: resolveReviewThread / Azure DevOps: status=fixed）
+5. `code-review` オーケストレーターへ委譲し観点別スキル並列実行
+6. レビュー結果を **行範囲指定でインラインコメント追加**
+7. 完了報告
+
+### 必要な認証
+
+| ホスト | 推奨認証 | 補助認証 | 備考 |
+|-------|--------|---------|------|
+| GitHub | `gh auth login`（OAuth） | `GH_TOKEN` 環境変数（PAT） | `--with-token < token.txt` 例示は使わない（平文ファイル禁止） |
+| クラウド Azure DevOps（dev.azure.com） | `az login`（MS アカウント） | `AZURE_DEVOPS_EXT_PAT` 環境変数 | `az devops invoke` / `az rest` が動作 |
+| **オンプレ TFS Server**（自社 TFS） | **NTLM（既存ドメインアカウント）** | PAT | **`az devops` 拡張は TFS 非対応**。`curl --ntlm --netrc-file` で REST API を直接呼ぶ |
+
+### オンプレ TFS Server の NTLM 認証セットアップ
+
+**オンプレ TFS Server** を使う場合、PAT を発行せずに **既存のドメインアカウント** で動作可能（NTLM 認証）。
+
+> **実装の所在と認証情報ストアの前提（U12）**: 以下の手順（credentials.json 登録・netrc 経由 curl 等）は **connector プラグイン（azure 系スキル）側の内部実装** の解説です。pr-review スキルは PR 操作を connector に委譲するのみで、NTLM 認証処理・認証情報取得を自前では行いません（`credentials.json` を直接参照しません）。**connector に接続していれば credentials-manager を別途直接呼び出す必要はなく、deep-code-review は credentials-manager を直接依存に持ちません**（connector が抽象化層）。利用者が行う作業は「1. TFS パスワードを **credentials-manager プラグイン経由で登録** する」だけです。登録先は credentials-manager の標準ストア `.claude/.local/plugins/credentials-manager/credentials.json`（リポジトリ優先 → ホーム。後方互換で従来パス `~/.claude/credentials.json` も connector が参照）で、connector がこれを解決します。
+
+```powershell
+# 1. TFS パスワードを credentials-manager プラグインで "tfs-password" エントリとして登録（初回のみ・手動）
+#    → credentials-manager 標準ストア .claude/.local/plugins/credentials-manager/credentials.json に保存される
+#    最低限必要なフィールド:
+#    {
+#      "credentials": {
+#        "tfs-password": {
+#          "type": "password",
+#          "username": "<your-username>",
+#          "value": "<password>",
+#          "urls": ["https://<tfs-host>/*"],
+#          "domains": ["<tfs-host>"],
+#          "auth_method": "ntlm:<your-username>"
+#        }
+#      }
+#    }
+#    ※未設定で pr-review スキルを起動すると、最初にユーザーへ問い合わせます。
+
+# 2. 利用時は環境変数経由で取得（null 文字列を弾く）※connector 内部の解決例。実体は connector が複数ストアを横断解決
+$env:TFS_HOST = '<tfs-host>'    # 例: tfs.example.com
+# credentials-manager 標準ストアを解決（リポジトリ優先 → ホーム。後方互換で従来パスも）
+$repoRoot = (& git rev-parse --show-toplevel 2>$null)
+$credPath = @(
+    (Join-Path $repoRoot '.claude/.local/plugins/credentials-manager/credentials.json'),
+    (Join-Path $HOME '.claude/.local/plugins/credentials-manager/credentials.json'),
+    (Join-Path $HOME '.claude/credentials.json')          # 後方互換（従来パス）
+) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+$creds = (Get-Content -LiteralPath $credPath -Raw -Encoding utf8 | ConvertFrom-Json).credentials.'tfs-password'
+$env:TFS_USER = $creds.username
+$tfsPass      = $creds.value     # SecureString に変換できればより安全
+if (-not $env:TFS_HOST) { throw 'TFS_HOST が未設定' }
+if (-not $env:TFS_USER) { throw 'tfs-password.username が credentials.json に未設定' }
+if (-not $tfsPass)      { throw 'tfs-password.value が credentials.json に未設定' }
+
+# 3. .netrc 経由で curl.exe 呼び出し（PASS をコマンドラインに出さない・try/finally で確実削除）
+$Netrc = New-TemporaryFile
+$Resp  = New-TemporaryFile
+# 必要に応じて NTFS ACL で他ユーザのアクセスを禁止する（例）
+$acl = Get-Acl $Netrc.FullName
+$acl.SetAccessRuleProtection($true, $false)
+$rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+    $env:USERNAME, 'FullControl', 'Allow')
+$acl.AddAccessRule($rule)
+Set-Acl -Path $Netrc.FullName -AclObject $acl
+
+try {
+    "machine $($env:TFS_HOST)`nlogin $($env:TFS_USER)`npassword $tfsPass" |
+        Out-File -LiteralPath $Netrc.FullName -Encoding ascii
+    $tfsPass = $null   # メモリ上の PASS を即削除（参照を切る）
+
+    # HTTP コード取得 + switch 分岐は ${CLAUDE_PLUGIN_ROOT}/references/http-error-handling.md セクション 3 を適用
+    $HttpCode = & curl.exe -sS --max-time 30 --ntlm --netrc-file $Netrc.FullName `
+        -o $Resp.FullName -w '%{http_code}' `
+        "https://$($env:TFS_HOST)/tfs/<collection>/<project>/_apis/git/repositories/<repo>/pullrequests?api-version=6.0"
+    if ([string]$HttpCode -notmatch '^2\d{2}$') {
+        Write-Host "HTTP $HttpCode"
+        Get-Content -LiteralPath $Resp.FullName -TotalCount 10 -Encoding utf8
+        throw "HTTP $HttpCode"
+    }
+} finally {
+    Remove-Item -LiteralPath $Netrc.FullName -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $Resp.FullName  -Force -ErrorAction SilentlyContinue
+}
+```
+
+`pr-review` スキルが上記手順を内部で自動化する。詳細は `skills/pr-review/references/azure-devops-tfs-ntlm.md` を参照。
+
+**認証情報未設定時の動作**: connector が解決する credentials-manager ストア（`.claude/.local/plugins/credentials-manager/credentials.json`。後方互換で従来パスも）に必要な情報がない場合、`pr-review` スキルは **API アクセスを試みる前にユーザーへ問い合わせ**ます（PAT 発行 / NTLM パスワード入力 / az login 等の指示を提示、または credentials-manager プラグインでの登録を案内）。これにより、誤った資格情報で外部 API を叩く事故を防ぎます。
+
+### PAT が必要な場合（補助・通常は不要）
+
+NTLM 認証が有効なオンプレ TFS では **NTLM 認証で完結する** ため通常 PAT は不要。以下のいずれかの場合のみ PAT を発行する。
+
+| ケース | 対応 |
+|------|------|
+| CI/CD パイプライン（ブラウザ認証不可） | PAT 発行 |
+| NTLM が無効化された TFS インスタンス | PAT 発行 |
+| クラウド Azure DevOps の利用（dev.azure.com） | `az login` を最優先・必要時のみ PAT |
+| GitHub PR レビュー | `gh auth login`（OAuth）を最優先・必要時のみ PAT |
+
+PAT 発行手順は各サービスの Web UI（右上ユーザーアイコン → Personal Access Tokens / Settings → Developer settings → Tokens）から行う。発行時の最小スコープ:
+
+| サービス | 必要スコープ |
+|---------|------------|
+| Azure DevOps（クラウド・オンプレ共通） | `Code` Read & Write, `Pull Request Threads` Read & Write |
+| GitHub | `repo`（プライベート）/ `pull_request` / `read:org`（組織リポ時） |
+
+PAT 取得後の保存:
+
+```powershell
+# 環境変数経由（推奨：履歴・プロセス引数に残らない）
+$env:GH_TOKEN = Read-Host -Prompt 'GH_TOKEN' -AsSecureString |
+    ConvertFrom-SecureString -AsPlainText            # GitHub
+# または
+$env:AZURE_DEVOPS_EXT_PAT = Read-Host -Prompt 'AZURE_DEVOPS_EXT_PAT' -AsSecureString |
+    ConvertFrom-SecureString -AsPlainText            # Azure DevOps
+
+# 永続化したい場合は credentials-manager プラグインで登録（標準ストア .claude/.local/plugins/credentials-manager/credentials.json に保存）、または OS の安全な保管領域（DPAPI / Keychain / Secret Service）を利用
+```
+
+### 認証情報の取り扱い禁止事項
+
+- 禁止: パスワード・PAT をチャット欄に平文で貼らない（履歴・ログに永続化される）
+- 禁止: `setx AZURE_DEVOPS_EXT_PAT <PAT>` で Windows レジストリに永続化しない
+- 禁止: `gh auth login --with-token < token.txt` で平文ファイル経由ログインしない
+- 禁止: `curl -u user:pass <URL>` でコマンドライン引数渡ししない（`ps` から漏洩）
+- 推奨: `Read-Host -AsSecureString` でエコーオフ入力 → 環境変数 → `.netrc` ファイル（temp 生成 + `try/finally` で確実削除。Windows/Git Bash では `chmod` の実効性が限定的なため、主防御は一時ファイルの短命化と確実削除）経由が安全
 
 ## クイックスタート（初回利用者向け）
 
@@ -264,163 +423,6 @@ D-1 実施済みなら、メインプラグインのインストール（上記�
 ```
 
 > **補足**: 同マーケットプレイスの `connector` プラグイン（PR コメント投稿等の I/O を担当）は同一マーケットプレイス内依存のため、本プラグインのインストール時に自動解決されます。
-
-## 使い方
-
-### トリガーフレーズ例
-
-```
-このブランチをレビューして
-PR #123 をレビューして
-https://dev.azure.com/org/project/_git/repo/pullrequest/45 をレビュー
-セキュリティ観点だけレビューして                     # → code-review-security 単独実行
-フロントエンドの変更を見て                           # → code-review-frontend 単独実行
-PR #123 の未解決コメントを確認して                   # → pr-review 内の解消判定
-仕様書 docs/specs/order.md と整合性を確認して        # → spec 引数経由で仕様整合性チェック
-```
-
-### モードの違い（観点別スキル粒度）
-
-| モード | 動員観点別スキル | 内訳エージェント（権限なければ SKIPPED） | 用途 |
-|--------|----------------|-----------------------------------------|------|
-| 標準 | 5種：impl / testing / security / architecture / frontend（差分内容により architecture / frontend は省略可） | 最大10種：impl + linter + perf + test + runner + sec + dep + arch + dba + web | 通常のコードレビュー（既定） |
-| 簡易 | 3種：impl / testing / security の必須トリオ | 最大7種：impl + linter + perf + test + runner + sec + dep | 軽微な修正・時間 / コスト制約 |
-
-> **粒度の注意**: モード判断は **観点別スキル単位**。各観点別スキル内のエージェント（例: `code-review-implementation` 内の linter / perf）は通常通り並列起動される。動的検証は対応する Bash 権限がなければ SKIPPED として記録される（「未実施 ≠ 問題なし」）。
-
-非対話モード（CI/CD・SDK 経由）では **標準モード**。
-
-### PR レビューの流れ
-
-1. `pr-review` スキルが PR 識別子（URL or ID）を受領しホスト判定
-2. 必要な外部ツール（gh / az / azure-devops 拡張）の存在確認、不足時は `env-setup` 経由でインストール
-3. PR メタ情報・差分・スレッド取得
-4. 未解決コメントの **解消判定 → ネイティブステータス更新**（GitHub: resolveReviewThread / Azure DevOps: status=fixed）
-5. `code-review` オーケストレーターへ委譲し観点別スキル並列実行
-6. レビュー結果を **行範囲指定でインラインコメント追加**
-7. 完了報告
-
-### 必要な認証
-
-| ホスト | 推奨認証 | 補助認証 | 備考 |
-|-------|--------|---------|------|
-| GitHub | `gh auth login`（OAuth） | `GH_TOKEN` 環境変数（PAT） | `--with-token < token.txt` 例示は使わない（平文ファイル禁止） |
-| クラウド Azure DevOps（dev.azure.com） | `az login`（MS アカウント） | `AZURE_DEVOPS_EXT_PAT` 環境変数 | `az devops invoke` / `az rest` が動作 |
-| **オンプレ TFS Server**（自社 TFS） | **NTLM（既存ドメインアカウント）** | PAT | **`az devops` 拡張は TFS 非対応**。`curl --ntlm --netrc-file` で REST API を直接呼ぶ |
-
-### オンプレ TFS Server の NTLM 認証セットアップ
-
-**オンプレ TFS Server** を使う場合、PAT を発行せずに **既存のドメインアカウント** で動作可能（NTLM 認証）。
-
-> **実装の所在と認証情報ストアの前提（U12）**: 以下の手順（credentials.json 登録・netrc 経由 curl 等）は **connector プラグイン（azure 系スキル）側の内部実装** の解説です。pr-review スキルは PR 操作を connector に委譲するのみで、NTLM 認証処理・認証情報取得を自前では行いません（`credentials.json` を直接参照しません）。**connector に接続していれば credentials-manager を別途直接呼び出す必要はなく、deep-code-review は credentials-manager を直接依存に持ちません**（connector が抽象化層）。利用者が行う作業は「1. TFS パスワードを **credentials-manager プラグイン経由で登録** する」だけです。登録先は credentials-manager の標準ストア `.claude/.local/plugins/credentials-manager/credentials.json`（リポジトリ優先 → ホーム。後方互換で従来パス `~/.claude/credentials.json` も connector が参照）で、connector がこれを解決します。
-
-```powershell
-# 1. TFS パスワードを credentials-manager プラグインで "tfs-password" エントリとして登録（初回のみ・手動）
-#    → credentials-manager 標準ストア .claude/.local/plugins/credentials-manager/credentials.json に保存される
-#    最低限必要なフィールド:
-#    {
-#      "credentials": {
-#        "tfs-password": {
-#          "type": "password",
-#          "username": "<your-username>",
-#          "value": "<password>",
-#          "urls": ["https://<tfs-host>/*"],
-#          "domains": ["<tfs-host>"],
-#          "auth_method": "ntlm:<your-username>"
-#        }
-#      }
-#    }
-#    ※未設定で pr-review スキルを起動すると、最初にユーザーへ問い合わせます。
-
-# 2. 利用時は環境変数経由で取得（null 文字列を弾く）※connector 内部の解決例。実体は connector が複数ストアを横断解決
-$env:TFS_HOST = '<tfs-host>'    # 例: tfs.example.com
-# credentials-manager 標準ストアを解決（リポジトリ優先 → ホーム。後方互換で従来パスも）
-$repoRoot = (& git rev-parse --show-toplevel 2>$null)
-$credPath = @(
-    (Join-Path $repoRoot '.claude/.local/plugins/credentials-manager/credentials.json'),
-    (Join-Path $HOME '.claude/.local/plugins/credentials-manager/credentials.json'),
-    (Join-Path $HOME '.claude/credentials.json')          # 後方互換（従来パス）
-) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
-$creds = (Get-Content -LiteralPath $credPath -Raw -Encoding utf8 | ConvertFrom-Json).credentials.'tfs-password'
-$env:TFS_USER = $creds.username
-$tfsPass      = $creds.value     # SecureString に変換できればより安全
-if (-not $env:TFS_HOST) { throw 'TFS_HOST が未設定' }
-if (-not $env:TFS_USER) { throw 'tfs-password.username が credentials.json に未設定' }
-if (-not $tfsPass)      { throw 'tfs-password.value が credentials.json に未設定' }
-
-# 3. .netrc 経由で curl.exe 呼び出し（PASS をコマンドラインに出さない・try/finally で確実削除）
-$Netrc = New-TemporaryFile
-$Resp  = New-TemporaryFile
-# 必要に応じて NTFS ACL で他ユーザのアクセスを禁止する（例）
-$acl = Get-Acl $Netrc.FullName
-$acl.SetAccessRuleProtection($true, $false)
-$rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-    $env:USERNAME, 'FullControl', 'Allow')
-$acl.AddAccessRule($rule)
-Set-Acl -Path $Netrc.FullName -AclObject $acl
-
-try {
-    "machine $($env:TFS_HOST)`nlogin $($env:TFS_USER)`npassword $tfsPass" |
-        Out-File -LiteralPath $Netrc.FullName -Encoding ascii
-    $tfsPass = $null   # メモリ上の PASS を即削除（参照を切る）
-
-    # HTTP コード取得 + switch 分岐は ${CLAUDE_PLUGIN_ROOT}/references/http-error-handling.md セクション 3 を適用
-    $HttpCode = & curl.exe -sS --max-time 30 --ntlm --netrc-file $Netrc.FullName `
-        -o $Resp.FullName -w '%{http_code}' `
-        "https://$($env:TFS_HOST)/tfs/<collection>/<project>/_apis/git/repositories/<repo>/pullrequests?api-version=6.0"
-    if ([string]$HttpCode -notmatch '^2\d{2}$') {
-        Write-Host "HTTP $HttpCode"
-        Get-Content -LiteralPath $Resp.FullName -TotalCount 10 -Encoding utf8
-        throw "HTTP $HttpCode"
-    }
-} finally {
-    Remove-Item -LiteralPath $Netrc.FullName -Force -ErrorAction SilentlyContinue
-    Remove-Item -LiteralPath $Resp.FullName  -Force -ErrorAction SilentlyContinue
-}
-```
-
-`pr-review` スキルが上記手順を内部で自動化する。詳細は `skills/pr-review/references/azure-devops-tfs-ntlm.md` を参照。
-
-**認証情報未設定時の動作**: connector が解決する credentials-manager ストア（`.claude/.local/plugins/credentials-manager/credentials.json`。後方互換で従来パスも）に必要な情報がない場合、`pr-review` スキルは **API アクセスを試みる前にユーザーへ問い合わせ**ます（PAT 発行 / NTLM パスワード入力 / az login 等の指示を提示、または credentials-manager プラグインでの登録を案内）。これにより、誤った資格情報で外部 API を叩く事故を防ぎます。
-
-### PAT が必要な場合（補助・通常は不要）
-
-NTLM 認証が有効なオンプレ TFS では **NTLM 認証で完結する** ため通常 PAT は不要。以下のいずれかの場合のみ PAT を発行する。
-
-| ケース | 対応 |
-|------|------|
-| CI/CD パイプライン（ブラウザ認証不可） | PAT 発行 |
-| NTLM が無効化された TFS インスタンス | PAT 発行 |
-| クラウド Azure DevOps の利用（dev.azure.com） | `az login` を最優先・必要時のみ PAT |
-| GitHub PR レビュー | `gh auth login`（OAuth）を最優先・必要時のみ PAT |
-
-PAT 発行手順は各サービスの Web UI（右上ユーザーアイコン → Personal Access Tokens / Settings → Developer settings → Tokens）から行う。発行時の最小スコープ:
-
-| サービス | 必要スコープ |
-|---------|------------|
-| Azure DevOps（クラウド・オンプレ共通） | `Code` Read & Write, `Pull Request Threads` Read & Write |
-| GitHub | `repo`（プライベート）/ `pull_request` / `read:org`（組織リポ時） |
-
-PAT 取得後の保存:
-
-```powershell
-# 環境変数経由（推奨：履歴・プロセス引数に残らない）
-$env:GH_TOKEN = Read-Host -Prompt 'GH_TOKEN' -AsSecureString |
-    ConvertFrom-SecureString -AsPlainText            # GitHub
-# または
-$env:AZURE_DEVOPS_EXT_PAT = Read-Host -Prompt 'AZURE_DEVOPS_EXT_PAT' -AsSecureString |
-    ConvertFrom-SecureString -AsPlainText            # Azure DevOps
-
-# 永続化したい場合は credentials-manager プラグインで登録（標準ストア .claude/.local/plugins/credentials-manager/credentials.json に保存）、または OS の安全な保管領域（DPAPI / Keychain / Secret Service）を利用
-```
-
-### 認証情報の取り扱い禁止事項
-
-- ❌ パスワード・PAT をチャット欄に平文で貼らない（履歴・ログに永続化される）
-- ❌ `setx AZURE_DEVOPS_EXT_PAT <PAT>` で Windows レジストリに永続化しない
-- ❌ `gh auth login --with-token < token.txt` で平文ファイル経由ログインしない
-- ❌ `curl -u user:pass <URL>` でコマンドライン引数渡ししない（`ps` から漏洩）
-- ✅ `Read-Host -AsSecureString` でエコーオフ入力 → 環境変数 → `.netrc` ファイル（temp 生成 + `try/finally` で確実削除。Windows/Git Bash では `chmod` の実効性が限定的なため、主防御は一時ファイルの短命化と確実削除）経由が安全
 
 ## 動的検証コマンドの追加方法
 

@@ -1,14 +1,6 @@
 ---
 name: code-review-architecture
-description: |
-  アーキテクチャ観点（システム構造・技術選定・データ層）でコード変更をレビューする観点別スキル。
-  内部で architect / dba の2エージェントを並列起動する（DB変更がない場合は dba を省略可）。
-
-  以下の場面で使用する:
-  - 「アーキテクチャ観点でレビューして」「設計影響を確認して」と言われた場合
-  - 「DB スキーマ変更 / マイグレーションをレビューして」と言われた場合
-  - 大規模リファクタリング・コンポーネント境界の変更時
-  - code-review オーケストレーターから委譲された場合（標準モードのみ）
+description: deep-code-review の観点別スキル。コード変更をアーキテクチャ観点（システム構造・技術選定・データ層）でレビュー。「アーキテクチャ観点でレビューして」「設計影響を確認して」「DB スキーマ変更/マイグレーションをレビューして」や code-review の委譲で起動する。Use when reviewing architecture or DB-layer changes. SKIP when reviewing implementation/tests/security/frontend (use the matching code-review-* skill).
 allowed-tools:
   - Read
   - Grep
@@ -18,7 +10,7 @@ allowed-tools:
   - Bash(git *)
 ---
 
-> **推奨依存の MCP（任意）**: `microsoft-docs`（`claude-plugins-official`）プラグインが導入されている環境では、そのプラグインが提供する Microsoft Learn ドキュメント検索・取得 MCP ツールを .NET 一次情報照合に利用できる（`${CLAUDE_PLUGIN_ROOT}/references/frameworks/dotnet.md` セクション 4.1）。MCP ツール名は導入環境で解決されるため `allowed-tools` に固定列挙せず、利用可能な場合のみ用いる（未導入時は照合をスキップ）。
+> **推奨依存の MCP（任意）**: `microsoft-docs`（`claude-plugins-official`）プラグイン導入環境では、そのプラグインが提供する Microsoft Learn ドキュメント検索・取得 MCP ツールを .NET 一次情報照合に利用できる（`${CLAUDE_PLUGIN_ROOT}/references/frameworks/dotnet.md` セクション 4.1）。MCP ツール名は導入環境で解決されるため `allowed-tools` に固定列挙せず、利用可能時のみ用いる（未導入時は照合をスキップ）。
 
 # code-review-architecture スキル
 
@@ -43,7 +35,7 @@ allowed-tools:
 
 ## 動的に省略可（責務はオーケストレーター）
 
-> **注意**: 本スキルが呼ばれたら **必ず両エージェントを起動する**（DB変更なしの場合のみ dba を内部で省略）。本スキル自体を呼ぶか否かの判断は **`code-review` オーケストレーター側** で行う。本スキル単独で「呼ばれたが何もしない」という判断はしない。
+> **注意**: 本スキルが呼ばれたら **必ず両エージェントを起動する**（DB変更なしの場合のみ dba を内部で省略）。本スキル自体を呼ぶか否かの判断は **`code-review` オーケストレーター側** で行う。本スキル単独で「呼ばれたが何もしない」判断はしない。
 
 | エージェント | 内部省略条件（本スキル内で判定） |
 |------------|---------|
@@ -55,7 +47,7 @@ allowed-tools:
 
 ## 実行モード判定
 
-観点別スキルは **起動形態（委譲 / 単独）** を判定する。対話 / 非対話の UI モード判定（`AskUserQuestion`）はオーケストレーター（`code-review`）の責務であり、本スキルは行わない。
+**起動形態（委譲 / 単独）** を判定する。対話 / 非対話の UI モード判定（`AskUserQuestion`）はオーケストレーター（`code-review`）責務であり本スキルは行わない。
 
 | 入力 | 起動形態 | 動作 |
 |-----|---------|------|
@@ -75,8 +67,8 @@ allowed-tools:
 ## 実行フロー
 
 1. 引数を解釈し、対象差分・関連ファイル・DB マイグレーション SQL を確定
-1.5. `language-profiles` の適用観点プロファイルを確認し（未受領時は `${CLAUDE_PLUGIN_ROOT}/references/language-detection.md` で自己検出）、各エージェントのプロンプトに言語プロファイル参照指示（`${CLAUDE_PLUGIN_ROOT}/references/common-references.md` セクション 4.5 のテンプレート）を含める（O10）
-1.6. （.NET 差分検出時・任意）**推奨依存 `microsoft-docs`** MCP が利用可能なら、使用 .NET / ASP.NET Core / EF Core API の非推奨・破壊的変更を learn.microsoft.com で照合する（`${CLAUDE_PLUGIN_ROOT}/references/frameworks/dotnet.md` セクション 4.1）。未解決の環境ではスキップし静的観点のみで評価する（「未照合」を「問題なし」と書かない）
+1.5. `language-profiles` の適用観点プロファイルを確認し（未受領時は `${CLAUDE_PLUGIN_ROOT}/references/language-detection.md` で自己検出）、各エージェントのプロンプトに言語プロファイル参照指示（`${CLAUDE_PLUGIN_ROOT}/references/common-references.md` セクション 4.5 のテンプレート）を含める。**言語プロファイルは hub（`<言語>.md`）＋観点別 details（`-impl` / `-core` / `-security`）の 2 層構成**であり、各エージェントは hub と **自担当節に対応する details のみ** を Read する（dba は sql 検出時 `sql.md` hub + `sql-core.md` + `sql-security.md`）（O10）
+1.6. （.NET 差分検出時・任意）**推奨依存 `microsoft-docs`** MCP が利用可能なら、使用 .NET / ASP.NET Core / EF Core API の非推奨・破壊的変更を learn.microsoft.com で照合（`${CLAUDE_PLUGIN_ROOT}/references/frameworks/dotnet.md` セクション 4.1）。未解決環境ではスキップし静的観点のみで評価（「未照合」を「問題なし」と書かない）
 2. DB 変更があるか判定し、`dba` の起動可否を決定
 3. 該当エージェントを **1メッセージ内で並列起動**:
    ```
@@ -87,14 +79,14 @@ allowed-tools:
 
 ## 参照
 
-本観点別スキルが参照する共通リファレンスは **`${CLAUDE_PLUGIN_ROOT}/references/common-references.md`** に集約済み（プラグイン内 SSOT）。
+共通リファレンスは **`${CLAUDE_PLUGIN_ROOT}/references/common-references.md`** に集約済み（プラグイン内 SSOT）。
 ルール ID 体系（Universal U1〜U16 + Observation O1〜O10）は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` を参照。
 
 ## 達成チェックリスト
 
 - `${CLAUDE_SKILL_DIR}/references/checklist.md` — 中間レポート返却前のルール達成チェック
 
-> 統合サマリの最終フォーマット・Verdict 判定はオーケストレーター（`code-review`）の責務。本スキルは中間レポート（後述「出力フォーマット」セクションの形式）を返すのみ。
+> 統合サマリの最終フォーマット・Verdict 判定はオーケストレーター（`code-review`）責務。本スキルは中間レポート（後述「出力フォーマット」の形式）を返すのみ。
 
 ## 出力フォーマット
 
@@ -115,8 +107,7 @@ allowed-tools:
 ## 重要な制約
 
 - Write ツールによるレビュー対象ソースコードの変更は行わない
-- 統合サマリの最終フォーマット・Verdict 判定はオーケストレーター（`code-review`）の責務であり、本スキルは中間レポートを返すのみ
 
 ## 責務外
 
-進捗管理（U5・複数エージェント並列起動時の `progress.md` 維持）と、自スキル外と判断した指摘の他観点別スキルへの振分けルールは、**`${CLAUDE_PLUGIN_ROOT}/references/common-references.md` セクション4 / セクション5** に集約済み（共通化済み）。
+進捗管理（U5・複数エージェント並列起動時の `progress.md` 維持）と、自スキル外と判断した指摘の他観点別スキルへの振分けルールは **`${CLAUDE_PLUGIN_ROOT}/references/common-references.md` セクション4 / セクション5** に集約済み。

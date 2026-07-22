@@ -17,6 +17,7 @@
 | 08 | case-08_install_rejected.md | インストール却下パス（E2 否定パス・案内のみ終了） | 対話 |
 | 09 | case-09_install_priority.md | インストール優先順位（E4・winget→サブコマンド→MSI/EXE） | 対話 |
 | 10 | case-10_delegated_verify_non_interactive.md | 委譲・verify 完全非対話（存在確認のみ・AskUserQuestion 不発火・E1） | 委譲（非対話） |
+| 11 | case-11_install_failure.md | インストール実行失敗パス（E2 承認済み・失敗の正直報告・偽装しない） | 対話 |
 
 ## ケースファイルの構成
 

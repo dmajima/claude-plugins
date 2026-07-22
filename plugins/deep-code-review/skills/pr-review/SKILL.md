@@ -1,19 +1,6 @@
 ---
 name: pr-review
-description: |
-  プルリクエスト（GitHub・Azure DevOps Git 両対応）の内容を読み取り、deep-code-review プラグインの観点別スキルでレビューし、
-  PR にインライン形式（該当範囲を選択した状態）でコメントを追記するスキル。
-  PR 内に未解決のスレッド/コメントがある場合は解消状態を確認し、解消済みであれば該当指摘のステータスを変更する。
-
-  以下の場面で使用する:
-  - 「PR #123 をレビューして」「この PR の URL をレビューして」と言われた場合
-  - 「Azure DevOps の PR をレビューして」と言われた場合
-  - GitHub / Azure DevOps の PR URL を渡された場合
-  - 「PR の未解決コメントを確認して」「未解決を解消できているか見て」と言われた場合
-
-  GitHub PR 操作は connector プラグインの github スキルに委譲する。
-  Azure DevOps の PR 操作は connector プラグインの azure スキルに委譲する。
-  外部ツール（gh / az 等）のインストールは connector 側の責務。
+description: Anthropic 公式 code-review とは別の deep-code-review プラグイン。GitHub・Azure DevOps の PR を観点別レビューし、インラインコメント追記・未解決コメントの解消とステータス更新を行う。「PR#123 をレビューして」や PR URL 提示、「未解決コメントを確認して」で起動する。Use when reviewing a GitHub/Azure DevOps PR. SKIP when reviewing local diffs (use code-review); PR host ops via connector.
 allowed-tools:
   - Read
   - Grep
@@ -39,7 +26,7 @@ allowed-tools:
 
 ## 責務
 
-GitHub と Azure DevOps Git の両方でホストされた PR を統一インターフェースでレビューし、**該当範囲を選択した状態でコメント追記**、未解決コメントの**解消確認＋ステータス変更**までを行う。
+GitHub と Azure DevOps Git 両方の PR を統一インターフェースでレビューし、**該当範囲を選択した状態でコメント追記**、未解決コメントの**解消確認＋ステータス変更**を行う。
 
 ## トリガー条件
 
@@ -108,8 +95,8 @@ flowchart TD
 
 ### Step 1/1.5: ホスト判定・認証確認
 
-- GitHub: `connector:github` に読み取り操作を委譲し、認証確認は connector 側で実行される
-- Azure DevOps（クラウド / TFS）: `connector:azure` に読み取り操作を委譲し、認証確認は connector 側で実行される
+- GitHub: `connector:github` に読み取り操作を委譲（認証確認は connector 側）
+- Azure DevOps（クラウド / TFS）: `connector:azure` に読み取り操作を委譲（認証確認は connector 側）
 - 認証未確認なら connector が API を呼ばずユーザーに問い合わせる。詳細: `${CLAUDE_SKILL_DIR}/references/credentials-precheck.md`
 
 ### Step 3.5: 期待挙動の推論

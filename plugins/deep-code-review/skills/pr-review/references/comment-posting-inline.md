@@ -1,6 +1,6 @@
 # Step 7 詳細: インラインコメント投稿（セクション 7.0〜7.4）
 
-`pr-review` スキル Step 7 のインラインコメント投稿に関する詳細実装。Finding ID 表示・GitHub / Azure DevOps への投稿委譲・サニタイズ・HTTP エラー分岐を扱う。
+`pr-review` スキル Step 7 のインラインコメント投稿の詳細実装。Finding ID 表示・GitHub / Azure DevOps への投稿委譲・サニタイズ・HTTP エラー分岐を扱う。
 
 > **親ファイル**: [`comment-posting.md`](comment-posting.md)（Step 7 の概要・セクションマップ）。サマリースレッド投稿（セクション 7.5〜7.7）は [`comment-posting-summary.md`](comment-posting-summary.md) を参照。
 
@@ -8,8 +8,7 @@
 
 ## 7.0 PR コメント本文の Finding ID 表示（必須）
 
-PR にインラインコメント / サマリースレッドを投稿する際、**本文冒頭に Finding ID を表示** する。
-ユーザーが PR 上で「この指摘を直して」と言うときに ID で一意特定できるようにするため。
+PR にインラインコメント / サマリースレッドを投稿する際、**本文冒頭に Finding ID を表示** する。ユーザーが PR 上で「この指摘を直して」と言うとき ID で一意特定するため。
 
 ### 7.0.1 インラインコメント本文の冒頭フォーマット
 
@@ -23,8 +22,8 @@ PR にインラインコメント / サマリースレッドを投稿する際�
 - 1 行目: **`## [<Finding ID>] [<致命度>] <タイトル>` の形式（必ず Markdown H2 見出し `## ` で始める）**
 - ID と致命度はそれぞれ `[ ]` で囲む（コードフェンス外でも自動リンク化されない記号）
 - 2 行目以降: 統合サマリの各指摘セクションをそのまま貼り付け
-- タイトルを H2 にする目的: PR 上で開いた際に「これがどの Finding ID で、どの致命度で、何の指摘か」を見出しレベルで識別でき、Markdown レンダラの目次・アウトライン機能でも一覧化できるようにする
-- 注意: H2 にしたことでコメント本文内のサブ見出し（「指摘内容」「求める修正」「理由・根拠」等）は H3（`###`）以降を使う
+- タイトルを H2 にする目的: PR 上で Finding ID・致命度・指摘内容を見出しレベルで識別でき、Markdown レンダラの目次・アウトライン機能でも一覧化するため
+- 注意: H2 にしたためコメント本文内のサブ見出し（「指摘内容」「求める修正」「理由・根拠」等）は H3（`###`）以降を使う
 
 ### 7.0.2 サマリースレッドの目次
 
@@ -61,12 +60,11 @@ PR にインラインコメント / サマリースレッドを投稿する際�
 </details>
 ```
 
-> **目次配置**: ヘッダブロック直後・セクション 1（対応が必要な指摘）の `<details>` ブロックの前。
-> ユーザーが ID と概要だけを一覧で確認できるようにし、詳細は対応セクションで参照する。
+> **目次配置**: ヘッダブロック直後・セクション 1（対応が必要な指摘）の `<details>` ブロックの前。ID と概要を一覧確認でき、詳細は対応セクションで参照する。
 
 ### 7.0.3 ID と PR コメントの紐付け
 
-オーケストレーターから返却されたサマリーには Finding ID 付きで指摘が含まれているため、`pr-review` 側で **個別インラインコメントを投稿する際、その本文に必ず Finding ID を含める**。
+オーケストレーター返却のサマリーは Finding ID 付きで指摘を含むため、`pr-review` 側で **個別インラインコメント投稿時、本文に必ず Finding ID を含める**。
 
 > **記法の変換（必須）**: インラインコメントは `<details>` で囲まない Markdown 文脈のため、サマリー本文（HTML 記法）から表・コード・見出しを流用する場合は **Markdown 記法（`|` テーブル / コードフェンス / `##`〜`###` 見出し）に変換** する。HTML の `<table>` / `<pre><code>` をインラインコメントへそのまま貼らない。
 
@@ -126,7 +124,7 @@ Skill(skill: "connector:github", args: "PR URL: <PR_URL> にインラインコ�
 
 ### 7.1.2 Pending Review 一括投稿（connector 委譲）
 
-指摘件数が多い場合（5件以上）は Pending Review でまとめて投稿する（通知の集約・レビュー単位の管理性が向上）:
+指摘件数が多い場合（5件以上）は Pending Review でまとめて投稿する（通知集約・レビュー単位の管理性向上）:
 
 ```text
 Skill(skill: "connector:github", args: "PR URL: <PR_URL> に Pending Review を投稿。サマリー: <review_summary>, コメント: <comments_json_array>。承認済み。")
@@ -169,8 +167,8 @@ Skill(skill: "connector:azure", args: "PR URL: <PR_URL> にインラインコメ
 - `<filePath>`: `/` 始まりのリポジトリルート相対パス（例: `/src/Controllers/OrderController.cs`）
 - `<startLine>` / `<endLine>`: 差分の右側（変更後）の行範囲。単一行の場合は同一値
 - `<comment_body>`: 7.0.1 のフォーマットに従った本文（`## [CR-NNN] [致命度] タイトル` + 詳細）
-- `「render-check 通過済み。承認済み。」` の明示は **必須**（pr-review の Step 7 で投稿前バリデーションとユーザー承認を実施済みのため）
-- connector からのレスポンスでスレッド `id`（threadId）を取得し、7.0.4 のリンク URL 構築と 7.4 の Finding → Thread マッピングに使用する
+- `「render-check 通過済み。承認済み。」` の明示は **必須**（Step 7 で投稿前バリデーションとユーザー承認を実施済みのため）
+- connector レスポンスのスレッド `id`（threadId）を取得し、7.0.4 のリンク URL 構築と 7.4 の Finding → Thread マッピングに使用する
 
 ### 7.2.2 サマリースレッド投稿（connector 委譲）
 
@@ -196,7 +194,7 @@ Skill(skill: "connector:azure", args: "PR URL: <PR_URL> のスレッド <threadI
 
 ## 7.3 コメント本文のサニタイズ（必須）
 
-PR にコメント追記する前のサニタイズ規則は **プラグイン共通リファレンス `${CLAUDE_PLUGIN_ROOT}/references/comment-sanitization.md` に集約済み**。本ファイルからは規則の参照のみ示す。
+PR コメント追記前のサニタイズ規則は **プラグイン共通リファレンス `${CLAUDE_PLUGIN_ROOT}/references/comment-sanitization.md` に集約済み**。本ファイルは規則の参照のみ示す。
 
 要点（詳細は `comment-sanitization.md` セクション 3〜4）:
 
@@ -204,7 +202,7 @@ PR にコメント追記する前のサニタイズ規則は **プラグイン�
 - 機密文字列の伏字化: Bearer / Basic / GHP / Fine-grained PAT / JWT / AWS / GCP / Slack
 - **疑わしい場合は伏字側に倒す**（false positive 許容）
 
-サニタイズ済みの本文文字列を組み立て、connector 呼び出し時の args に含める（JSON body の構築は connector 側の責務）。
+サニタイズ済み本文文字列を組み立て、connector 呼び出し時の args に含める（JSON body 構築は connector 側の責務）。
 
 ---
 
@@ -215,6 +213,6 @@ PR にコメント追記する前のサニタイズ規則は **プラグイン�
 要点:
 
 - HTTP エラーハンドリングは **connector 側が担当**（connector プラグインの `references/http-error-handling.md` / `references/safe-api-access.md` に従う）
-- pr-review 側は connector 呼び出しが失敗した場合の **未送信件数の報告** と **部分失敗時のロールバック判断** に責務を限定する
+- pr-review 側は connector 呼び出し失敗時の **未送信件数の報告** と **部分失敗時のロールバック判断** に責務を限定する
 - 部分失敗時: 既存状態を巻き戻さず、未送信件数を完了報告（Step 8）に明示
 - connector が認証エラー（401/403 相当）を返した場合: pr-review は投稿を即停止し、ユーザーに認証確認を案内する

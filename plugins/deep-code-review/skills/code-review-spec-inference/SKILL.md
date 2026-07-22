@@ -1,13 +1,6 @@
 ---
 name: code-review-spec-inference
-description: |
-  PR description / コメント / 外部リンク先資料 / 明示仕様書から、PR がもたらす「あるべき姿（期待挙動）」を推論するスキル。
-  pr-review スキルの Step 3.5（期待挙動の推論）から呼び出され、レビュー時の判定根拠を生成する。
-
-  以下の場面で使用する:
-  - pr-review が `spec=<path>` 引数なしで PR をレビューする際の仕様書代替
-  - pr-review が外部リンク先資料（Backlog / TFS Boards / Wiki 等）から期待挙動を抽出する際
-  - 仕様書が複数あって矛盾する場合の優先順位判定
+description: deep-code-review のスキル。PR description・コメント・外部リンク・仕様書から PR の期待挙動（あるべき姿）を推論し判定根拠を生成。「PR のあるべき姿を推論して」「期待挙動を抽出して」「仕様書代替で推論して」や pr-review Step 3.5・code-review の委譲で起動する。Use when inferring a PR's expected behavior without an explicit spec. SKIP when posting comments or fetching PR data (use pr-review).
 allowed-tools:
   - Read
   - Grep
@@ -31,7 +24,7 @@ allowed-tools:
 
 ## 責務
 
-PR の自然言語情報（description / コメント / 外部リンク先資料 / 明示仕様書）から、コードレビュー時の判定根拠となる **「期待挙動サマリ」** を生成する。
+PR の自然言語情報（description / コメント / 外部リンク先資料 / 明示仕様書）から、コードレビュー時の判定根拠となる **「期待挙動サマリ」** を生成。
 
 ## トリガー条件
 
@@ -47,7 +40,7 @@ PR の自然言語情報（description / コメント / 外部リンク先資料
 
 ## 実行モード判定
 
-本スキルは **委譲起動のみ**（対話 UI `AskUserQuestion` は持たず、期待挙動サマリ JSON を返すのみ）。外部 fetch の承認要否は `fetch-external` 引数で切り替える（承認 UI 自体は呼び出し元 `pr-review` の責務）。
+本スキルは **委譲起動のみ**（対話 UI `AskUserQuestion` は持たず、期待挙動サマリ JSON を返すのみ）。外部 fetch の承認要否は `fetch-external` 引数で切り替える（承認 UI 自体は呼び出し元 `pr-review` 責務）。
 
 | 軸 | 値 | 動作 |
 |----|----|------|
@@ -125,7 +118,7 @@ flowchart TD
 
 ### Step 5: 矛盾事項の検出
 
-複数情報源間の矛盾（仕様書 vs description / 過去コメント vs description 等）を検出し、出力 JSON の `conflicts` フィールドに格納する。
+複数情報源間の矛盾（仕様書 vs description / 過去コメント vs description 等）を検出し、出力 JSON の `conflicts` フィールドに格納。
 
 ## 参照
 

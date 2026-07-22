@@ -40,7 +40,7 @@
 - **GitLab / Bitbucket 対応**: pr-review にホスト分岐追加
 - **macOS / Linux のインストール手順整備**: 現状は Windows 主想定（winget 使用）
 - **Agent Teams パターンの拡充**: 利用実績に応じてテンプレート追加
-- **evals の extension-toolkit `eval-guide.md` 形式への段階移行**: 「期待出力」フィールド・自動実行形式への統一
+- **evals の extension-toolkit `eval-guide.md` 5 セクション標準への段階移行**（現行の 4 セクション簡略様式＝`eval-guide.md` 節 3.1 の条件付き許容からの脱却）: 「期待出力」フィールドの追加・自動実行形式（節 10）への統一
 - **共通 references の「片方向参照」原則と実態の整合整理**: 規範本体の SSOT がスキル側にあるケースの整理
 
 ---

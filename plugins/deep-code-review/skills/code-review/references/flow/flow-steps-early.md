@@ -1,22 +1,21 @@
 # レビュー実行フロー — 前半 Step（0-P〜3.5）
 
-> 親: [flow.md](flow.md)（全体図・用語定義・Step 索引）。本ファイルは **準備〜動員決定フェーズ**（Step 0-P / Step 0 / Step 1 / Step 2 / Step 3 / Step 3.5）の詳細を保持する。
-> 続きのフェーズ: レビュー実行（Step 4〜7）は [flow-steps-review.md](flow-steps-review.md)、出力・状態（Step 8〜8.5）は [flow-steps-output.md](flow-steps-output.md) を参照。
+> 親: [flow.md](flow.md)（全体図・用語定義・Step 索引）。本ファイルは **準備〜動員決定フェーズ**（Step 0-P / Step 0 / Step 1 / Step 2 / Step 3 / Step 3.5）の詳細を保持。
+> 続き: レビュー実行（Step 4〜7）は [flow-steps-review.md](flow-steps-review.md)、出力・状態（Step 8〜8.5）は [flow-steps-output.md](flow-steps-output.md)。
 
 ---
 
 ## Step 0-P: 事前準備（前回 state 読込・inputs 確認・コード信頼性原則）
 
-レビュー開始前に、前回の状態と仕様情報を読み込む。
+開始前に前回状態と仕様情報を読み込む。
 
 ### 0-P-1: ブランチ名の確定
 
-現在のブランチ名を `git branch --show-current` で取得する。
-`pr-review` から委譲された場合は PR のブランチ名を使用する。
+ブランチ名を `git branch --show-current` で取得。`pr-review` からの委譲時は PR のブランチ名を使う。
 
 ### 0-P-2: 前回 state.yaml の読み込み
 
-`.claude/.local/plugins/deep-code-review/{branch_name}/` 配下のタイムスタンプフォルダを日時降順でソートし、最新の `state.yaml` を検索する。
+`.claude/.local/plugins/deep-code-review/{branch_name}/` 配下のタイムスタンプフォルダを日時降順ソートし最新の `state.yaml` を検索。
 
 | 結果 | 動作 |
 |------|------|
@@ -35,10 +34,9 @@
 
 ### 0-P-4: コード信頼性原則の適用準備
 
-前回 state.yaml に `code_as_reference_decisions` が記録されている場合、承認済みのパターンを保持する。
-新たにコードからの規約類推が必要になった場合は、`code-trustworthiness.md` に従いユーザー承認を取る。
+前回 state.yaml に `code_as_reference_decisions` があれば承認済みパターンを保持。新たにコードからの規約類推が必要なら `code-trustworthiness.md` に従いユーザー承認を取る。
 
-詳細は `${CLAUDE_SKILL_DIR}/references/state/state-management.md` セクション 4 / `${CLAUDE_SKILL_DIR}/references/state/inputs-management.md` セクション 4 / `${CLAUDE_SKILL_DIR}/references/state/code-trustworthiness.md` を参照。
+詳細: `${CLAUDE_SKILL_DIR}/references/state/state-management.md` セクション 4 / `${CLAUDE_SKILL_DIR}/references/state/inputs-management.md` セクション 4 / `${CLAUDE_SKILL_DIR}/references/state/code-trustworthiness.md`。
 
 ---
 
@@ -51,17 +49,15 @@
 | 標準 | 5種（impl / testing / security / architecture / frontend）。差分内容に応じて architecture / frontend は省略可 | 各スキル内のエージェント全員（最大10種） |
 | 簡易 | 必須トリオ3種（impl / testing / security）のみ | 各スキル内のエージェント全員（最大7種：impl + linter + perf + test + runner + sec + dep） |
 
-> **粒度に注意**: モード判断は **観点別スキル単位**。エージェント単位ではない。簡易モードでも各観点別スキル内の補助エージェント（linter / perf 等）は通常通り動作する（観点別スキル内部で動的検証 SKIPPED 設計が機能する）。
+> **粒度に注意**: モード判断は **観点別スキル単位**でありエージェント単位ではない。簡易モードでも各観点別スキル内の補助エージェント（linter / perf 等）は通常通り動作する（観点別スキル内部で動的検証 SKIPPED 設計が機能する）。
 
-**非対話モード・失敗時**: 標準モードで実行（既定）。
-詳細は `mode-selection.md` を参照。
+**非対話モード・失敗時**: 標準モードで実行（既定）。詳細は `mode-selection.md`。
 
 ---
 
 ## Step 1: スコープ確定
 
-レビュー対象範囲をユーザー指示・引数から特定する。
-比較ブランチは **`origin/develop` → `origin/main` → `origin/master`** の順で自動判定（`scope-detection.md` セクション 1.2 参照）。
+対象範囲をユーザー指示・引数から特定。比較ブランチは **`origin/develop` → `origin/main` → `origin/master`** の順で自動判定（`scope-detection.md` セクション 1.2 参照）。
 
 | ユーザー指示の例 | 解釈 | 取得方法 |
 |---|---|---|
@@ -73,17 +69,17 @@
 
 > **PR レビュー要求**（「PR #123 をレビュー」等）は **本スキルではなく `pr-review` スキルが起点**。本スキルが直接 `gh pr` コマンドを呼ぶことはない。
 
-詳細は `scope-detection.md` を参照。
+詳細は `scope-detection.md`。
 
 ---
 
 ## Step 2: 変更内容の把握＋プロジェクト規約読込
 
-差分を確認し、変更の **性質** を分類するとともに、プロジェクト規約を読み込む。
+差分を確認し変更の **性質** を分類、プロジェクト規約を読み込む。
 
 ### ベンダーディレクトリの自動除外
 
-変更ファイル一覧の取得後、以下のパスパターンに一致するファイルはレビュー対象から **自動除外** する（NuGet パッケージ・npm モジュール等のサードパーティコードはレビュー対象外）:
+変更ファイル一覧の取得後、以下のパスパターンに一致するファイルをレビュー対象から **自動除外**（NuGet パッケージ・npm モジュール等のサードパーティコードは対象外）:
 
 | パターン | 対象 |
 |---------|------|
@@ -95,7 +91,7 @@
 | `/**/bower_components/**` | Bower パッケージ |
 | `/**/vendor/**` | Composer 等のベンダーディレクトリ |
 
-除外したファイル数は統合サマリの集計セクションに「ベンダーディレクトリ除外: N 件」として記載する。除外対象にユーザーのカスタムコードが含まれている可能性がある場合は、除外前にユーザーに確認する。
+除外ファイル数は統合サマリの集計セクションに「ベンダーディレクトリ除外: N 件」と記載する。除外対象にユーザーのカスタムコードが含まれる可能性があれば、除外前にユーザーに確認する。
 
 ### 分類軸
 
@@ -108,8 +104,7 @@
 
 ### 言語・フレームワーク検出（必須）
 
-差分ファイル一覧とマーカーファイルから、対象の言語・フレームワークを検出し、適用する観点プロファイルを確定する。
-手順・対応表は **`${CLAUDE_PLUGIN_ROOT}/references/language-detection.md`** に従う:
+差分ファイル一覧とマーカーファイルから対象の言語・フレームワークを検出し、適用する観点プロファイルを確定。手順・対応表は **`${CLAUDE_PLUGIN_ROOT}/references/language-detection.md`** に従う:
 
 1. 差分ファイルを拡張子で言語分類（JS/TS は `tsconfig.json` 有無で分岐）
 2. マーカーファイル（`package.json` / `*.csproj` / `composer.json` / `pyproject.toml` 等）の依存定義から FW を特定
@@ -128,19 +123,17 @@
 | `CONTRIBUTING.md` / `docs/` 配下 | コントリビューションガイド・スタイルガイド |
 | `.editorconfig` / `.eslintrc*` / `.prettierrc*` 等 | 整形・Linter 設定 |
 
-要約を **最大 2,000 文字** にまとめて `project-rules-summary` として保持。Step 4 / Step 4-T で観点別スキル / Agent Teams メンバーに渡す。
+要約を **最大 2,000 文字** にまとめ `project-rules-summary` として保持。Step 4 / Step 4-T で観点別スキル / Agent Teams メンバーに渡す。
 
 **規約源の優先順位解決**: プロジェクト規約と言語プロファイルのデファクト規約の優先順位は **`${CLAUDE_PLUGIN_ROOT}/references/conventions-resolution.md`**（5 段階解決）に従う。解決結果（言語・FW 検出結果 + 規約源の対応表）を「適用規約サマリ」として `project-rules-summary` に統合する。プロジェクト独自規約が存在する項目では、言語プロファイルのデファクトを根拠にした指摘を出さない。
 
 ### 仕様書読み込み（任意）
 
-`spec=<path>` 引数が指定されている場合、仕様書ファイルを全文読み込み、最大 4,000 文字の `spec_summary` を生成する。
-`code-review-implementation` に追加観点として渡す。
+`spec=<path>` 引数指定時は仕様書ファイルを全文読み込み、最大 4,000 文字の `spec_summary` を生成し `code-review-implementation` に追加観点として渡す。
 
 ### inputs フォルダの読み込み（Step 0-P で準備済み）
 
-Step 0-P-3 で読み込んだ inputs フォルダの内容を `spec_summary` に統合する。
-`spec=<path>` 引数で指定された仕様書と inputs フォルダの内容が重複する場合は、inputs フォルダの内容を優先する。
+Step 0-P-3 で読み込んだ inputs フォルダの内容を `spec_summary` に統合する。`spec=<path>` 引数指定の仕様書と inputs フォルダの内容が重複すれば inputs フォルダを優先する。
 
 inputs の活用方法:
 - 観点別スキルへの `args` に含める `spec_summary` に inputs の要約を統合
@@ -149,7 +142,7 @@ inputs の活用方法:
 
 ### コード信頼性原則の適用
 
-変更内容の評価基準を策定する際、`code-trustworthiness.md` の原則に従う:
+変更内容の評価基準を策定する際は `code-trustworthiness.md` の原則に従う:
 - **参照してよい情報源**: CLAUDE.md / `.claude/rules/` / `.editorconfig` / inputs フォルダ / OWASP 等
 - **ユーザー承認が必要**: 差分外の既存コードパターンからの規約類推、提出コード内のパターンからの規約類推
 - **参照禁止**: 提出コードのパターンを無断で規約として類推すること
@@ -170,7 +163,7 @@ inputs の活用方法:
 
 ## Step 3: 動員する観点別スキルの決定
 
-Step 0 のモードと Step 2 の分類結果を組み合わせて、起動する **観点別スキル** を決定する。
+Step 0 のモードと Step 2 の分類結果を組み合わせ、起動する **観点別スキル** を決定する。
 
 ### 簡易モード
 
@@ -220,7 +213,7 @@ Step 0 のモードと Step 2 の分類結果を組み合わせて、起動す�
 
 ### ユーザー承認
 
-採用候補が決まったら、`AskUserQuestion` でユーザー承認を取る（コスト最大 6 倍程度を明示）。詳細は `team-selection.md` セクション 3.1 参照。
+採用候補が決まったら `AskUserQuestion` でユーザー承認を取る（コスト最大 6 倍程度を明示）。詳細は `team-selection.md` セクション 3.1。
 
 ---
 

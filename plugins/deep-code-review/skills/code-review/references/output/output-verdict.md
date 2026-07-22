@@ -2,7 +2,7 @@
 
 親（索引・セクションマップ）: [`output-format.md`](output-format.md)
 
-本ファイルは出力フォーマットの詳細のうち、以下のセクションを収録する。
+本ファイルは出力フォーマット詳細のうち、以下のセクションを収録する。
 
 - セクション 3（レビュー結果）: 3.1 判定マトリクス / 3.2 例外 / 3.3 推奨アクション
 - セクション 4（未確認事項・制約セクション）: 4.1 状態語彙 / 4.2 SKIPPED 時の必須記載項目
@@ -103,7 +103,7 @@
 
 ## 5. ファイル出力
 
-review-summary.md は Step 8.5 でプラグインデータ領域に自動出力される。ユーザーが「ファイルに保存」「レポートを出して」等と要求した場合は、出力済みの以下のパスを案内する。
+review-summary.md は Step 8.5 でプラグインデータ領域に自動出力される。ユーザーが「ファイルに保存」「レポートを出して」等と要求時は、出力済みの以下のパスを案内する。
 
 ```
 .claude/.local/plugins/deep-code-review/{branch_name}/{yyyyMMdd_HHmmss}/review-summary.md
@@ -127,16 +127,6 @@ review-summary.md は Step 8.5 でプラグインデータ領域に自動出力�
 > **実施日時**: 2026-04-27 14:30 (JST) ／ **対象 head SHA**: `a3c4d5e`
 > **レビュー対象**: PR \#45
 > **レビューモード**: 標準
-
-<details>
-<summary>1. 対応が必要な指摘 （0 件 ✓ 指摘なし）</summary>
-<h2>1. 対応が必要な指摘 （0 件）</h2>
-
-<p>指摘なし</p>
-
-</details>
-
----
 
 <details>
 <summary>2. 改善提案 （2 件 ⚠）</summary>
@@ -188,18 +178,8 @@ review-summary.md は Step 8.5 でプラグインデータ領域に自動出力�
 
 </details>
 
----
-
-<details>
-<summary>3. スコープ外指摘 （0 件 ✓ 該当なし）</summary>
-<h2>3. スコープ外指摘 （0 件）</h2>
-
-<p>該当なし。</p>
-
-</details>
-
-（以下、セクション 4〜9 も同形式の `<details>` ブロックで続ける。各セクションの内部構造は `template/review-summary.md` を参照）
+（セクション 1・3〜9 も同形式の `<details>` ブロックで続ける。各セクションの内部構造は `template/review-summary.md`（body-1 / body-2）を参照）
 ````
 
 > **注 1**: ヘッダブロックの `PR \#45` のように `\#` と書くのは Markdown 文脈での自動リンク化回避のため。`<details>` 内の HTML タグ間テキストでは `\#` エスケープを使わず「件数表記の言い換え」または `<a href>` 明示リンクを使う（詳細: `${CLAUDE_PLUGIN_ROOT}/references/comment-sanitization.md` セクション 5.5 / 5.5.7）。
-> **注 2**: `<details>` 内で Markdown のテーブル・見出し・コードフェンスがレンダリングされない制約は主に Azure DevOps / TFS のもの（GitHub は一部レンダリング可能なホスト依存挙動）。両ホスト対応のため内部 HTML 記法に統一している。
+> **注 2**: `<details>` 内で Markdown のテーブル・見出し・コードフェンスがレンダリングされない制約は主に Azure DevOps / TFS のもの（GitHub は一部レンダリング可能なホスト依存挙動）。両ホスト対応のため内部 HTML 記法に統一する。
