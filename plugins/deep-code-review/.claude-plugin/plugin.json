@@ -1,6 +1,6 @@
 {
   "name": "deep-code-review",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "観点別マルチエージェントでコード変更・PR をレビューするプラグイン（Anthropic 公式 code-review とは別）",
   "license": "MIT",
   "author": {

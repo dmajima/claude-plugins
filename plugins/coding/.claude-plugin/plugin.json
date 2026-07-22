@@ -1,6 +1,6 @@
 {
   "name": "coding",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "対象リポジトリの言語・フレームワークを自動検出し、プロジェクト規約準拠の実装・設計を統括する多言語対応プラグイン。",
   "license": "MIT",
   "author": {
