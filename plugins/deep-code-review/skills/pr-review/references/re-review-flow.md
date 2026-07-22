@@ -1,6 +1,6 @@
 # 再レビュー時の動作（既存スレッド起点フロー）
 
-`pr-review` スキルが **修正後の再レビュー** を行う際に、既存自著スレッドを起点に動作するための **4 パターン分岐 + reply テンプレート + 対象抽出条件 + API 呼び出し** をまとめたファイル。
+`pr-review` スキルが **修正後の再レビュー** で既存自著スレッドを起点に動作するための **4 パターン分岐 + reply テンプレート + 対象抽出条件 + API 呼び出し** をまとめたファイル。
 
 > **位置付け**: 旧 `comment-status.md` から分離（403 行 → 3 ファイルへの構造リファクタリング）。本ファイルは「再レビュー実行時の動作仕様」に特化。
 
@@ -8,7 +8,7 @@
 
 ## 1. 動作原則
 
-修正後の再レビューでは **新規スレッドを作成する前に、まず既存の自著スレッドを起点に動作する** こと。
+修正後の再レビューでは **新規スレッド作成前に、まず既存の自著スレッドを起点に動作する** こと。
 
 | 状態 | 動作 |
 |------|------|
@@ -21,14 +21,14 @@
 これにより:
 
 - 既存指摘の追跡性が保たれる（同スレッド内に修正履歴が積み上がる）
-- 同じ箇所に対して新規スレッドが乱立しない
+- 同じ箇所に新規スレッドが乱立しない
 - 起票者・PR 閲覧者が「このスレッドはどこまで解消したか」を時系列で把握できる
 
 ---
 
 ## 2. 4 パターン分岐
 
-再レビュー実行時 / スコープ外指示 / 修正完了指示の受領時は、各既存自著スレッドを以下の 4 パターンのいずれかに分類する:
+再レビュー実行時 / スコープ外指示 / 修正完了指示の受領時、各既存自著スレッドを以下 4 パターンのいずれかに分類する:
 
 ```
         ┌─ Pattern A: 解消（自動）
@@ -102,7 +102,7 @@ connector 呼び出し時: `marker: [deep-code-review-plugin] unresolved; reply 
 
 connector 呼び出し時: `marker: [deep-code-review-plugin] user-acknowledged scope-out`
 
-> Pattern D は **ユーザーの明示指示時のみ** 適用される（自動判定では発火しない）。詳細は `scope-out-acknowledgment.md` を参照。
+> Pattern D は **ユーザーの明示指示時のみ** 適用（自動判定では発火しない）。詳細は `scope-out-acknowledgment.md` を参照。
 
 ### Pattern E（ユーザー指示による修正完了確認）
 
@@ -119,7 +119,7 @@ connector 呼び出し時: `marker: [deep-code-review-plugin] user-acknowledged 
 
 connector 呼び出し時: `marker: [deep-code-review-plugin] user-acknowledged fix`
 
-> Pattern E は **ユーザー修正指示 + Claude による修正コミット作成** が両方成立した場合のみ適用される。
+> Pattern E は **ユーザー修正指示 + Claude による修正コミット作成** が両方成立した場合のみ適用。
 > 修正コミットへの明示リンク（`[<sha7>](<commit-url>)`）が **必須**（実証なき status 変更を防ぐ）。
 > 詳細は `scope-out-acknowledgment.md` セクション 8 を参照。
 
@@ -160,7 +160,7 @@ Skill(skill: "connector:azure", args: "PR URL: <PR_URL> のスレッド <threadI
 Skill(skill: "connector:azure", args: "PR URL: <PR_URL> のスレッド <threadId> のステータスを <new_status> に変更。承認済み。")
 ```
 
-connector 側の API 実装詳細は connector プラグインの `skills/azure/references/pr-operations.md` を参照。
+API 実装詳細は connector プラグインの `skills/azure/references/pr-operations.md` を参照。
 
 ### 5.2 GitHub（connector:github 委譲）
 
@@ -178,7 +178,7 @@ Skill(skill: "connector:github", args: "PR URL: <PR_URL> のコメント <commen
 Skill(skill: "connector:github", args: "PR URL: <PR_URL> のスレッド <threadId> を resolve。承認済み。")
 ```
 
-connector 側の API 実装詳細は connector プラグインの `skills/github/references/pr-operations.md` を参照。
+API 実装詳細は connector プラグインの `skills/github/references/pr-operations.md` を参照。
 
 ---
 

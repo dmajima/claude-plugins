@@ -1,5 +1,5 @@
 ---
-description: 再テストを full / ng-only / ids / resume モードで実行する
+description: オーケストレータ deep-test:test を再テストモードで起動する
 argument-hint: "[full | ng-only | ids=TC-... | resume] [--non-interactive]"
 allowed-tools:
   - Skill

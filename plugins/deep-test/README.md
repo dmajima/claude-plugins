@@ -2,7 +2,7 @@
 
 テスト設計→レビュー→実施→結果レビュー→報告→再テストのフルライフサイクルを、テストレベル別特化スキルとマルチエージェントレビューで支援する観点別テストプラグインです。日本の SI 実務で使われる 8 テストレベル（ユニット/単体/内部結合/外部結合/システム/受入(UAT)/性能/セキュリティ）に対応し、Playwright MCP による実アプリ動作・ユーザー目線のテストを重視します。テスト実績は YAML で永続化され、全件・NG のみ・ID 指定の再テストと、Excel / Markdown の 1 ファイル報告書生成ができます。人手確認が不可欠なケース（manual-assist）とチャーターベースの探索的テスト（exploratory）も自動実行と同一の実績管理に統合し、対話時は確認・探索セッションを支援、非対話時は手動手順書（チャーターシート）の自動生成に縮退します。報告書では実行主体（自動 / 手動）を区別して集計します。
 
-なお、コードレビュー中の差分限定ユニットテスト実行はコードレビュー系プラグインの責務であり、本プラグインはプロジェクト全体のテストライフサイクル管理を担います。
+なお、コードレビュー中の差分限定ユニットテスト実行はコードレビュー系プラグイン（`deep-code-review` の `code-review-testing` スキル）の責務であり、本プラグインはプロジェクト全体のテストライフサイクル管理を担います。
 
 ## このドキュメントについて
 
@@ -197,11 +197,13 @@ plugins/deep-test/
 │   ├── user-perspective-reviewer.md
 │   ├── defect-analyst.md
 │   └── evidence-auditor.md
-├── references/                     # プラグイン共通規範（ナビ CLAUDE.md + SSOT 17 ファイル + 人間向け README）+ 共通スクリプト
+├── references/                     # プラグイン共通規範（ナビ CLAUDE.md + SSOT 17 + 条件付き詳細 2 ファイル + 人間向け README）+ 共通スクリプト
 │   ├── CLAUDE.md                   # ナビゲーション
 │   ├── README.md                   # 人間向けインデックス（Claude 動作では不参照）
 │   ├── common-references.md        # worker スキル共通参照インデックス
+│   ├── common-references-details.md # 共通参照インデックスの条件付き詳細節（分割。test-setup / test-environment 起動時等に条件ロード）
 │   ├── test-levels.md              # 8 テストレベル定義
+│   ├── test-levels-details.md      # テストレベル定義の条件付き詳細節（分割。特定レベルの実行・設計時のみ）
 │   ├── yaml-schema.md              # 実績 YAML 共通規約・操作規約（スキーマハブ）
 │   ├── yaml-schema-cases.md        # test-cases.yaml スキーマ
 │   ├── yaml-schema-results.md      # test-results.yaml スキーマ
@@ -221,7 +223,7 @@ plugins/deep-test/
 │       ├── setup/                  # venv 構築・削除（requirements.txt 含む。全スキル共通・一元管理）
 │       └── run/                    # run_via_job.sh（Python 実行ラッパー）・archive_evidence.sh（エビデンスアーカイブ）
 └── skills/
-    ├── test/                       # オーケストレータ（+ references/scripts/results/results_manager.py）
+    ├── test/                       # オーケストレータ（+ references/flow-resume.md・scripts/results/results_manager.py）
     ├── test-setup/
     ├── test-analyze/
     ├── test-fixture/

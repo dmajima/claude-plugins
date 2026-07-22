@@ -21,7 +21,7 @@ worker スキルへの引き渡しは `key=value` の空白区切り文字列で
 | `run-id` | `start-run` が採番した run_id | Phase 5 / 6 / environment の up・down 呼出（任意） |
 | `cases` | 対象ケース ID の CSV | Phase 3（draft 限定レビュー時）/ 5 |
 | `mode` | 実行モード（再テスト時の full / ng-only / ids 等） | Phase 5 / 7 |
-| `manual-sheet` | 生成済み手動手順書（チャーターシート）のパス（非対話縮退用・任意。手動系ケース〔`automation: manual-assist` / `exploratory`〕を含むレベルへの委譲で、オーケストレータの手順書一括生成が成功した場合のみ付与する。実行スキルは skipped の reason にこのパスを転記する。`${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md` 7 章） | Phase 5 |
+| `manual-sheet` | 生成済み手動手順書（チャーターシート）のパス（非対話縮退用・任意。手動系ケース〔`automation: manual-assist` / `exploratory`〕を含むレベルへの委譲で、オーケストレータの手順書一括生成が成功時のみ付与する。実行スキルは skipped の reason にこのパスを転記する。`${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md` 7 章） | Phase 5 |
 | `non-interactive` | `true`（非対話モード時のみ付与） | 全フェーズ |
 
 - パスはオーケストレータが**解決済みの形**で渡す（worker スキル側で target-slug 解決をやり直させない）
@@ -44,7 +44,7 @@ worker スキルは最終応答に、人間可読の要約に加えて **JSON �
 
 ### 2.2 Phase 1.5: test-analyze → オーケストレータ
 
-test-analyze は解析材料を**ファイルで引き継ぐ**フェーズであり、返り値の JSON コードブロックは**免除**する（本節冒頭の「JSON を 1 つのコードブロック」規約の唯一の例外）。成果物はファイル、返り値は Markdown 要約で受け渡す。
+test-analyze は解析材料を**ファイルで引き継ぐ**フェーズであり、返り値の JSON コードブロックは**免除**する（本節冒頭の「JSON を 1 つのコードブロック」規約の唯一の例外）。
 
 | 引き継ぎ | 形態 | 内容 |
 |---------|------|------|
@@ -55,7 +55,7 @@ test-analyze は解析材料を**ファイルで引き継ぐ**フェーズであ
 
 ### 2.3 Phase 1.6: test-fixture → オーケストレータ
 
-test-fixture は成果物を**ファイルで引き継ぐ**フェーズであり、返り値の JSON コードブロックは**免除**する（2.2 の test-analyze と同じファイル引き継ぎ・JSON 免除の先例に倣う）。成果物はファイル、返り値は Markdown 要約で受け渡す。
+test-fixture は成果物を**ファイルで引き継ぐ**フェーズであり、返り値の JSON コードブロックは**免除**する（2.2 の test-analyze と同じファイル引き継ぎ・JSON 免除の先例に倣う）。
 
 | 引き継ぎ | 形態 | 内容 |
 |---------|------|------|
@@ -67,14 +67,14 @@ test-fixture は成果物を**ファイルで引き継ぐ**フェーズであり
 
 ### 2.4 Phase 1.7: test-environment → オーケストレータ
 
-test-environment は成果物を**ファイルで引き継ぐ**フェーズであり、返り値の JSON コードブロックは**免除**する（2.2 / 2.3 と同じファイル引き継ぎ・JSON 免除の型）。成果物はファイル、返り値は Markdown 要約で受け渡す。up / down / status のライフサイクル呼出でも同型（`environment.yaml` の `status` 更新 + Markdown 要約）。
+test-environment は成果物を**ファイルで引き継ぐ**フェーズであり、返り値の JSON コードブロックは**免除**する（2.2 / 2.3 と同じファイル引き継ぎ・JSON 免除の型）。up / down / status のライフサイクル呼出でも同型（`environment.yaml` の `status` 更新 + Markdown 要約）。
 
 | 引き継ぎ | 形態 | 内容 |
 |---------|------|------|
 | 成果物 | ファイル | `{base}/{target}/environment.yaml`（機械可読・`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 準拠）と派生成果物（`{base}/{target}/environment/compose.test.yml`・`environment/.env.test`）。Phase 2（test-design）が preconditions / 環境前提の材料に、Phase 5（オーケストレータ）が `start-run --environment` の環境文字列の材料に単方向消費する |
 | 返り値 | Markdown 要約 | 環境構築結果サマリ（target-slug・action・applicability・派生成果物・config_validated・project 名・endpoints・status.state・env-architect 自己チェック所見・縮退時は reason）。書式は test-environment SKILL.md「引き渡し」節に準拠 |
 
-- オーケストレータは成果物ファイル（`environment.yaml`）のパス存在を確認し、加えて YAML として parse 可能であることを venv Python で機械確認する（失敗は再委譲 1 回 → 環境なし縮退・venv 不在は目視縮退。手順は flow.md 6 章 Phase 1.7 節「受領後の parse 検証」）。Markdown 要約をユーザー報告に用いる（返り値の JSON パースは行わない）。`environment.yaml` を parse 検証するのは、これが**機械消費される派生成果物**（`environment/compose.test.yml`・`.env.test` を docker compose が読む）を記述するマニフェスト（test-environment が派生成果物と共に生成）であり、その parse 健全性が派生成果物群の生成一貫性の代理指標になるため（analysis.yaml〔2.2〕/ fixtures.yaml〔2.3〕は LLM が Read で読解する材料で構造崩れを吸収でき〔軽量補完もある〕機械 parse 検証を課さない = 意図された非対称。`environment.yaml` 自体も下流の LLM が読む〔Phase 2 の材料・Phase 5 の `--environment` 文字列組立〕が、その先で派生成果物を機械が消費する点が analysis/fixtures との違い）。`environment.yaml` は下流が単方向に消費する（test-environment へ戻さない）
+- オーケストレータは成果物ファイル（`environment.yaml`）のパス存在を確認し、加えて YAML として parse 可能であることを venv Python で機械確認する（失敗は再委譲 1 回 → 環境なし縮退・venv 不在は目視縮退。手順は flow-resume.md 6 章 Phase 1.7 節「受領後の parse 検証」）。Markdown 要約をユーザー報告に用いる（返り値の JSON パースは行わない）。`environment.yaml` を parse 検証するのは、これが**機械消費される派生成果物**（`environment/compose.test.yml`・`.env.test` を docker compose が読む）を記述するマニフェスト（test-environment が派生成果物と共に生成）であり、その parse 健全性が派生成果物群の生成一貫性の代理指標になるため（analysis.yaml〔2.2〕/ fixtures.yaml〔2.3〕は LLM が Read で読解する材料で構造崩れを吸収でき〔軽量補完もある〕機械 parse 検証を課さない = 意図された非対称。`environment.yaml` 自体も下流の LLM が読む〔Phase 2 の材料・Phase 5 の `--environment` 文字列組立〕が、その先で派生成果物を機械が消費する点が analysis/fixtures との違い）。`environment.yaml` は下流が単方向に消費する（test-environment へ戻さない）
 - no-op / 縮退（docker 資産なし・unit のみ・docker 利用不可）時は `applicability: not-applicable | unavailable` + `reason` を受領し、フローを止めずに Phase 2 へ進む（ユーザー起動 URL があれば従来前提が優先）。parse 検証の再失敗（再委譲上限 1）による環境なし縮退も同様にフローを止めない
 
 ### 2.5 Phase 2: test-design → オーケストレータ
@@ -123,7 +123,7 @@ test-environment は成果物を**ファイルで引き継ぐ**フェーズで�
 | サブコマンド | stdin / 入力 | stdout | 主要フィールド |
 |------------|-------------|--------|---------------|
 | `init` | — | JSON | `ok` / `created` / `target_dir` / `results_file` / `evidence_dir` |
-| `start-run` | — | **JSON** | `run_id` / `mode` / `scope_size` / `active_runs_warning`。`run_id` を JSON 抽出（例: `json.load(sys.stdin)['run_id']`）して Phase 5 全体で使う（flow.md 6 章 Phase 5） |
+| `start-run` | — | **JSON** | `run_id` / `mode` / `scope_size` / `active_runs_warning`。`run_id` を JSON 抽出（例: `json.load(sys.stdin)['run_id']`）して Phase 5 全体で使う（flow-resume.md 6 章 Phase 5） |
 | `record` | `--result-json <path\|->`（`-` は stdin） | JSON | `ok` / `case_id` / `status` / `latest_updated` / `recorded` / `scope_size` / `remaining`（未記録ケース） |
 | `finish-run` | — | JSON | `ok` / `status`（確定した run status）/ `missing`（欠落ケース一覧）/ `recorded` / `scope_size` |
 | `select` | — | JSON | `cases`（approved・レベル順）/ `draft_cases`（承認済みケースゲート対象）/ `excluded_deprecated` / `unknown_ids` / `warnings` / `details`（ケース別: level・title・priority・automation・timeout_sec・latest_status 等） |
@@ -140,7 +140,7 @@ exit code の意味（0 / 1 / 2 / 3）とバリデーション時の stderr 出�
 | 人間承認ゲートの提示項目 | `select` の `cases` 件数 + `details`（level 内訳・timeout_sec 合計）+ `details[].destructive` の機械集計（破壊的操作件数）+ `details[].automation` の機械集計（手動 manual-assist / exploratory 件数） |
 | MCP ゲートの要否 | `select` の `details[].level`（unit のみなら判定不要） |
 | 一次バリデーション（fail 3 点セット） | `record` の exit code 2 + stderr の欠落フィールド |
-| 中断検知・resume の残ケース | `summary` の `runs[].status`（中断 run の抽出）/ `validate` の `resumable_runs`（未記録ケースの特定。flow.md 5 章） |
+| 中断検知・resume の残ケース | `summary` の `runs[].status`（中断 run の抽出）/ `validate` の `resumable_runs`（未記録ケースの特定。flow-resume.md 5 章） |
 | 最終バリデーション | `validate` の `ok` / `violations` |
 | 引き渡し・報告の集計 | `summary` の `levels` / `totals` / `runs` / `latest_fails` |
 

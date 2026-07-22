@@ -3,7 +3,7 @@
 `pr-review` スキルが **完了報告（Step 8）の前** に通過すべきルール群。
 ID 体系・SSOT は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` を参照。
 
-> **位置付け**: 本ファイルは **ルール ID 単位の達成チェック**。具体的な手順チェック（A/B/C/D グループ）は `completion-checklist.md` 側で運用する。両者は併用関係（手順 = HOW、ルール = WHY）。
+> **位置付け**: 本ファイルは **ルール ID 単位の達成チェック**。具体的な手順チェック（A/B/C/D グループ）は `completion-checklist.md` 側で運用。両者は併用関係（手順 = HOW、ルール = WHY）。
 > **確認タイミング**: Step 7.5（完了前チェックリスト）と Step 8（完了報告）の間。
 > **未通過時**: 該当項目を解消してから完了報告する。
 
@@ -14,24 +14,7 @@ ID 体系・SSOT は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` �
 > 規範本文・達成基準は **`${CLAUDE_PLUGIN_ROOT}/references/universal-rules.md`** を参照（プラグイン内 SSOT）。
 > 適用範囲は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` セクション8 を参照。
 
-```
-[ ] (U1) スキル構成規約への準拠
-[ ] (U2) ファイル文字コード・改行コードの維持
-[ ] (U3) ローカルデータ領域の規約遵守
-[ ] (U4) セッション作業領域の規約遵守
-[ ] (U5) 進捗管理ルール（progress.md）
-[ ] (U6) ポータブルパス記法の遵守
-[ ] (U7) PR 外への影響禁止
-[ ] (U8) 別 PR 推奨の禁止
-[ ] (U9) エージェント並列起動
-[ ] (U10) エージェント共通指示の付与
-[ ] (U11) 重要度付与・重複統合の規範
-[ ] (U12) 認証情報の取り扱い
-[ ] (U13) 動的検証の SKIPPED 明示
-[ ] (U14) 提出コードの信頼性原則（コードからの規約類推制限・ユーザー承認義務化）
-[ ] (U15) 指摘への信頼度（0〜100）付与（仮定ベースは 60 未満・動的検証実証済みは 90 以上。severity-ranking.md セクション 7）
-[ ] (U16) 差分の削除側（- 行）で既存の防御コード（例外処理・入力検証・リソース解放・a11y 属性・認可・エラー表示 UI）が失われていれば回帰として指摘している
-```
+上記 SSOT（`${CLAUDE_PLUGIN_ROOT}/references/universal-rules.md` の U マップ表）の U1〜U16 全項目の通過を確認（各 U の 1 行要約・達成基準は同ファイルおよび `universal-rules-{environment,process,quality}.md` を参照）。
 
 ---
 
@@ -76,36 +59,19 @@ ID 体系・SSOT は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` �
 
 ## C. 出力チェック（自動検証案）
 
-```bash
-# C-Auto-1: 投稿前のサニタイズ違反検出（comment-sanitization.md セクション5.6.4 の簡易ガード）
-violation=0
-echo "$SAFE" | grep -nE '(^|[^\\\\\w])#[0-9]+([^a-zA-Z0-9_]|$)' && violation=$((violation+1))
-echo "$SAFE" | grep -nE '(^|[^\\\\\w])@[A-Za-z0-9_./-]+'        && violation=$((violation+1))
-echo "$SAFE" | grep -nEi '<img\b'                                && violation=$((violation+1))
-echo "$SAFE" | grep -nEi '\[[^]]+\]\((javascript|data|vbscript|file):' && violation=$((violation+1))
-[ "$violation" -gt 0 ] && { echo "ERROR: サニタイズ未通過。投稿中止。"; exit 1; }
+投稿前に以下を検証する（ルール ID 判定は A/B 節が担う。ランタイム自動実行はしない）:
 
-# C-Auto-2: PR 外への影響検出（禁止コマンドの実行履歴）
-banned_cmds=("gh issue create" "az boards work-item create" "az repos create" "gh repo create")
-for cmd in "${banned_cmds[@]}"; do
-  history | grep -qE "$cmd" && echo "WARN: 禁止コマンド実行の可能性: $cmd"
-done
+- **C-Auto-1**: 投稿前サニタイズ違反（裸の `#<数字>` / `@<英数字>` / `<img>` / 危険スキームリンク）の検出。未通過なら投稿中止（`${CLAUDE_PLUGIN_ROOT}/references/comment-sanitization-escaping.md` 5.6.4 の簡易ガードと同一方式）
+- **C-Auto-2**: PR 外への影響（`gh issue create` / `az boards work-item create` 等の禁止コマンド実行）の検出
+- **C-Auto-3**: メインリポジトリ状態・残存 worktree の確認（worktree 不変条件）
 
-# C-Auto-3: メインリポジトリの状態確認（worktree 不変条件）
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-echo "メインリポジトリ: ${CURRENT_BRANCH} @ $(git rev-parse --short HEAD)"
-WORKTREE_BASE=".claude/.local/plugins/deep-code-review/_worktree"
-if [ -d "${WORKTREE_BASE}" ] && [ -n "$(ls -A "${WORKTREE_BASE}" 2>/dev/null)" ]; then
-  echo "残存 worktree:"
-  bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/worktree/list.sh" "$(git rev-parse --show-toplevel)"
-fi
-```
+bash 実装案は `${CLAUDE_PLUGIN_ROOT}/references/comment-sanitization-escaping.md` 5.6.4 および `completion-checklist-autocheck-samples.md` E-3 / E-4（自動化検討時のみ Read）を参照。
 
 ---
 
 ## D. 未通過時の対応
 
-> 本表は頻出の未通過パターンのみを記載する（絞り込みは意図的）。記載外の ID はセクション A〜C の該当項目と `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` の達成基準に従って解消する。
+> 本表は頻出の未通過パターンのみ記載（絞り込みは意図的）。記載外の ID はセクション A〜C の該当項目と `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` の達成基準に従って解消する。
 
 | 未通過 ID | 対応 |
 |----------|------|

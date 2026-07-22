@@ -1,6 +1,6 @@
 ---
 name: test-run-performance
-description: 性能テスト（TC-PERF）を Playwright タイミング計測（Navigation Timing / Performance API）で実行する実行スキル。単一セッション応答時間を既定 3 回計測し中央値を閾値と比較して pass / fail 判定する。k6 等の負荷ツール検出時のみ多重負荷を条件付き実行し、なければ skipped を返す。結果は中間データとしてオーケストレータへ返却する。performance レベルのケース実行を委譲された時、主要操作の応答時間を計測し閾値判定する場合に使用する。
+description: 性能テスト（TC-PERF）を Playwright タイミング計測で実行するスキル。応答時間を既定 3 回計測し中央値を閾値比較で pass/fail 判定。k6 等の負荷ツール検出時のみ多重負荷を条件付き実行、なければ skipped。deep-test の test の run から performance 実行委譲や「性能テストを実行して」「応答時間を計測して閾値判定して」で起動。入力不足なら非実行。Use when running perf tests. SKIP when non-perf levels (other test-run-*).
 allowed-tools:
   - Read
   - Grep
@@ -112,13 +112,9 @@ flowchart TD
 
 ## 検証（チェックリスト）
 
-中間結果 JSON を返却する前に、`${CLAUDE_SKILL_DIR}/references/performance-execution.md` の達成チェックリストを通過すること。要点:
+中間結果 JSON を返却する前に、`${CLAUDE_SKILL_DIR}/references/performance-execution.md` の達成チェックリスト（計測方法・中央値・閾値判定・`extras.measured_value` / `extras.threshold` 記録・fail 時 severity・計測生データのエビデンス化）を通過すること。捏造対策の要点:
 
-- 単一セッション応答時間を既定 3 回計測し、中央値を実測値として採用している
-- 閾値と実測値を比較して pass / fail を判定している
-- pass / fail を問わず results[] 直下の `extras.measured_value` / `extras.threshold` を記録し、fail 時は severity を `severity-policy.md` 4.1 のバンドで判定している
 - 負荷ツール未検出時に多重負荷ケースを `skipped` + reason で返し、「多重負荷・スループット計測は専用負荷試験の代替ではない」旨と整合している
-- 計測値の生データ（JSON）をエビデンスに含めている
 - scope の全ケースについて 1 エントリを返している
 - `test-results.yaml` を直接編集していない（返却のみ）
 
@@ -149,7 +145,7 @@ flowchart TD
 
 | 参照先 | 内容 |
 |-------|------|
-| `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス（実行時の共通規範一式はここから到達する） |
+| `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス |
 | `${CLAUDE_SKILL_DIR}/references/performance-execution.md` | 計測手順・メトリクス取得コード例・複数回計測と中央値・負荷ツール検出・閾値判定・達成チェックリスト（本スキル固有） |
 
-> **正本ツールリストとの同期（同期義務）**: frontmatter の allowed-tools に列挙した `mcp__playwright__browser_*` ツールは、`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 5 章（正本ツールリスト）から同期している。正本リストの改訂時は本スキルの frontmatter へ必ず反映すること。Playwright MCP が `playwright` 以外の名前で登録されている場合のプレフィクス読み替えは同 2 章に従う。
+> **正本ツールリストとの同期（同期義務）**: frontmatter の `mcp__playwright__browser_*` は正本リスト（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 5 章）の改訂時に必ず frontmatter へ反映する。`playwright` 以外の登録名でのプレフィクス読み替えは同 2 章に従う。

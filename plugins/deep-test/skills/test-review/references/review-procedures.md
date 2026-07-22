@@ -1,8 +1,8 @@
 # test-review 詳細手順（文脈判定・エージェント起動・統合・判定）
 
-`test-review` スキルの実行手順の詳細。SKILL.md の実行フローから参照される。
+`test-review` スキルの実行手順詳細。SKILL.md 実行フローから参照。
 エージェントの選定・起動方式・プロンプト組み立て・共通注入事項は `${CLAUDE_PLUGIN_ROOT}/references/agents.md` が SSOT。
-判定基準・統合規則は `${CLAUDE_SKILL_DIR}/references/review-criteria.md` を併読する。
+判定基準・統合規則は `${CLAUDE_SKILL_DIR}/references/review-criteria.md` を併読。
 
 ---
 
@@ -74,15 +74,15 @@ coverage-reviewer / feasibility-reviewer / user-perspective-reviewer を **1 メ
 ### 3.3 統合と判定
 
 1. 各エージェントの結果を要約して取り込む（agents.md 5 章。生の全文を保持し続けない）
-2. review-criteria.md 3 章の統合規則で重複排除・ランキングする
-3. review-criteria.md 2 章のゲート基準で PASS / NEEDS REVISION を判定する（エージェントの所見は意見として扱い、判定は統合後の指摘から本スキルが行う）
+2. review-criteria.md 3 章の統合規則で重複排除・ランキング
+3. review-criteria.md 2 章のゲート基準で PASS / NEEDS REVISION を判定（エージェントの所見は意見として扱い、判定は統合後の指摘から本スキルが行う）
 
 ### 3.4 承認処理（PASS 時のみ）
 
-1. レビュー対象とした draft ケース全件の `review_status` を `approved` へ Edit で更新する
-2. `meta.updated_at` を現在時刻（`date` コマンドの ISO8601）へ更新する
+1. レビュー対象とした draft ケース全件の `review_status` を `approved` へ Edit で更新
+2. `meta.updated_at` を現在時刻（`date` コマンドの ISO8601）へ更新
 3. **書き換え範囲の制約**: 上記 2 点以外（revision・updated_at〔ケース側〕・steps 等の内容フィールド・レビュー対象外のケース）には一切触れない
-4. 更新後の整合確認: レビュー対象ケースに `review_status: draft` が残っていないことを Grep で確認する
+4. 更新後の整合確認: レビュー対象ケースに `review_status: draft` が残っていないことを Grep で確認
 
 - NEEDS REVISION 時は test-cases.yaml に**一切書き込まない**（draft のまま維持。`yaml-schema-cases.md` 3 章の遷移図のとおり、draft → approved の遷移は PASS のみ）
 
@@ -109,7 +109,7 @@ Critical / High 指摘を test-design が着手できる粒度の修正指示に
 
 1. 実行結果サマリ（レベル別集計・fail 概要）を引数から受領する。未受領の場合は test-results.yaml から自ら要約する
 2. `results=`（省略時は `{target-slug}/test-results.yaml`）を Read する（**読み取りのみ**。Edit / Write は禁止）
-3. 対象 run を確定する: `run=` 指定があればその run、なければ最新 run（run_id 降順の先頭）
+3. 対象 run を確定: `run=` 指定があればその run、なければ最新 run（run_id 降順の先頭）
 4. 対象 run の結果から以下を抽出・整理する:
    - fail 全件の defect 詳細（severity / reproduction_steps / test_data / evidence / extras）と results[] 直下の extras（measured_value / threshold 等・存在する場合。defect.extras とは別領域）、対応するケース定義（test-cases.yaml の steps / expected / data）
    - defect.evidence / results[].evidence のパス一覧（実在確認は Glob で行い、欠落はそのまま指摘材料にする）

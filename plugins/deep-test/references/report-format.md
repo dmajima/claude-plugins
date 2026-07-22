@@ -12,7 +12,7 @@
 | ファイル数 | 報告は **1 ファイル**（Excel `.xlsx` または Markdown `.md`） |
 | 形式選択 | 対話時: AskUserQuestion で Excel / Markdown を選択。非対話時: **Markdown 既定**（execution-policy.md 非対話既定値表） |
 | 複数レベルの一括報告 | 複数テストレベルを同時実施した場合も 1 ファイル内で一括報告する（Excel: シート分け / Markdown: セクション分け） |
-| 集計規則 | ケースごとの**最新 run 結果（latest）**を採用する。過去 run は推移情報として扱う（規則の詳細は retest-policy.md 参照） |
+| 集計規則 | ケースごとの**最新 run 結果（latest）**を採用。過去 run は推移情報として扱う（詳細は retest-policy.md） |
 | 再生成 | 実績 YAML が SSOT のため、報告書は何度でも再生成可能。同名ファイルは上書きしてよい（報告書は派生物） |
 | 出力先 | セッション作業領域直下（最終成果物）。パス規約は data-locations.md 参照 |
 | 機微情報 | 転載時のマスキング必須（evidence-policy.md） |
@@ -115,7 +115,7 @@ test-report_{target-slug}_{yyyyMMdd}.xlsx （Markdown 形式は同名で拡張�
 | 14 | 補足情報（extras） | results[] 直下 `extras` のキー・値（status を問わず。pass 行の実測値等の構造化情報。マスキング・切り詰めは列 13 と同一規則） |
 
 - ユニット / 単体のシートには、シート先頭（表の直上）に用語注記を 1 行付す（ユニット = コードレベルの自動テスト（テストフレームワーク実行） / 単体 = 実アプリの画面・機能単位テスト（Playwright 実行）。他レベルのシートには不要。文言の SSOT は test-levels.md）
-- **results[] 直下 `extras` の転載**: 結果に results[] 直下の `extras` がある場合、レベル別シートの列 14「補足情報（extras）」として転載する（status を問わず。pass 行の実測値等の構造化情報が該当）。表示整形・500 文字超の切り詰め・機微情報マスキングは defect.extras（列 13）と同一規則を適用する（Markdown 形式ではレベル別テーブルの末尾列「補足情報（extras）」として同様に転載する）
+- **results[] 直下 `extras` の転載**: 列 14「補足情報（extras）」の転載規則（status を問わず・pass 行の実測値等の構造化情報が該当・列 13 と同一のマスキング/切り詰め）は、Markdown のレベル別テーブル末尾列「補足情報（extras）」にも同様に適用する
 
 ### 3.5 スタイル定義
 

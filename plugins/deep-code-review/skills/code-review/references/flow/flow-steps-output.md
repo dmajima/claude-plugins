@@ -1,13 +1,13 @@
 # レビュー実行フロー — 出力・状態 Step（8〜8.5）
 
-> 親: [flow.md](flow.md)（全体図・用語定義・Step 索引）。本ファイルは **出力・状態フェーズ**（Step 8 / Step 8.5）の詳細を保持する。
-> 前フェーズ: 準備〜動員決定（Step 0-P〜3.5）は [flow-steps-early.md](flow-steps-early.md)、レビュー実行（Step 4〜7）は [flow-steps-review.md](flow-steps-review.md) を参照。
+> 親: [flow.md](flow.md)（全体図・用語定義・Step 索引）。本ファイルは **出力・状態フェーズ**（Step 8 / Step 8.5）の詳細を保持。
+> 前フェーズ: 準備〜動員決定（Step 0-P〜3.5）は [flow-steps-early.md](flow-steps-early.md)、レビュー実行（Step 4〜7）は [flow-steps-review.md](flow-steps-review.md)。
 
 ---
 
 ## Step 8: 統合サマリ出力
 
-`output-format.md` の出力フォーマットに従い、最終サマリを生成する。
+`output-format.md` の出力フォーマットに従い最終サマリを生成する。
 
 ### 出力先
 
@@ -31,13 +31,13 @@
 9. `8. 集計` — 実施日時・モード・参加観点別スキル・比較ブランチ・参照規約・参照仕様書 等
 10. `9. レビュー実施環境` — `pr-review` 経由時の worktree 作成・処理状況。それ以外は「該当なし」
 
-詳細は `output-format.md` セクション 1〜2 と `template/review-summary.md` を参照。
+詳細は `output-format.md` セクション 1〜2 と `template/review-summary.md`。
 
 ---
 
 ## Step 8.5: state.yaml 出力（必須）
 
-Step 8 完了直後に、レビュー結果を state.yaml として永続化する。
+Step 8 完了直後にレビュー結果を state.yaml として永続化する。
 
 ### 8.5-1: タイムスタンプフォルダ作成（出力先パスの厳守）
 
@@ -82,13 +82,7 @@ REPO_ROOT/.claude/.local/plugins/deep-code-review/{branch_name}/{yyyyMMdd_HHmmss
 
 ### 8.5-3: detail_summary の記述
 
-**各 finding の `detail_summary` は、再レビュー時に前回指摘を正確に理解するための鍵。**
-以下を含めること:
-
-- 問題が発生するファイルパスと行範囲
-- 具体的な問題内容（何が・なぜ問題か）
-- 期待される修正方針
-- 関連する規約・仕様への参照
+各 finding の `detail_summary` は再レビュー時に前回指摘を正確に理解する鍵。記述要件（含めるべき4項目・悪い例/良い例）は `${CLAUDE_SKILL_DIR}/references/state/state-management.md` セクション 5.3（SSOT）に従う。
 
 ### 8.5-4: PR Thread ID の記録
 
@@ -102,14 +96,14 @@ PR レビュー時（`pr-review` 経由）で PR にコメントを投稿した�
 
 #### Thread ID の受渡しインターフェース
 
-`code-review` は PR 識別子を直接処理しない設計のため、Thread ID は以下の経路で取得する:
+`code-review` は PR 識別子を直接処理しない設計のため、Thread ID は以下の経路で取得:
 
 | 呼び出し元 | 受渡し方法 | 取得タイミング |
 |-----------|-----------|--------------|
 | `pr-review` → `code-review` | `pr-review` がレビュー結果を PR に投稿後、`finding-thread-map.json` をセッション作業領域に保存（pr-review Step 7.4） | Step 8.5 実行時 |
 | `code-review` 単独実行（PR 経由でない場合） | Thread ID なし。`pr_thread_id` / `pr_thread_url` / `pr_thread_status` は全て `null` | Step 8.5 実行時 |
 
-Step 8.5 では、`finding-thread-map.json` が存在する場合はその内容を Finding ID で照合し、state.yaml の各 finding に Thread ID を転記する。存在しない場合は Thread ID 関連フィールドを `null` のままとする。
+Step 8.5 では、`finding-thread-map.json` が存在すればその内容を Finding ID で照合し、state.yaml の各 finding に Thread ID を転記する。存在しなければ Thread ID 関連フィールドを `null` のままとする。
 
 #### 投稿失敗時の Thread ID 処理
 
@@ -139,7 +133,7 @@ Step 7（PR コメント投稿）の結果に基づき、state.yaml の各 findi
 
 ### 8.5-6: サマリー作成 → ファイル出力 → PR 投稿（必須・処理順序厳守）
 
-PR サマリースレッドの投稿は、以下の順序で実施する。**ファイルと PR コメントの内容は完全同一** とする。
+PR サマリースレッドの投稿は以下の順序で実施する。**ファイルと PR コメントの内容は完全同一** とする。
 
 ```
 1. サマリー本文を構築（特殊文字エスケープ適用済みの最終形）
@@ -151,7 +145,7 @@ PR サマリースレッドの投稿は、以下の順序で実施する。**フ
 
 **手順 1: サマリー本文の構築**
 
-`${CLAUDE_SKILL_DIR}/references/template/output/review-summary.md` のフォーマットに従い、Step 5-7 の結果からサマリー本文を構築する。Markdown 特殊文字のエスケープ（`\#` `\@` `\!` 等）もこの時点で適用する。
+`${CLAUDE_SKILL_DIR}/references/template/output/review-summary.md` のフォーマットに従い Step 5-7 の結果からサマリー本文を構築する。Markdown 特殊文字のエスケープ（`\#` `\@` `\!` 等）もこの時点で適用する。
 
 **手順 2: review-summary.md へのファイル出力**
 
@@ -181,7 +175,7 @@ jq -n --rawfile body "<timestamp>/review-summary.md" '...' |
 curl.exe ... -d "@$jsonFile" "<API URL>"
 ```
 
-これにより Markdown 特殊文字（`#` `|` `_` `\` 等）が bash/PowerShell のシェル処理で破壊されることを防ぐ。
+これにより Markdown 特殊文字（`#` `|` `_` `\` 等）が bash/PowerShell のシェル処理で破壊されるのを防ぐ。
 
 #### インラインコメントの投稿手順
 
@@ -237,7 +231,7 @@ $tid = (Get-Content $resp -Raw | ConvertFrom-Json).id
 - [ ] `review_round` が前回 +1 で正しい
 - [ ] `remaining_issues` と `resolved_since_last` に矛盾がない（同一 ID が両方に存在しない）
 
-詳細は `${CLAUDE_SKILL_DIR}/references/state/state-management.md` を参照。
+詳細は `${CLAUDE_SKILL_DIR}/references/state/state-management.md`。
 
 ---
 

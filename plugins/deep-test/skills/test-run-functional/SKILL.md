@@ -1,6 +1,6 @@
 ---
 name: test-run-functional
-description: "単体テスト（level: functional / TC-FUNC）の実行スキル。Playwright MCP で画面・機能単位の実動作を確認し、ステップごとのスクショを収集して中間結果 JSON を返す。deep-test オーケストレータ（test）の run フェーズから functional レベルのケース実行時に使用する。MCP 不可時は skipped を返す。automation: playwright-test のケースは fixtures.yaml と SUT テストコードを前提に npx playwright test で .spec.ts を実走する（MCP 併存）。"
+description: "単体テスト（画面操作。level: functional / TC-FUNC）の実行スキル。Playwright MCP で画面・機能の実動作を確認しスクショ収集して中間結果 JSON を返す。コード実行の「ユニットテスト」は test-run-unit（本スキルは画面操作の単体テスト）。deep-test の test の run から functional 実行時や「単体テストレベル（画面・機能単位）のケースを実行して」で起動（入力不足なら非実行）。MCP 不可時は skipped。Use when running screen functional tests."
 allowed-tools:
   - Read
   - Grep
@@ -29,7 +29,7 @@ allowed-tools:
 
 # test-run-functional スキル
 
-単体テスト（`level: functional` / `TC-FUNC`）を、Playwright MCP によるブラウザ実操作機構で実施する実行スキル。
+単体テスト（`level: functional` / `TC-FUNC`）を、Playwright MCP によるブラウザ実操作で実施する実行スキル。
 実アプリケーションの画面・機能単位の動作をユーザー操作レベルで確認し、ステップごとのエビデンスを収集してケース単位の中間結果 JSON を返却する（実績 YAML への書き込みは行わない）。
 
 ## 責務
@@ -106,7 +106,7 @@ flowchart TD
 target-slug / run_id / 対象ケースリスト（functional）/ 対象アプリ情報（URL 等）を受領する。
 
 ### 2. MCP 二重防御
-初回ブラウザ操作前に `mcp__playwright__*` ツールの実利用可否を確認する。未ロード・呼び出し不能の場合は実行を偽装せず scope 全ケースを skipped + reason で返却する（オーケストレータの MCP ゲートで通常は事前遮断されるが、run 中の喪失・直接起動に備える）。
+初回ブラウザ操作前に `mcp__playwright__*` ツールの実利用可否を確認する。未ロード・呼び出し不能の場合は実行を偽装せず scope 全ケースを skipped + reason で返却する（MCP ゲートで通常は事前遮断されるが、run 中の喪失・直接起動に備える）。
 
 ### 3. 対象到達確認
 browser_navigate で対象 URL へ遷移する。接続不能が即時判明した場合は skipped、応答なしのままタイムアウトした場合は blocked（分岐表は `${CLAUDE_SKILL_DIR}/references/functional-execution.md` 5 章）。
@@ -127,11 +127,11 @@ preconditions 確認（`depends_on` の依存先が同一 run 内で fail / bloc
 検証チェックリストを通過後、中間結果 JSON を返却する。
 
 ### playwright-test 実走経路（automation: playwright-test）
-上記 1〜8 は Playwright MCP 経路（`automation: playwright`）の手順である。`automation: playwright-test` のケースは、MCP のその場操作ではなく fixtures.yaml + SUT テストコードを前提に `npx playwright test` で実走する。実行手順・エビデンス化・SKIPPED 判定は `${CLAUDE_SKILL_DIR}/references/functional-execution.md` 7 章（playwright-test 実走経路）に従う。既存の MCP・manual-assist 経路と併存し、置き換えない。
+上記 1〜8 は Playwright MCP 経路（`automation: playwright`）の手順。`automation: playwright-test` のケースは fixtures.yaml + SUT テストコードを前提に `npx playwright test` で実走する（実行手順・エビデンス化・SKIPPED 判定は `${CLAUDE_SKILL_DIR}/references/functional-execution.md` 7 章）。既存の MCP・manual-assist 経路と併存し置き換えない。
 
 ## 検証（チェックリスト）
 
-中間結果 JSON の返却前に以下を確認する。未達項目は解消してから返却する。
+中間結果 JSON の返却前に以下を確認し、未達項目は解消してから返却する。
 
 ```
 [ ] scope 全ケースについて 1 エントリずつ結果を返している（欠落なし。finish-run 突合の前提）
@@ -177,8 +177,8 @@ preconditions 確認（`depends_on` の依存先が同一 run 内で fail / bloc
 
 | 参照先 | 内容 |
 |-------|------|
-| `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス（実行時の共通規範一式はここから到達する） |
+| `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` | worker スキル共通参照の集約インデックス |
 | `${CLAUDE_SKILL_DIR}/references/functional-execution.md` | steps と Playwright 操作の対応表・照合方法・エビデンス取得/移送手順・status 分岐・playwright-test 実走経路（本スキル固有） |
 | `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` | `npx playwright test` + fixtures.yaml の実行規約（`automation: playwright-test` 経路。既定の MCP 経路と併存） |
 
-> **正本ツールリストとの同期（同期義務）**: frontmatter の allowed-tools に列挙した `mcp__playwright__browser_*` ツールは、`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 5 章（正本ツールリスト）から同期している。正本リストの改訂時は本スキルの frontmatter へ必ず反映すること。Playwright MCP が `playwright` 以外の名前で登録されている場合のプレフィクス読み替えは同 2 章に従う。
+> **正本ツールリストとの同期（同期義務）**: frontmatter の `mcp__playwright__browser_*` は正本リスト（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 5 章）の改訂時に必ず frontmatter へ反映する。`playwright` 以外の登録名でのプレフィクス読み替えは同 2 章に従う。

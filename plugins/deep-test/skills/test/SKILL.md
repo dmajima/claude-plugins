@@ -1,6 +1,6 @@
 ---
 name: test
-description: テストライフサイクル全体（設計→レビュー→実行→結果レビュー→報告→再テスト）を制御するオーケストレータスキル。「テストして」「テスト設計して」「再テストして」「テスト報告して」等の依頼や /deep-test:test 系コマンドで起動する。モード判定・target-slug 解決・フェーズ委譲・ゲート判定・実績記録（results_manager.py 経由）のみを担い、設計・レビュー・実行・報告書生成の実務は test-design / test-review / test-run-* / test-report へ Skill 委譲する。
+description: deep-test のテストライフサイクル全体のオーケストレータ。「テストして」「テスト設計して」（design-only）「ユニットテストだけ実行して」（run-only）「再テストして」「テスト報告書を作って」（report-only）や /deep-test:test で起動。モード判定・target-slug 解決・フェーズ委譲・ゲート判定・実績 YAML 記録を担い実務は各 worker へ委譲。Use when orchestrating deep-test. コードレビューの差分ユニットテスト（deep-code-review:code-review-testing）は対象外。
 allowed-tools:
   - Read
   - Grep
@@ -13,13 +13,13 @@ allowed-tools:
 
 > **権限ポリシー**
 > - 実務（設計・レビュー・実行・報告書生成）は worker スキルへ **Skill ツール経由で委譲** する。エージェントの直接起動は行わない（worker スキルの責務。`${CLAUDE_PLUGIN_ROOT}/references/agents.md`）
-> - `Bash` は **results_manager.py の実行・venv 構築（setup_venv.sh）・`environment.yaml` の parse 検証（venv Python。`${CLAUDE_SKILL_DIR}/references/flow.md` 6 章 Phase 1.7 節）** に使用する。`test-results.yaml` / `test-cases.yaml` を Edit / Write で直接編集することは禁止
+> - `Bash` は **results_manager.py の実行・venv 構築（setup_venv.sh）・`environment.yaml` の parse 検証（venv Python。`${CLAUDE_SKILL_DIR}/references/flow-resume.md` 6 章 Phase 1.7 節）** に使用する。`test-results.yaml` / `test-cases.yaml` を Edit / Write で直接編集することは禁止
 > - MCP ゲートの実利用可否判定に `ToolSearch` を使用する（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 4 章）
 
 # test スキル（オーケストレータ）
 
 テストライフサイクル全体を制御し、フェーズスキル・実行スキルへの委譲とゲート判定・実績記録を一元管理する。
-テストに関する知識・実務は持たず、**制御（いつ・何を・どの順で・進めてよいか）** に徹する。
+テストの知識・実務は持たず、**制御（いつ・何を・どの順で・進めてよいか）** に徹する。
 
 ## 責務
 
@@ -74,14 +74,14 @@ allowed-tools:
 
 ## results_manager.py（実績 YAML 操作の唯一の入口）
 
-`test-results.yaml` の追記・集計・抽出・検証はすべて `${CLAUDE_SKILL_DIR}/references/scripts/results/results_manager.py` を Bash + venv で実行して行う（サブコマンド仕様は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema.md` 3 章、Phase 別の実行コマンド例は `${CLAUDE_SKILL_DIR}/references/flow.md` 6 章）。
+`test-results.yaml` の追記・集計・抽出・検証はすべて `${CLAUDE_SKILL_DIR}/references/scripts/results/results_manager.py` を Bash + venv で実行する（サブコマンド仕様は `${CLAUDE_PLUGIN_ROOT}/references/yaml-schema.md` 3 章、Phase 別の実行コマンド例は `${CLAUDE_SKILL_DIR}/references/flow-resume.md` 6 章）。
 
 - サブコマンド: `init` / `start-run` / `record` / `finish-run` / `select` / `validate` / `summary` / `annotate`
 - exit code: `0`=正常 / `1`=一般エラー / `2`=バリデーションエラー（欠落フィールドを stderr 出力）/ `3`=ロック競合（.lock 残留時は実行中プロセスがないことを確認して手動削除）/ `64`=引数パースエラー（サブコマンド・オプションの typo）
 
 ## 実行モード判定
 
-起動コマンド・引数・依頼内容から以下のモードを確定する。判定に迷う場合はユーザーに確認する。
+起動コマンド・引数・依頼内容から以下のモードを確定する。判定に迷えばユーザーに確認する。
 
 | モード | 引数 | フロー |
 |-------|------|-------|
@@ -90,7 +90,7 @@ allowed-tools:
 | 部分: design-only | `design-only` | Phase 0→2→3（設計レビューゲートまで。run へ進まない） |
 | 部分: run-only | `run-only levels=<level,...>`（対象レベル指定必須） | Phase 0→(1 必要時)→4→5（select full の結果を指定レベルで絞り込む） |
 | 部分: report-only | `report-only` | Phase 0→7（実績 YAML から報告書を再生成。run なし） |
-| 再開 | `resume` | Phase 0→復帰位置判定（`${CLAUDE_SKILL_DIR}/references/flow.md` 5 章）→Phase 5 残ケース→6→7 |
+| 再開 | `resume` | Phase 0→復帰位置判定（`${CLAUDE_SKILL_DIR}/references/flow-resume.md` 5 章）→Phase 5 残ケース→6→7 |
 | 非対話 | `--non-interactive`（各モードに併用） | 確認をスキップし既定値で進行（既定値表は `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 9 章） |
 
 - 再テストのモード定義・対象判定マトリクス・resume 規約は `${CLAUDE_PLUGIN_ROOT}/references/retest-policy.md` が SSOT
@@ -119,13 +119,13 @@ flowchart TD
     P6 --> P7["Phase 7: 報告\nvalidate → Skill: test-report"]
 ```
 
-フェーズ遷移・ゲート判定・遡行ループ・resume 復帰位置判定の詳細は `${CLAUDE_SKILL_DIR}/references/flow.md`、フェーズ間の受け渡しデータは `${CLAUDE_SKILL_DIR}/references/state-handoff.md` を参照。
+フェーズ遷移・ゲート判定・遡行ループの詳細は `${CLAUDE_SKILL_DIR}/references/flow.md`、resume 復帰位置判定・Phase 別の実行コマンド集は `${CLAUDE_SKILL_DIR}/references/flow-resume.md`、フェーズ間の受け渡しデータは `${CLAUDE_SKILL_DIR}/references/state-handoff.md` を参照。
 
 ### Phase 別の要点
 
-Phase 別の要点（内容・委譲先 / 操作の一覧表）は `${CLAUDE_SKILL_DIR}/references/flow.md` 2.1 章へ移管した。各 Phase の具体的な実行コマンド・Skill args・判定手順は同 6 章（実行コマンド集）を参照。
+Phase 別の要点（内容・委譲先 / 操作の一覧表）は `${CLAUDE_SKILL_DIR}/references/flow.md` 2.1 章へ移管した。各 Phase の具体的な実行コマンド・Skill args・判定手順は `${CLAUDE_SKILL_DIR}/references/flow-resume.md` 6 章（実行コマンド集）を参照。
 
-Phase 5 の手動実施ケース（`automation: manual-assist` / `exploratory`）はレベル内で自動実行ケース群の後に処理し、非対話時は start-run 前に手順書を一括生成して skipped + reason（手順書パス）へ縮退する（生成失敗はフェイルオープン。規範は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md`、手順は flow.md 6 章 Phase 5 手順 0.5）。
+Phase 5 の手動実施ケース（`automation: manual-assist` / `exploratory`）はレベル内で自動実行ケース群の後に処理し、非対話時は start-run 前に手順書を一括生成して skipped + reason（手順書パス）へ縮退する（生成失敗はフェイルオープン。規範は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md`、手順は flow-resume.md 6 章 Phase 5 手順 0.5）。
 
 ## 検証
 
@@ -143,7 +143,7 @@ Phase 5 の手動実施ケース（`automation: manual-assist` / `exploratory`�
 
 ### 正常完了時
 
-以下をまとめてユーザーへ報告する。
+以下をユーザーへ報告する。
 
 - run_id・実行モード・対象 target-slug
 - レベル別集計（summary の出力: 対象数 / pass / fail / blocked / skipped / na）と run 横断推移
@@ -157,7 +157,7 @@ Phase 5 の手動実施ケース（`automation: manual-assist` / `exploratory`�
 
 - MCP ゲート停止: 再起動ハンドオフ（状態保存済みの明示 / 再起動依頼 / `resume` での再開手順）を出力する（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 3 章）
 - その他の中断: 中断位置・test-results.yaml の記録状況・再開手段（resume または該当モード）を報告する
-- environment up 後の中断: down は自動実施されない。残存コンテナの確認手順（`docker compose -p {slug}-test ps`。`-p` 単独は簡易確認用）と手動 down 手順（`Skill: test-environment` の `action=down`。撤収は `environment.yaml` の `lifecycle` 記録〔`-f` 群 + `-p` の完全形〕による）を必ず案内に含める（resume 時は健全なら再利用される。`${CLAUDE_SKILL_DIR}/references/flow.md` 5 章）
+- environment up 後の中断: down は自動実施されない。残存コンテナの確認手順（`docker compose -p {slug}-test ps`。`-p` 単独は簡易確認用）と手動 down 手順（`Skill: test-environment` の `action=down`。撤収は `environment.yaml` の `lifecycle` 記録〔`-f` 群 + `-p` の完全形〕による）を必ず案内に含める（resume 時は健全なら再利用される。`${CLAUDE_SKILL_DIR}/references/flow-resume.md` 5 章）
 
 ## 重要な制約
 
@@ -183,7 +183,8 @@ Phase 5 の手動実施ケース（`automation: manual-assist` / `exploratory`�
 | `${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` | MCP 実利用可否判定（ToolSearch 手順）・再起動ハンドオフ |
 | `${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` | テストレベル定義・レベル→実行スキル対応 |
 | `${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md` | fail 時 3 点セット・二段バリデーション |
-| `${CLAUDE_SKILL_DIR}/references/flow.md` | フェーズ遷移詳細・ゲート判定手順・遡行ループ・resume 復帰位置判定 |
+| `${CLAUDE_SKILL_DIR}/references/flow.md` | フェーズ遷移詳細・状態遷移図・ゲート判定手順・遡行ループ |
+| `${CLAUDE_SKILL_DIR}/references/flow-resume.md` | resume 復帰位置判定（5 章）・Phase 別の実行コマンド集（6 章）〔実行時・resume 時に Read〕 |
 | `${CLAUDE_SKILL_DIR}/references/state-handoff.md` | フェーズ間の引き継ぎデータ規約（args 規約・返却 JSON 構造） |
 | `${CLAUDE_SKILL_DIR}/references/scripts/results/results_manager.py` | 実績 YAML 操作スクリプト（test-results.yaml への書き込みの唯一経路。test-report が validate 目的で読み取り実行する利用は許容） |
 | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/` | venv 構築・削除スクリプトと requirements.txt（プラグイン共通） |

@@ -1,7 +1,6 @@
 # 言語・フレームワーク検出手順
 
-Analyze フェーズの冒頭で実施する、対象プロジェクトの言語・フレームワーク検出と委譲先言語スキルの決定手順。
-`orchestrator-coding` / `orchestrator-design` が共通で使用する。
+Analyze フェーズ冒頭で実施する、対象プロジェクトの言語・フレームワーク検出と委譲先言語スキルの決定手順。`orchestrator-coding` / `orchestrator-design` が共用する。
 検出マーカーと言語スキルの対応は [skill-index.md](skill-index.md)（SSOT）に従う。
 
 ## 1. 検出フロー
@@ -66,17 +65,7 @@ SQL を扱うタスクでは方言を特定する。判定材料（[skill-index.
 
 ### Step 5: 検出結果の記録
 
-`impact-analysis.md` の「言語・フレームワーク検出結果」セクションに記録する:
-
-```markdown
-## 言語・フレームワーク検出結果
-
-| 区分 | 言語 / FW | 検出根拠 | 適用スキル / プロファイル |
-|------|----------|---------|------------------------|
-| 主 | TypeScript | tsconfig.json | coding-typescript |
-| 主 | React 19 | package.json dependencies.react | frameworks/react.md（SSOT） |
-| 副 | CSS (Tailwind) | devDependencies.tailwindcss | coding-css + frameworks/frontend-tooling.md |
-```
+検出結果は `impact-analysis.md` の「言語・フレームワーク検出結果」表に記録する（形式はテンプレート [`template/impact-analysis.md`](template/impact-analysis.md) が正典）。各行に **区分（主 / 副）・言語 / FW・検出根拠・適用スキル / プロファイル** を記載し、言語横断 FW は SSOT `frameworks/` である旨を明記する。
 
 ## 3. 未対応言語の扱い
 

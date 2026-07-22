@@ -9,8 +9,8 @@ Playwright MCP のツール定義・利用規約（正本ツールリスト・fi
 
 ### 1.1 基本パターン
 
-要素操作は「**browser_snapshot で要素 ref を取得 → 操作ツールに ref を渡す**」を基本とする（ref は直近の snapshot から取得する）。
-各ステップの実行後にスクリーンショットを取得し（3 章）、次のステップへ進む。
+要素操作は「**browser_snapshot で要素 ref を取得 → 操作ツールに ref を渡す**」を基本とする（ref は直近 snapshot から取得）。
+各ステップ実行後にスクリーンショットを取得し（3 章）、次ステップへ進む。
 
 ### 1.2 対応表
 
@@ -39,7 +39,7 @@ Playwright MCP のツール定義・利用規約（正本ツールリスト・fi
 | 表示テキスト・メッセージ | browser_snapshot のアクセシビリティツリーに期待テキストが存在するか |
 | 画面遷移 | 遷移後の browser_snapshot のページ URL・タイトル・画面固有要素の存在 |
 | 要素の状態（活性 / 非活性・チェック状態・選択値） | browser_snapshot の要素属性 |
-| 非同期反映（動的表示） | browser_wait_for で出現・消滅を待機した後に snapshot で確認 |
+| 非同期反映（動的表示） | browser_wait_for で出現・消滅を待機後に snapshot で確認 |
 | レイアウト・視覚的確認 | browser_take_screenshot の画像確認（目視相当の判断であることを actual に明記する） |
 | コンソールエラーの有無 | browser_console_messages |
 
@@ -49,7 +49,7 @@ Playwright MCP のツール定義・利用規約（正本ツールリスト・fi
 ## 3. エビデンス取得・移送手順
 
 1. **取得**: 各ステップ実行後に browser_take_screenshot を **filename 指定**で実行する: `{case_id}_{NN}_{label}.png`（NN はステップ番号 2 桁・label は内容を表す英数字。命名は playwright-mcp.md 6 章の推奨形式）
-2. **移送**: 取得の**直後**（次のステップに進む前）に、Bash で raw 出力先から `evidence/{run_id}/{case_id}/` へ move する（移送規約は data-locations.md 5 章。コピーではなく移動とし raw 出力先に残骸を残さない）
+2. **移送**: 取得の**直後**（次ステップに進む前）に、Bash で raw 出力先から `evidence/{run_id}/{case_id}/` へ move する（移送規約は data-locations.md 5 章。コピーではなく移動とし raw 出力先に残骸を残さない）
 3. **移送時のリネーム**: ケースディレクトリ内ではケース ID プレフィクスが冗長なため、`{NN}_{label}.png` へリネームして evidence-policy.md 4 章の命名（ステップ番号 2 桁プレフィクス）に揃える（例: `TC-FUNC-001_01_login-page.png` → `01_login-page.png`）
 4. **テキスト系**: browser_console_messages / browser_snapshot / browser_network_requests の取得結果は、Bash（heredoc / リダイレクト・UTF-8）で `evidence/{run_id}/{case_id}/` へ直接保存する（raw 出力を経ないため移送不要）。命名例: `90_console-log.txt` / `91_snapshot.txt` / `92_network.txt`
 

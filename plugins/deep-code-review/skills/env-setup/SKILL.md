@@ -1,16 +1,6 @@
 ---
 name: env-setup
-description: |
-  deep-code-review プラグインが利用する外部依存ツール（Windows 標準以外）のインストール・更新・存在確認を集約するスキル。
-  PR レビュー・LSP・動的検証で必要となる gh / az CLI / azure-devops 拡張 / csharp-ls / typescript-language-server / Node.js / Python / .NET SDK 等を扱う。
-
-  以下の場面で使用する:
-  - 「環境構築して」「必要なツールをインストールして」と言われた場合
-  - 他スキル（pr-review / code-review-* 等）が必要ツールの不在を検知して呼び出した場合
-  - 「gh / az / csharp-ls / typescript-language-server がない」とエラーが出た場合
-
-  本スキルは **Windows 標準以外の外部依存ツール全て** のインストール窓口。
-  各スキルは個別にインストールせず、必要時に本スキルへ依頼する設計。
+description: deep-code-review プラグインの外部依存ツール（gh/az/csharp-ls/tsserver/Node/Python 等 Windows 標準外）の導入・更新・確認を集約。「環境構築して」「必要なツールをインストールして」や他スキルのツール不在検知、「gh/az がない」エラー時に起動する。Use when installing/verifying the plugin's tools. SKIP when setting up a project's deps or a plugin's own venv (use environment-setup-toolkit).
 allowed-tools:
   - Read
   - Grep
@@ -68,22 +58,22 @@ deep-code-review プラグインおよび配下のスキル群が利用する **
 
 ## 実行モード判定
 
-本スキルは **確認モード（既定）/ インストールモード / 委譲（他スキルからの依頼）** の3系統で動作する。他スキル（`pr-review` / `code-review-*` 等）からの委譲呼び出し時は、引数（`verify` / `install`・対象ツール）に従い非対話で実行する。
+本スキルは **確認モード（既定）/ インストールモード / 委譲（他スキルからの依頼）** の3系統で動作。他スキル（`pr-review` / `code-review-*` 等）からの委譲呼び出し時は、引数（`verify` / `install`・対象ツール）に従い非対話で実行。
 
 ### 1. 確認モード（既定）
 
-ユーザーから明確な「インストールして」指示がない場合は、まず **存在確認** のみを行う。
+ユーザーから明確な「インストールして」指示がない場合は、まず **存在確認** のみ行う。
 
 ```bash
 # 全ツール一括確認
 where gh az node npm python dotnet pwsh
 ```
 
-存在しないツールがあれば、ユーザーに **インストール可否を確認** してから実行する。
+存在しないツールがあれば、ユーザーに **インストール可否を確認** してから実行。
 
 ### 2. インストールモード
 
-ユーザーが「インストールして」「セットアップして」と明示した場合、または他スキルからインストール依頼を受けた場合のみ、対象ツールを順にインストールする。
+ユーザーが「インストールして」「セットアップして」と明示した場合、または他スキルからインストール依頼を受けた場合のみ、対象ツールを順にインストール。
 
 #### Windows でのインストール優先順位
 
@@ -106,7 +96,7 @@ where gh az node npm python dotnet pwsh
 1. **依頼内容の解釈**: 確認のみか、インストール込みか、対象ツールは何か
 2. **存在確認**: `where <tool>` で確認
 3. **不足ツールの提示**: 一覧をユーザーに見せる
-4. **インストール承認の取得**: AskUserQuestion で確認（不足ツールを一覧で提示し、まとめて承認を取る）
+4. **インストール承認の取得**: AskUserQuestion で確認（不足ツールを一覧提示し、まとめて承認を取る）
 5. **インストール実行**: 上記優先順位に従ってインストール
 6. **再確認**: インストール後にバージョンを確認し、結果を報告
 

@@ -136,6 +136,7 @@ Windows + PowerShell から Python スクリプトを `Start-Process -NoNewWindo
 | 出力フォーマット例 | エラーメッセージ・JSON 出力構造の例 |
 | 構造ツリー（コードブロック内）| `plugins/foo/references/scripts/...` のディレクトリ図 |
 | インラインで動作の解説に必要な短い疑似コード | `# pseudocode:` 等の明示があるもの |
+| 規約・フレームワークのリファレンス文書内の例示コードブロック | 実行を意図しない言語・FW の記法サンプル（`references/frameworks/*.md` の Web FW・ORM 規約例等） |
 
 判断基準: **そのコードブロックを Claude が実行することが期待されているか**。実行されるなら `references/scripts/` に切り出す。表示専用なら md に残してよい。
 

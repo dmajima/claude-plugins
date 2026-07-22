@@ -1,7 +1,7 @@
 # データ配置規約
 
-deep-test プラグインが扱うデータ（テスト計画・ケース定義・実行実績・エビデンス・報告書）の配置パス・target-slug 解決・エビデンス移送・保持方針を定義する唯一の SSOT である。
-すべてのスキルはデータの読み書き先を本ファイルの規約で解決する。
+deep-test が扱うデータ（テスト計画・ケース定義・実行実績・エビデンス・報告書）の配置パス・target-slug 解決・エビデンス移送・保持方針を定義する唯一の SSOT。
+全スキルはデータの読み書き先を本規約で解決する。
 
 ---
 
@@ -14,7 +14,7 @@ deep-test プラグインが扱うデータ（テスト計画・ケース定義�
 
 - 判定は現在のディレクトリから `.git` を探索し、見つかればそのリポジトリルートを基準とする
 - 同一セッション中は基準ディレクトリを切り替えない
-- `.claude/.local/` はバージョン管理対象外の領域である。リポジトリ配下で使用する場合は `.gitignore` に `.claude/.local/` が登録されていることを確認する
+- `.claude/.local/` はバージョン管理対象外。リポジトリ配下で使用する場合は `.gitignore` に `.claude/.local/` が登録されていることを確認する
 
 ---
 
@@ -46,9 +46,9 @@ deep-test プラグインが扱うデータ（テスト計画・ケース定義�
     └── archive/                       # 手動クリーンアップ時のアーカイブ置き場（7 章）
 ```
 
-> 注記: test-fixture が生成する **SUT のテストコード**（`playwright.config.ts` / `{tests}/fixtures/*.ts` / `auth.setup.ts` / seed 等）は SUT 側のテストディレクトリ（`project=` 配下）に配置され、**deep-test の管理データ領域（本ツリー）とは別**である。deep-test が本ツリーに置くのはフィクスチャの機械可読マニフェスト `fixtures.yaml` のみで、SUT テストコードそのものは deep-test の管理対象外である（SUT テストコードの書き込み境界は `playwright-test.md`）。
+> 注記: test-fixture が生成する **SUT のテストコード**（`playwright.config.ts` / `{tests}/fixtures/*.ts` / `auth.setup.ts` / seed 等）は SUT 側のテストディレクトリ（`project=` 配下）に配置され、**deep-test の管理データ領域（本ツリー）とは別**である。本ツリーに置くのはフィクスチャの機械可読マニフェスト `fixtures.yaml` のみで、SUT テストコード本体は deep-test の管理対象外（書き込み境界は `playwright-test.md`）。
 
-> 注記: **SUT の docker 資産**（compose・Dockerfile・`.env` 等）は **read-only** である。test-environment は派生ファイル（`environment/compose.test.yml` / `environment/.env.test`）を本ツリー（deep-test の管理データ領域）に生成し、SUT 側（`project=` 配下）へは一切書き込まない（派生スキーマ・書き込み境界は `yaml-schema-environment.md`）。
+> 注記: **SUT の docker 資産**（compose・Dockerfile・`.env` 等）は **read-only**。test-environment は派生ファイル（`environment/compose.test.yml` / `environment/.env.test`）を本ツリー（deep-test の管理データ領域）に生成し、SUT 側（`project=` 配下）へは一切書き込まない（派生スキーマ・書き込み境界は `yaml-schema-environment.md`）。
 
 ---
 
@@ -105,7 +105,7 @@ flowchart TD
 ### 5.1 raw 出力先
 
 - Playwright MCP の出力先は基準ディレクトリ配下の `playwright/`（フラット構造）に固定する
-- MCP サーバーの出力先はセッション起動時に固定され、run や case ごとに切り替えられない。そのため全ケースの出力がこの一時置き場に混在する前提で扱う
+- MCP サーバーの出力先はセッション起動時に固定され、run や case ごとに切り替えられないため、全ケースの出力がこの一時置き場に混在する前提で扱う
 - MCP の登録・起動オプション（出力先指定を含む）は `playwright-mcp.md` 参照
 
 ### 5.2 移送規約（実行スキルの必須後処理）
@@ -114,7 +114,7 @@ flowchart TD
 2. **ステップ実行直後**（次のステップ・次のケースに進む前）に、出力ファイルを `{target-slug}/evidence/{run_id}/{case_id}/` へ **move** する
 3. move はコピーではなく移動とし、`playwright/` に残骸を残さない
 
-- ステップ直後の移送を必須とする理由: 移送を後回しにすると他ステップ・他ケースの出力と混在し、ファイルの帰属（どのケースのどのステップの証跡か）が判別不能になるため
+- ステップ直後の移送を必須とする理由: 後回しにすると他ステップ・他ケースの出力と混在し、ファイルの帰属（どのケースのどのステップの証跡か）が判別不能になるため
 - エビデンスのファイル内容・取得タイミング・命名の要件は `evidence-policy.md` 参照
 - run 終了時に `playwright/` に残留ファイルがある場合は帰属不明ファイルとして警告し、内容を確認のうえ手動で整理する
 - 実績 YAML に記録するエビデンスパスは、移送後の `{target-slug}/` 直下基準の相対パスとする（`yaml-schema.md` 2.1）

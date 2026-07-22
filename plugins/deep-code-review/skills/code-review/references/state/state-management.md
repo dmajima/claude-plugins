@@ -1,15 +1,15 @@
 # State Management（レビュー状態管理）
 
-レビュー結果を `state.yaml` に永続化し、再レビュー時に前回の指摘状態を引き継ぐ仕組みを定義する。
+レビュー結果を `state.yaml` に永続化し、再レビュー時に前回指摘状態を引き継ぐ仕組みを定義する。
 
 ---
 
 ## 1. 目的
 
-- レビュー結果を構造化データとして保持し、再レビュー時の精度を向上する
-- 解消済み・未解消の指摘を正確に追跡する
-- PR コメント（Azure DevOps / GitHub）との紐づけ（Thread ID）を維持する
-- 複数回レビューを跨いだ指摘の追跡可能性を確保する
+- レビュー結果を構造化データで保持し、再レビュー精度を向上
+- 解消済み・未解消の指摘を正確に追跡
+- PR コメント（Azure DevOps / GitHub）との紐づけ（Thread ID）を維持
+- 複数回レビューを跨いだ指摘の追跡可能性を確保
 
 ---
 
@@ -47,7 +47,7 @@
 
 ### 2.1 ブランチ名のサニタイズルール
 
-ブランチ名をディレクトリ名として使用する際、以下のサニタイズを適用する。
+ブランチ名をディレクトリ名に使う際、以下のサニタイズを適用する。
 
 | ルール | 対象 | 処理 |
 |--------|------|------|
@@ -69,7 +69,7 @@
 
 ### 3.1 Step 8.5（オーケストレーターフロー内）
 
-Step 8（統合サマリ出力）の直後に、state.yaml を生成・保存する。
+Step 8（統合サマリ出力）の直後に state.yaml を生成・保存する。
 
 ### 3.2 生成手順
 
@@ -150,8 +150,7 @@ stateDiagram-v2
 
 ### 5.3 detail_summary の重要性
 
-`detail_summary` は **再レビュー時に前回指摘を正確に理解するための鍵** である。
-以下の情報を含めること:
+`detail_summary` は **再レビュー時に前回指摘を正確に理解する鍵**。以下を含めること:
 
 - 問題が発生するファイルパスと行範囲
 - 具体的な問題内容（何が・なぜ問題か）
@@ -168,8 +167,7 @@ stateDiagram-v2
 
 ### 6.1 Azure DevOps
 
-Azure DevOps の PR コメントスレッドは `threadId`（数値）で識別される。
-state.yaml の `pr_thread_id` にこの値を保持する。
+Azure DevOps の PR コメントスレッドは `threadId`（数値）で識別される。state.yaml の `pr_thread_id` に保持する。
 
 ```yaml
 findings:
@@ -205,20 +203,17 @@ findings:
 
 ### 7.1 再レビュー時の採番
 
-再レビュー時の **新規指摘** は、前回 state.yaml の最大 Finding ID 番号 + 1 から採番する。
-これは `output-format.md` セクション 1.5 の規則と整合する。
+再レビュー時の **新規指摘** は、前回 state.yaml の最大 Finding ID 番号 + 1 から採番する。`output-format.md` セクション 1.5 の規則と整合する。
 
 ### 7.2 前回指摘の参照
 
-統合サマリのセクション 6（既存指摘の解消判定）で、前回 Finding ID を参照する際は
-state.yaml の `findings[].id` / `remaining_issues[].id` を使用する。
+統合サマリのセクション 6（既存指摘の解消判定）で前回 Finding ID を参照する際は、state.yaml の `findings[].id` / `remaining_issues[].id` を使用する。
 
 ---
 
 ## 8. state.yaml と既存セッション作業領域の関係（厳守）
 
-state.yaml は **プラグインのローカルデータ** として `.claude/.local/plugins/deep-code-review/` 配下に保持する。
-これはセッション作業領域（`.claude/.local/work/{yyyyMMdd_nn_summary}/`）とは **別の管理体系** である。
+state.yaml は **プラグインのローカルデータ** として `.claude/.local/plugins/deep-code-review/` 配下に保持する。セッション作業領域（`.claude/.local/work/{yyyyMMdd_nn_summary}/`）とは **別の管理体系**。
 
 > **禁止**: state.yaml / review-summary.md / inputs を `.claude/.local/work/` 配下に保存すること。
 > セッション作業領域はセッション終了後に参照されなくなるため、再レビュー時の前回 state 読み込み（Step 0-P-2）が失敗する。
@@ -235,8 +230,7 @@ state.yaml は **プラグインのローカルデータ** として `.claude/.l
 
 ## 9. クリーンアップ
 
-state.yaml は **手動削除** を原則とする（誤削除防止のため自動化しない）。
-ブランチがマージされた後、不要になったフォルダはユーザーが判断して削除する。
+state.yaml は **手動削除** を原則とする（誤削除防止のため自動化しない）。ブランチのマージ後、不要になったフォルダはユーザーが判断して削除する。
 
 ---
 

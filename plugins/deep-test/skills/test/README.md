@@ -8,6 +8,12 @@
 このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。
 スキルが実行時に参照するのは `SKILL.md` と `references/` 配下、およびプラグイン共通の `references/` です。
 
+## 導入手順
+
+本スキル `test` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
+
+- **起動トリガー**: 「このアプリをテストして」等の自然言語、または `/deep-test:test`・`/deep-test:test-retest`・`/deep-test:test-report` コマンド（テストライフサイクル全体を制御するオーケストレータ）
+
 ## 役割
 
 | 責務 | 内容 |
@@ -87,7 +93,8 @@ skills/test/
 ├── SKILL.md                        # スキル定義（Claude が読み込むエントリポイント）
 ├── README.md                       # 本ファイル（人間向け）
 ├── references/
-│   ├── flow.md                     # フェーズ遷移・ゲート判定手順・遡行ループ・resume 復帰判定
+│   ├── flow.md                     # フェーズ遷移・状態遷移図・ゲート判定手順・遡行ループ
+│   ├── flow-resume.md              # resume 復帰位置判定・Phase 別実行コマンド集（flow.md から移管）
 │   ├── state-handoff.md            # フェーズ間の受け渡しデータ規約（args / 返却 JSON / スクリプト入出力）
 │   └── scripts/
 │       └── results/

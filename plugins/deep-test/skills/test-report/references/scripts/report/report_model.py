@@ -22,9 +22,9 @@ import sys
 
 import yaml
 
-# テストレベル定数の共有モジュール（<plugin>/references/scripts/lib/levels.py）を import する。
+# テストレベル定数の共有モジュール（<plugin>/references/scripts/common/levels.py）を import する。
 # 本ファイル（skills/test-report/references/scripts/report/）からプラグインルート直下の
-# references/scripts/lib/ までの相対深度は 5 階層（../ を 5 個）。
+# references/scripts/common/ までの相対深度は 5 階層（../ を 5 個）。
 # generate_excel.py / generate_markdown.py はこれらを本モジュール経由で参照する
 # （import されたシンボルは本モジュールの属性となるため from report_model import ... で解決可能）。
 sys.path.insert(
@@ -32,7 +32,7 @@ sys.path.insert(
     os.path.normpath(
         os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "..", "..", "..", "..", "..", "references", "scripts", "lib",
+            "..", "..", "..", "..", "..", "references", "scripts", "common",
         )
     ),
 )

@@ -1,11 +1,11 @@
 <!-- TEST-FIXTURE-PATTERNS-SENTINEL-v1 -->
 # test-fixture パターン集（認証 / モック / シード / base）
 
-`test-fixture` が生成 / 拡充するフィクスチャの実装パターンと最小コード例。SKILL.md・`fixture-procedures.md` 6 章から参照される。
-実行規約・fixtures.yaml スキーマ・書き込み境界の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md` であり、本書はその**パターン別の適用例**を補完する（`playwright.config.ts` の骨子は playwright-test.md 2.1 を正とし、本書は fixture コード側を主に示す。規範本文は複製しない）。
+`test-fixture` が生成 / 拡充するフィクスチャの実装パターンと最小コード例。SKILL.md・`fixture-procedures.md` 6 章から参照。
+実行規約・fixtures.yaml スキーマ・書き込み境界の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md`。本書はその**パターン別の適用例**を補完する（`playwright.config.ts` の骨子は playwright-test.md 2.1 を正とし、本書は fixture コード側を主に示す。規範本文は複製しない）。
 
 - 各コード例は**最小の骨子**であり、対象の技術スタック（`analysis.yaml` の `architecture.frameworks`）に合わせて調整する
-- 認証情報の実値は**ハードコードしない**（環境変数・credentials-manager 経由）。storageState 出力先は `.gitignore` 追記を提案する
+- 認証情報の実値は**ハードコードしない**（環境変数・credentials-manager 経由）。storageState 出力先は `.gitignore` 追記を提案
 - 既存基盤の拡充時は既存の書式・命名を尊重し、不足分のみ非破壊で追加する
 - 生成した各フィクスチャは `fixtures.yaml` の 1 エントリ（`type` / `name` / `provides` / `artifact` / `status` / `confidence`）として記録する
 

@@ -1,7 +1,7 @@
 # test-review 判定基準・指摘統合規則
 
 `test-review` スキルの指摘重要度の定義・PASS / NEEDS REVISION 判定基準・指摘統合規則の定義場所。
-欠陥重要度（defect.severity = 本番影響度）の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md` であり、本書の「指摘重要度」とは**別概念**である（1.1 章）。
+欠陥重要度（defect.severity = 本番影響度）の SSOT は `${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md`。本書の「指摘重要度」とは**別概念**である（1.1 章）。
 
 ---
 
@@ -14,7 +14,7 @@
 | **指摘重要度**（本書） | test-review が出すレビュー指摘の**対応必要度**（成果物・実績記録の欠陥ではなく、テスト成果物の問題の重さ） | 本ファイル 1.2 章 |
 | **欠陥 severity** | テスト実行で検出した欠陥（status: fail の defect）の**本番影響度** | `severity-policy.md`（本書には複製しない） |
 
-- 結果文脈で「severity 妥当性」を検証する際の判定基準は severity-policy.md を参照する。その検証結果として出す指摘（「severity が過小」等）の重さは本書の指摘重要度で表す
+- 結果文脈で「severity 妥当性」を検証する際の判定基準は severity-policy.md を参照。その検証結果として出す指摘（「severity が過小」等）の重さは本書の指摘重要度で表す
 
 ### 1.2 指摘重要度の定義
 

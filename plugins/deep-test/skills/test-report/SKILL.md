@@ -1,6 +1,6 @@
 ---
 name: test-report
-description: 実績 YAML（test-results.yaml / test-cases.yaml）からテスト報告書 1 ファイルを生成する報告スキル。対話時は Excel / Markdown を選択、非対話時は Markdown 既定。生成前に results_manager.py validate と evidence-auditor でエビデンス完全性を最終バリデーションし、違反検出時は生成を中断して差し戻す。テスト報告書の作成・再生成を求められた時、または test オーケストレータの report フェーズから委譲された時に使用。テスト実行・実績 YAML への書き込み・欠陥修正は責務外。
+description: 実績 YAML（test-results.yaml/test-cases.yaml）から報告書 1 ファイル生成。対話時 Excel/Markdown 選択・非対話時 Markdown 既定。results_manager.py validate と evidence-auditor でエビデンス完全性を検証し、違反検出時は生成を中断して差し戻す。「テスト報告書を作成して」「テスト結果を Excel にまとめて」等や test の report 委譲で起動。Use when generating reports. テスト実行(test-run-*)・実績 YAML 書込・欠陥修正は責務外。
 allowed-tools:
   - Read
   - Grep
@@ -16,8 +16,10 @@ allowed-tools:
 
 実績 YAML（test-results.yaml + test-cases.yaml）を入力として、以下の 2 つを担う。
 
-1. **報告書生成**: Excel または Markdown のテスト報告書を **1 ファイル**生成する（複数テストレベルの一括報告は Excel = シート分け / Markdown = セクション分け。フォーマット SSOT は `${CLAUDE_PLUGIN_ROOT}/references/report-format.md`）
-2. **エビデンス完全性の最終バリデーション**: 生成前に validate（fail の defect 3 点セット・scope/results 突合）と evidence-auditor 監査（エビデンス実在・マスキング状態）を通し、違反があれば**生成せずに差し戻す**（`${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md` 二段バリデーションの最終段）
+| # | 責務 | 内容 |
+|---|------|------|
+| 1 | **報告書生成** | Excel または Markdown のテスト報告書を **1 ファイル**生成（複数テストレベルの一括報告は Excel = シート分け / Markdown = セクション分け。フォーマット SSOT は `${CLAUDE_PLUGIN_ROOT}/references/report-format.md`） |
+| 2 | **エビデンス完全性の最終バリデーション** | 生成前に validate（fail の defect 3 点セット・scope/results 突合）と evidence-auditor 監査（エビデンス実在・マスキング状態）を通し、違反があれば**生成せずに差し戻す**（`${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md` 二段バリデーションの最終段） |
 
 ## 責務外（他スキルが担当）
 
@@ -32,20 +34,20 @@ allowed-tools:
 
 ## トリガー条件
 
-- オーケストレータ `test` の report フェーズ（フルフロー末尾・再テスト末尾・report-only モード）から Skill ツール経由で委譲された場合
-- 「テスト報告書を作成して」「テスト結果を Excel にまとめて」「実績から報告書を再生成して」と言われた場合
+- オーケストレータ `test` の report フェーズ（フルフロー末尾・再テスト末尾・report-only モード）から Skill ツール経由で委譲された
+- 「テスト報告書を作成して」「テスト結果を Excel にまとめて」「実績から報告書を再生成して」と言われた
 
-このスキルを起動しないケース:
+起動しないケース:
 
 - テスト実行そのものの依頼（オーケストレータ `test` / `test-run-*` へ）
 - 実績 YAML の修正・記録の依頼（オーケストレータ `test` へ）
 
 ## 前提
 
-- `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` の基準ディレクトリ配下に `{target-slug}/test-cases.yaml` と `{target-slug}/test-results.yaml` が存在し、run が 1 件以上記録されていること
-- results_manager.py（`${CLAUDE_PLUGIN_ROOT}/skills/test/references/scripts/results/results_manager.py`）が存在すること（validate 実行に使用）
-- evidence-auditor エージェント定義が `${CLAUDE_PLUGIN_ROOT}/agents/` に存在すること
-- Python 3.9+ / Bash が利用可能であること（venv 構築は `${CLAUDE_SKILL_DIR}/references/setup.md`）
+- `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` の基準ディレクトリ配下に `{target-slug}/test-cases.yaml` と `{target-slug}/test-results.yaml` が存在し、run が 1 件以上記録されている
+- results_manager.py（`${CLAUDE_PLUGIN_ROOT}/skills/test/references/scripts/results/results_manager.py`）が存在する（validate 実行に使用）
+- evidence-auditor エージェント定義が `${CLAUDE_PLUGIN_ROOT}/agents/` に存在する
+- Python 3.9+ / Bash が利用可能である（venv 構築は `${CLAUDE_SKILL_DIR}/references/setup.md`）
 
 ## 実行モード判定
 
@@ -72,19 +74,19 @@ flowchart TD
 ```
 
 ### 1. 入力確認
-target-slug を解決する（委譲時は引数値をそのまま使用。単独起動時は `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 4 章の解決フロー）。報告対象は既定で**全 run（推移表示） + latest 集計**（集計規則は `${CLAUDE_PLUGIN_ROOT}/references/retest-policy.md` 5 章）。
+target-slug を解決（委譲時は引数値をそのまま使用。単独起動時は `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 4 章の解決フロー）。報告対象は既定で**全 run（推移表示） + latest 集計**（集計規則は `${CLAUDE_PLUGIN_ROOT}/references/retest-policy.md` 5 章）。
 
 ### 2. 最終バリデーション
-venv の Python で results_manager.py の `validate` サブコマンドを実行する（引数の詳細はオーケストレータ `test` スキルのドキュメントに従う）。fail の defect 3 点セット（reproduction_steps / test_data / evidence）欠落と、run の scope vs results 不整合（欠落ケース）を検出する。**違反あり → 報告書を生成せず、違反一覧を「引き渡し」の差し戻しフォーマットで返却して中断する**。
+venv の Python で results_manager.py の `validate` サブコマンドを実行（引数の詳細はオーケストレータ `test` スキルのドキュメントに従う）。fail の defect 3 点セット（reproduction_steps / test_data / evidence）欠落と、run の scope vs results 不整合（欠落ケース）を検出する。**違反あり → 報告書を生成せず、違反一覧を「引き渡し」の差し戻しフォーマットで返却して中断する**。
 
 ### 3. エビデンス監査
-evidence-auditor を Agent ツールで起動する（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` 準拠。単独起動・共通注入事項を必ず含める）。エビデンスファイルの実在確認と機微情報のマスキング状態を監査させ、欠落・未マスクの指摘（高信頼のもの）があれば生成を中断して差し戻す。
+evidence-auditor を Agent ツールで起動（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` 準拠。単独起動・共通注入事項を必ず含める）。エビデンスファイルの実在確認と機微情報のマスキング状態を監査させ、欠落・未マスクの指摘（高信頼のもの）があれば生成を中断して差し戻す。
 
 ### 4. 形式選択
-対話時は AskUserQuestion で Excel / Markdown を選択する。非対話時は Markdown 既定。
+対話時は AskUserQuestion で Excel / Markdown を選択。非対話時は Markdown 既定。
 
 ### 5. 生成
-`${CLAUDE_SKILL_DIR}/references/scripts/report/generate_excel.py` または `generate_markdown.py` を venv で実行する（コマンドは `${CLAUDE_SKILL_DIR}/references/procedures.md`）。出力先は**セッション作業領域直下**、ファイル名は `test-report_{target-slug}_{yyyyMMdd}.xlsx|.md`（`${CLAUDE_PLUGIN_ROOT}/references/report-format.md` 2 章）。
+`${CLAUDE_SKILL_DIR}/references/scripts/report/generate_excel.py` または `generate_markdown.py` を venv で実行（コマンドは `${CLAUDE_SKILL_DIR}/references/procedures.md`）。出力先は**セッション作業領域直下**、ファイル名は `test-report_{target-slug}_{yyyyMMdd}.xlsx|.md`（`${CLAUDE_PLUGIN_ROOT}/references/report-format.md` 2 章）。
 
 ### 6. 返却
 報告書の絶対パスとサマリ（総合判定・レベル別集計・NG 件数・未確認事項件数）を「引き渡し」のフォーマットで返す。
@@ -132,7 +134,8 @@ evidence-auditor を Agent ツールで起動する（`${CLAUDE_PLUGIN_ROOT}/ref
 
 ## 参照
 
-- 共通 references の参照先は `${CLAUDE_PLUGIN_ROOT}/references/common-references.md`（3.4 報告時）に集約済み（プラグイン内 SSOT）
-- スキル固有:
-  - `${CLAUDE_SKILL_DIR}/references/setup.md` — venv 構築・依存パッケージ・削除手順
-  - `${CLAUDE_SKILL_DIR}/references/procedures.md` — 生成スクリプトの実行手順・引数・実測記録・トラブルシュート
+| 区分 | 参照先 | 内容 |
+|------|--------|------|
+| 共通 references | `${CLAUDE_PLUGIN_ROOT}/references/common-references.md`（3.4 報告時） | プラグイン内 SSOT に集約済み |
+| スキル固有 | `${CLAUDE_SKILL_DIR}/references/setup.md` | venv 構築・依存パッケージ・削除手順 |
+| スキル固有 | `${CLAUDE_SKILL_DIR}/references/procedures.md` | 生成スクリプトの実行手順・引数・実測記録・トラブルシュート |

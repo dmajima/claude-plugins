@@ -1,6 +1,6 @@
 # references/template/
 
-ワークフロー成果物のテンプレート（SSOT）。`orchestrator-coding`（6 フェーズ）と `orchestrator-design`（4 フェーズ）が共通で使用する。
+ワークフロー成果物のテンプレート（SSOT）。`orchestrator-coding`（6 フェーズ）・`orchestrator-design`（4 フェーズ）が共用する。
 
 ## 原則
 

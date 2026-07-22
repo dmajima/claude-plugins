@@ -1,11 +1,10 @@
 # 実行共通規範（execution-policy）
 
-`deep-test` プラグインの実行フェーズ（run）に関わる全スキル共通の規範 SSOT。
-オーケストレータ（`test`）のゲート判定と、実行スキル 6 種（`test-run-unit` / `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security`）の共通動作を定義する。
+`deep-test` の実行フェーズ（run）に関わる全スキル共通規範の SSOT。オーケストレータ（`test`）のゲート判定と、実行スキル 6 種（`test-run-unit` / `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security`）の共通動作を定義する。
 
 ## 1. 実行フェーズのゲート（4 種）
 
-run の前後に以下の 4 ゲートを配置する。**判定はすべてオーケストレータの責務**であり、実行スキルはゲート判定を行わない。
+run の前後に 4 ゲートを配置する。**判定はすべてオーケストレータの責務**であり、実行スキルはゲート判定を行わない。
 
 ```mermaid
 flowchart TD
@@ -47,7 +46,7 @@ flowchart TD
 |------|------|
 | 位置 | run 前（scope 確定・承認済みケースゲート通過後） |
 | 動作 | AskUserQuestion で「実行に進むか」を確認する |
-| 提示必須項目 | 実行ケース数 / 対象テストレベル / 想定所要時間（ケース数とケースタイムアウト上限からの概算）/ **破壊的操作を含むケース数**（test-cases.yaml の `destructive: true` を select 出力から機械集計する。LLM の自由記述推測ではなく構造化フィールドに基づく）/ **手動実施ケース件数**（`automation: manual-assist` / `exploratory` を select 出力の `details.automation` から destructive と同型で機械集計する。対話が発生する旨と概算拘束時間の根拠。処理規範は `manual-execution.md`） |
+| 提示必須項目 | 実行ケース数 / 対象テストレベル / 想定所要時間（ケース数とケースタイムアウト上限からの概算）/ **破壊的操作を含むケース数**（test-cases.yaml の `destructive: true` を select 出力から機械集計。LLM の自由記述推測ではなく構造化フィールドに基づく）/ **手動実施ケース件数**（`automation: manual-assist` / `exploratory` を select 出力の `details.automation` から destructive と同型で機械集計。対話発生の旨と概算拘束時間の根拠。処理規範は `manual-execution.md`） |
 | 非対話時 | **スキップ**（自動進行。セクション 9 参照） |
 
 文言例（提示必須項目を質問文に埋め込み、各選択肢に帰結を 1 行で添える）: 質問「テスト実行に進みますか？（対象 12 ケース / unit, functional / 想定 15 分 / 破壊的操作 0 件 / 手動確認 2 件〔うち探索的 1〕）」、選択肢「実行する」（run を開始する）/「対象を見直す」（select からやり直す）/「中断する」（実績未変更のまま終了する）
@@ -72,7 +71,7 @@ flowchart TD
 | Playwright Test ランナー（`npx playwright test` + フィクスチャ） | `automation: playwright-test`（fixture 前提の再現可能テスト） | Playwright / ランナー未導入・fixtures.yaml 不在時 → 対象ケースを skipped + reason（規約は `playwright-test.md`） |
 | テストランナー（pytest / jest / dotnet test 等） | unit | 検出不可 → 対象ケースを skipped + reason |
 | 対象アプリケーション | ブラウザ駆動レベル全般 | 対象 URL 到達不可・起動未確認 → 対象ケースを skipped + reason |
-| Docker デーモン（test-environment 派生環境） | SUT の起動（Phase 1.7 で provision した派生環境の up による base URL 提供） | 従来前提（ユーザー起動 URL）へフォールバック。ユーザー起動 URL も無い場合 → 対象ケースを skipped + reason（縮退の詳細は yaml-schema-environment.md） |
+| Docker デーモン（test-environment 派生環境） | SUT の起動（Phase 1.7 派生環境の up による base URL 提供） | ユーザー起動 URL へフォールバック。それも無い場合 → 対象ケースを skipped + reason（縮退の詳細は yaml-schema-environment.md） |
 | 外部負荷ツール（k6 等） | performance の多重負荷 | 検出不可 → 多重負荷ケースのみ skipped。単一セッション応答時間計測は実施する |
 
 - `skipped` / `blocked` の使い分け（status 意味論）・enum 定義は yaml-schema-results.md 6 章、skipped ケースの環境整備後 ng-only 再テスト対象化は retest-policy.md 参照
@@ -87,7 +86,7 @@ flowchart TD
 | scope 全件返却 | 割り当てられた scope の全ケースについて**必ず 1 エントリを返す**（実行不能でも skipped / blocked として返す）。finish-run の scope vs results 突合の前提 |
 | エビデンス移送 | 実行スキルはステップ実行直後に raw 出力をケース単位の evidence/ へ移送してから、移送後パスを返却する（移送規約は data-locations.md 参照） |
 
-進捗可視化（オーケストレータの責務）: レベル完了時にサマリ（レベル名・実行件数・pass / fail 内訳）を出力する。長時間レベル（scenario / uat / integration / performance / security）で 1 レベル内のケース数が多い場合は、レベル完了時サマリに加えて一定間隔（例: 5 ケースごと）に intra-level の簡易進捗（実行済み / 総数・pass / fail 内訳）も出力し、無反応に見える時間を作らない。
+進捗可視化（オーケストレータの責務）: レベル完了時にサマリ（レベル名・実行件数・pass / fail 内訳）を出力する。長時間レベル（scenario / uat / integration / performance / security）でケース数が多い場合は、加えて一定間隔（例: 5 ケースごと）に intra-level の簡易進捗（実行済み / 総数・pass / fail 内訳）も出力し、無反応に見える時間を作らない。
 
 ## 4. 中間結果返却フォーマット（実行スキル → オーケストレータ）
 
@@ -146,7 +145,7 @@ results[] 各要素（1 ケース 1 エントリ）:
 |------|------|
 | 前提の宣言 | ケースは `preconditions` でデータ前提（必要なマスタ・アカウント・初期状態）を宣言する |
 | 復元 | `postconditions` で作成データの削除・状態復元を行い、共有環境の状態汚染を防ぐ |
-| 順序非依存 | 実行順序非依存を原則とする（どの順で実行しても同じ結果になるようケースを設計する） |
+| 順序非依存 | どの順で実行しても同じ結果になるようケースを設計する（実行順序非依存を原則とする） |
 | 依存の明示 | ケース間の依存が不可避な場合は `depends_on` で明示する。依存元 fail 時、後続ケースは blocked + reason で記録する |
 | 復元失敗の記録 | postconditions の実施に失敗した場合は、その旨を actual / reason に記録し隠蔽しない |
 

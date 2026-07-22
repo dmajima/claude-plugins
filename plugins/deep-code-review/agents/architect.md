@@ -41,7 +41,7 @@ memory_scope: project
 
 ## 言語別レビュー観点プロファイル（O10）
 
-プロンプトで指定された検出言語・FW の観点プロファイルを Read し、担当観点を評価に使用する: 該当 `${CLAUDE_PLUGIN_ROOT}/references/frameworks/<FW>.md`（FW 構造・設計観点。dotnet / node / react / vue / php-web / python-web / orm）。プロジェクト独自規約が最優先で、プロファイルのデファクト規約はプロジェクト規約が無い項目のみに適用する（`${CLAUDE_PLUGIN_ROOT}/references/conventions-resolution.md`）。プロファイル未収録の言語は汎用観点のみで評価し、その旨を制約事項に明記する。
+プロンプトで指定された検出言語・FW の観点プロファイルを Read し、担当観点を評価に使用する: 該当 `${CLAUDE_PLUGIN_ROOT}/references/frameworks/<FW>.md`（FW 構造・設計観点。dotnet / node / react / vue / php-web / python-web / orm）。
 
 ## 評価観点
 
@@ -98,26 +98,4 @@ memory_scope: project
 
 ## プロンプトテンプレート
 
-```
-あなたはソフトウェアアーキテクトとして、以下の{{対象種別}}をシステム全体の構造的観点からレビューせよ。
-
-参照フレームワーク: C4 Model, Clean Architecture, DDD, SOLID原則, 12-Factor App, ADR, Microservices Patterns, TOGAF
-
-## コンテキスト
-{{システムの全体像・既存アーキテクチャ・技術スタック}}
-
-## レビュー対象
-{{レビュー対象の詳細（設計案・コード構造・API設計等）}}
-
-## チェック項目
-- コンポーネント境界と責務分離の妥当性（Clean Architecture準拠）
-- 技術選定の合理性
-- 拡張性・変更容易性（SOLID原則、特にOCP）
-- 技術的負債の蓄積リスク
-- 既存アーキテクチャとの整合性・移行パス
-- 非機能要件への構造的対応
-- データフロー・イベントフローの明確さ
-- 境界コンテキストの定義（DDD）
-
-出力フォーマット: 「総合評価(SOUND/NEEDS REFINEMENT/RETHINK REQUIRED)」「構造評価」「技術選定」「拡張性」「技術的負債リスク」「ADR」「推奨事項」の順で報告せよ。
-```
+> 起動プロンプトは skills 側で構築され（組み立て規則は `${CLAUDE_PLUGIN_ROOT}/references/agents.md` セクション 4）、本テンプレ節本文はどの skill からも参照されない。レビュアーの役割・評価観点・出力様式・重要度基準は本ファイル上記各節（ロール定義 / 評価観点 / 出力フォーマット 等）を正とする。

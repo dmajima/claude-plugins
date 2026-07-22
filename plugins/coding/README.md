@@ -20,6 +20,8 @@
 | `test-engineer` | エージェント | テスト十分性・回帰リスク評価とテスト実行 |
 | `architect` | エージェント | 大規模・高リスク変更の設計レビュー（読み取り専用） |
 
+> **同名エージェントの名前空間について（重要）**: 本プラグインの `architect` / `test-engineer` エージェントは、`deep-code-review` プラグインにも同名で存在します。両者は目的・起動文脈が異なり、`test-engineer` は `tools` 権限にも差があります（本プラグインの `test-engineer` は Bash 実行を含みますが、`deep-code-review` 側は含みません。`architect` は tools 自体は両プラグインで同一です）。両プラグインを併用する環境で誤って別プラグインのエージェントが解決されるのを避けるため、本プラグインのエージェントを明示的に指定する場合は名前空間付き（`coding:architect` / `coding:test-engineer`）で呼び出すことを推奨します。
+
 ## 対応言語・フレームワーク
 
 | 言語 | 言語スキル（デファクト規約） | 主なフレームワーク |
@@ -81,7 +83,7 @@ git checkout main
   "extraKnownMarketplaces": {
     "dmajima-claude-plugins": {
       "source": {
-        "source": "github",
+        "type": "github",
         "repo": "dmajima/claude-plugins"
       },
       "autoUpdate": true

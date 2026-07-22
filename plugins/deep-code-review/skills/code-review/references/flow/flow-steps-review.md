@@ -1,7 +1,7 @@
 # レビュー実行フロー — レビュー実行 Step（4〜7）
 
-> 親: [flow.md](flow.md)（全体図・用語定義・Step 索引）。本ファイルは **レビュー実行フェーズ**（Step 4 / Step 4-T / Step 5 / Step 6 / Step 7）の詳細を保持する。
-> 前フェーズ: 準備〜動員決定（Step 0-P〜3.5）は [flow-steps-early.md](flow-steps-early.md)、後フェーズ: 出力・状態（Step 8〜8.5）は [flow-steps-output.md](flow-steps-output.md) を参照。
+> 親: [flow.md](flow.md)（全体図・用語定義・Step 索引）。本ファイルは **レビュー実行フェーズ**（Step 4 / Step 4-T / Step 5 / Step 6 / Step 7）の詳細を保持。
+> 前フェーズ: 準備〜動員決定（Step 0-P〜3.5）は [flow-steps-early.md](flow-steps-early.md)、後フェーズ: 出力・状態（Step 8〜8.5）は [flow-steps-output.md](flow-steps-output.md)。
 
 ---
 
@@ -9,7 +9,7 @@
 
 > **Step 4-T と排他**。本ステップは Agent Teams 不採用時のみ実行。
 
-選定した観点別スキルを **1メッセージ内で並列起動**（Independent 型）する。
+選定した観点別スキルを **1メッセージ内で並列起動**（Independent 型）。
 
 ### 引数フォーマット
 
@@ -18,7 +18,7 @@ Skill(skill: "<観点別スキル名>",
       args: "<scope> <project-rules-summary> language-profiles=<検出言語/FWプロファイルパス一覧> mode=<standard|quick> [spec_summary=<...>]")
 ```
 
-`language-profiles` には Step 2 の検出結果（適用する `${CLAUDE_PLUGIN_ROOT}/references/languages/*.md` / `frameworks/*.md` のパス一覧と主/副の区分）を含める。各観点別スキルはこれを内部エージェントのプロンプトに引き渡す。
+`language-profiles` には Step 2 の検出結果（適用する `${CLAUDE_PLUGIN_ROOT}/references/languages/*.md` / `frameworks/*.md` のパス一覧と主/副の区分）を含める。各観点別スキルはこれを内部エージェントのプロンプトに渡す。
 
 ### 標準モード（典型例）
 
@@ -38,7 +38,7 @@ Skill(skill: "code-review-testing",        args: "... mode=quick")   # 並列
 Skill(skill: "code-review-security",       args: "... mode=quick")   # 並列
 ```
 
-各観点別スキルは内部で対応する複数エージェントを並列起動し、観点別の中間レポートを返す。
+各観点別スキルは内部で複数エージェントを並列起動し、観点別の中間レポートを返す。
 
 ### コード信頼性原則（U14）の観点別スキルへの伝達（必須）
 
@@ -52,7 +52,7 @@ Skill(skill: "code-review-security",       args: "... mode=quick")   # 並列
 
 Agent Teams（Step 4-T）でチームメンバーをスポーンする際も、各メンバーのプロンプトに同一の注意喚起を含める。
 
-前回 state.yaml に `code_as_reference_decisions`（ユーザー承認済みの規約類推）がある場合は、承認済みパターンも `project-rules-summary` に追記する（例: 「ユーザー承認済み: 既存コードの Repository パターンをプロジェクト慣例として参照可」）。
+前回 state.yaml に `code_as_reference_decisions`（ユーザー承認済みの規約類推）があれば、承認済みパターンも `project-rules-summary` に追記する（例: 「ユーザー承認済み: 既存コードの Repository パターンをプロジェクト慣例として参照可」）。
 
 ---
 
@@ -62,8 +62,7 @@ Agent Teams（Step 4-T）でチームメンバーをスポーンする際も、�
 
 ### 4-T-1: 前段サブエージェント並列実行
 
-`team-selection.md` のパターンごとに指定された補助観点を **`Agent` ツール直接** で並列起動。
-観点別スキル経由ではない（二重起動防止）。
+`team-selection.md` のパターンごとに指定された補助観点を **`Agent` ツール直接** で並列起動（観点別スキル経由ではない・二重起動防止）。
 
 ```
 # 例: パターン4（data-quality-extended）の場合
@@ -84,7 +83,7 @@ Agent({ team_name: "...", subagent_type: "test-engineer",            ... })
 Agent({ team_name: "...", subagent_type: "security-engineer",        ... })
 ```
 
-各メンバーのスポーンプロンプトには `team-selection.md` の骨子に従い、**Step 2 の検出結果（「検出言語・FW と適用観点プロファイル」欄・C23）** と U14 コード信頼性原則の注意喚起を必ず含める。チームメンバーも観点別スキル経路と同様に、該当する言語・FW 観点プロファイル（`${CLAUDE_PLUGIN_ROOT}/references/languages/` / `frameworks/`）を Read して評価に使用する（O10 相当）。
+各メンバーのスポーンプロンプトには `team-selection.md` の骨子に従い、**Step 2 の検出結果（「検出言語・FW と適用観点プロファイル」欄・C23）** と U14 コード信頼性原則の注意喚起を必ず含める。チームメンバーも観点別スキル経路と同様、該当する言語・FW 観点プロファイル（`${CLAUDE_PLUGIN_ROOT}/references/languages/` / `frameworks/`）を Read して評価に使う（O10 相当）。
 
 ### 4-T-3: 議論ラウンド
 
@@ -107,9 +106,9 @@ TeamDelete({ team_name: "..." })
 
 ## Step 5: 結果統合・重複排除・前回指摘の解消確認
 
-各観点別スキル / Agent Teams から返ってきた指摘を 1 つのプールにまとめ、重複を統合する。
+各観点別スキル / Agent Teams から返った指摘を 1 つのプールにまとめ、重複を統合する。
 **再レビュー時は前回 state.yaml の指摘との照合を行う。**
-詳細は `severity-ranking.md` を参照。
+詳細は `severity-ranking.md`。
 
 ### 前回指摘の解消確認（再レビュー時・Step 0-P で前回 state 読み込み済み）
 
@@ -136,7 +135,7 @@ TeamDelete({ team_name: "..." })
 | Suggestions | Low の指摘・推奨改善・代替案・スタイル提案（本 PR スコープ内） | `## 2. 改善提案` |
 | Scope-out | 重要度に関わらず、本 PR の仕様・当初スコープから外れる指摘 | `## 3. スコープ外指摘` |
 
-**スコープ外判定の基準** は `${CLAUDE_PLUGIN_ROOT}/references/scope-out-policy.md` セクション 2 を参照。
+**スコープ外判定の基準** は `${CLAUDE_PLUGIN_ROOT}/references/scope-out-policy.md` セクション 2。
 **「別 PR で対応してください」「別途 Issue を起票してください」等の文言は使わない**（同セクション 3.2 の禁止表現）。
 
 ### プロファイルアンカー照合（必須・C25）
@@ -158,7 +157,7 @@ TeamDelete({ team_name: "..." })
 - 改善提案（Low / Suggestions）は **Impact × Effort 降順** に並べ、**最大 10 件まで記載**
 - スコープ外指摘は **重要度の高い順** に並べ、件数制限なし
 
-詳細は `severity-ranking.md` を参照。
+詳細は `severity-ranking.md`。
 
 ### 6.2 Finding ID の一括採番（必須）
 
@@ -176,7 +175,7 @@ TeamDelete({ team_name: "..." })
 | Medium が 1 件以上、Critical/High なし、test-runner GREEN/SKIPPED | **NG・再レビュー不要（Needs Attention）** |
 | Issues なし、test-runner GREEN/SKIPPED | **OK（Ready to Merge）** |
 
-詳細は `output-format.md` を参照。
+詳細は `output-format.md`。
 
 ---
 

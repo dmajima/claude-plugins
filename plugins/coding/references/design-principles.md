@@ -1,7 +1,7 @@
 # 設計原則（SSOT）
 
 設計観点・リスクヘッジ・データフローの言語横断ルール。
-`orchestrator-coding` の Phase 3（Design）と `orchestrator-design` の設計フェーズが共通で参照する。
+`orchestrator-coding` の Phase 3（Design）と `orchestrator-design` の設計フェーズが参照する。
 言語ごとのコード構造（レイヤ配置・モジュール構成・FW 固有パターン）は各言語スキル `coding-{lang}` が保有し、本ファイルには置かない。
 
 ## 1. 設計観点（言語非依存）

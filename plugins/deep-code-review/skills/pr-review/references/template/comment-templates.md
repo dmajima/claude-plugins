@@ -10,11 +10,7 @@ PR にインラインコメント・サマリースレッドを投稿する際�
 
 ## 1. 共通署名テンプレート（SIGNATURE）— connector に委譲済み
 
-> **委譲設計**: 署名の付加は **connector プラグインの責務** に移管。pr-review は投稿本文に署名を含めない。connector が投稿前に `references/signatures.md`（SSOT）の署名を自動付加する。
->
-> 操作マーカー（`🤖 [deep-code-review-plugin] auto-resolve` 等）が必要な場合は、connector 呼び出し時の args に `marker: [deep-code-review-plugin] auto-resolve` を含める。
-
-本セクションのテンプレートは **参考情報として維持** するが、pr-review が本文に署名を付加してはならない。
+> **委譲設計**: 署名の付加は **connector プラグインの責務**。pr-review は投稿本文に署名を含めない。connector が投稿前に `references/signatures.md`（SSOT）を自動付加する。操作マーカーが必要な場合は connector 呼び出し時の args に `marker:`（例: `[deep-code-review-plugin] auto-resolve`）を指定する（マーカー定義の SSOT: `comment-status-policy.md` 0.4）。
 
 ---
 

@@ -12,7 +12,7 @@
 
 ## 分岐の根拠
 
-references/flow.md 5.1 手順 6（environment.yaml が applicable の場合は環境を再確認する: `docker compose -p {slug}-test ps` + health 再確認〔`Skill: test-environment` の `action=status`〕で健全なら**再利用**〔再 up 不要〕・不健全なら `action=down` → `action=up` で作り直す）・5.2（中断時に environment が up のまま残っている場合、down は自動実施されていない。resume するなら手順 6 の環境再確認で再利用 / 作り直しを判定・resume しない場合は手動 down を案内）・5.1 手順 4〜8（resumable_runs の missing 採用・run_id 新規採番禁止・MCP ゲート再判定）、SKILL.md「引き渡し」（environment up 後の中断: resume 時は健全なら再利用される）。
+references/flow-resume.md 5.1 手順 6（environment.yaml が applicable の場合は環境を再確認する: `docker compose -p {slug}-test ps` + health 再確認〔`Skill: test-environment` の `action=status`〕で健全なら**再利用**〔再 up 不要〕・不健全なら `action=down` → `action=up` で作り直す）・5.2（中断時に environment が up のまま残っている場合、down は自動実施されていない。resume するなら手順 6 の環境再確認で再利用 / 作り直しを判定・resume しない場合は手動 down を案内）・5.1 手順 4〜8（resumable_runs の missing 採用・run_id 新規採番禁止・MCP ゲート再判定）、SKILL.md「引き渡し」（environment up 後の中断: resume 時は健全なら再利用される）。
 
 ## 期待動作
 

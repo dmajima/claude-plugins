@@ -1,6 +1,6 @@
 ---
 name: test-review
-description: テスト成果物を多観点レビューする単一責務のフェーズスキル。設計文脈（test-plan.md + test-cases.yaml）では 3 エージェント並列で網羅性・実現性・ユーザー目線を評価して PASS / NEEDS REVISION を判定し、PASS 時に review_status を approved 化する。結果文脈（実行結果 + test-results.yaml）では 2 エージェントで NG 原因・再現手順・severity 妥当性を検証する。test オーケストレータから委譲された時、または「テストケース／テスト結果をレビューして」と依頼された時に使用。
+description: テスト成果物を多観点レビューするスキル。設計文脈（test-plan.md/test-cases.yaml）は 3 エージェントで網羅性/実現性/ユーザー目線を評価し PASS/NEEDS REVISION 判定・approved 化。結果文脈は 2 エージェントで NG 原因/再現手順/severity 検証。「テストケースをレビューして」「テスト結果をレビューして」で起動。Use when reviewing artifacts/results. SKIP when designing (test-design) or running (test-run-*).
 allowed-tools:
   - Read
   - Grep
@@ -16,8 +16,7 @@ allowed-tools:
 
 # test-review スキル
 
-テスト成果物の多観点レビューを担う単一責務のフェーズスキル。入力によって 2 つの文脈を切り替える。
-どちらの文脈でも、指摘には重要度（Critical / High / Medium / Low）と信頼度（0〜100）を付与し、統合時に重複を排除する。
+テスト成果物の多観点レビューを担う単一責務のフェーズスキル。入力によって 2 文脈を切り替える。どちらの文脈でも指摘に重要度（Critical / High / Medium / Low）と信頼度（0〜100）を付与する。
 
 | 文脈 | 入力 | 起動エージェント（並列） | 出力 |
 |------|------|------------------------|------|
@@ -28,12 +27,12 @@ allowed-tools:
 
 | # | 責務 | 概要 |
 |---|------|------|
-| 1 | 文脈判定 | 入力（引数・渡されたパス）から設計文脈 / 結果文脈を判定する |
-| 2 | 多観点レビューの実施 | 文脈別のエージェント構成（`${CLAUDE_PLUGIN_ROOT}/references/agents.md`）を 1 メッセージ内で並列起動する。プロンプトには共通注入事項（同 4.3 章）を必ず含める |
+| 1 | 文脈判定 | 入力（引数・渡されたパス）から設計文脈 / 結果文脈を判定 |
+| 2 | 多観点レビューの実施 | 文脈別のエージェント構成（`${CLAUDE_PLUGIN_ROOT}/references/agents.md`）を 1 メッセージ内で並列起動。プロンプトには共通注入事項（同 4.3 章）を必ず含める |
 | 3 | 指摘の統合 | 重複排除・矛盾の両論保持・重要度と信頼度によるランキング（`${CLAUDE_SKILL_DIR}/references/review-criteria.md`） |
-| 4 | 判定（設計文脈のみ） | PASS / NEEDS REVISION を判定する（基準: Critical / High 指摘が 1 件以上なら NEEDS REVISION） |
-| 5 | 承認処理（設計文脈 PASS 時のみ） | test-cases.yaml のレビュー対象ケースの `review_status` を `approved` へ更新する |
-| 6 | レビューレポート返却 | 文脈別フォーマットで統合結果・判定・引き継ぎ事項を返却する |
+| 4 | 判定（設計文脈のみ） | PASS / NEEDS REVISION を判定（基準: Critical / High 指摘が 1 件以上なら NEEDS REVISION） |
+| 5 | 承認処理（設計文脈 PASS 時のみ） | test-cases.yaml のレビュー対象ケースの `review_status` を `approved` へ更新 |
+| 6 | レビューレポート返却 | 文脈別フォーマットで統合結果・判定・引き継ぎ事項を返却 |
 
 ## 責務外（他スキルが担当）
 
@@ -47,21 +46,21 @@ allowed-tools:
 
 ## トリガー条件
 
-起動するケース:
+起動する:
 
-- オーケストレータ `test` から Skill ツール経由で委譲された場合（設計フェーズ後の設計レビュー・run 後の結果レビュー・承認済みケースゲートで要求された draft ケースの承認レビュー）
-- 「テストケースをレビューして」「テスト計画をレビューして」「テスト結果をレビューして」と依頼された場合
+- オーケストレータ `test` から Skill ツール経由で委譲（設計フェーズ後の設計レビュー・run 後の結果レビュー・承認済みケースゲートで要求された draft ケースの承認レビュー）
+- 「テストケースをレビューして」「テスト計画をレビューして」「テスト結果をレビューして」と依頼された
 
-起動しないケース:
+起動しない:
 
-- ソースコードのレビューを求められた場合（本スキルの対象はテスト成果物であり、コードレビューは対象外）
-- ケースの修正・追加そのものを求められた場合（`test-design` の責務）
-- 報告書の生成を求められた場合（`test-report` の責務）
+- ソースコードのレビューを求められた（本スキルの対象はテスト成果物であり、コードレビューは対象外）
+- ケースの修正・追加そのものを求められた（`test-design` の責務）
+- 報告書の生成を求められた（`test-report` の責務）
 
 ## 前提
 
-- `${CLAUDE_PLUGIN_ROOT}/references/` の共通規範（agents.md / test-levels.md / yaml-schema.md / severity-policy.md / evidence-policy.md）が存在すること
-- 対象エージェント定義（coverage-reviewer / feasibility-reviewer / user-perspective-reviewer / defect-analyst）がプラグインルート `agents/` に存在すること
+- `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` 3.2（レビュー時）が参照する共通規範一式が存在する
+- 対象エージェント定義（coverage-reviewer / feasibility-reviewer / user-perspective-reviewer / defect-analyst）がプラグインルート `agents/` に存在する
 
 受け取る引数:
 
@@ -81,33 +80,33 @@ allowed-tools:
 
 | 判定条件 | モード | 動作 |
 |---------|-------|------|
-| 引数に `--non-interactive` を含む（委譲時はオーケストレータが付与） | 非対話 | 文脈が判定できない場合はエラー中断（推測で進めない）。それ以外は確認なしで進行する |
-| 上記以外 | 対話 | 文脈が曖昧な場合のみ AskUserQuestion で確認する |
+| 引数に `--non-interactive` を含む（委譲時はオーケストレータが付与） | 非対話 | 文脈が判定できない場合はエラー中断（推測で進めない）。それ以外は確認なしで進行 |
+| 上記以外 | 対話 | 文脈が曖昧な場合のみ AskUserQuestion で確認 |
 
 ## 実行フロー
 
 詳細手順は `${CLAUDE_SKILL_DIR}/references/review-procedures.md`、判定・統合の基準は `${CLAUDE_SKILL_DIR}/references/review-criteria.md` に従う。
 
 ### 1. 文脈判定
-入力を解釈し、文脈（設計 / 結果）を判定する。
+入力を解釈し文脈（設計 / 結果）を判定。
 
 ### 2. レビュー対象確定
-入力成果物を読み込み、レビュー対象を確定する（設計は対象ケースの抽出、結果は対象 run の fail・defect の抽出〔読み取りのみ〕）。
+入力成果物を読み込みレビュー対象を確定（設計は対象ケースの抽出、結果は対象 run の fail・defect の抽出〔読み取りのみ〕）。
 
 ### 3. エージェント並列起動
-文脈別のエージェント構成を 1 メッセージ内で並列起動する（設計 3 並列 / 結果 2 並列。プロンプト組み立ては agents.md 4 章準拠）。
+文脈別のエージェント構成を 1 メッセージ内で並列起動（設計 3 並列 / 結果 2 並列。プロンプト組み立ては agents.md 4 章準拠）。
 
 ### 4. 指摘統合
-各エージェントの結果を統合する（重複排除・重要度 / 信頼度ランキング）。
+各エージェントの結果を統合（重複排除・重要度 / 信頼度ランキング）。
 
 ### 5. 判定（設計文脈のみ）
-PASS / NEEDS REVISION を判定する。
+PASS / NEEDS REVISION を判定。
 
 ### 6. 承認処理（設計文脈 PASS 時のみ）
-test-cases.yaml のレビュー対象ケースの `review_status` を `approved` へ更新する。
+test-cases.yaml のレビュー対象ケースの `review_status` を `approved` へ更新。
 
 ### 7. 返却
-文脈別フォーマットでレビューレポートを返却する。
+文脈別フォーマットでレビューレポートを返却。
 
 ## 検証
 

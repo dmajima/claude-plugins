@@ -6,10 +6,6 @@
 
 ---
 
-## 1. 利用可能なエージェント一覧
-
-エージェントはプラグインルート `agents/` に配置された共有定義を `subagent_type: "deep-test:<agent-name>"` 形式で参照する（随時追加されるため固定リストは持たない。スキル改修時に `agents/` 配下と `${CLAUDE_PLUGIN_ROOT}/references/agents.md` の選定表を確認する）。
-
 ## 2. このスキルで使用するエージェント
 
 | ID | subagent_type | 役割 | 説明 |
@@ -41,8 +37,8 @@
 
 ## 4. フェーズ運用のルール
 
-- Phase 2 の env-architect 起動は Agent ツールで行い、プロンプトには共通注入事項ブロック（信頼度 0〜100 の付与・未確認を「問題なし」と書かない・severity は `severity-policy.md` 準拠・エビデンス要件は `evidence-policy.md` 準拠）を必ず含める
-- 結果の統合・PASS / NEEDS REVISION の判断・成果物への反映可否は**起動元スキル（test-environment）の責務**。env-architect に総合判定や成果物修正をさせない
+- Phase 2 の env-architect 起動は Agent ツールで行い、プロンプトには共通注入事項ブロック（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` 4.3 章）を必ず含める
+- 結果の統合・判定は起動元スキルの責務（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` 3 章・5 章）。成果物への反映可否も本スキルが判断し、env-architect に成果物修正をさせない
 - Phase 2 → Phase 3 は重大指摘（read-only 境界の逸脱・秘匿値の混入等）が解消するまで繰り返してよいが、反映しない指摘は理由を付して返却の所見に残す（黙殺しない）
 - no-op / 縮退判定（派生を生成せず `applicability` + `reason` のみのマニフェスト）の場合も、判定理由の妥当性を env-architect に確認させてよい（生成物が小さくても自己チェックを省略しない運用が望ましい）
 - 自己チェックは provision（Phase 1.7）で必ず実施する。up / down / status のライフサイクル操作のみの起動では、成果物（派生設計）が変わらないため自己チェックを省略してよい（status.notes への記録のみで返却できる）

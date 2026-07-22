@@ -35,7 +35,5 @@ argument-hint: "[タスク説明] [--non-interactive]"
 スキル完了後、以下を提示する:
 
 - implementation-report.md の要約（変更ファイル・検証結果・残課題）
-- **成果物一式が置かれたセッション作業領域の絶対パス**（`.claude/.local/work/{yyyyMMdd_nn_summary}/`。中間成果物を後から追跡できるようにする）
+- **成果物一式が置かれたセッション作業領域の絶対パス**（`.claude/.local/work/{yyyyMMdd_nn_summary}/`。中間成果物を後から追跡できる）
 - 推奨される次のアクション（コミット・PR 作成はユーザの明示指示があるまで実行しない）
-
-`git commit` 以降の操作はこのコマンドからは実行しない。

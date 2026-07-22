@@ -42,10 +42,7 @@ docstring は PEP 257 -- Docstring Conventions（https://peps.python.org/pep-025
 | 末尾セミコロン | 使用しない（1 行 1 文。複数文を `;` で連結しない） |
 | 空行 | トップレベルの関数・クラス定義の前後に空行 2 行、クラス内メソッド間は空行 1 行 -- PEP 8「Blank Lines」 |
 
-行長についての補足:
-- PEP 8 本文（https://peps.python.org/pep-0008/#maximum-line-length）は 79 文字を規定し、チーム合意により最大 99 文字まで許容してよいとする。
-- Black は既定 88 文字（https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html ）。Ruff の formatter/linter も既定 88 文字（https://docs.astral.sh/ruff/settings/#line-length ）。
-- プロジェクトに `pyproject.toml` の `line-length` 設定があればそれを最優先する。
+行長についての補足: PEP 8 本文（[#maximum-line-length](https://peps.python.org/pep-0008/#maximum-line-length)）は 79 文字を規定し、チーム合意により最大 99 文字まで許容してよい。Black・Ruff formatter は既定 88 文字（詳細は下記「ツールチェーン」）。プロジェクトに `pyproject.toml` の `line-length` 設定があればそれを最優先する。
 
 ### 2.3 主要スタイル規則
 
@@ -69,9 +66,7 @@ docstring は PEP 257 -- Docstring Conventions（https://peps.python.org/pep-025
 | フォーマット | `ruff format .` または `black .` | いずれも既定 88 文字・二重引用符。Ruff format は Black 互換（https://docs.astral.sh/ruff/formatter/ ） |
 | 型チェック | `mypy .` | PEP 484 準拠の静的型検査（https://mypy.readthedocs.io/ ） |
 
-補足:
-- Ruff は `ruff check`（リンター、旧 flake8/isort/pyupgrade 等を統合）と `ruff format`（フォーマッター、Black 互換）で構成される。
-- import 並び替えは Ruff の `I` ルール（isort 互換）または `isort` 単体で行える。
+補足: Ruff は `ruff check`（旧 flake8/isort/pyupgrade 等を統合）と `ruff format`（Black 互換）で構成される。import 並び替えは Ruff の `I` ルール（isort 互換）または `isort` 単体で行える。
 
 ### プロジェクト規約ファイル（存在時は本プロファイルより優先）
 

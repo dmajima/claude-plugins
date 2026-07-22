@@ -121,7 +121,7 @@ curl -sk -I "https://localhost:5001/" | grep -iE '^(content-security-policy|x-fr
 | コンソールログ | XSS 検知時等の `browser_console_messages` テキスト |
 
 - すべてステップ実行直後に `evidence/{run_id}/{case_id}/` へ move する（`${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 5 章）
-- テキスト系エビデンスは**保存前に**機微情報を置換してから保存する（5 章）
+- テキスト系エビデンスは**保存前に**機微情報を置換する（5 章）
 
 ## 5. 機微情報マスキング手順（本スキルは特に高頻度）
 

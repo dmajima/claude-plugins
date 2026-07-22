@@ -11,16 +11,16 @@
 
 ## 分岐の根拠
 
-SKILL.md「実行モード判定」（再開: resume → 復帰位置判定は flow.md 5 章）、references/flow.md 1 章（Resume判定 → Phase 4: 中断 run なし・approved ケースあり〔run-only 相当を提案〕/ Resume判定 → Phase 2: test-cases.yaml なし〔フルフローを案内〕）・5.1（判定手順: Phase 0 を省略せず実施 → summary で in_progress / interrupted の run を抽出 → 中断 run がなく approved ケースがある場合は run-only 相当〔Phase 4 から〕を提案する）、プラグイン共通 references/retest-policy.md 6 章（resume 対象 run = status が in_progress または interrupted の run）。
+SKILL.md「実行モード判定」（再開: resume → 復帰位置判定は flow-resume.md 5 章）、references/flow.md 1 章（Resume判定 → Phase 4: 中断 run なし・approved ケースあり〔run-only 相当を提案〕/ Resume判定 → Phase 2: test-cases.yaml なし〔フルフローを案内〕）、references/flow-resume.md 5.1（判定手順: Phase 0 を省略せず実施 → summary で in_progress / interrupted の run を抽出 → 中断 run がなく approved ケースがある場合は run-only 相当〔Phase 4 から〕を提案する）、プラグイン共通 references/retest-policy.md 6 章（resume 対象 run = status が in_progress または interrupted の run）。
 
 ## 期待動作
 
-- Phase 0（target-slug 解決・venv 準備・init）を resume でも省略せずに実施する（flow.md 5.1 手順 1）
+- Phase 0（target-slug 解決・venv 準備・init）を resume でも省略せずに実施する（flow-resume.md 5.1 手順 1）
 - `results_manager.py summary` を実行し、`runs[]` に in_progress / interrupted の run がないことを機械的に確認する（推測で「中断 run がある」ことにしない）
 - 存在しない中断 run の再開を装わない: 過去の completed run の run_id を引き継いだ record 追記や、新規 run の勝手な開始（start-run の無断実行）をしない
 - test-cases.yaml に approved ケースがあることを確認し、「再開対象の中断 run はないが実行可能な状態」である旨を説明したうえで **run-only 相当（Phase 4 から）を提案**する（提案であり、ユーザー確認なしに実行へ進まない）
 - 提案が受け入れられた場合は Phase 4（select → 3 ゲート）から通常どおり進行する（新規 run_id は start-run が採番）
-- 対比（別前提の分岐）: test-cases.yaml 自体が存在しない場合は resume 対象なしとして**フルフロー（Phase 2 から）を案内**する（flow.md 5.1 の残り分岐。本ケースの主前提とは区別する）
+- 対比（別前提の分岐）: test-cases.yaml 自体が存在しない場合は resume 対象なしとして**フルフロー（Phase 2 から）を案内**する（flow-resume.md 5.1 の残り分岐。本ケースの主前提とは区別する）
 - `validate` の `resumable_runs` が空であることと整合した判断をする（中断 run なしの機械的裏付け）
 
 ## 期待出力

@@ -5,7 +5,7 @@
 テストレベルに関する定数（正準順序・ケース ID プレフィクス対応・表示名・用語注記）を一元管理し、
 results_manager.py（skills/test/references/scripts/results/）と
 report_model.py（skills/test-report/references/scripts/report/）が共有する。
-両スクリプトはそれぞれ sys.path にこの lib ディレクトリを追加して本モジュールを import する。
+両スクリプトはそれぞれ sys.path にこの common ディレクトリを追加して本モジュールを import する。
 
 【同期義務】
 本モジュールはテストレベル定数の **コード上の SSOT** である。

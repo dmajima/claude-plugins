@@ -3,14 +3,14 @@
 
 `deep-test` プラグインの **再現可能テスト経路**（Playwright Test = `.spec.ts` + フィクスチャ）に関する規範 SSOT。
 test-fixture（Phase 1.6）が生成する `fixtures.yaml` の完全スキーマ、Playwright Test の実行規約（`npx playwright test` / projects / storageState / `test.extend`）、
-および 認証(storageState) / モック(route.fulfill) / シード / base(test.extend) のパターン規範を定義する唯一の場所である。
+および 認証(storageState) / モック(route.fulfill) / シード / base(test.extend) のパターン規範を定義する唯一の場所。
 フィールド・enum 値の追加・変更・改廃は本ファイルを起点に行い、他 references・スキルへは参照のみで内容を複製しない。
 
 ---
 
 ## 0. 2 モードの棲み分け（探索的 MCP と再現可能 Playwright Test）
 
-deep-test の Playwright 利用には 2 モードがあり、正本ファイルを分けて管理する。両者は排他ではなく補完関係である。
+deep-test の Playwright 利用には 2 モードがあり、正本ファイルを分けて管理する。両者は排他ではなく補完関係。
 
 | モード | 正本 | 実体 | automation / executed_by | 主用途 |
 |-------|------|------|--------------------------|--------|
@@ -25,8 +25,8 @@ deep-test の Playwright 利用には 2 モードがあり、正本ファイル�
 
 ## 1. fixtures.yaml スキーマ（SSOT）
 
-`fixtures.yaml` は test-fixture（Phase 1.6）が生成し、`test-design`（Phase 2）が **単方向に消費** する機械可読のフィクスチャマニフェストである。
-配置は `{base}/{target-slug}/fixtures.yaml`（`data-locations.md` の配置規約に準拠）。生成主体は test-fixture の LLM（Write で直接生成）である。
+`fixtures.yaml` は test-fixture（Phase 1.6）が生成し、`test-design`（Phase 2）が **単方向に消費** する機械可読のフィクスチャマニフェスト。
+配置は `{base}/{target-slug}/fixtures.yaml`（`data-locations.md` の配置規約に準拠）。生成主体は test-fixture の LLM（Write で直接生成）。
 
 ### 1.1 meta
 
@@ -89,14 +89,14 @@ meta:
   config_artifact: "playwright.config.ts"
 fixtures:
   - name: authenticatedPage
-    type: auth                       # auth | mock | seed | base
+    type: auth
     provides: "ログイン済みの page（storageState 経由）"
     artifact: "tests/fixtures/auth.fixture.ts"
     usage: "test('...', async ({ authenticatedPage }) => { ... })"
     depends_on: [adminStorageState]
     source_refs: [EP-001]            # 消費した analysis.yaml の EP / EXT ID（任意）
-    status: created                  # created | extended | existing
-    confidence: high                 # high | medium | low
+    status: created
+    confidence: high
   - name: mockPaymentApi
     type: mock
     provides: "決済 API を成功 / 失敗で差し替える"
@@ -164,7 +164,7 @@ export default defineConfig({
 - `auth.setup.ts` で 1 度だけログインし、`context.storageState({ path })` で storageState を保存する。本体プロジェクトは `use.storageState` でこれを再利用し、各テストで再ログインしない
 - ロール別（admin / general 等）に storageState を分割する場合は、`analysis.yaml` の `entry_points[].auth` / `attack_surface_summary` を材料にロールを決める
 - storageState 出力先（例: `tests/.auth/*.json`）は **セッショントークンを含むため .gitignore 前提**。test-fixture は `.gitignore` への追記を提案し、実トークンをコミットしない
-- 認証情報の実値を `config` / `fixture` / `setup` に **ハードコードしない**。環境変数・credentials-manager 経由の取得コードとして記述する（4 章）
+- 認証情報の実値を `config` / `fixture` / `setup` に **ハードコードしない**（取得方法〔環境変数・credentials-manager 経由〕・機微情報の扱いは 4 章）
 
 ### 3.2 モック（mock / route.fulfill）
 

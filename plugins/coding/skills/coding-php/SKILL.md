@@ -1,12 +1,12 @@
 ---
 name: coding-php
-description: PHP のコード実装・構造設計を PSR-12 / PER とプロジェクト規約優先で支援する言語スキル。「PHP で実装して」「この PHP を直して」「Laravel のコントローラを書いて」等で起動する。Use when implementing or structuring PHP code. SKIP when 4+ files or full phases (use orchestrator-coding), design-only (use orchestrator-design), or other languages (use coding-*).
+description: PHP のコード実装・構造設計を PSR-12 / PER とプロジェクト規約優先で支援する言語スキル。「PHP で実装して」「この PHP を直して」「Laravel のコントローラを書いて」等で起動する。Use when implementing or structuring PHP code. SKIP if 4+ files/full phases (orchestrator-coding), design-only (orchestrator-design), or other languages (coding-*).
 ---
 
 # Coding PHP（PHP 言語スキル）
 
 PHP のデファクト規約（PSR-1 / PSR-12 / PER Coding Style）・コード構造・フレームワーク知識（Laravel / Symfony / WordPress）を提供する言語スキル。
-オーケストレーターからの参照と、単独起動時の軽量実装フローの両方に対応する。
+オーケストレーター参照と単独起動時の軽量実装フローに対応する。
 
 ## 責務
 
@@ -25,6 +25,17 @@ PHP のデファクト規約（PSR-1 / PSR-12 / PER Coding Style）・コード�
 | ORM（Eloquent 等）の横断知識 | SSOT `../../references/frameworks/orm.md` |
 | 他言語のコード | 対応する言語スキル（`../../references/skill-index.md`） |
 
+## トリガー条件（単独実行モード）
+
+- 「PHP で実装して」「この PHP コードを修正して」
+- 「Laravel のコントローラを書いて」「PHPUnit のテストを追加して」
+
+起動しないケース:
+
+- タスクが大きく全フェーズの統括が必要（→ `orchestrator-coding`）
+- 設計書の作成のみ（→ `orchestrator-design`）
+- PHP 以外の言語（→ 該当する言語スキル）
+
 ## 前提
 
 呼び出し前に以下が決まっていること:
@@ -32,7 +43,7 @@ PHP のデファクト規約（PSR-1 / PSR-12 / PER Coding Style）・コード�
 1. 対象コードの言語が PHP である（オーケストレーター経由では言語検出済み）
 2. 対象リポジトリ（カレントディレクトリ基準）
 
-言語が異なる場合は該当する言語スキルを使う（対応表: `../../references/skill-index.md`）。
+言語が異なれば該当言語スキルを使う（対応表: `../../references/skill-index.md`）。
 
 ## 利用モード
 
@@ -48,17 +59,6 @@ PHP のデファクト規約（PSR-1 / PSR-12 / PER Coding Style）・コード�
 | `--non-interactive` フラグあり | 非対話 | 確認をスキップし、最も保守的な解釈を採用して進行する（採用した判断は報告に記録） |
 | 上記以外 | 対話 | 規約の矛盾・実装方針の拮抗は `AskUserQuestion` で確認する |
 
-## トリガー条件（単独実行モード）
-
-- 「PHP で実装して」「この PHP コードを修正して」
-- 「Laravel のコントローラを書いて」「PHPUnit のテストを追加して」
-
-このスキルを起動しないケース:
-
-- タスクが大きく全フェーズの統括が必要（→ `orchestrator-coding`）
-- 設計書の作成のみ（→ `orchestrator-design`）
-- PHP 以外の言語（→ 該当する言語スキル）
-
 ## 実行フロー（単独実行モード）
 
 1. **規約解決**: SSOT `../../references/conventions-resolution.md` に従い、プロジェクト独自規約（`.php-cs-fixer.php`・`.php-cs-fixer.dist.php`・`phpcs.xml`・`phpstan.neon`・`composer.json`・`CLAUDE.md`・既存慣習）を走査する。独自規約がない項目は [references/conventions.md](references/conventions.md) のデファクト規約を適用する
@@ -73,7 +73,6 @@ PHP のデファクト規約（PSR-1 / PSR-12 / PER Coding Style）・コード�
 - PSR-4 準拠のファイル名＝クラス名一致・クラス定数の `UPPER_SNAKE_CASE` など、[references/conventions.md](references/conventions.md) の必須事項を省略しない
 - WordPress を対象とする場合は PSR ではなく WordPress Coding Standards に従う（同一コードベースで規約を混在させない。詳細: [references/frameworks/php-web.md](references/frameworks/php-web.md)）
 - コミット・push はユーザの明示指示があるまで実行しない
-- 規約・FW 知識を本文へ直書きせず、references を単一情報源として維持する
 
 ## 参照
 

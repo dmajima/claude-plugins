@@ -3,18 +3,14 @@
 `deep-test` プラグインの全 worker スキル 13 種が共通参照するリファレンスの集約インデックス。
 各スキルの SKILL.md は本ファイルを 1 行参照するだけで共通規範一式に到達できる。
 
-> **位置付け**: `${CLAUDE_PLUGIN_ROOT}/references/common-references.md`（プラグイン共通 references）。
-> 対象は worker スキル（フェーズスキル 7 + 実行スキル 6）。オーケストレータ `test` は制御専任のため本ファイルの参照契約の対象外（必要な references を直接参照する）。
-> 本ファイル → 個別スキルへの依存は持たない（適用先スキルを示す一覧の記載は許容）。
+> **位置付け**: `${CLAUDE_PLUGIN_ROOT}/references/common-references.md`（プラグイン共通 references）。対象は worker スキル（フェーズスキル 7 + 実行スキル 6）。オーケストレータ `test` は制御専任のため本ファイルの参照契約の対象外（必要な references を直接参照する）。本ファイル → 個別スキルへの依存は持たない（適用先スキルを示す一覧の記載は許容）。
+> 特定スキル起動時のみ必要な節（1 章スキル一覧・3.5 セットアップ時・3.8 環境構築時）は `common-references-details.md` に分離し、本ファイルには見出しとポインタを温存する。
 
 ---
 
 ## 1. 対象スキル（13 worker スキル）
 
-| 区分 | スキル |
-|------|-------|
-| フェーズスキル（7） | `test-setup` / `test-analyze` / `test-fixture` / `test-environment` / `test-design` / `test-review` / `test-report` |
-| 実行スキル（6） | `test-run-unit` / `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security` |
+対象は worker スキル 13 種（フェーズスキル 7 + 実行スキル 6）。スキル名の区分一覧は `common-references-details.md` 1 章を参照。
 
 ## 2. 全スキル共通（常時参照）
 
@@ -72,11 +68,7 @@
 
 ### 3.5 セットアップ時（`test-setup`）
 
-| ファイル | 利用目的 |
-|---------|---------|
-| `playwright-mcp.md` | MCP 登録・既存登録検出（重複登録禁止）・起動オプション・正本ツールリスト |
-| `data-locations.md` | Playwright 出力先規約・target-slug 配下の初期化 |
-| `execution-policy.md` | ツール利用可否判定の結果記録方法（後続の MCP ゲート判定材料） |
+参照ファイルと利用目的は `common-references-details.md` 3.5 を参照（`test-setup` 起動時）。
 
 ### 3.6 解析時（`test-analyze`）
 
@@ -99,13 +91,7 @@
 
 ### 3.8 環境構築時（`test-environment`）
 
-| ファイル | 利用目的 |
-|---------|---------|
-| `yaml-schema-environment.md` | `environment.yaml` の生成・スキーマ遵守（`applicability` 縮退・ライフサイクル状態・コマンド規約形・enum 値） |
-| `yaml-schema-analysis.md` | 材料として消費する `analysis.yaml`（`architecture.build_run` / `dependency_summary.external_dependencies` / `meta.target_type` / `entry_points`）のスキーマ |
-| `data-locations.md` | `environment.yaml` / `environment/` 配下の配置先・target-slug 解決・SUT docker 資産は read-only である旨 |
-| `execution-policy.md` | Docker デーモン利用不可時の縮退（skipped）・非対話既定値（environment up の可否・health 未達時の扱い） |
-| `agents.md` | env-architect の起動・プロンプト組み立て |
+参照ファイルと利用目的は `common-references-details.md` 3.8 を参照（`test-environment` 起動時）。
 
 ## 4. 実行スキル共通契約（結果の返却）
 
@@ -119,5 +105,4 @@
 
 ## 5. 適用契約
 
-本ファイルは worker スキル 13 種が共通参照するリファレンスのインデックスであり、各 SKILL.md からの参照は本ファイル経由の 1 行に集約する。
-規範の改訂は各 SSOT ファイル側で行い、本ファイルは参照先の追加・変更時のみ更新する（SSOT 所有権は `CLAUDE.md` の一覧を参照）。
+本ファイルは worker スキル 13 種が共通参照するリファレンスのインデックスであり、各 SKILL.md からの参照は本ファイル経由の 1 行に集約する。規範の改訂は各 SSOT ファイル側で行い、本ファイルは参照先の追加・変更時のみ更新する（SSOT 所有権は `CLAUDE.md` の一覧を参照）。

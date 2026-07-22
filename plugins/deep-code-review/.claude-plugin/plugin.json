@@ -1,7 +1,7 @@
 {
   "name": "deep-code-review",
-  "version": "1.0.0",
-  "description": "Azure DevOps/オンプレTFS・GitHub PR 対応の観点別マルチエージェントコードレビュー（Anthropic公式 code-review とは別）。8言語+主要FW・信頼度スコアで多角レビューし統合サマリと判定を返す",
+  "version": "1.1.0",
+  "description": "観点別マルチエージェントでコード変更・PR をレビューするプラグイン（Anthropic 公式 code-review とは別）",
   "license": "MIT",
   "author": {
     "name": "dmajima"

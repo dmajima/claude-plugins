@@ -26,16 +26,34 @@ FW 固有の観点は `${CLAUDE_PLUGIN_ROOT}/references/frameworks/` が保有�
 | [php.md](php.md) | PHP | implementation-engineer 他 |
 | [sql.md](sql.md) | SQL（MySQL / SQL Server / PostgreSQL 方言対応） | dba |
 
+## hub + 観点別 details 構成
+
+各観点が「hub（共通部）＋自観点の details だけ」をロードするよう、節3本文を観点別 details に分離した（内容は移動のみで欠落なし）。hub は識別・準拠規約・重要度表(節4)・FW(節5)・動的検証(節6)と、節3の**スタブ見出し（節番号温存）＋ポインタ**を保持する。外部参照（agents O10 の「観点 3.1〜3.5・3.8」等）は hub のスタブ経由で 2 ホップ解決する。
+
+| hub | 観点別 details | 収録節 |
+|-----|---------------|-------|
+| `python.md` / `javascript.md` / `typescript.md` / `csharp.md` / `php.md` | `<言語>-impl.md` | 3.1〜3.6, 3.8（implementation-engineer / performance-reviewer / linter） |
+| （同上） | `<言語>-security.md` | 3.7（security-engineer） |
+| `sql.md` | `sql-core.md` | 3.1, 3.4〜3.8（dba ほか） |
+| `sql.md` | `sql-security.md` | 3.2 インジェクション（security-engineer）/ 3.3 マイグレーション（dependency-safety） |
+| `html.md` | `html-core.md` | 3.1〜3.3, 3.5, 3.6, 3.8（web-designer ほか） |
+| `html.md` | `html-security.md` | 3.4 セキュリティ / 3.7 テンプレートエンジン（web-designer / security-engineer） |
+| `css.md` | （未分割） | 全観点 web-designer 単一・security 節無しのため分割せず全体を維持 |
+
+各エージェントは hub を Read 後、hub のスタブから **自担当（【担当】）の節に対応する details のみ** を Read する（他観点 details は読まない）。詳細は `${CLAUDE_PLUGIN_ROOT}/references/common-references.md` セクション 4.5。
+
 ## 章構成（全プロファイル統一）
 
-| 章 | 内容 |
-|----|------|
-| 1. 識別 | 対象拡張子・マーカーファイル |
-| 2. 準拠規約 | プロジェクト規約が無い場合のデファクト基準 |
-| 3. レビュー観点 | 観点別チェックリスト（【担当: エージェント】付き） |
-| 4. 典型的な指摘パターン | 重要度の目安表 + NG/OK コード例 |
-| 5. フレームワーク観点 | 検出 FW → `${CLAUDE_PLUGIN_ROOT}/references/frameworks/*.md` への参照 |
-| 6. 動的検証コマンド | ビルド / Linter / テストのコマンド（権限がある場合のみ実行、なければ SKIPPED） |
+hub（`<言語>.md`）が保持する章構成。分割プロファイルでは節3本文のみ観点別 details へ移動する（後述）。
+
+| 章 | 内容 | 分割時の所在 |
+|----|------|------------|
+| 1. 識別 | 対象拡張子・マーカーファイル | hub |
+| 2. 準拠規約 | プロジェクト規約が無い場合のデファクト基準 | hub |
+| 3. レビュー観点 | 観点別チェックリスト（【担当: エージェント】付き） | hub に節番号スタブ＋ポインタのみ／本文は観点別 details（`-impl` / `-core` / `-security`） |
+| 4. 典型的な指摘パターン | 重要度の目安表（一部プロファイルは NG/OK コード例を併記）。全観点が finding 突合に共用 | hub |
+| 5. フレームワーク観点 | 検出 FW → `${CLAUDE_PLUGIN_ROOT}/references/frameworks/*.md` への参照 | hub |
+| 6. 動的検証コマンド | ビルド / Linter / テストのコマンド（権限がある場合のみ実行、なければ SKIPPED） | hub |
 
 ## 利用方法（エージェントプロンプトへの組み込み）
 
@@ -44,10 +62,10 @@ FW 固有の観点は `${CLAUDE_PLUGIN_ROOT}/references/frameworks/` が保有�
 ```
 ## 言語別レビュー観点
 検出言語: TypeScript（主）, CSS（副）
-以下を Read して該当観点を評価に使用せよ:
-- ${CLAUDE_PLUGIN_ROOT}/references/languages/typescript.md（javascript.md も継承元として参照）
-- ${CLAUDE_PLUGIN_ROOT}/references/languages/css.md
-- ${CLAUDE_PLUGIN_ROOT}/references/frameworks/react.md
+各言語プロファイルは hub＋観点別 details の 2 層（css は未分割）。以下の手順で Read せよ:
+1. hub を Read: ${CLAUDE_PLUGIN_ROOT}/references/languages/typescript.md（javascript.md も継承元として参照） / ${CLAUDE_PLUGIN_ROOT}/references/languages/css.md
+2. hub のスタブから、あなたの担当（【担当】）に該当する節のポインタ先 details のみ Read（例: security-engineer → typescript-security.md。impl 系 → typescript-impl.md。css は未分割で全体を使用）
+3. ${CLAUDE_PLUGIN_ROOT}/references/frameworks/react.md
 あなたの担当観点は【担当】表記を参照。プロジェクト独自規約（適用規約サマリ参照)が最優先。
 ```
 

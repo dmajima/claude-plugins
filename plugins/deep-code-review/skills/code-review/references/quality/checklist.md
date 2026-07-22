@@ -4,7 +4,7 @@
 ID 体系・SSOT は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` を参照。
 
 > **確認タイミング**: Step 8（統合サマリ出力）の直前。
-> **未通過時**: 該当項目を解消してから出力する。チェックリスト未通過のままサマリを返却してはならない。
+> **未通過時**: 該当項目を解消してから出力。チェックリスト未通過のままサマリを返却してはならない。
 
 ---
 
@@ -13,24 +13,7 @@ ID 体系・SSOT は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` �
 > 規範本文・達成基準は **`${CLAUDE_PLUGIN_ROOT}/references/universal-rules.md`** を参照（プラグイン内 SSOT）。
 > 適用範囲は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` セクション8 を参照。
 
-```
-[ ] (U1) スキル構成規約への準拠
-[ ] (U2) ファイル文字コード・改行コードの維持
-[ ] (U3) ローカルデータ領域の規約遵守
-[ ] (U4) セッション作業領域の規約遵守
-[ ] (U5) 進捗管理ルール（progress.md）
-[ ] (U6) ポータブルパス記法の遵守
-[ ] (U7) PR 外への影響禁止
-[ ] (U8) 別 PR 推奨の禁止
-[ ] (U9) エージェント並列起動
-[ ] (U10) エージェント共通指示の付与
-[ ] (U11) 重要度付与・重複統合の規範
-[ ] (U12) 認証情報の取り扱い
-[ ] (U13) 動的検証の SKIPPED 明示
-[ ] (U14) 提出コードの信頼性原則（コードからの規約類推制限・ユーザー承認義務化）
-[ ] (U15) 指摘への信頼度（0〜100）付与（仮定ベースは 60 未満・動的検証実証済みは 90 以上。severity-ranking.md セクション 7）
-[ ] (U16) 差分の削除側（- 行）で既存の防御コード（例外処理・入力検証・リソース解放・a11y 属性・認可・エラー表示 UI）が失われていれば回帰として指摘している
-```
+上記 SSOT（`${CLAUDE_PLUGIN_ROOT}/references/universal-rules.md` の U マップ表）の U1〜U16 全項目の通過を確認（各 U の 1 行要約・達成基準は同ファイルおよび `universal-rules-{environment,process,quality}.md` を参照）。
 
 ---
 
@@ -69,67 +52,20 @@ ID 体系・SSOT は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` �
 
 ## C. 出力チェック（統合サマリの自動検証案）
 
-```bash
-# C-Auto-1: 必須セクションの存在確認
-# H2 セクションは <details><summary> 折り畳み形式のため <summary> 行を検出する
-# セクション 1〜3 は状態記号付き summary の完全形（>0 件は「N 件 ⚠」/ 0 件は「0 件 ✓ + 状態語」）で検証する
-# （pr-review/references/completion-checklist.md E-1 と同一方式）
-required_sections=(
-  "^# 🤖 \[deep-code-review-plugin\] PR レビューサマリー"
-  "<summary>1\. 対応が必要な指摘 （(0 件 ✓ 指摘なし|[1-9][0-9]* 件 ⚠)）</summary>"
-  "<summary>2\. 改善提案 （(0 件 ✓ 該当なし|[1-9][0-9]* 件 ⚠)）</summary>"
-  "<summary>3\. スコープ外指摘 （(0 件 ✓ 該当なし|[1-9][0-9]* 件 ⚠)）</summary>"
-  "<summary>4\. 観点別の指摘なし"
-  "<summary>5\. 観点間の見解の差異"
-  "<summary>6\. 既存指摘の解消判定"
-  "<summary>7\. 未確認事項・制約"
-  "<summary>8\. 集計"
-  "<summary>9\. レビュー実施環境"
-)
-for sec in "${required_sections[@]}"; do
-  echo "$SUMMARY_BODY" | grep -qE "$sec" || echo "MISSING: $sec"
-done
+Step 8 出力前に以下を検証（ルール ID 判定は A/B 節が担う。ランタイム自動実行はしない）:
 
-# C-Auto-2: 別 PR 推奨文言が混入していないか
-banned_patterns=("別.*PR.*対応" "別途.*PR.*起票" "別チケット" "Issue を作成" "Work Item を作成")
-for pat in "${banned_patterns[@]}"; do
-  echo "$SUMMARY_BODY" | grep -qE "$pat" && echo "BANNED: $pat"
-done
+- **C-Auto-1**: 必須 9 セクションの `<summary>` 存在（セクション 1〜3 は件数＋状態記号の完全形）
+- **C-Auto-2**: 別 PR 推奨・Issue/Work Item 起票等の禁止文言が混入していないこと
+- **C-Auto-3**: ヘッダブロック必須項目（レビュー結果 / 対応必須 / 改善提案 / スコープ外 / 実施日時 / 対象 head SHA / レビュー対象 / レビューモード）の存在
+- **C-Auto-4**: Finding ID（`CR-NNN`）の重複なし・連続通番・詳細補足 `<h4>` 件数 ≤ 一意 ID 件数
 
-# C-Auto-3: ヘッダブロック必須項目
-header_items=("レビュー結果" "対応必須" "改善提案" "スコープ外" "実施日時" "対象 head SHA" "レビュー対象" "レビューモード")
-for item in "${header_items[@]}"; do
-  echo "$SUMMARY_BODY" | head -20 | grep -q "$item" || echo "HEADER MISSING: $item"
-done
-
-# C-Auto-4: Finding ID の付与・連続性チェック
-# 詳細補足見出しは HTML 記法（<h4>CR-NNN: ...</h4>）のため <h4> 行を数える
-# （pr-review/references/completion-checklist.md E-2.5 と同一方式）
-ids=$(echo "$SUMMARY_BODY" | grep -oE 'CR-[0-9]{3}' | sort -u)
-total_findings=$(echo "$SUMMARY_BODY" | grep -cE '<h4>CR-[0-9]{3}:')
-unique_ids=$(echo "$ids" | wc -l)
-
-# 重複チェック
-duplicates=$(echo "$SUMMARY_BODY" | grep -oE 'CR-[0-9]{3}' | sort | uniq -d)
-[ -n "$duplicates" ] && echo "ERROR: 重複した Finding ID: $duplicates"
-
-# 連続性チェック（CR-001 から最終 ID まで欠番なく連続しているか）
-last_id=$(echo "$ids" | tail -n 1 | sed 's/CR-//')
-if [ -n "$last_id" ]; then
-  expected=$(printf "%03d" "$(echo "$ids" | wc -l)")
-  [ "$last_id" != "$expected" ] && echo "WARN: ID 最終番号 ($last_id) と一意 ID 件数 ($expected) が不一致。欠番の可能性"
-fi
-
-# サマリー表の ID 列（<td> 内 CR-NNN）と詳細補足見出し（<h4>）の整合
-# 詳細補足は「インライン未投稿の指摘のみ」のため <h4> 件数 <= 一意 ID 件数 であること
-[ "$total_findings" -gt "$(echo "$ids" | wc -l)" ] && echo "ERROR: 詳細補足見出し（<h4>CR-NNN:）が ID 一覧より多い（採番不整合）"
-```
+bash 実装案は `${CLAUDE_PLUGIN_ROOT}/skills/pr-review/references/completion-checklist-autocheck-samples.md`（E-1〜E-2.5 と同一方式・自動化検討時のみ Read）を参照。
 
 ---
 
 ## D. 未通過時の対応
 
-> 本表は頻出の未通過パターンのみを記載する（絞り込みは意図的）。記載外の ID はセクション A〜C の該当項目と `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` の達成基準に従って解消する。
+> 本表は頻出の未通過パターンのみを記載（絞り込みは意図的）。記載外の ID はセクション A〜C の該当項目と `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` の達成基準に従って解消する。
 
 | 未通過 ID | 対応 |
 |----------|------|

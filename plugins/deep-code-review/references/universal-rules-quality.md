@@ -32,7 +32,7 @@ U12〜U16（認証情報の取り扱い / 動的検証の SKIPPED 明示 / 提�
 ### 詳細
 
 - 認証情報取得の委譲先: `${CLAUDE_PLUGIN_ROOT}/skills/pr-review/references/credentials-precheck.md`（connector 委譲・credentials-manager ストア前提）
-- ユーザーグローバル規約 `~/.claude/rules/security/credentials-management.md`
+- 認証情報管理は利用者環境のグローバルルール（存在する場合）とも整合
 - 機密文字列パターン: `${CLAUDE_PLUGIN_ROOT}/references/comment-sanitization.md` セクション 3〜4
 
 ---

@@ -13,24 +13,7 @@ ID 体系・SSOT は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` �
 > 規範本文・達成基準は **`${CLAUDE_PLUGIN_ROOT}/references/universal-rules.md`** を参照（プラグイン内 SSOT）。
 > 適用範囲は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` セクション8 を参照。
 
-```
-[ ] (U1) スキル構成規約への準拠
-[ ] (U2) ファイル文字コード・改行コードの維持
-[ ] (U3) ローカルデータ領域の規約遵守
-[ ] (U4) セッション作業領域の規約遵守
-[ ] (U5) 進捗管理ルール（progress.md）
-[ ] (U6) ポータブルパス記法の遵守
-[ ] (U7) PR 外への影響禁止
-[ ] (U8) 別 PR 推奨の禁止
-[ ] (U9) エージェント並列起動
-[ ] (U10) エージェント共通指示の付与
-[ ] (U11) 重要度付与・重複統合の規範
-[ ] (U12) 認証情報の取り扱い
-[ ] (U13) 動的検証の SKIPPED 明示
-[ ] (U14) 提出コードの信頼性原則（コードからの規約類推制限・ユーザー承認義務化）
-[ ] (U15) 指摘への信頼度（0〜100）付与（仮定ベースは 60 未満・動的検証実証済みは 90 以上。severity-ranking.md セクション 7）
-[ ] (U16) 差分の削除側（- 行）で既存の防御コード（例外処理・入力検証・リソース解放・a11y 属性・認可・エラー表示 UI）が失われていれば回帰として指摘している
-```
+上記 SSOT（`${CLAUDE_PLUGIN_ROOT}/references/universal-rules.md` の U マップ表）の U1〜U16 全項目の通過を確認する（各 U の 1 行要約・達成基準は同ファイルおよび `universal-rules-{environment,process,quality}.md` を参照）。
 
 ---
 
@@ -54,32 +37,12 @@ ID 体系・SSOT は `${CLAUDE_PLUGIN_ROOT}/references/skill-rules-matrix.md` �
 
 ## C. 中間レポート出力チェック
 
-```bash
-# C-Auto-1: 必須セクションが揃っているか
-required_sections=(
-  "^## テスト観点レビュー結果"
-  "^### test-engineer"
-  "^### test-runner"
-)
-for sec in "${required_sections[@]}"; do
-  echo "$REPORT" | grep -qE "$sec" || echo "MISSING: $sec"
-done
+返却前に以下を検証する（ランタイム自動実行はしない。ルール ID 判定は A/B 節が担う）:
 
-# C-Auto-2: test-runner ステータスが GREEN/RED/SKIPPED のいずれかで明示されているか
-echo "$REPORT" | grep -E "実行ステータス: (GREEN|RED|SKIPPED)" >/dev/null \
-  || echo "MISSING: test-runner status (GREEN/RED/SKIPPED)"
-
-# C-Auto-3: SKIPPED 時に理由が併記されているか
-echo "$REPORT" | grep -E "実行ステータス: SKIPPED" >/dev/null && \
-  ! echo "$REPORT" | grep -E "SKIPPED.*（" >/dev/null && \
-  echo "WARN: SKIPPED の理由が未記載"
-
-# C-Auto-4: 別 PR 推奨文言の混入
-banned=("別.*PR.*対応" "別途.*PR.*起票" "別チケット" "Issue を作成" "Work Item を作成")
-for pat in "${banned[@]}"; do
-  echo "$REPORT" | grep -qE "$pat" && echo "BANNED: $pat"
-done
-```
+- **C-Auto-1**: 必須セクション（`## テスト観点レビュー結果` / `### test-engineer` / `### test-runner`）が揃っている
+- **C-Auto-2**: test-runner 実行ステータス（`実行ステータス: GREEN|RED|SKIPPED`）が明示されている
+- **C-Auto-3**: SKIPPED 時に理由が併記されている（U13）
+- **C-Auto-4**: 別 PR 推奨・Issue/Work Item 起票等の禁止文言が混入していない（U8）
 
 ---
 

@@ -10,6 +10,12 @@ SUT の docker 資産（compose / Dockerfile / `.env` 系）を**一切変更せ
 このファイルは **人間向けのリファレンス** です。Claude Code がスキル動作中に参照することはありません。
 スキルが実行時に参照するのは `SKILL.md` と `references/` 配下です。
 
+## 導入手順
+
+本スキル `test-environment` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
+
+- **起動トリガー**: オーケストレータ `test` の Phase 1.7（provision）・Phase 5（up）・Phase 6（down）からの委譲、または「このアプリのテスト用コンテナ環境を作って／起動して／片付けて」等の自然言語依頼・`/deep-test:test-environment` コマンドでの単独起動
+
 ## 何をするか
 
 | action | フェーズ位置 | 内容 |

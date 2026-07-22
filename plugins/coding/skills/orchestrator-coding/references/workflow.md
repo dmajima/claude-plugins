@@ -20,7 +20,7 @@
 └── workspace/                  # 中間生成物・一時ファイル
 ```
 
-テンプレートは `../../../references/template/`（SSOT）を使用する。ソースコードの変更はリポジトリへ直接行う（作業領域にはコードを置かない）。
+テンプレートは `../../../references/template/`（SSOT）。ソースコードはリポジトリへ直接変更する（作業領域にコードを置かない）。
 
 ### 0.2 品質ゲート判定（全フェーズ共通）
 
@@ -60,15 +60,11 @@
 
 Phase 5 のレビューは `impl-reviewer` 1 体に簡略化してよい。Phase 1 / 4 / 6 は省略しない。
 
-クイックモード中に「設計起因」の遡行（0.3 の Phase 5 → Phase 3 相当）が必要になった場合は、統合済みの `impact-analysis.md` の設計セクションを修正して Phase 4 をやり直す。修正の過程でクイックモードの条件（1〜3 ファイル・方針一意）を満たさなくなった場合は、独立した `implementation-design.md` を新規作成して標準モードへ移行し、その旨を成果物に記録する。
+クイックモード中に「設計起因」の遡行（0.3 の Phase 5 → Phase 3 相当）が必要になったら、統合済み `impact-analysis.md` の設計セクションを修正して Phase 4 をやり直す。修正過程でクイックモードの条件（1〜3 ファイル・方針一意）を満たさなくなったら、独立した `implementation-design.md` を新規作成して標準モードへ移行し、その旨を成果物に記録する。
 
 ## Phase 1: Intake（指示受領）
 
-| 項目 | 内容 |
-|------|------|
-| 目的 | タスクの正確な理解と作業単位への分解 |
-| 入力 | ユーザのタスク説明（テキスト / 参照ファイル / URL） |
-| 成果物 | `implementation-plan.md`（`../../../references/template/implementation-plan.md`） |
+**目的**: タスクの正確な理解と作業単位への分解。**入力**: ユーザのタスク説明（テキスト / 参照ファイル / URL）。**成果物**: `implementation-plan.md`（テンプレート `../../../references/template/implementation-plan.md`）。
 
 手順:
 
@@ -82,32 +78,24 @@ Phase 5 のレビューは `impl-reviewer` 1 体に簡略化してよい。Phase
 
 ## Phase 2: Analyze（分析）
 
-| 項目 | 内容 |
-|------|------|
-| 目的 | 言語・FW・規約の確定と影響範囲の把握 |
-| 入力 | implementation-plan.md |
-| 成果物 | `impact-analysis.md`（`../../../references/template/impact-analysis.md`） |
+**目的**: 言語・FW・規約の確定と影響範囲の把握。**入力**: implementation-plan.md。**成果物**: `impact-analysis.md`（テンプレート `../../../references/template/impact-analysis.md`）。
 
 手順:
 
 1. **言語・FW 検出**: [language-detection.md](../../../references/language-detection.md) に従い適用言語スキルを確定する（[skill-index.md](../../../references/skill-index.md)）
 2. **規約解決**: [conventions-resolution.md](../../../references/conventions-resolution.md) に従い適用規約サマリを生成する
 3. **影響範囲調査**: 変更対象と依存関係（呼び出し元 / 参照先 / テスト / 設定）を Grep / Glob で追跡する。調査量が多い場合は `Explore` 系サブエージェントに委譲し、結果の要約のみ取り込む
-4. **技術制約の把握**: 適用言語スキル（`references/conventions.md`）のツールチェーン（ビルド / テスト / Lint コマンド）が対象環境で利用可能か確認する。利用不可の場合は SKIPPED として記録
+4. **技術制約の把握**: 適用言語スキル（`references/conventions.md`）のツールチェーン（ビルド / テスト / Lint コマンド）が対象環境で利用可能か確認する（利用不可は SKIPPED 記録）
 
 品質ゲート観点: 言語・FW 検出結果と適用規約サマリが記録されているか / 影響範囲に主要な依存の漏れがないか。
 
 ## Phase 3: Design（設計）
 
-| 項目 | 内容 |
-|------|------|
-| 目的 | 実装方針の確定とリスクの事前評価 |
-| 入力 | impact-analysis.md |
-| 成果物 | `implementation-design.md`（`../../../references/template/implementation-design.md`） |
+**目的**: 実装方針の確定とリスクの事前評価。**入力**: impact-analysis.md。**成果物**: `implementation-design.md`（テンプレート `../../../references/template/implementation-design.md`）。
 
 手順:
 
-1. 実装方針（変更アプローチ・データフロー・エラーハンドリング方針）を確定する。設計観点・データフロー原則は [design-principles.md](../../../references/design-principles.md)（SSOT）に従い、言語のコード構造・FW 構造規約は適用言語スキルの references を参照する
+1. 実装方針（変更アプローチ・データフロー・エラーハンドリング方針）を確定する。設計観点・データフロー原則は [design-principles.md](../../../references/design-principles.md)（SSOT）に従い、言語のコード構造・FW 構造規約は適用言語スキルの references を参照
 2. 変更ファイルリスト（新規 / 修正 / 削除）を作成する
 3. リスクと対応策を列挙する（分類と標準対応は [design-principles.md](../../../references/design-principles.md) 節 2）
 4. **大規模・高リスク判定**: [design-principles.md](../../../references/design-principles.md) 節 2.3 の判定基準に該当する場合、`architect` エージェントに設計レビューを依頼し、指摘を反映する（[agents.md](agents.md)）
@@ -117,11 +105,7 @@ Phase 5 のレビューは `impl-reviewer` 1 体に簡略化してよい。Phase
 
 ## Phase 4: Implement（実装）
 
-| 項目 | 内容 |
-|------|------|
-| 目的 | 規約準拠の実装とローカル検証 |
-| 入力 | implementation-design.md + 適用規約サマリ |
-| 成果物 | コード変更（リポジトリ直接）+ `file-list.md`（`../../../references/template/file-list.md`） |
+**目的**: 規約準拠の実装とローカル検証。**入力**: implementation-design.md + 適用規約サマリ。**成果物**: コード変更（リポジトリ直接）+ `file-list.md`（テンプレート `../../../references/template/file-list.md`）。
 
 手順:
 
@@ -135,15 +119,11 @@ Phase 5 のレビューは `impl-reviewer` 1 体に簡略化してよい。Phase
 
 ## Phase 5: Self-Review（自己レビュー）
 
-| 項目 | 内容 |
-|------|------|
-| 目的 | 独立した視点による品質検証 |
-| 入力 | file-list.md + 適用規約サマリ + implementation-design.md |
-| 成果物 | `self-review-result.md`（`../../../references/template/self-review-result.md`） |
+**目的**: 独立した視点による品質検証。**入力**: file-list.md + 適用規約サマリ + implementation-design.md。**成果物**: `self-review-result.md`（テンプレート `../../../references/template/self-review-result.md`）。
 
 手順:
 
-1. `impl-reviewer`（実装品質・規約準拠）と `test-engineer`（テスト十分性・回帰リスク）を **並列** 起動する（[agents.md](agents.md)）
+1. `impl-reviewer` と `test-engineer` を **並列** 起動する（役割は [agents.md](agents.md)）
 2. レビュー対象は file-list.md 記載のファイルに限定する。適用規約サマリをプロンプトに含め、**規約準拠の判定基準を規約サマリに固定** する
 3. 指摘を統合し、重大度（Critical / High / Medium / Low）で分類する
 4. Critical / High があれば Phase 4 へ遡行して修正する（設計起因なら Phase 3 へ）。Medium / Low は対応可否を判断し、未対応分は残課題として記録する
@@ -153,11 +133,7 @@ Phase 5 のレビューは `impl-reviewer` 1 体に簡略化してよい。Phase
 
 ## Phase 6: Report（報告）
 
-| 項目 | 内容 |
-|------|------|
-| 目的 | 成果の集約と最終検証 |
-| 入力 | 全フェーズ成果物 |
-| 成果物 | `implementation-report.md`（`../../../references/template/implementation-report.md`） |
+**目的**: 成果の集約と最終検証。**入力**: 全フェーズ成果物。**成果物**: `implementation-report.md`（テンプレート `../../../references/template/implementation-report.md`）。
 
 手順:
 

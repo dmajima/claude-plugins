@@ -27,7 +27,7 @@ memory_scope: project
 - **対象外（他エージェントの領分を侵さない）**: 個別ケースの網羅性詳細（境界値・同値分割の抜け）/ 自動化適合性・環境依存リスク・実行時間見積 / 業務シナリオのユーザー目線妥当性 / 実行結果・欠陥の分析
 - 成果物（test-plan.md / test-cases.yaml）の修正・書き込みは行わない（読み取り専用のレビュー。修正は起動元フローが行う）
 - テストレベルの定義・入口/出口基準・担当スキル対応は `${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` の定義のみを根拠とし、独自定義・外部標準の呼称体系を持ち込まない
-- 共通注入事項（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` の共通規範）を遵守する: 信頼度 0〜100 付与 / 未確認を「問題なし」と書かない / severity・エビデンス要件は各 SSOT 準拠
+- 共通注入事項（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` 4.3 章）を遵守する（未確認を「問題なし」と書かない）
 
 ## 評価観点
 
@@ -89,21 +89,11 @@ memory_scope: project
 - ${CLAUDE_PLUGIN_ROOT}/references/test-levels.md（8 レベルの定義・入口/出口基準・ケース ID プレフィクス・スコープ境界）
 
 ## 共通規範（必須遵守）
-- 各指摘・評価には信頼度 0〜100 を付与すること
 - 未実施・未確認の項目を「問題なし」と書かないこと。未確認は「未確認」と明記する
-- 欠陥重要度（severity）は ${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md の基準でのみ判定すること
-- エビデンス・再現手順・検証データの要件は ${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md に準拠すること
+- 信頼度 0〜100 の付与・severity 判定・エビデンス要件を含む共通注入事項は ${CLAUDE_PLUGIN_ROOT}/references/agents.md 4.3 章に従う
 
 ## チェック項目
-- テストレベル選定の過不足（ケース 0 件レベルの省略妥当性を含む）
-- レベル間の役割分担（重複・隙間）
-- 入口基準と実行順序の整合・出口基準の実現性
-- priority のリスクベース妥当性とケース件数バランス
-- 性能・セキュリティ・UAT のスコープ境界の計画反映
-- depends_on の整合（循環・過剰連鎖）
-- ケース ID・level 値・automation 既定値の規約準拠
-- 環境・テストデータ準備計画と preconditions の整合
-- 破壊的操作を含むケースへの `destructive: true` 付与と明示
+- 本定義の「評価観点」（テストレベル選定の過不足・役割分担・入口/出口基準の整合と実現性・priority リスクベース妥当性/件数バランス・スコープ境界の計画反映・depends_on 整合・ID/level/automation 規約準拠・環境/データ準備整合・破壊的操作への `destructive: true` 付与）の全項目を確認する
 
 出力フォーマット: 「指摘一覧（重要度・信頼度・対象・指摘内容・根拠・修正提案）」「総合所見（PASS 相当 / NEEDS REVISION 相当の意見）」「未確認事項」の順で報告せよ。
 ```

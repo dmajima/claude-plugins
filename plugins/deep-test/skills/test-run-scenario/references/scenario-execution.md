@@ -1,21 +1,21 @@
 # シナリオ実行手順（test-run-scenario 固有）
 
 `test-run-scenario` が system / uat レベルの業務シナリオ E2E を実行する際の固有手順。
-実行共通規範・エビデンス要件・データ配置・severity 判定・中間結果フォーマットは重複記載せず、`${CLAUDE_PLUGIN_ROOT}/references/` の各 SSOT を参照する（本ファイルはシナリオ特有のフローと判断のみを扱う）。
+実行共通規範・エビデンス要件・データ配置・severity 判定・中間結果フォーマットは重複記載せず、`${CLAUDE_PLUGIN_ROOT}/references/` の各 SSOT を参照（本ファイルはシナリオ特有のフローと判断のみ扱う）。
 
 ---
 
 ## 1. 前段: 入力の解決と整列
 
-1. 入力（`target-slug` / `run_id` / 対象ケースリスト / 対象アプリ情報）を確認する
-2. 対象ケースを実行順に整列する
-   - `depends_on` の依存グラフに従い、依存元を先に実行する（循環がある場合はエラーとしてオーケストレータへ返す）
+1. 入力（`target-slug` / `run_id` / 対象ケースリスト / 対象アプリ情報）を確認
+2. 対象ケースを実行順に整列
+   - `depends_on` の依存グラフに従い依存元を先に実行（循環時はエラーでオーケストレータへ返す）
    - 同順位内は `priority`（high → medium → low）で並べる
-3. Playwright MCP のロード状態を初回ブラウザ操作前に確認する。未ロードなら全対象ケースを `skipped` + reason（MCP 未ロード）で返却する（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 条件付き動的検証）
+3. Playwright MCP のロード状態を初回ブラウザ操作前に確認。未ロードなら全対象ケースを `skipped` + reason（MCP 未ロード）で返却（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 条件付き動的検証）
 
 ## 2. 1 ケース（1 シナリオ）の実行手順
 
-各ケースは「1 本の業務シナリオ」を表す。以下を順に行う。
+各ケースは「1 本の業務シナリオ」。以下を順に行う。
 
 ```mermaid
 flowchart TD
@@ -42,21 +42,21 @@ flowchart TD
 
 ### 2.1 preconditions（前提確認）
 
-- ログイン状態・初期データ・アカウント権限など、ケースが宣言した前提を準備・確認する
-- 前提を成立させられない場合は当該ケースを `blocked` + reason（前提不成立の内容）で記録する（`skipped` ではない。論理上のブロックのため）
+- ログイン状態・初期データ・アカウント権限などケースが宣言した前提を準備・確認
+- 前提を成立させられない場合は当該ケースを `blocked` + reason（前提不成立の内容）で記録（`skipped` ではなく論理ブロックのため）
 - テストデータの前提宣言と復元の原則は `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 5 章（テストデータ分離）に従う
 
 ### 2.2 steps（シナリオ実行とエビデンス取得）
 
-- steps を先頭から 1 つずつ実行する。業務シナリオは「ログイン → 業務操作（登録・検索・更新等）→ 結果確認 → ログアウト」のように複数機能・複数画面を跨ぐ
-- **各ステップ実行直後**にスクリーンショット（`browser_take_screenshot`、filename 指定必須）を取得し、`evidence/{run_id}/{case_id}/` へ **move** する（移送規約は `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 5 章）
+- steps を先頭から 1 つずつ実行。業務シナリオは「ログイン → 業務操作（登録・検索・更新等）→ 結果確認 → ログアウト」のように複数機能・複数画面を跨ぐ
+- **各ステップ実行直後**にスクリーンショット（`browser_take_screenshot`、filename 指定必須）を取得し、`evidence/{run_id}/{case_id}/` へ **move**（移送規約は `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 5 章）
 - 待機は固定スリープではなく `browser_wait_for` の条件待機を用いる（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 7.2）
-- 画面遷移でパラメータ・業務データが引き継がれることを、遷移先の表示値で確認する（system の主な確認観点）
+- 画面遷移でパラメータ・業務データが引き継がれることを遷移先の表示値で確認（system の主な確認観点）
 
 ### 2.3 expected 照合と postconditions
 
-- 最終ステップまで到達したら expected と実際の表示・状態を照合する
-- postconditions（作成データの削除・状態復元・ログアウト等）を必ず実行し、共有環境を汚染しない。復元に失敗した場合はその旨を actual / reason に記録し隠蔽しない
+- 最終ステップまで到達したら expected と実際の表示・状態を照合
+- postconditions（作成データの削除・状態復元・ログアウト等）を必ず実行し共有環境を汚染しない。復元失敗時はその旨を actual / reason に記録し隠蔽しない
 
 ## 3. シナリオ途中 fail 時の後続判断（本スキルの中核判断）
 
@@ -69,7 +69,7 @@ flowchart TD
 | シナリオの途中ステップが失敗した | 当該ケースは `fail`。以降のステップは**実行不能として打ち切る**（無理に続行しない） | `actual` に「到達ステップ（例: ステップ 4 まで到達、ステップ 5 でエラー）」を明記。以降のステップは「未到達（先行 fail のため）」として actual に含める |
 | 失敗ステップの証跡 | 追加でアクセシビリティスナップショット（`browser_snapshot`）・コンソールログ（`browser_console_messages`）をテキスト保存し evidence/ へ move | defect.evidence に含める |
 
-- 「以降のステップを blocked にする」とは、シナリオ内の残ステップを**独立に成功扱いしない**ことを指す。ケース全体の status は `fail`（欠陥を検出したため）であり、残ステップの未検証は actual に明示する
+- 「以降のステップを blocked にする」とは、シナリオ内の残ステップを**独立に成功扱いしない**こと。ケース全体の status は `fail`（欠陥を検出したため）で、残ステップの未検証は actual に明示する
 
 ### 3.2 後続ケース（depends_on による連鎖）
 
@@ -82,7 +82,7 @@ flowchart TD
 
 ## 4. UAT 観点チェックリスト（uat レベルのケースで追加適用）
 
-uat レベルのケースは system の確認に加え、**業務担当者が実際に使えるか**の受入観点で評価する。以下を確認し、逸脱は fail または所見として `actual` / defect に記録する。
+uat レベルのケースは system の確認に加え、**業務担当者が実際に使えるか**の受入観点で評価する。以下を確認し、逸脱は fail または所見として `actual` / defect に記録。
 
 | 観点 | 確認内容 | 逸脱時の扱い |
 |------|---------|-------------|
@@ -92,7 +92,7 @@ uat レベルのケースは system の確認に加え、**業務担当者が実
 | 帳票・出力物 | 出力帳票が業務要件（項目・書式・体裁）を満たすか | 業務要件を満たさない出力は fail |
 
 - uat の fail は必ず**ユーザー影響（どの業務担当者のどの業務がどう困るか）**を `actual` と `defect.reproduction_steps` に含める
-- severity は本番影響度で判定する（`${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md`）。「使いにくい」だけの軽微問題を過大評価しない
+- severity は本番影響度で判定（`${CLAUDE_PLUGIN_ROOT}/references/severity-policy.md`）。「使いにくい」だけの軽微問題を過大評価しない
 - **本スキルは受入判断そのものを行わない**。UAT の pass は「受入観点シナリオが検証で成立した」ことを示すに留め、サインオフは人間に委ねる（`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` 6 章）
 
 ## 5. 長大シナリオの中断耐性
@@ -102,11 +102,11 @@ uat レベルのケースは system の確認に加え、**業務担当者が実
 - **1 ケース完了ごとに結果エントリを確定**し、途中まで完了したケースの結果を失わない構造で進める
 - 実行中のケースがタイムアウト（既定 120 秒・`timeout_sec` で上書き可）した場合は当該ケースを `blocked` + reason（タイムアウト・到達ステップ・経過時間）で記録し、次ケースへ進む
 - 中断で以降のケースに到達できない場合も、**scope 全件のエントリを返す**（未到達ケースは `blocked`〔前提未到達〕または `skipped`〔MCP 喪失等の実行手段不在〕+ reason）。これは finish-run の scope vs results 突合の前提（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 3 章）
-- 各ケースの `actual` に進行状況（到達ステップ）を残すことで、オーケストレータ側で resume（`${CLAUDE_PLUGIN_ROOT}/references/retest-policy.md` 6 章）を判断できるようにする
+- 各ケースの `actual` に進行状況（到達ステップ）を残し、オーケストレータ側で resume（`${CLAUDE_PLUGIN_ROOT}/references/retest-policy.md` 6 章）を判断可能にする
 
 ## 6. 達成チェックリスト（返却前）
 
-中間結果 JSON をオーケストレータへ返却する前に以下を確認する。
+中間結果 JSON をオーケストレータへ返却する前に以下を確認。
 
 ```
 [ ] scope の全ケースに 1 エントリを返している（中断・未到達も blocked/skipped + reason で返す）
@@ -128,20 +128,20 @@ uat レベルのケースは system の確認に加え、**業務担当者が実
 
 ### 7.1 前提（実走のみ・テストコードは生成しない）
 
-- `fixtures.yaml`（`{base}/{target-slug}/fixtures.yaml`）と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts` / フィクスチャ）が既に存在すること。これらの**生成は test-fixture（Phase 1.6）の責務**であり、本スキルは**実走のみ**を行い SUT テストコードを生成・改変しない
+- `fixtures.yaml`（`{base}/{target-slug}/fixtures.yaml`）と SUT テストコード（`test_root` 配下の `.spec.ts` / `playwright.config.ts` / フィクスチャ）が既に存在すること。これらの**生成は test-fixture（Phase 1.6）の責務**であり、本スキルは**実走のみ**行い SUT テストコードを生成・改変しない
 - system / uat シナリオの前提（ログイン状態・シードデータ）は fixtures.yaml の**認証フィクスチャ（`type: auth`・storageState）**・**シードフィクスチャ（`type: seed`）**で再現する（規約は `${CLAUDE_PLUGIN_ROOT}/references/playwright-test.md`）
 
 ### 7.2 実行（Bash）とシナリオの再現
 
-- `npx playwright test` を Bash で実行する（`--project` / spec パス指定）。Bash 実行の書式は本プラグインの既存 Bash 呼び出し規約に合わせる。Playwright は node/npx 実行であり `run_via_job.sh` ラッパーは不要
+- `npx playwright test` を Bash で実行（`--project` / spec パス指定）。Bash 実行の書式は本プラグインの既存 Bash 呼び出し規約に合わせる。Playwright は node/npx 実行であり `run_via_job.sh` ラッパーは不要
 
 ```bash
 # SUT の project= ルートで対象シナリオ spec を実走する例（認証済みプロジェクト・JUnit + line レポート）
 cd "<SUT の project= ルート>" && npx playwright test tests/<対象シナリオ>.spec.ts --project=authenticated --reporter=line,junit
 ```
 
-- 業務シナリオ（ログイン → 業務操作 → 結果確認 → ログアウト）の通し実行は `.spec.ts` に載っている前提で実走する。ログインは認証フィクスチャの storageState 再利用により毎回再ログインせずに再現する
-- uat レベルの受入観点（4 章の導線・エラーメッセージ妥当性・業務データ成立性）は、`.spec.ts` のアサーションで機械判定できる範囲を実走で確認し、目視が要る観点は MCP 経路または manual-assist に委ねる旨を actual に明記する
+- 業務シナリオ（ログイン → 業務操作 → 結果確認 → ログアウト）の通し実行は `.spec.ts` に載っている前提で実走。ログインは認証フィクスチャの storageState 再利用により毎回再ログインせず再現する
+- uat レベルの受入観点（4 章の導線・エラーメッセージ妥当性・業務データ成立性）は、`.spec.ts` のアサーションで機械判定できる範囲を実走で確認し、目視が要る観点は MCP 経路または manual-assist に委ねる旨を actual に明記
 
 ### 7.3 結果マッピングとエビデンス化
 
@@ -151,8 +151,8 @@ cd "<SUT の project= ルート>" && npx playwright test tests/<対象シナリ�
 | シナリオ途中で fail | `fail`（JUnit・トレースから 3 章の後続判断・defect を組み立てる。到達ステップを actual に記録） |
 | 設定エラー等でテスト自体が実行されなかった | `blocked` + reason |
 
-- エビデンス: stdout / stderr ログ・JUnit XML・HTML レポート・失敗時トレース / スクリーンショットを `evidence/{run_id}/{case_id}/` へ保存する（テストランナー実行時のエビデンス収集は `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 7 章に準ずる。命名例: `80_playwright-stdout.txt` / `81_junit.xml`）
-- `executed_by` は `playwright-test` を記録する（`playwright-mcp` と混同しない）
+- エビデンス: stdout / stderr ログ・JUnit XML・HTML レポート・失敗時トレース / スクリーンショットを `evidence/{run_id}/{case_id}/` へ保存（テストランナー実行時のエビデンス収集は `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 7 章に準ずる。命名例: `80_playwright-stdout.txt` / `81_junit.xml`）
+- `executed_by` は `playwright-test` を記録（`playwright-mcp` と混同しない）
 
 ### 7.4 SKIPPED 規範（実行手段不在時・偽装禁止）
 

@@ -16,7 +16,7 @@
 
 ### 1.1 全体構成（順序厳守）
 
-統合サマリは **必ず以下の順序** で出力する。任意セクションも含め、`<details>` ブロックは省略せず本文に「該当なし」を残すことで読み手の判別性を確保する。
+統合サマリは **必ず以下の順序** で出力する。任意セクションも含め、`<details>` ブロックは省略せず本文に「該当なし」を残して読み手の判別性を確保する。
 
 ```markdown
 # 🤖 [deep-code-review-plugin] PR レビューサマリー （第 <N> 回）
@@ -71,24 +71,13 @@
 
 ### 1.4 集計セクションの必須項目
 
-集計セクションに以下を **必ず明記** する（透明性のため）:
+集計セクション（統合サマリ セクション 8）に以下を **必ず明記** する（透明性のため）。各項目の記入例・値の書式・HTML 構造は実体テンプレート `${CLAUDE_SKILL_DIR}/references/template/output/review-summary-body-2.md` セクション 8「集計」を SSOT とする（template 優先・本ディレクトリ `output-format.md` L9）:
 
-| 項目 | 例 |
-|------|------|
-| 実施日時 | `2026-04-27 14:30 (JST)` |
-| レビューモード | `標準` / `簡易` |
-| 参加観点別スキル | `5 種（impl, testing, security, architecture, frontend）` |
-| 参加エージェント | `10 名（impl, test, sec, linter, runner, perf, dep, arch, dba, web）` |
-| 比較ブランチ | `origin/develop`（自動判定）/ `master`（CLAUDE.md 指定）/ `PR #45`（PRレビュー時）等 |
-| 対象 head SHA | `a3c4d5e (a3c4d5ef0123...)` |
-| 参照規約ファイル一覧 | `CLAUDE.md, .claude/rules/coding/csharp.md, .claude/rules/security/auth.md, .editorconfig` |
-| 検出言語・FW と適用観点プロファイル | `TypeScript（主・languages/typescript.md）, React（frameworks/react.md）, SQL: PostgreSQL（副・languages/sql.md）`。未対応言語がある場合は `Go（観点プロファイル未収録）` のように明記 |
-| 参照仕様書一覧 | `docs/specs/order-feature.md`（spec 引数で指定された場合のみ。未指定時は `（仕様書未指定）`） |
-| 件数集計 | Critical/High/Medium/改善提案/スコープ外 の各件数 |
-| 低信頼のため除外 | `2 件`（信頼度 60 未満で足切りした件数。0 件時は `0 件`。C24） |
-| test-runner ステータス | `GREEN` / `RED` / `SKIPPED` |
-| レビュー対象 | `branch-diff`（origin/develop...HEAD）/ `PR #45` / `file-list: src/Order/Order.cs` 等 |
-| Agent Teams 採用パターン | `quality-assurance` / `security-compliance` / `system-design` / `data-quality-extended` / `frontend-quality-extended` / `不採用（サブエージェント方式）` |
+- 実施日時 / レビューモード / 参加観点別スキル / 参加エージェント
+- 比較ブランチ（自動判定 / CLAUDE.md 指定 / PR 別を書き分け）/ 対象 head SHA
+- 参照規約ファイル一覧 / 検出言語・FW と適用観点プロファイル（未収録言語は「観点プロファイル未収録」と明記）/ 参照仕様書一覧（未指定時は「（仕様書未指定）」）
+- 件数集計（Critical / High / Medium / 改善提案 / スコープ外）/ 低信頼のため除外（信頼度 60 未満の足切り件数・0 件時も明記・C24）
+- test-runner ステータス（GREEN / RED / SKIPPED）/ レビュー対象 / Agent Teams 採用パターン（不採用時も明記）
 
 ---
 
@@ -137,7 +126,7 @@ CR-006  [Scope-out] Repository パターン移行   → セクション 3（ス�
 統合サマリの セクション1〜セクション3 は **2 段構成**:
 
 - **A. サマリー表（必須・全件記載）**: ID / 致命度 / カテゴリ / タイトル / 該当箇所 等を表形式で一覧化。ID は PR インラインコメントへの **明示リンク**
-- **B. 詳細補足（インライン未投稿の指摘のみ）**: PR にインラインコメントを投稿していない指摘について詳細（該当コード / 指摘内容 / 求める修正 / 理由・根拠 等）を記述。投稿済みの指摘は PR コメント側で詳細が読めるため重複記述しない
+- **B. 詳細補足（インライン未投稿の指摘のみ）**: 該当指摘の詳細（該当コード / 指摘内容 / 求める修正 / 理由・根拠 等）を記述。投稿済みの指摘は PR コメント側で詳細が読めるため重複記述しない
 
 ### 2.1 「対応が必要な指摘」の項目
 
