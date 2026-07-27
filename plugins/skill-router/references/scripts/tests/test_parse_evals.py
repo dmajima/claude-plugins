@@ -17,7 +17,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-_LIB = Path(__file__).resolve().parent.parent / "lib"
+_LIB = Path(__file__).resolve().parent.parent / "routing"
 sys.path.insert(0, str(_LIB))
 
 import parse_evals  # noqa: E402
