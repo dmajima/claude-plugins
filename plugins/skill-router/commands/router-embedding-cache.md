@@ -5,7 +5,7 @@ argument-hint: "[--clear] [--show <qualified_name>]"
 
 ユーザの引数: $ARGUMENTS
 
-`skill-router` v0.4 で導入された **埋め込みベース判定** の **キャッシュ** （`<base>/embeddings_cache/`）を確認・操作します。`embedding.enabled: false` の場合は「キャッシュは未生成です」と表示します。
+`skill-router` の **埋め込みベース判定** の **キャッシュ** （`<base>/embeddings_cache/`）を確認・操作します。`embedding.enabled: false` の場合は「キャッシュは未生成です」と表示します。
 
 ## 動作モード
 
@@ -21,7 +21,7 @@ argument-hint: "[--clear] [--show <qualified_name>]"
 |---|---|
 | `<base>/embeddings_cache/vectors.npz` | NumPy 配列（shape: N×D、float32）。各行が 1 スキルのベクトル |
 | `<base>/embeddings_cache/manifest.json` | `{qualified_name -> {content_hash, model, idx, generated_at}}` |
-| `<base>/embeddings_cache/models/` | fastembed のモデルキャッシュ（ONNX ファイル等。手動配置可） |
+| `<venv-base>/embeddings_cache/models/` | fastembed のモデルキャッシュ（ONNX ファイル等。手動配置可）。ベクトルと違い `<venv-base>` 側に置く（onnxruntime が実行するファイルであり、リポジトリ相対に解決されうる `<base>` からは受け取らない） |
 
 ## base ディレクトリ解決
 
@@ -92,10 +92,10 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/clear_embedding_cache.sh" 
 
 1. オンライン環境で `--clear` 後 `/router-rebuild` を実行してモデルを取得
 2. `embeddings_cache/models/` 配下を丸ごとオフライン環境にコピー
-3. `<base>/config.json` の `embedding.cache_dir` を該当パスに指定
+3. `<venv-base>/config.json` の `embedding.cache_dir` を該当パスに指定
 
 ## 関連
 
-- `<base>/config.json` の `embedding` セクション（既定無効）
+- `<venv-base>/config.json` の `embedding` セクション（既定無効）
 - `/router-rebuild` （SessionStart と同等のフローで `vectors.npz` も差分更新）
 - `/router-status`（`stats.embedding` を含めて表示）

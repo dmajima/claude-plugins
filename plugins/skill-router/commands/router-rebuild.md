@@ -6,14 +6,18 @@ description: skill-router の index を手動再構築（新規スキル追加�
 
 ## 動作
 
-1. `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/build_index.py` を Python で実行する。
+1. `${CLAUDE_PLUGIN_ROOT}/references/scripts/routing/build_index.py` を Python で実行する。
 2. 実行後、生成された `<base>/index.json` の末尾統計を読み出してユーザに要約提示する。
-3. `<base>` の解決順位は `${CLAUDE_PLUGIN_DATA}` → `<repo>/.claude/.local/plugins/skill-router/` → `${HOME}/.claude/.local/plugins/skill-router/`。
+3. `<base>` の解決順位は `${CLAUDE_PLUGIN_DATA}` → `<repo>/.claude/.local/plugins/skill-router/` → `~/.claude/.local/plugins/skill-router/`。
 
 ## 実行手順
 
+`embedding.enabled=true` のときはベクトル化に venv 内の Python が必要です。共通ヘルパーでインタプリタを選択してから実行します（venv が無い場合はシステム Python にフォールバックし、heuristic のみで再構築します）。
+
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/build_index.py"
+source "${CLAUDE_PLUGIN_ROOT}/references/scripts/commands/resolve_base.sh"
+PY="$(skill_router_venv_python 2>/dev/null || command -v python3 || command -v python)"
+"$PY" "${CLAUDE_PLUGIN_ROOT}/references/scripts/routing/build_index.py"
 ```
 
 実行後、以下のいずれかから `index.json` を Read で取得する:
