@@ -23,7 +23,7 @@ import time
 from pathlib import Path
 
 
-_LIB_DIR = Path(__file__).resolve().parent.parent / "scripts" / "lib"
+_LIB_DIR = Path(__file__).resolve().parent.parent / "scripts" / "routing"
 
 
 def _self_measure() -> dict[str, float]:

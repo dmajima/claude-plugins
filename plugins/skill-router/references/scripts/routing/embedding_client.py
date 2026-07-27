@@ -7,7 +7,7 @@ A thin wrapper over ``fastembed`` that:
   is constructed).  In that state every public function falls through
   to a no-op which preserves the heuristic-only behaviour of v0.2.
 - caches the loaded ``TextEmbedding`` model in a module-level slot so
-  repeated calls within the same session amortise the model load cost
+  repeated calls within one process amortise the model load cost (the hooks are separate processes, so this does not carry across prompts)
   (model load is the most expensive step at ~1-3s on first call).
 - vectorises lists of texts in a single batch call, exposing
   :func:`embed_many` and :func:`embed_one` for callers.
@@ -68,7 +68,7 @@ class EmbeddingConfig:
 
     enabled: bool = False
     model: str = DEFAULT_MODEL
-    cache_dir: str | None = None  # None -> <base>/embeddings_cache/models
+    cache_dir: str | None = None  # None -> <venv-base>/embeddings_cache/models
     weight: float = 3.0
     min_similarity: float = 0.3
     max_skills_per_run: int = 200
@@ -153,27 +153,44 @@ def _fallback_cache_dir() -> Path:
     return home.joinpath(*_FALLBACK_CACHE_REL_POSIX)
 
 
-def _resolve_cache_dir(cfg: EmbeddingConfig, base: Path) -> Path:
+def _resolve_cache_dir(cfg: EmbeddingConfig, venv_base: Path) -> Path:
     """Pick a cache directory for the fastembed/HuggingFace download.
+
+    ``venv_base`` is the *user-owned* directory (``<venv-base>``), never the
+    repository-relative ``<base>``: this cache holds the ONNX graph that
+    onnxruntime loads and executes, so letting a checked-out repository supply
+    it would hand the prompt path an attacker-chosen model.  Callers therefore
+    pass :func:`config_io.resolve_venv_base`; tests pass a temporary directory.
 
     Resolution:
       1. user-specified ``cfg.cache_dir`` -- respected verbatim (the
          operator presumably knows their environment best).
-      2. ``<base>/embeddings_cache/models`` -- the default, fine on
-         POSIX and on Windows when ``<base>`` is shallow.
+      2. ``<venv-base>/embeddings_cache/models`` -- the default, fine on
+         POSIX and on Windows when ``<venv-base>`` is shallow.
       3. On Windows only, when (2) would push paths past MAX_PATH,
          fall back to ``~/AppData/Local/skill-router/models`` and log
          a warning so operators can opt out via ``cfg.cache_dir``.
     """
     if cfg.cache_dir:
-        return Path(cfg.cache_dir).expanduser()
-    primary = base / "embeddings_cache" / "models"
+        # Deliberately honoured verbatim: overriding this is the documented
+        # escape hatch for Windows MAX_PATH (see README), so constraining it to
+        # plugin-owned directories would break the very case it exists for.
+        # The whole ``embedding`` block is read from <venv-base>/config.json
+        # (config_io.embedding_section), which a repository cannot write, and a
+        # symlinked cache dir is refused below.
+        candidate = Path(cfg.cache_dir).expanduser()
+        if not candidate.is_symlink():
+            return candidate
+    primary = venv_base / "embeddings_cache" / "models"
     if os.name == "nt" and len(str(primary)) > _WINDOWS_CACHE_DIR_HEADROOM:
         fallback = _fallback_cache_dir()
         try:
             fallback.mkdir(parents=True, exist_ok=True)
             import logging as _logging
 
+            # 埋め込みは索引経路とプロンプト経路の両方から呼ばれる。インデクサの
+            # 名前空間に出すと、プロンプト経路（skill_router.route のみ設定済み）
+            # ではハンドラ不在で警告が捨てられる。
             _logging.getLogger("skill_router.embedding").warning(
                 "embedding cache_dir %r is too deep for Windows MAX_PATH "
                 "(len=%d > %d); falling back to %s. Set "
@@ -191,18 +208,51 @@ def _resolve_cache_dir(cfg: EmbeddingConfig, base: Path) -> Path:
     return primary
 
 
-def get_model(cfg: EmbeddingConfig, base: Path) -> Any | None:
-    """Return a loaded ``TextEmbedding`` or ``None`` on failure."""
+def _cache_is_populated(cache_dir: Path) -> bool:
+    """True when the ONNX cache holds a *complete* model.
+
+    A download interrupted by the SessionStart timeout leaves ``.lock`` and
+    ``*.incomplete`` files behind.  Treating those as "populated" would let the
+    prompt path resume the download - exactly what require_cached exists to
+    prevent - so a finished ``.onnx`` with no in-progress markers is required.
+    """
+    try:
+        if not cache_dir.is_dir():
+            return False
+        onnx = list(cache_dir.rglob("*.onnx"))
+        if not onnx:
+            return False
+        for marker in ("*.incomplete", "*.lock"):
+            if any(cache_dir.rglob(marker)):
+                return False
+        return True
+    except OSError:
+        return False
+
+
+def get_model(cfg: EmbeddingConfig, venv_base: Path,
+              require_cached: bool = False) -> Any | None:
+    """Return a loaded ``TextEmbedding`` or ``None`` on failure.
+
+    ``venv_base`` locates the model cache; see :func:`_resolve_cache_dir` for
+    why it must be the user-owned directory rather than ``<base>``.
+
+    ``require_cached`` refuses to construct the model when the cache is still
+    empty.  The prompt path passes it so a first-use download (~120 MB, no
+    timeout of its own) can never block a user's prompt; SessionStart - which
+    has a 360 s budget - performs the download instead.
+    """
     if not is_sdk_available():
         return None
-    cache_dir = _resolve_cache_dir(cfg, base)
+    cache_dir = _resolve_cache_dir(cfg, venv_base)
     key = (cfg.model, str(cache_dir))
     cached = _model_cache.get(key)
     if cached is not None:
         return cached
+    if require_cached and not _cache_is_populated(cache_dir):
+        return None
     try:
         cache_dir.mkdir(parents=True, exist_ok=True)
-        os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
         instance = _TextEmbedding(  # type: ignore[misc]
             model_name=cfg.model,
             cache_dir=str(cache_dir),

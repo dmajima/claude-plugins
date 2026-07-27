@@ -29,25 +29,55 @@ def main(argv: list[str]) -> int:
 
     base = Path(argv[1])
     sessions_root = base / "sessions"
+
+    # <base> はリポジトリ配下に解決されうる。clone したリポジトリが
+    # `sessions` を $HOME へのシンボリックリンクとして同梱していると、
+    # リンクを辿った削除でユーザのディレクトリを消してしまう。
+    # リンクは辿らず、実ディレクトリのみを対象にする。
+    if sessions_root.is_symlink():
+        print(f"clean_old_sessions: refusing to follow symlink {sessions_root}",
+              file=sys.stderr)
+        return 0
     if not sessions_root.is_dir():
         print(f"clean_old_sessions: nothing to do (no {sessions_root})")
+        return 0
+    try:
+        root_resolved = sessions_root.resolve()
+    except OSError:
         return 0
 
     now = time.time()
     removed = 0
+    failed = 0
     for entry in sessions_root.glob("*"):
-        if not entry.is_dir():
+        # リンク（およびリンク経由で外へ出るパス）は対象外。削除範囲を
+        # sessions/ の実体配下に閉じ込める。
+        if entry.is_symlink() or not entry.is_dir():
             continue
         try:
+            resolved = entry.resolve()
+            if resolved.parent != root_resolved:
+                continue
             age = now - entry.stat().st_mtime
         except OSError:
             continue
         if age <= _AGE_THRESHOLD_SECONDS:
             continue
-        shutil.rmtree(entry, ignore_errors=True)
+        try:
+            # ignore_errors は使わない。大量削除が無警告で進むと、
+            # 誤対象に対する取り消しの機会が失われる。
+            shutil.rmtree(entry)
+        except OSError as exc:
+            failed += 1
+            print(f"clean_old_sessions: failed to remove {entry}: {exc}",
+                  file=sys.stderr)
+            continue
         removed += 1
 
     print(f"clean_old_sessions: removed {removed} session(s) older than 30 days")
+    if failed:
+        print(f"clean_old_sessions: {failed} session(s) could not be removed",
+              file=sys.stderr)
     return 0
 
 

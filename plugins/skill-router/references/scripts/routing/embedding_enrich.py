@@ -41,6 +41,7 @@ _HERE = Path(__file__).resolve().parent
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
+import config_io  # noqa: E402
 import embedding_client  # noqa: E402
 
 try:  # pragma: no cover - optional dependency
@@ -253,9 +254,17 @@ def save_cache(
     mfinal = manifest_path(base)
     mtmp = mfinal.with_name(mfinal.name + ".tmp")
     try:
-        cache_dir(base).mkdir(parents=True, exist_ok=True)
-        with vtmp.open("wb") as fh:
+        cdir = cache_dir(base)
+        # `<base>` はリポジトリ配下に解決されうる。ディレクトリ自体をリンクに
+        # されると、以下の書き込みがまとめてリンク先へ落ちる。`is_symlink()` は
+        # Windows のジャンクションを検出しないため、実体比較も併用する。
+        if config_io.is_reparse_point(cdir):
+            return
+        cdir.mkdir(parents=True, exist_ok=True)
+        # 一時ファイル・最終ファイルとも、リンクを追従して truncate しない。
+        with config_io.open_write(vtmp, binary=True) as fh:
             _np.savez(fh, vectors=matrix)
+        config_io.drop_symlink(vfinal)
         os.replace(vtmp, vfinal)
         digest = vectors_sha256(base) or ""
         entries_sig = _compute_entries_signature(manifest)
@@ -268,8 +277,9 @@ def save_cache(
             "entries_sha256": entries_sig,
             "entries": manifest,
         }
-        with mtmp.open("w", encoding="utf-8") as fh:
+        with config_io.open_write(mtmp) as fh:
             json.dump(manifest_payload, fh, ensure_ascii=False, indent=2)
+        config_io.drop_symlink(mfinal)
         os.replace(mtmp, mfinal)
         if os.name == "posix":
             try:
@@ -362,7 +372,10 @@ def ensure_skill_vectors(
 
     if pending:
         pending = pending[: cfg.max_skills_per_run]
-        model = embedding_client.get_model(cfg, base)
+        # ベクトルの保存先は <base> だが、ONNX モデルのキャッシュは
+        # <venv-base> に置く。<base> はリポジトリ相対に解決されうるため、
+        # clone が同梱した .onnx を onnxruntime に実行させる経路になる。
+        model = embedding_client.get_model(cfg, config_io.resolve_venv_base())
         if model is None:
             # Fall through: best-effort reuse of cached rows that *do* exist.
             new_vectors_per_idx: dict[int, Any] = {}
