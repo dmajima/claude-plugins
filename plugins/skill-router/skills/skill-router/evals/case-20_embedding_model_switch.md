@@ -20,7 +20,7 @@
 
 ```bash
 # config.json を書き換える
-cat > <base>/config.json <<'JSON'
+cat > <venv-base>/config.json <<'JSON'
 {
   "embedding": {
     "enabled": true,
@@ -52,7 +52,7 @@ JSON
 
 ## 分岐の根拠
 
-`references/scripts/lib/embedding_enrich.py` の `ensure_skill_vectors` 内の `(content_hash, model)` 複合キーチェック（`test_embedding_enrich.py::test_model_change_invalidates_cache` でユニット保証）。モデル切り替え時のキャッシュ無効化動作を eval として形式化することで、運用者がモデル変更後の挙動を予測可能にする（review evals M-8）。
+`references/scripts/routing/embedding_enrich.py` の `ensure_skill_vectors` 内の `(content_hash, model)` 複合キーチェック（`test_embedding_enrich.py::test_model_change_invalidates_cache` でユニット保証）。モデル切り替え時のキャッシュ無効化動作を eval として形式化することで、運用者がモデル変更後の挙動を予測可能にする（review evals M-8）。
 
 ## 関連ケース
 
@@ -63,5 +63,5 @@ JSON
 ## 備考
 
 - `BAAI/bge-small-en-v1.5` は英語専用モデル。多言語入力では精度が落ちる点に注意（README で対応プラットフォーム+モデル選定指針を案内）
-- モデルファイル群は `<base>/embeddings_cache/models/` 配下に共存可能（`models--BAAI--bge-small-en-v1.5/` と `models--sentence-transformers--paraphrase-multilingual-MiniLM-L12-v2/` が並ぶ）
+- モデルファイル群は `<venv-base>/embeddings_cache/models/` 配下に共存可能（`models--BAAI--bge-small-en-v1.5/` と `models--sentence-transformers--paraphrase-multilingual-MiniLM-L12-v2/` が並ぶ）
 - 再ベクトル化中も heuristic は動作するため、ユーザ体感の劣化なし

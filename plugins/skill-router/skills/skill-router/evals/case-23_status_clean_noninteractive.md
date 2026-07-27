@@ -23,7 +23,7 @@
 | 1 | `--clean` 引数を確定済みとして検出（`AskUserQuestion` を発行しない） |
 | 2 | `references/scripts/commands/resolve_base.sh` で `<base>` を解決 |
 | 3 | `references/scripts/commands/clean_old_sessions.py "<base>"` を Bash 経由で起動 |
-| 4 | `<base>/sessions/*/` を走査し `time.time - st_mtime > 2592000` (30 日) のディレクトリを `shutil.rmtree(ignore_errors=True)` で削除 |
+| 4 | `<base>/sessions/*/` を走査し `time.time - st_mtime > 2592000` (30 日) のディレクトリを `shutil.rmtree(entry)` で削除する。`ignore_errors` は **使わない**（大量削除が無警告で進むと、誤った対象に対する取り消しの機会が失われるため） |
 | 5 | 標準出力に `clean_old_sessions: removed N session(s) older than 30 days` を 1 行出力 |
 | 6 | 削除完了後、通常の `/router-status` フロー (統計・直近決定・スコア分布) に進む |
 
@@ -34,8 +34,8 @@
 | stdout | `clean_old_sessions: removed N session(s) older than 30 days` (1 行) |
 | 副作用 | `<base>/sessions/<sid>/` (30 日超) のディレクトリツリーを削除 |
 | 副作用 (制約) | 30 日以内のセッション・ファイル・他ディレクトリは削除しない |
-| 失敗時 | rmtree が失敗した場合は `ignore_errors=True` で継続、削除件数のみ提示 |
-| 後続動作 | `/router-status` 通常表示 (`stats.skills_indexed` / `recent decisions` 等) |
+| 失敗時 | rmtree が失敗したディレクトリごとに `clean_old_sessions: failed to remove <path>: <理由>` を stderr へ出力して継続し、最後に `clean_old_sessions: <N> session(s) could not be removed` を stderr へ出力する。終了コードは 0 |
+| 後続動作 | `/router-status` 通常表示 (`stats.total_skills_indexed` / `recent decisions` 等) |
 
 ## 分岐の根拠
 

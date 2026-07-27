@@ -37,7 +37,7 @@ HTML にして
 
 ## 分岐の根拠
 
-`references/scripts/lib/route.py` の `_skip_phrase_signals` および `score_skill` の `weights.skip_phrase_combo` / `skip_phrase_single`。動詞 + 名詞共起と単独発火の両分岐をテストする負例抑制機構の代表ケース。
+`references/scripts/routing/route.py` の `_skip_phrase_signals` および `score_skill` の `weights.skip_phrase_combo` / `skip_phrase_single`。動詞 + 名詞共起と単独発火の両分岐をテストする負例抑制機構の代表ケース。
 
 ## 関連ケース
 

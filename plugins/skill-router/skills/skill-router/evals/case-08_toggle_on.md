@@ -22,7 +22,7 @@ skill-router を再有効化して
 |-------|------|
 | 1 | skill-router スキルが起動する（high 帯） |
 | 2 | `/router-toggle on` を案内、または直接実行 |
-| 3 | 3 階層すべて（`${CLAUDE_PLUGIN_DATA}` / `<repo>` / `${HOME}`）の `disabled` ファイルを順次削除 |
+| 3 | 3 階層すべて（`${CLAUDE_PLUGIN_DATA}` / `<repo>` / `~`）の `disabled` ファイルを順次削除 |
 | 4 | 削除したパスを集計しユーザに提示 |
 | 5 | 「次回 UserPromptSubmit から有効化されます」を補足 |
 
@@ -30,13 +30,13 @@ skill-router を再有効化して
 
 | 出力 | 内容 |
 |-----|------|
-| 標準出力 | `skill-router: removed disabled flag at <path>` を削除した階層分（0 階層なら空）+ 最終的に `skill-router toggled ON` |
+| 標準出力 | `skill-router: removed disabled flag at <path>` を削除した階層分（0 階層なら空）+ 最終的に `skill-router toggled ON (cleared N flag(s))` |
 | 副作用 | 全階層の `disabled` ファイル削除（存在した分のみ） |
 | べき等動作 | 既に ON 状態（`disabled` 不在）でも何もエラーにならず ON を維持 |
 
 ## 分岐の根拠
 
-`commands/router-toggle.md` の有効化処理と `references/scripts/hooks/route_prompt.sh` のトグル参照順位（base 解決の 3 階層）。`route_prompt.sh` は 3 階層を OR 条件で参照するため、再有効化時には全階層を順次削除する必要がある（`/router-toggle off` で `${CLAUDE_PLUGIN_DATA}` に作られたフラグを `${HOME}` 階層の確認だけでは消せない）。
+`commands/router-toggle.md` の有効化処理と `references/scripts/hooks/route_prompt.sh` のトグル参照順位（base 解決の 3 階層）。`route_prompt.sh` は 3 階層を OR 条件で参照するため、再有効化時には全階層を順次削除する必要がある（`/router-toggle off` で `${CLAUDE_PLUGIN_DATA}` に作られたフラグを `~` 階層の確認だけでは消せない）。
 
 ## 関連ケース
 

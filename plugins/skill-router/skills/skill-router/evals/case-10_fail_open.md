@@ -39,7 +39,7 @@
 
 ## 分岐の根拠
 
-`references/scripts/lib/route.py` と `build_index.py` の `main` の `try/except` フェイルオープン構造、および `references/scripts/hooks/route_prompt.sh` の「Bash 側で JSON パースしない」原則。ルーティング処理は補助機能でありユーザの本来作業をブロックしてはならないため、すべての例外パスで exit 0 を貫く。
+`references/scripts/routing/route.py` と `build_index.py` の `main` の `try/except` フェイルオープン構造、および `references/scripts/hooks/route_prompt.sh` の「Bash 側で JSON パースしない」原則。ルーティング処理は補助機能でありユーザの本来作業をブロックしてはならないため、すべての例外パスで exit 0 を貫く。
 
 ## 関連ケース
 
@@ -51,4 +51,4 @@
 - 検証方法: `<base>/index.json` を意図的に不正 JSON へ書き換えてプロンプトを送信し、`<base>/error.log` の有無と通常応答が継続することを確認
 - 検証スクリプト例: `printf 'broken' > <base>/index.json` 後にプロンプト送信、復旧は `/router-rebuild`
 - `build_index.py` 側の fail-open は `case-01_rebuild` の「失敗時」セクションに記載済み
-- 旧 `index.pkl` は廃止済み（pickle.load の RCE 経路回避、`build_index.py` モジュール docstring 参照）
+- `route.py` は `index.json` のみをロードする（pickle 経路を持たない。`build_index.py` モジュール docstring 参照）

@@ -55,7 +55,7 @@ p.write_text(json.dumps(data), encoding='utf-8')
 
 ## 分岐の根拠
 
-`references/scripts/lib/embedding_enrich.py` の `_compute_entries_signature` 自己整合チェック（B11 で追加、`test_embedding_enrich.py::test_load_manifest_rejects_tampered_entries` でユニット保証）。manifest 自体の改竄を best-effort で検出する CWE-345 緩和策の eval 形式化（review evals M-8）。
+`references/scripts/routing/embedding_enrich.py` の `_compute_entries_signature` 自己整合チェック（B11 で追加、`test_embedding_enrich.py::test_load_manifest_rejects_tampered_entries` でユニット保証）。manifest 自体の改竄を best-effort で検出する CWE-345 緩和策の eval 形式化（review evals M-8）。
 
 ## 関連ケース
 
@@ -64,6 +64,6 @@ p.write_text(json.dumps(data), encoding='utf-8')
 
 ## 備考
 
-- 攻撃者が `entries` と `entries_sha256` を **同時に整合的に書き換え** た場合は本チェックを突破できる（攻撃者抑止力ゼロ、SECURITY.md でも明示）
+- 攻撃者が `entries` と `entries_sha256` を **同時に整合的に書き換え** た場合は本チェックを突破できる（本チェックは事故・部分破損の検出が目的であり、整合的に改竄できる攻撃者への抑止力は無い。`<base>` がリポジトリ相対に解決されうる前提での防御は `installed.is_installed()` による出力名の実インストール照合が担う。case-27 参照）
 - 完全防御には keyed HMAC か外部 trusted store が必要だが、本機能はあくまで「無差別書き換え・偶発破損」に対する第一段階フィルタ
 - 検出後の運用対処は `/router-embedding-cache --clear` → `/router-rebuild` で再生成

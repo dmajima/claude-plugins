@@ -20,7 +20,7 @@
 
 | Phase | 動作 |
 |-------|------|
-| 1 | `references/scripts/lib/build_index.py` の `build` 実行 |
+| 1 | `references/scripts/routing/build_index.py` の `build` 実行 |
 | 2 | `embedding_enrich.ensure_skill_vectors` で各スキルの `content_hash` を計算 |
 | 3 | `manifest.json` の既存 entry と `(content_hash, model)` が一致 → 再ベクトル化スキップ |
 | 4 | 既存 `vectors.npz` を `expected_sha256` 検証付きで `load_vectors` 経由再利用 |
@@ -31,13 +31,13 @@
 | 出力 | 内容 |
 |-----|------|
 | 標準出力 | `index.json` 末尾の `stats` 抜粋（`build_duration_ms` が初回より顕著に小さい） |
-| 副作用 | `vectors.npz` / `manifest.json` のバイト列は変化なし（`vectors_sha256` 一致） |
+| 副作用 | `vectors.npz` / `manifest.json` の再書き出しされるが `entries[].content_hash` と `idx` の対応は不変（`generated_at` と `vectors_sha256` は毎回更新される） |
 | 計測値 | 2 回目の `build_duration_ms` が 1 回目の 1/100 程度（モデル推論をスキップしているため）|
 | 失敗時 | `<base>/error.log` に `traceback.format_exc` を `mask_secrets` 経由で記録、フェイルオープン |
 
 ## 分岐の根拠
 
-`references/scripts/lib/embedding_enrich.py` の `ensure_skill_vectors` 内で `content_hash` ベースのキャッシュ判定を行う。差分更新ロジックの正常動作を担保するため、SessionStart の hot path の最適化が崩れていないことを検証する分岐。
+`references/scripts/routing/embedding_enrich.py` の `ensure_skill_vectors` 内で `content_hash` ベースのキャッシュ判定を行う。差分更新ロジックの正常動作を担保するため、SessionStart の hot path の最適化が崩れていないことを検証する分岐。
 
 ## 関連ケース
 
