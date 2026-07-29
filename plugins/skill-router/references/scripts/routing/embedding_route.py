@@ -43,12 +43,16 @@ except Exception:  # pragma: no cover - optional dependency
 def boost_rows(
     user_prompt: str,
     rows: list[tuple[dict[str, Any], float, list[str]]],
-    base: Path,
+    venv_base: Path,
     cfg: embedding_client.EmbeddingConfig,
     qn_to_idx: dict[str, int],
     matrix: Any | None,
 ) -> list[tuple[dict[str, Any], float, list[str]]]:
     """Return ``rows`` with similarity boosts applied and resorted.
+
+    ``venv_base`` is the user-owned directory holding the ONNX model cache -
+    deliberately not ``<base>``, which can resolve inside a checked-out
+    repository (see :func:`embedding_client._resolve_cache_dir`).
 
     ``qn_to_idx`` and ``matrix`` come from
     :func:`embedding_enrich.ensure_skill_vectors`.  When either is
@@ -65,7 +69,7 @@ def boost_rows(
         return rows
     if cfg.weight <= 0.0:
         return rows
-    model = embedding_client.get_model(cfg, base)
+    model = embedding_client.get_model(cfg, venv_base, require_cached=True)
     if model is None:
         return rows
     query = embedding_client.embed_one(model, user_prompt)

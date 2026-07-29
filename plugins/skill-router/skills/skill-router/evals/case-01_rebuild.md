@@ -21,20 +21,21 @@ router のインデックスを再構築して
 | Phase | 動作 |
 |-------|------|
 | 1 | skill-router スキルが起動する（high 帯） |
-| 2 | `${CLAUDE_PLUGIN_ROOT}/references/scripts/lib/build_index.py` を Bash で実行する |
+| 2 | `${CLAUDE_PLUGIN_ROOT}/references/scripts/routing/build_index.py` を Bash で実行する |
 | 3 | 実行後、生成された `<base>/index.json` を Read で取得し統計を要約する |
 
 ## 期待出力
 
 | 出力 | 内容 |
 |-----|------|
-| 標準出力 | `index.json` 末尾の `stats` フィールドの抜粋（`total_skills_indexed` / `skills_with_evals` / `scan_duration_ms`） |
+| 標準出力 | `index.json` 末尾の `stats` フィールドの抜粋（`total_skills_indexed` / `skills_with_evals` / `skipped_plugins` / `scan_duration_ms`）と `inverted_index.json` の `stats.skipped_overgeneric_keywords` |
+| venv 未構築時 | システム Python で実行され heuristic のみで再構築される（`stats.embedding.enabled=false`） |
 | 副作用 | `<base>/index.json` / `inverted_index.json` の `generated_at` 更新（`embedding.enabled=true` 時は `embeddings_cache/vectors.npz` + `manifest.json` も差分更新） |
 | 失敗時 | `<base>/error.log` の末尾を要約し、フェイルオープン挙動（exit 0）の事実を伝える |
 
 ## 分岐の根拠
 
-`commands/router-rebuild.md` と `references/scripts/lib/build_index.py` の `build` 関数。`/router-rebuild` は index 手動再構築の唯一のエントリポイントであり、SessionStart 自動再構築では足りないシナリオ（プラグイン追加直後・evals 編集後）を救済する分岐。
+`commands/router-rebuild.md` と `references/scripts/routing/build_index.py` の `build` 関数。`/router-rebuild` は index 手動再構築の唯一のエントリポイントであり、SessionStart 自動再構築では足りないシナリオ（プラグイン追加直後・evals 編集後）を救済する分岐。
 
 ## 関連ケース
 

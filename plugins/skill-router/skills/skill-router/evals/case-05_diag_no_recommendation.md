@@ -35,17 +35,20 @@ skill-router の推奨が全然出ない
 | index 空（`total_skills_indexed=0` かつ `skipped_plugins>0`） | 「`installed_plugins.json` のスキーマ変動等で全プラグインが skip されています。`<base>/index.log` を確認し、必要なら skill-router を更新してください」 |
 | disabled フラグあり | 「現在 OFF。`/router-toggle on` で有効化してください（フラグ位置: <path>）」 |
 | 閾値超過（top1 低調） | 「mid_score 閾値が高すぎる可能性があります。`<base>/config.json` の `thresholds.mid_score` を {現在値} → {推奨値} に下げてください」 |
-| 候補絞込で 0 件 | 「逆引き索引で候補が見つかっていません。`overgeneric` キーワードリストを確認するか、対象スキルの description に固有語彙を追加してください」 |
+| 候補絞込で 0 件 | 「`route_decisions.jsonl` に `tier: "skip"` / `reason: "no_candidates"` が記録されています。逆引き索引で候補が見つかっていません。`overgeneric` キーワードリストを確認するか、対象スキルの description に固有語彙を追加してください」 |
+| index の名前が実インストールと不一致 | 「`route_decisions.jsonl` に `tier: "skip"` / `reason: "not_installed"` が記録されています。`index.json` が記載するスキルがホスト上に見つかりません。リポジトリ配下の `<base>` に古い（あるいは第三者が同梱した）`index.json` が残っている可能性があります。`/router-rebuild` で再生成してください」 |
+| 該当時刻の記録が無い | 「`sessions/<sid>/prompts.jsonl` にあるプロンプトが `route_decisions.jsonl` に記録されていません。推奨なしのターンも `tier: "skip"` として決定側に残るため、行の欠落はフックがタイムアウトして `additionalContext` が破棄されたことを示します（case-24 の診断へ）」 |
 
 ## 分岐の根拠
 
-`references/scripts/lib/route.py` の `determine_tier` および `config.json` の `thresholds` セクション + フェイルオープン原則のクロス参照。低帯比率が高い場合は閾値・skip_keywords・index 鮮度のいずれかが原因となるため、診断の最初の入口として配置。
+`references/scripts/routing/route.py` の `determine_tier` および `config.json` の `thresholds` セクション + フェイルオープン原則のクロス参照。低帯比率が高い場合は閾値・skip_keywords・index 鮮度のいずれかが原因となるため、診断の最初の入口として配置。
 
 ## 関連ケース
 
 - `case-01_rebuild` — index 再構築（不在解消）
 - `case-06_diag_over_recommendation` — 逆方向（誤推奨が多い）の診断
 - `case-08_toggle_on` — disabled 解除
+- `case-24_diag_prompt_hook_timeout` — フックがタイムアウトして推奨が失われる場合
 
 ## 備考
 

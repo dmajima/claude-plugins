@@ -38,7 +38,7 @@ skill-router の誤推奨が多すぎる
 
 ## 分岐の根拠
 
-`references/scripts/lib/route.py` の `_skip_phrase_signals` / `score_skill` の `skip_phrase_combo` / `skip_phrase_single` と `thresholds.high_ratio`（相対比閾値）。誤推奨が多い症状は閾値・skip_keywords・重みの 3 軸のいずれかで対処可能なため、各軸の現在値を確認した上で改善案を絞り込む。
+`references/scripts/routing/route.py` の `_skip_phrase_signals` / `score_skill` の `skip_phrase_combo` / `skip_phrase_single` と `thresholds.high_ratio`（相対比閾値）。誤推奨が多い症状は閾値・skip_keywords・重みの 3 軸のいずれかで対処可能なため、各軸の現在値を確認した上で改善案を絞り込む。
 
 ## 関連ケース
 

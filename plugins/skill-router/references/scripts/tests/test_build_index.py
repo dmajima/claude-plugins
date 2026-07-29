@@ -7,13 +7,14 @@ Run from the repository root with the standard library only::
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
-_LIB = Path(__file__).resolve().parent.parent / "lib"
+_LIB = Path(__file__).resolve().parent.parent / "routing"
 sys.path.insert(0, str(_LIB))
 
 import build_index  # noqa: E402  (path adjusted above)
@@ -108,7 +109,7 @@ class ResolveInstallPathTests(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         # ``_resolve_install_path`` calls ``Path.resolve(strict=True)`` which
-        # canonicalises Windows 8.3 short paths (e.g. ``WWDMAJ~1``) into their
+        # canonicalises Windows 8.3 short paths (e.g. ``SOMEUSR~1``) into their
         # long-name form.  Mirror that here so equality assertions hold on
         # any Windows runner regardless of the user profile name length.
         self.real_dir = Path(self._tmp.name).resolve()
@@ -248,13 +249,14 @@ class BuildEntryPointSmokeTests(unittest.TestCase):
     def _close_log_handlers() -> None:
         import logging as _logging
 
-        lg = _logging.getLogger("skill_router.build_index")
-        for handler in list(lg.handlers):
-            try:
-                handler.close()
-            except Exception:
-                pass
-            lg.removeHandler(handler)
+        for name in ("skill_router.build_index", "skill_router.embedding"):
+            lg = _logging.getLogger(name)
+            for handler in list(lg.handlers):
+                try:
+                    handler.close()
+                except Exception:
+                    pass
+                lg.removeHandler(handler)
 
     def test_build_emits_schema_v3_and_stats_embedding_disabled(self) -> None:
         index = build_index.build()
@@ -268,23 +270,105 @@ class BuildEntryPointSmokeTests(unittest.TestCase):
         self.assertEqual(on_disk["schema_version"], 3)
         self.assertFalse(on_disk["stats"]["embedding"]["enabled"])
 
+    def test_error_log_does_not_follow_a_symlink(self) -> None:
+        """例外経路の error.log がリンクを追従しないこと。
+
+        `<base>` はリポジトリ配下に解決されうる。index.json をディレクトリとして
+        同梱すれば `_atomic_write` が失敗し、この経路に確実に到達できる。
+        追記先をリンクで奪われると traceback を任意ファイルへ書き込まれる。
+        """
+        outside = Path(self._tmp.name) / "outside.txt"
+        outside.write_text("keep me", encoding="utf-8")
+        try:
+            os.symlink(outside, self.base / "error.log")
+        except (OSError, NotImplementedError, AttributeError):
+            self.skipTest("symlink creation not permitted")
+        # index.json をディレクトリ化して os.replace を失敗させる
+        (self.base / "index.json").mkdir(parents=True, exist_ok=True)
+        self.assertEqual(build_index.main(), 0)  # フェイルオープン
+        self.assertEqual(outside.read_text(encoding="utf-8"), "keep me")
+        self.assertFalse((self.base / "error.log").is_symlink())
+
+    def test_unwritable_index_keeps_the_previous_one(self) -> None:
+        """`index.json` をディレクトリとして同梱されても例外を外へ出さない。
+
+        `_atomic_write` の OSError が `build()` の外へ抜けると、索引が更新
+        されないだけのはずが例外経路に落ちる。前回の索引を据え置いて
+        フェイルオープンする。
+        """
+        (self.base / "index.json").mkdir(parents=True, exist_ok=True)
+        index = build_index.build()  # 例外を送出しないこと
+        self.assertEqual(index["schema_version"], 3)
+        self.assertEqual(build_index.main(), 0)
+
+    def test_installed_plugins_accepts_the_path_key(self) -> None:
+        """`installPath` ではなく `path` を持つスキーマも受けること。"""
+        import installed
+        (self.base / "installed_plugins.json").write_text(
+            json.dumps({"version": 2, "plugins": {
+                "p@mkt": [{"path": str(self.base)}]}}), encoding="utf-8")
+        catalogue = installed.installed_plugins(self.base)
+        self.assertIn("p", catalogue)
+        self.assertTrue(catalogue["p"])
+
+    def test_max_postings_per_keyword_is_honoured(self) -> None:
+        """テンプレートが配るキーが実際に索引構築へ効くこと。
+
+        以前は `MAX_POSTINGS_PER_KEYWORD` 定数だけが使われており、利用者が
+        config.json を編集しても何も起きなかった（診断ケースはこのキーの
+        調整を対処方針として提示している）。
+        """
+        skills = [{"qualified_name": f"p:s{i}", "keywords": ["shared"],
+                   "trigger_phrases": []} for i in range(4)]
+        wide = build_index.build_inverted_index(skills, max_postings=10)
+        self.assertIn("shared", wide["index"])
+        narrow = build_index.build_inverted_index(skills, max_postings=3)
+        self.assertNotIn("shared", narrow["index"])
+        self.assertIn("shared", narrow["overgeneric"])
+
+    def test_max_postings_is_read_from_config_and_clamped(self) -> None:
+        """リポジトリ供給の値でも壊れない範囲に収めること。"""
+        cfg = self.base / "config.json"
+        cfg.write_text(json.dumps(
+            {"candidate_filter": {"max_postings_per_keyword": 7}}),
+            encoding="utf-8")
+        self.assertEqual(build_index.resolve_max_postings(self.base), 7)
+
+        # `1e400` は JSON パースで float('inf') になり、int() が OverflowError を
+        # 送出する。捕捉しないと当該リポジトリで索引構築が毎回失敗する。
+        for bad, expected in ((0, 1), (-5, 1), (10 ** 9, 500), ("x", 50),
+                              (float("inf"), 50), (float("nan"), 50)):
+            cfg.write_text(json.dumps(
+                {"candidate_filter": {"max_postings_per_keyword": bad}}),
+                encoding="utf-8")
+            with self.subTest(value=bad):
+                self.assertEqual(
+                    build_index.resolve_max_postings(self.base), expected)
+
+    def test_embedding_stack_is_not_imported_when_disabled(self) -> None:
+        """既定（opt-out）で numpy / fastembed を引き込まないこと。
+
+        route.py が build_index を import するため、ここでモジュール先頭に
+        置くとプロンプト経路にまで import 費用が乗る。無効時にモジュール
+        グローバルが未束縛のままであることを不変条件として固定する。
+        """
+        build_index.embedding_client = None
+        build_index.embedding_enrich = None
+        build_index.build()
+        self.assertIsNone(build_index.embedding_client)
+        self.assertIsNone(build_index.embedding_enrich)
+
     def test_build_passes_user_config_into_embedding_pipeline(self) -> None:
-        # Place a config.json that turns embedding on.  ensure_skill_vectors
-        # is patched to assert it was called with enabled=True and the
-        # supplied model name.
-        (self.base).mkdir(parents=True, exist_ok=True)
-        (self.base / "config.json").write_text(
-            json.dumps(
-                {
-                    "embedding": {
-                        "enabled": True,
-                        "model": "BAAI/bge-small-en-v1.5",
-                    }
-                }
-            ),
-            encoding="utf-8",
-        )
+        # The embedding block is owned by <venv-base>, not <base>, so patch
+        # that reader.  ensure_skill_vectors is patched to assert it was
+        # called with enabled=True and the supplied model name.
+        # 埋め込みモジュールは遅延ロードなので、patch する前に束縛しておく。
+        self.assertTrue(build_index._load_embedding_stack())
         with mock.patch.object(
+            build_index.config_io,
+            "embedding_section",
+            return_value={"enabled": True, "model": "BAAI/bge-small-en-v1.5"},
+        ), mock.patch.object(
             build_index.embedding_enrich,
             "ensure_skill_vectors",
             return_value=({}, None),

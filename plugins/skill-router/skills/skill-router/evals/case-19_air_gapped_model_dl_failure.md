@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 起動フレーズ | "/router-rebuild"（または SessionStart 自動発火） |
-| 既存状態 | `embedding.enabled=true`、`<base>/embeddings_cache/models/` にモデル未配置、HF ハブへ HTTPS 接続不可（DNS or HTTP エラー）|
+| 既存状態 | `embedding.enabled=true`、`<venv-base>/embeddings_cache/models/` にモデル未配置、HF ハブへ HTTPS 接続不可（DNS or HTTP エラー）|
 | モード | 非対話（自動）|
 
 ## トリガープロンプト
@@ -28,6 +28,7 @@ export HF_HUB_OFFLINE=1
 
 | Phase | 動作 |
 |-------|------|
+| 0 | venv 未構築の場合、SessionStart の `ensure` が `construct()` を実行し、`pip install` がネットワーク到達不可で失敗する。`<venv-base>/venv-construct.log` に記録され、`<venv-base>/.venv-construct-failed` の `count` が加算される。以降 `python-bin` はシステム Python を返すため `fastembed` は import できない |
 | 1 | `build_index.build` 内で `embedding_enrich.ensure_skill_vectors` を呼ぶ |
 | 2 | `embedding_client.get_model` が `fastembed.TextEmbedding` を構築試行 |
 | 3 | モデル DL 失敗 → 例外発生 |
@@ -42,16 +43,18 @@ export HF_HUB_OFFLINE=1
 | 出力 | 内容 |
 |-----|------|
 | `index.json` | `stats.embedding.enabled=false`、`stats.embedding.skills_vectorised=0` |
-| `index.log` | `embedding vectorisation failed; continuing with heuristic only` 等の WARNING |
+| `index.log` | `indexed skills=... embedding=off` 等の WARNING |
 | `error.log` | （任意）`traceback.format_exc` を `mask_secrets` 経由で記録 |
 | 副作用 | プロセス継続、例外伝播なし。`vectors.npz` / `manifest.json` 未生成 |
 | ユーザ体感 | 通常通り heuristic ベースのルーティング推奨が動作（embedding なしで運用） |
 
 ## 分岐の根拠
 
-`references/scripts/lib/embedding_client.py` の `get_model` および `embedding_enrich.ensure_skill_vectors` の例外 → `None` 返却 → `build_index.build` の except 節という多層フェイルオープン経路。エアギャップ環境での運用継続性を担保する分岐（review evals H-F）。
+`references/scripts/routing/embedding_client.py` の `get_model` および `embedding_enrich.ensure_skill_vectors` の例外 → `None` 返却 → `build_index.build` の except 節という多層フェイルオープン経路。エアギャップ環境での運用継続性を担保する分岐（review evals H-F）。
 
 ## 関連ケース
+
+- `case-24_diag_prompt_hook_timeout` — 構築失敗のバックオフ（3 回連続失敗で 6 時間抑止）の診断
 
 - `case-13_embedding_disabled` — 設定で明示的に無効化したケース（裏返し）
 - `case-14_cache_tamper_failopen` — キャッシュ改竄時のフェイルオープン

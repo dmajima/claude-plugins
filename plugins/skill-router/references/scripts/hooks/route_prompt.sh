@@ -3,9 +3,12 @@
 #
 #
 # CRITICAL: stdin JSON は Bash で parse せず、Python (json.load) に委譲する。
-# Bash の責務は: Python interpreter の起動 / toggle (disabled) check / stdin の素通し のみ。
+# Bash の責務は: Python interpreter の選択 / toggle (disabled) check / stdin の素通し のみ。
 #
 # Fail-open: any error must not block the user prompt.
+# UserPromptSubmit の終了コード 2 は Claude Code にとって「プロンプトを破棄せよ」の
+# 意味を持つ。route.py は常に 0 を返すが、インタプリタ起動失敗（rc=2 等）は
+# その外側で起きるため、本スクリプトは常に exit 0 で終端する。
 
 set +e
 
@@ -30,32 +33,59 @@ fi
 # shellcheck source=../commands/resolve_base.sh
 source "$plugin_root/references/scripts/commands/resolve_base.sh"
 
-if [[ -n "${CLAUDE_PLUGIN_DATA:-}" && -f "${CLAUDE_PLUGIN_DATA}/disabled" ]]; then
+if skill_router_is_disabled; then
   exit 0
 fi
 
-repo="$(skill_router_project_root 2>/dev/null || true)"
-if [[ -n "$repo" && -f "$repo/.claude/.local/plugins/skill-router/disabled" ]]; then
-  exit 0
-fi
 
-home_dir="$(skill_router_home_dir)"
-if [[ -n "$home_dir" && -f "$home_dir/.claude/.local/plugins/skill-router/disabled" ]]; then
-  exit 0
-fi
-
-lifecycle="$plugin_root/references/scripts/lib/venv_lifecycle.py"
-venv_py="$("$python_bin" "$lifecycle" python-bin --plugin-root "$plugin_root" --no-construct 2>/dev/null)"
+# インタプリタは Bash 側で選択する。venv_lifecycle を起動して尋ねると
+# プロンプト経路に Python プロセスがもう 1 回増えるため、30s 予算では割に合わない。
+# venv が無い（= 埋め込み未使用）場合はシステム Python で heuristic 経路が動く。
+# 最終利用時刻マーカーは route.py 自身が更新する（venv 内で動いたときのみ）。
+venv_py="$(skill_router_venv_python 2>/dev/null || true)"
+# 絶対パス検証は resolve_base.sh の共有関数に一本化する。同じ判定を各所に
+# 手書きすると、ブラケット式の些細な差でプラットフォーム片方だけが無音で壊れる。
+skill_router_is_absolute_path "$venv_py" || venv_py=""
 [[ -z "${venv_py// /}" ]] && venv_py="$python_bin"
 
-route_script="$plugin_root/references/scripts/lib/route.py"
+route_script="$plugin_root/references/scripts/routing/route.py"
 
-# Python に stdin を渡して起動。Bash の I/O リダイレクトで stdin/stdout/stderr を制御。
-# .NET Process API のような複雑な処理は不要 (Bash の pipe で完結)。
-printf '%s' "$stdin_payload" | "$venv_py" "$route_script"
-route_rc=$?
+# Python に stdin を渡して起動。stderr は捕捉し、失敗時のみ error.log に残す。
+# 素通しするとフック失敗のたびにユーザへノイズが出るため。
+stderr_temp=""
+if command -v mktemp >/dev/null 2>&1; then
+  stderr_temp="$(mktemp 2>/dev/null || true)"
+fi
+# フックが timeout で打ち切られると下の rm には到達しないため、trap でも
+# 後始末する。自分が作ったファイル 1 個だけを対象にし、親ディレクトリには
+# 触れない（SessionStart 側と同じ原則）。
+trap '[[ -n "$stderr_temp" ]] && rm -f -- "$stderr_temp" 2>/dev/null; true' EXIT
 
-# Stale-venv teardown (routing 完了後)
-"$python_bin" "$lifecycle" cleanup-if-stale --plugin-root "$plugin_root" >/dev/null 2>&1
+if [[ -n "$stderr_temp" ]]; then
+  printf '%s' "$stdin_payload" | "$venv_py" "$route_script" 2>"$stderr_temp"
+  route_rc=$?
+  if [[ $route_rc -ne 0 && -s "$stderr_temp" ]]; then
+    base="$(skill_router_base 2>/dev/null || true)"
+    if [[ -n "$base" && -d "$base" ]]; then
+      # Python 側（config_io.open_append）と同じくリンクは追従しない。
+      # `<base>` はリポジトリ配下に解決されうるため、リンクを辿ると
+      # 切り詰め（: >）と追記の対象をリポジトリに選ばれる。
+      [[ -L "$base/error.log" ]] && rm -f -- "$base/error.log" 2>/dev/null
+      # route.py 側と同じ 1MiB 上限。この経路が使われるのは Python の起動自体が
+      # 失敗し続ける構成であり、上限が最も必要になる。
+      if [[ -f "$base/error.log" ]]          && [[ "$(wc -c <"$base/error.log" 2>/dev/null || echo 0)" -gt 1048576 ]]; then
+        : >"$base/error.log"
+      fi
+      {
+        printf '[route_prompt] interpreter=%s rc=%s\n' "$venv_py" "$route_rc"
+        cat -- "$stderr_temp"
+      } >>"$base/error.log" 2>/dev/null
+    fi
+  fi
+  rm -f -- "$stderr_temp" 2>/dev/null
+else
+  printf '%s' "$stdin_payload" | "$venv_py" "$route_script"
+fi
 
-exit $route_rc
+# Stale-venv teardown は SessionStart (build_index_on_start.sh) が担当する。
+exit 0

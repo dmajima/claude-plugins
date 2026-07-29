@@ -1,10 +1,12 @@
 # skill-router requirements
 #
-# v0.4.0 introduces optional local embedding-based routing.  The
-# dependencies below are installed eagerly by venv_lifecycle when the
-# user opts in (``embedding.enabled = true``); they remain unused at
-# import time when the feature is disabled because embedding_client
-# falls back to a no-op path if fastembed cannot be imported.
+# These dependencies exist only for the optional local embedding-based
+# routing.  venv_lifecycle installs them when the user opts in
+# (``embedding.enabled = true`` in <venv-base>/config.json) and never
+# otherwise, so a default install pays no download or disk cost.  With
+# the feature disabled the router runs on the standard library alone;
+# embedding_client also falls back to a no-op path if fastembed cannot
+# be imported.
 #
 # Approximate disk footprint after install:
 #   fastembed       ~400 MB (vendored onnxruntime wheels)
@@ -13,18 +15,22 @@
 #   model on first use  ~120 MB (paraphrase-multilingual-MiniLM-L12-v2)
 # Total ~650 MB; remains under the 1 GB design budget.
 #
-# venv lifecycle is managed in-tree by
-# references/scripts/lib/venv_lifecycle.py and invoked from the
-# SessionStart / UserPromptSubmit hooks.  Policy:
-#   * construct  : on the first SessionStart after deps appear (or after
-#                  a teardown), under <base>/.venv where <base> is
-#                  resolved by build_index.resolve_base_dir().
-#   * rebuild    : on stderr containing a Python traceback that ends in
-#                  ModuleNotFoundError / ImportError, up to 3 times per
-#                  session (tracked by <base>/.venv-rebuild-count).
-#   * teardown   : when the venv is older than 72 h, evaluated at the
-#                  end of the UserPromptSubmit hook so the user-facing
-#                  response is never blocked.
+# The venv is built under a user-owned directory (${CLAUDE_PLUGIN_DATA},
+# else ~/.claude/.local/plugins/skill-router/) - never inside a checked-out
+# repository, which could otherwise supply the interpreter the hooks run.
+#
+# Supply-chain note: this file pins version *ranges*, not hashes, so an
+# install resolves whatever matching wheels the index serves at the time.
+# For hash-verified installs, generate a lock file next to this one
+# (requirements.lock); venv_lifecycle detects it and switches to
+# `pip install --require-hashes -r requirements.lock`.  Generation steps are
+# in the plugin README ("ハッシュ pinning" section).  No lock is shipped because the
+# valid hash set is per-platform and would go stale in the repository.
+#
+# Construction, rebuild budget, backoff and TTL teardown are specified in
+# the module docstring of references/scripts/routing/venv_lifecycle.py, which
+# is the single source of truth for this lifecycle.  Do not restate the
+# policy here; keep this file to the dependency list.
 
 fastembed>=0.3,<1.0
 numpy>=1.24,<3.0

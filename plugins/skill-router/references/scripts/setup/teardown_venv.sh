@@ -45,3 +45,12 @@ if [[ -d "$venv_dir" ]]; then
 else
   echo "[teardown_venv] No venv at $venv_dir, nothing to do"
 fi
+
+# 最終利用時刻マーカーも併せて撤去する。残したまま作り直すと、次回
+# SessionStart の cleanup-if-stale が新しい venv を古いタイムスタンプで
+# 評価して即座に撤去しうる（venv_lifecycle.teardown と同じ理由）。
+marker="$work_dir/.venv-last-used"
+if [[ -f "$marker" ]]; then
+  rm -f -- "$marker"
+  echo "[teardown_venv] Removed $marker"
+fi

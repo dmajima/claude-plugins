@@ -36,7 +36,7 @@ Markdown を PDF に変換したい
 
 ## 分岐の根拠
 
-`references/scripts/lib/embedding_route.py` の `boost_rows` および `route.py` の `embedding_used` フラグ管理。表層一致では拾えない言い換え・同義語に対し意味的類似度で補正する v0.4 の中核機能を担保する分岐。
+`references/scripts/routing/embedding_route.py` の `boost_rows` および `route.py` の `embedding_used` フラグ管理。表層一致では拾えない言い換え・同義語に対し意味的類似度で補正する中核機能を担保する分岐。
 
 ## 関連ケース
 

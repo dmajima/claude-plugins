@@ -16,11 +16,11 @@ argument-hint: "[--clean]"
 
 ## 取得する情報
 
-1. **base ディレクトリ解決**: `${CLAUDE_PLUGIN_DATA}` → `<repo>/.claude/.local/plugins/skill-router/` → `${HOME}/.claude/.local/plugins/skill-router/` の順で最初に存在するパスを採用。
+1. **base ディレクトリ解決**: `${CLAUDE_PLUGIN_DATA}` → `<repo>/.claude/.local/plugins/skill-router/` → `~/.claude/.local/plugins/skill-router/` の順で最初に存在するパスを採用。
 2. **`<base>/index.json`** の `generated_at` / `stats` フィールドを Read で取得。
 3. **`<base>/inverted_index.json`** の `stats` フィールドを Read で取得。
-4. **`<base>/sessions/*/route_decisions.jsonl`** の最終行を最新から最大 10 件取得し、tier ごとに集計。
-5. **disabled フラグ存在判定**: `<base>/disabled` の有無で「現在 ON / OFF」を表示。
+4. **`<base>/sessions/*/route_decisions.jsonl`** の最終行を最新から最大 10 件取得し、tier ごとに集計。tier は `high` / `mid` / `low` / `skip` の 4 値（`skip` は推奨に至らなかったターン。`reason` は `index_empty`（索引が空）/ `no_candidates`（逆引きで候補 0 件）/ `not_installed`（index の名前が実インストールと一致しない）のいずれか）。
+5. **disabled フラグ存在判定**: `references/scripts/commands/resolve_base.sh` を source して `skill_router_is_disabled` を呼び、「現在 ON / OFF」を表示する。判定は 3 階層（`${CLAUDE_PLUGIN_DATA}` / リポジトリ / ホーム）を走査するため、`<base>` 単独を見てはならない（ホーム層のフラグでルーティングが停止していても ON と表示してしまう）。OFF の場合は真になった層のパスを併記する。
 
 ## 提示するレポート
 
@@ -31,7 +31,7 @@ argument-hint: "[--clean]"
 - skills indexed       : <N>  (with evals: <M>)
 - inverted keywords    : <K>  (overgeneric skipped: <S>)
 - routing toggle       : ON | OFF (disabled flag: <path>)
-- recent decisions     : high=<a>  mid=<b>  low=<c>  (last 10)
+- recent decisions     : high=<a>  mid=<b>  low=<c>  skip=<d>  (last 10)
 - score histogram      : (top1 値の 0.5 刻みヒストグラム ASCII bar 表示)
 ```
 
@@ -40,7 +40,7 @@ argument-hint: "[--clean]"
 セッション削除は `references/scripts/commands/clean_old_sessions.py` に切り出しています（ADR-025 / scripts-policy 準拠）。
 
 ```bash
-& python "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/clean_old_sessions.py" $Base
+python "$CLAUDE_PLUGIN_ROOT/references/scripts/commands/clean_old_sessions.py" "$BASE"
 ```
 実行後、削除したセッションディレクトリ数を提示する（標準出力 1 行）。
 

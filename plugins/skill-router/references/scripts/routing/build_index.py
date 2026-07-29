@@ -23,7 +23,7 @@ new schema version ships, update **all** of the following together:
    branch here.
 3. :func:`_count_installed_plugins` -- keep the totals consistent with
    how the new schema represents per-plugin entries.
-4. ``plugins/skill-router/tests/test_build_index.py`` -- add cases that
+4. ``references/scripts/tests/test_build_index.py`` -- add cases that
    round-trip the new shape.
 
 Index files (``index.json`` / ``inverted_index.json``) are JSON-only by
@@ -37,6 +37,7 @@ from __future__ import annotations
 import json
 import logging
 import logging.handlers
+import math
 import os
 import re
 import socket
@@ -52,8 +53,31 @@ if str(_HERE) not in sys.path:
 
 import parse_evals  # noqa: E402  (sibling module, see design v2 section 3.2.6)
 import config_io  # noqa: E402
-import embedding_client  # noqa: E402
-import embedding_enrich  # noqa: E402
+import text_tokens  # noqa: E402
+
+# Bound by :func:`_load_embedding_stack` on first use, not at import time.
+embedding_client: Any = None
+embedding_enrich: Any = None
+
+
+def _load_embedding_stack() -> bool:
+    """Import the embedding modules on first use.  True when they are usable.
+
+    ``embedding_client`` pulls in numpy and fastembed - hundreds of milliseconds
+    and ~50 MB of address space that the default configuration (embedding
+    disabled) never uses.  Bound to module globals so callers (and tests) can
+    reach them as ``build_index.embedding_enrich`` once loaded.
+    """
+    global embedding_client, embedding_enrich
+    if embedding_client is not None:
+        return True
+    try:
+        import embedding_client as _client
+        import embedding_enrich as _enrich
+    except Exception:  # pragma: no cover - fail-open
+        return False
+    embedding_client, embedding_enrich = _client, _enrich
+    return True
 
 
 SCHEMA_VERSION = 3
@@ -105,38 +129,15 @@ _NOUN_VOCAB: frozenset[str] = frozenset(
 # ---------------------------------------------------------------------------
 
 
-def _project_root(start: Path) -> Path | None:
-    """Walk up from `start` looking for .git, stopping at HOME boundary."""
-    home = Path(os.path.expanduser("~")).resolve()
-    cur = start.resolve()
-    while True:
-        if (cur / ".git").exists():
-            return cur
-        if cur == cur.parent or cur == home:
-            return None
-        cur = cur.parent
-
-
-def resolve_base_dir() -> Path:
-    """Resolution order documented in design v2 section 4.4."""
-    plugin_data = os.environ.get("CLAUDE_PLUGIN_DATA", "").strip()
-    if plugin_data:
-        candidate = Path(plugin_data)
-        try:
-            candidate.mkdir(parents=True, exist_ok=True)
-            if os.access(candidate, os.W_OK):
-                return candidate
-        except OSError:
-            pass
-
-    project = _project_root(Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())))
-    if project is not None:
-        return project / ".claude" / ".local" / "plugins" / "skill-router"
-
-    return Path(os.path.expanduser("~")) / ".claude" / ".local" / "plugins" / "skill-router"
+# ``<base>`` の解決は config_io が所有する。`<venv-base>` と対の概念であり、
+# 差分そのものがセキュリティ境界のため、2 つを別レイヤに置くと片方だけの変更で
+# 境界が消える。ここでは再エクスポートし、モジュール属性としての差し替え
+# （テストの patch）も従来どおり効くようにする。
+resolve_base_dir = config_io.resolve_base_dir
 
 
 _LOG_MAX_BYTES = 1_048_576  # 1 MiB per log file
+_ERROR_LOG_MAX_BYTES = 1_048_576  # 1 MiB cap for the append-only error log
 _LOG_BACKUP_COUNT = 3  # rotate to .1 / .2 / .3, then drop
 
 
@@ -149,14 +150,30 @@ def _setup_logger(base: Path) -> logging.Logger:
     # Rotating handler (1 MiB x 3 backups = 4 MiB cap) prevents the log
     # from growing unboundedly across long-lived dev environments
     # (security review Suggestion / CWE-779).
-    handler = logging.handlers.RotatingFileHandler(
-        base / "index.log",
-        maxBytes=_LOG_MAX_BYTES,
-        backupCount=_LOG_BACKUP_COUNT,
-        encoding="utf-8",
-    )
+    # route.py と同じ理由で、先に 0600 の実体を用意してからハンドラを開く。
+    # route.py と同じく、ハンドラ生成の失敗で索引構築ごと止めない。
+    try:
+        try:
+            config_io.open_append(base / "index.log").close()
+        except OSError:
+            pass
+        handler = logging.handlers.RotatingFileHandler(
+            base / "index.log",
+            maxBytes=_LOG_MAX_BYTES,
+            backupCount=_LOG_BACKUP_COUNT,
+            encoding="utf-8",
+        )
+    except OSError:
+        return logger
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
     logger.addHandler(handler)
+    # 埋め込み側の警告（MAX_PATH フォールバック等）を index.log へ寄せる。
+    # route.py 側も同じロガーを自分のファイルへ束ねるため、どちらの経路から
+    # 呼ばれても警告が残る。
+    embedding_logger = logging.getLogger("skill_router.embedding")
+    if not embedding_logger.handlers:
+        embedding_logger.setLevel(logging.INFO)
+        embedding_logger.addHandler(handler)
     return logger
 
 
@@ -173,15 +190,7 @@ def _read_json(path: Path) -> Any:
         return None
 
 
-def _load_user_config(base: Path) -> dict[str, Any]:
-    """Read ``<base>/config.json`` for sections build_index needs (the
-    ``embedding`` block in v0.4).  Returns ``{}`` when missing/malformed.
-
-    Thin wrapper kept for readability at the call sites; delegates the
-    actual I/O to :func:`config_io.load_raw_config` which is shared
-    with :func:`route.load_config` (review architect M-2).
-    """
-    return config_io.load_raw_config(base)
+_PLUGIN_KEY_RE = re.compile(r"^[A-Za-z0-9._@:-]{1,128}$")
 
 
 def _enabled_plugin_keys(settings: Any) -> set[str]:
@@ -324,29 +333,9 @@ def _split_skip_phrases(text: str) -> tuple[list[str], list[str]]:
     return verbs, list(nouns)
 
 
-_KW_KANJI_RE = re.compile(r"[一-鿿]{2,}")
-_KW_KATAKANA_RE = re.compile(r"[ァ-ヺー]{4,}")
-_KW_ASCII_RE = re.compile(r"[A-Za-z][A-Za-z0-9_-]{1,}")
-_STOPWORDS_EN: frozenset[str] = frozenset(
-    {"the", "and", "for", "with", "this", "that", "from", "into", "use"}
-)
-
-
-def extract_keywords(*texts: str) -> list[str]:
-    seen: dict[str, None] = {}
-    for text in texts:
-        if not text:
-            continue
-        for token in _KW_KANJI_RE.findall(text):
-            seen.setdefault(token, None)
-        for token in _KW_KATAKANA_RE.findall(text):
-            seen.setdefault(token, None)
-        for token in _KW_ASCII_RE.findall(text):
-            lower = token.lower()
-            if lower in _STOPWORDS_EN:
-                continue
-            seen.setdefault(lower, None)
-    return list(seen)
+# トークナイザは text_tokens が所有する（router と同一の規則を使うため）。
+# ここでは再エクスポートのみ行う。
+extract_keywords = text_tokens.extract_keywords
 
 
 def _extract_trigger_phrases(text: str) -> list[str]:
@@ -414,7 +403,39 @@ def _extract_skill_record(
 # ---------------------------------------------------------------------------
 
 
-def build_inverted_index(skills: list[dict[str, Any]]) -> dict[str, Any]:
+def resolve_max_postings(base: Path) -> int:
+    """``candidate_filter.max_postings_per_keyword`` from ``<base>/config.json``.
+
+    A keyword pointing at more skills than this is treated as overgeneric and
+    dropped from the inverted index.  Lowering it is the documented remedy for a
+    bloated index (see the ``case-07`` / ``case-24`` diagnostics), which is why
+    the key is read here rather than left as a constant.
+
+    ``<base>`` can be supplied by a checked-out repository, so the value is
+    clamped: 0 would drop every keyword and leave the router permanently
+    silent, and a huge value would defeat the pruning that keeps scoring
+    linear-ish.
+    """
+    try:
+        section = config_io.load_raw_config(base).get("candidate_filter")
+        if isinstance(section, dict):
+            raw = section.get("max_postings_per_keyword",
+                              MAX_POSTINGS_PER_KEYWORD)
+            # JSON の `1e400` は float("inf") としてパースされ、int() が
+            # OverflowError を送出する。捕捉しないと SessionStart の索引構築が
+            # そのリポジトリで毎回失敗する。
+            if isinstance(raw, float) and not math.isfinite(raw):
+                return MAX_POSTINGS_PER_KEYWORD
+            return max(1, min(500, int(raw)))
+    except (TypeError, ValueError, OSError, OverflowError):
+        pass
+    return MAX_POSTINGS_PER_KEYWORD
+
+
+def build_inverted_index(
+    skills: list[dict[str, Any]],
+    max_postings: int = MAX_POSTINGS_PER_KEYWORD,
+) -> dict[str, Any]:
     raw: dict[str, list[str]] = {}
     for skill in skills:
         for kw in set(skill.get("keywords", []) + skill.get("trigger_phrases", [])):
@@ -427,7 +448,7 @@ def build_inverted_index(skills: list[dict[str, Any]]) -> dict[str, Any]:
     pruned: dict[str, list[str]] = {}
     for kw, postings in raw.items():
         unique = sorted(set(postings))
-        if len(unique) > MAX_POSTINGS_PER_KEYWORD:
+        if len(unique) > max_postings:
             overgeneric.append(kw)
             continue
         pruned[kw] = unique
@@ -452,21 +473,32 @@ def build_inverted_index(skills: list[dict[str, Any]]) -> dict[str, Any]:
 
 def _atomic_write(path: Path, payload: bytes) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_bytes(payload)
+    # `<base>` への書き込みは config_io の 2 関数に一本化する（CLAUDE.md の
+    # 不変条件）。素の write_bytes は O_NOFOLLOW を経由しないため、
+    # drop_symlink との間に競合窓が残る。
+    with config_io.open_write(tmp, binary=True) as fh:
+        fh.write(payload)
+    config_io.drop_symlink(path)
     os.replace(tmp, path)
 
 
 def _write_outputs(
     base: Path, index: dict[str, Any], inverted: dict[str, Any]
 ) -> None:
-    _atomic_write(
-        base / "index.json",
-        json.dumps(index, ensure_ascii=False, indent=2).encode("utf-8"),
-    )
-    _atomic_write(
-        base / "inverted_index.json",
-        json.dumps(inverted, ensure_ascii=False, indent=2).encode("utf-8"),
-    )
+    # `index.json` / `index.json.tmp` をディレクトリとして同梱されると
+    # `_atomic_write` が OSError を送出する。ここで捕捉しないと build() の外へ
+    # 抜け、索引が更新されないだけのはずが例外経路に落ちる。書けなければ
+    # 前回の索引が据え置かれる（フェイルオープン）。
+    for name, payload in (("index.json", index),
+                          ("inverted_index.json", inverted)):
+        try:
+            _atomic_write(
+                base / name,
+                json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8"),
+            )
+        except OSError:
+            logging.getLogger("skill_router.build_index").warning(
+                "could not write %s; keeping the previous index", name)
     # Legacy index.pkl is removed if present.  See module docstring for
     # the security rationale (pickle.load is RCE-prone against
     # attacker-controllable <base>).
@@ -496,7 +528,13 @@ def build() -> dict[str, Any]:
     installed = _read_json(home / ".claude" / "plugins" / "installed_plugins.json")
 
     enabled_user = _enabled_plugin_keys(user_settings)
-    enabled_project = _enabled_plugin_keys(project_settings)
+    # プロジェクト側 settings.json はリポジトリが供給しうる。キー名は
+    # そのままログにも索引にも載るため、形式を検証してから採用する
+    # （改行を含むキーでログ行を偽造されるのを防ぐ）。
+    enabled_project = {
+        key for key in _enabled_plugin_keys(project_settings)
+        if _PLUGIN_KEY_RE.fullmatch(key)
+    }
     enabled = enabled_user | enabled_project
 
     if isinstance(installed, dict):
@@ -515,7 +553,8 @@ def build() -> dict[str, Any]:
         install_path = _resolve_install_path(installed, key, expected_scope=scope)
         if install_path is None:
             skipped_plugins += 1
-            logger.warning("install path missing for %s", key)
+            logger.warning("install path missing for %s",
+                       config_io.sanitise_for_log(key))
             continue
         plugin, _, marketplace = key.partition("@")
         for skill_md in install_path.glob("skills/*/SKILL.md"):
@@ -531,35 +570,42 @@ def build() -> dict[str, Any]:
                 skills.append(record)
 
     # ------------------------------------------------------------------
-    # Optional embedding-based skill vectorisation (v0.4+).
+    # Optional embedding-based skill vectorisation.
     #
-    # Gated by ``embedding.enabled`` in the user's ``config.json``.
+    # Gated by ``config_io.embedding_section()`` - the single decision point
+    # shared with venv_lifecycle (which builds the venv) and route.py (which
+    # consumes the vectors), so the flag can never be on in one and off in
+    # another.  It is read from <venv-base>, not from the repository-relative
+    # base, so a clone cannot trigger the dependency install.
     # When disabled, missing SDK, or any failure, the helper returns
     # ``({}, None)`` and the heuristic-only behaviour is preserved.
     # ------------------------------------------------------------------
-    user_config = _load_user_config(base)
-    embedding_section = (
-        user_config.get("embedding", {}) if isinstance(user_config, dict) else {}
-    )
-    if not isinstance(embedding_section, dict):
-        embedding_section = {}
-    embedding_cfg = embedding_client.EmbeddingConfig.from_dict(embedding_section)
+    embedding_section = config_io.embedding_section()
+    embedding_opted_in = bool(embedding_section.get("enabled", False))
     embed_started = time.perf_counter()
     embed_qn_to_idx: dict[str, int] = {}
-    try:
-        embed_qn_to_idx, _matrix = embedding_enrich.ensure_skill_vectors(
-            skills, base, embedding_cfg
-        )
-    except Exception:  # pragma: no cover - fail-open
-        logger.exception("embedding vectorisation failed; continuing with heuristic only")
-        embed_qn_to_idx = {}
+    embedding_model: str | None = None
+    sdk_available = False
+    # opt-in のときだけ numpy / fastembed を読み込む。無効時に import すると、
+    # このモジュールを取り込む route.py（プロンプト経路）にも費用が乗る。
+    if embedding_opted_in and _load_embedding_stack():
+        embedding_cfg = embedding_client.EmbeddingConfig.from_dict(
+            embedding_section)
+        embedding_model = embedding_cfg.model
+        try:
+            embed_qn_to_idx, _matrix = embedding_enrich.ensure_skill_vectors(
+                skills, base, embedding_cfg
+            )
+            sdk_available = embedding_client.is_sdk_available()
+        except Exception:  # pragma: no cover - fail-open
+            logger.exception(
+                "embedding vectorisation failed; continuing with heuristic only")
+            embed_qn_to_idx = {}
     embed_duration_ms = int((time.perf_counter() - embed_started) * 1000)
 
     duration_ms = int((time.perf_counter() - started) * 1000)
     embedding_active = (
-        embedding_cfg.enabled
-        and embedding_client.is_sdk_available()
-        and bool(embed_qn_to_idx)
+        embedding_opted_in and sdk_available and bool(embed_qn_to_idx)
     )
     index = {
         "schema_version": SCHEMA_VERSION,
@@ -580,14 +626,14 @@ def build() -> dict[str, Any]:
             "scan_duration_ms": duration_ms,
             "embedding": {
                 "enabled": bool(embedding_active),
-                "model": embedding_cfg.model if embedding_active else None,
+                "model": embedding_model if embedding_active else None,
                 "skills_vectorised": len(embed_qn_to_idx),
                 "build_duration_ms": embed_duration_ms,
             },
         },
         "skills": skills,
     }
-    inverted = build_inverted_index(skills)
+    inverted = build_inverted_index(skills, resolve_max_postings(base))
     _write_outputs(base, index, inverted)
     logger.info(
         "indexed skills=%d enabled=%d skipped=%d duration_ms=%d embedding=%s",
@@ -602,6 +648,15 @@ def build() -> dict[str, Any]:
 
 def main() -> int:
     try:
+        # Record "the venv was used" from the process that actually runs in it
+        # (see venv_lifecycle.touch_last_used_if_active).  A no-op under the
+        # system interpreter.
+        try:
+            import venv_lifecycle  # local import: keeps build()'s hot path lean
+
+            venv_lifecycle.touch_last_used_if_active()
+        except Exception:  # pragma: no cover - never block indexing
+            pass
         build()
     except Exception:  # pragma: no cover - fail-open
         try:
@@ -616,7 +671,17 @@ def main() -> int:
             # capture environment values or prompt fragments
             # (security review L-3, CWE-209).
             masked_tb = session_state.mask_secrets(traceback.format_exc())
-            with (base / "error.log").open("a", encoding="utf-8") as fh:
+            error_log = base / "error.log"
+            # 恒常的に失敗する構成ではプロンプトごとに積み上がるため、
+            # route.log / venv-construct.log と同様に上限を設ける。
+            try:
+                if error_log.exists() and error_log.stat().st_size > _ERROR_LOG_MAX_BYTES:
+                    error_log.unlink()
+            except OSError:
+                pass
+            # 追記は必ず config_io.open_append 経由。ここだけ素の open だった
+            # ため、リポジトリが仕込んだリンク先へ traceback を書き込めた。
+            with config_io.open_append(error_log) as fh:
                 fh.write(f"=== {datetime.now(timezone.utc).isoformat()} ===\n")
                 fh.write(masked_tb)
                 if not masked_tb.endswith("\n"):

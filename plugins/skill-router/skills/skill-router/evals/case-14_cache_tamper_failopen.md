@@ -45,7 +45,7 @@ printf '\x00' >> "<base>/embeddings_cache/vectors.npz"
 
 ## 分岐の根拠
 
-`references/scripts/lib/embedding_enrich.py` の `load_vectors(expected_sha256=...)` における SHA-256 検証 + `route.py` の `embedding_route.boost_rows` への通知。攻撃者が `vectors.npz` だけ書き換えてもルーティング誘導が成立しないことを担保するセキュリティ分岐（CWE-345 緩和）。
+`references/scripts/routing/embedding_enrich.py` の `load_vectors(expected_sha256=...)` における SHA-256 検証 + `route.py` の `embedding_route.boost_rows` への通知。攻撃者が `vectors.npz` だけ書き換えてもルーティング誘導が成立しないことを担保するセキュリティ分岐（CWE-345 緩和）。
 
 ## 関連ケース
 

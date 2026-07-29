@@ -7,13 +7,14 @@ Run from the repository root::
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from io import StringIO
 from pathlib import Path
 
-_LIB = Path(__file__).resolve().parent.parent / "lib"
+_LIB = Path(__file__).resolve().parent.parent / "routing"
 sys.path.insert(0, str(_LIB))
 
 import session_state  # noqa: E402
@@ -219,6 +220,42 @@ class AppendPromptMaskingTests(unittest.TestCase):
         body = path.read_text(encoding="utf-8")
         self.assertNotIn(secret, body)
         self.assertIn("***", body)
+
+
+class LeafSymlinkGuardTests(unittest.TestCase):
+    """`<base>` 配下のリーフに置かれた symlink を追従しないこと。
+
+    `<base>` はリポジトリ配下に解決されうるため、clone が仕込んだリンクを
+    辿ると、追記・上書き・切り詰めの対象がリポジトリの指定した任意ファイルに
+    なる。ディレクトリ鎖の検査だけでは防げない。
+    """
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.base = Path(self._tmp.name) / "base"
+        self.base.mkdir(parents=True)
+        self.outside = Path(self._tmp.name) / "outside.txt"
+        self.outside.write_text("keep me", encoding="utf-8")
+
+    def test_prompts_jsonl_does_not_follow_symlink(self) -> None:
+        sessions = self.base / "sessions" / "sid"
+        sessions.mkdir(parents=True)
+        link = sessions / "prompts.jsonl"
+        try:
+            os.symlink(self.outside, link)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlink creation not permitted")
+        session_state.append_prompt(self.base, "sid", {"prompt": "hello"})
+        self.assertEqual(self.outside.read_text(encoding="utf-8"), "keep me")
+        self.assertFalse(link.is_symlink())
+
+    def test_gitignore_is_rewritten_when_it_does_not_ignore(self) -> None:
+        """空の .gitignore を同梱されても履歴が追跡対象にならないこと。"""
+        (self.base / ".gitignore").write_text("", encoding="utf-8")
+        session_state.session_dir(self.base, "sid")
+        body = (self.base / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("*", body)
 
 
 if __name__ == "__main__":

@@ -12,17 +12,17 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 
 | プラグイン | 説明 | バージョン | インストール |
 |----------|------|----------|----------|
-| `coding` | 多言語対応の実装・設計ワークフロープラグイン（言語スキル8種+SSOT規約管理・自動検出・プロジェクト規約優先） | 1.0.0 | `/plugin install coding@dmajima-claude-plugins` |
+| `coding` | 多言語対応の実装・設計ワークフロープラグイン（言語スキル8種+SSOT規約管理・自動検出・プロジェクト規約優先） | 1.0.1 | `/plugin install coding@dmajima-claude-plugins` |
 | `connector` | 7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き） | 2.5.1 | `/plugin install connector@dmajima-claude-plugins` |
 | `convert-doc` | Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX 取り込み・デザイン追加対応） | 4.1.0 | `/plugin install convert-doc@dmajima-claude-plugins` |
 | `credentials-manager` | 認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン | 2.1.2 | `/plugin install credentials-manager@dmajima-claude-plugins` |
-| `deep-code-review` | 観点別マルチエージェントでコード変更・PR をレビュー（Anthropic 公式 code-review とは別）。Azure DevOps/オンプレTFS・GitHub PR 対応、8言語+主要FW・信頼度スコアで統合サマリと判定を返す | 1.0.0 | `/plugin install deep-code-review@dmajima-claude-plugins` |
-| `deep-test` | テスト設計→環境構築→実施→報告→再テストを支援。8レベル・Playwright実動作・手動/探索的・YAML実績管理。コードレビュー（deep-code-review）の差分テストとは別 | 1.4.1 | `/plugin install deep-test@dmajima-claude-plugins` |
-| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.11.1 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
+| `deep-code-review` | 観点別マルチエージェントでコード変更・PR をレビュー（Anthropic 公式 code-review とは別）。Azure DevOps/オンプレTFS・GitHub PR 対応、8言語+主要FW・信頼度スコアで統合サマリと判定を返す | 1.1.0 | `/plugin install deep-code-review@dmajima-claude-plugins` |
+| `deep-test` | テスト設計→環境構築→実施→報告→再テストを支援。8レベル・Playwright実動作・手動/探索的・YAML実績管理。コードレビュー（deep-code-review）の差分テストとは別 | 1.5.0 | `/plugin install deep-test@dmajima-claude-plugins` |
+| `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.11.2 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 | `maintenance` | Claude Code 環境のメンテナンス統合プラグイン（プラグイン一括更新 / 古い作業フォルダ整理 / Git 経由設定同期） | 1.0.0 | `/plugin install maintenance@dmajima-claude-plugins` |
 | `meeting-minutes` | 会議の文字起こし・録画データから構造化議事録を作成し Markdown / docx 出力 | 1.3.0 | `/plugin install meeting-minutes@dmajima-claude-plugins` |
 | `session-usage` | セッションのトークン消費量をJSONLから集計し、AskUserQuestion対話メニューで操作する診断プラグイン | 1.0.1 | `/plugin install session-usage@dmajima-claude-plugins` |
-| `skill-router` | プロンプト送信時に available-skills を自動スコアリングしてフック注入で適合スキルを推奨。ロジック編集は対象外 | 0.6.1 | `/plugin install skill-router@dmajima-claude-plugins` |
+| `skill-router` | プロンプト送信時に available-skills を自動スコアリングし、フック注入で適合スキルを推奨。完全ローカルの埋め込み意味判定をオプトインで搭載（既定無効・外部送信なし） | 1.0.0 | `/plugin install skill-router@dmajima-claude-plugins` |
 
 ## マーケットプレイスの追加方法
 

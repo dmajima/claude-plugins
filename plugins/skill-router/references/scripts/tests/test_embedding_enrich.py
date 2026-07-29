@@ -6,13 +6,14 @@ these tests run offline.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
-_LIB = Path(__file__).resolve().parent.parent / "lib"
+_LIB = Path(__file__).resolve().parent.parent / "routing"
 sys.path.insert(0, str(_LIB))
 
 import embedding_client  # noqa: E402
@@ -349,6 +350,56 @@ class SaveCacheCleanupTests(unittest.TestCase):
             self.assertTrue(cache.is_dir())
             tmp_files = [p for p in cache.iterdir() if p.suffix == ".tmp"]
             self.assertEqual(tmp_files, [])
+
+
+@unittest.skipIf(np is None, "numpy not installed")
+class SaveCacheLinkGuardTests(unittest.TestCase):
+    """`<base>/embeddings_cache/` を経由した任意ファイル破壊を防ぐこと。
+
+    `<base>` はリポジトリ配下に解決されうる。キャッシュのリーフ、または
+    ディレクトリ自体をリンクとして同梱されると、`save_cache` の書き込みが
+    リンク先を truncate して上書きしてしまう。
+    """
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.base = Path(self._tmp.name) / "base"
+        self.base.mkdir()
+        self.victim = Path(self._tmp.name) / "victim.txt"
+        self.victim.write_text("keep me", encoding="utf-8")
+
+    def _save(self) -> None:
+        embedding_enrich.save_cache(
+            self.base,
+            {"p:s": {"content_hash": "h", "model": "m", "idx": 0,
+                     "generated_at": "t"}},
+            np.zeros((1, 4), dtype=np.float32))
+
+    def test_linked_leaf_is_not_followed(self) -> None:
+        cache = embedding_enrich.cache_dir(self.base)
+        cache.mkdir(parents=True)
+        link = cache / "vectors.npz.tmp"
+        try:
+            os.symlink(self.victim, link)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlink creation not permitted")
+        self._save()
+        self.assertEqual(self.victim.read_text(encoding="utf-8"), "keep me")
+
+    def test_linked_cache_directory_is_refused(self) -> None:
+        outside = Path(self._tmp.name) / "outside-dir"
+        outside.mkdir()
+        (outside / "sentinel.txt").write_text("keep me", encoding="utf-8")
+        try:
+            os.symlink(outside, embedding_enrich.cache_dir(self.base),
+                       target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlink creation not permitted")
+        self._save()
+        # リンク先に書き込みが落ちていないこと
+        self.assertEqual(sorted(p.name for p in outside.iterdir()),
+                         ["sentinel.txt"])
 
 
 if __name__ == "__main__":

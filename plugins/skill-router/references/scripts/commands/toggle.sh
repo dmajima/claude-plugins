@@ -12,24 +12,12 @@ source "$(dirname -- "${BASH_SOURCE[0]}")/resolve_base.sh"
 
 action="${1:-status}"
 
-plugin_data="${CLAUDE_PLUGIN_DATA:-}"
-home_dir="$(skill_router_home_dir)"
-home_base=""
-[[ -n "$home_dir" ]] && home_base="$home_dir/.claude/.local/plugins/skill-router"
-
-repo_base=""
-if repo="$(skill_router_project_root)"; then
-  repo_base="$repo/.claude/.local/plugins/skill-router"
-fi
-
-test_disabled_flag() {
-  local base="$1"
-  [[ -z "$base" ]] && return 1
-  [[ -f "$base/disabled" ]]
-}
-
+# 階層の知識はこのスクリプトに持たない。フックの判定（skill_router_is_disabled）
+# と探索リスト（skill_router_disabled_candidates）を resolve_base.sh から共有する。
+# ここで判定を書き直すと、正規化の有無が食い違って「OFF にしたのに status は ON、
+# on にしても復帰しない」という無音の不整合になる。
 invoke_status() {
-  if test_disabled_flag "$plugin_data" || test_disabled_flag "$repo_base" || test_disabled_flag "$home_base"; then
+  if skill_router_is_disabled; then
     echo "skill-router: OFF"
   else
     echo "skill-router: ON"
@@ -58,7 +46,7 @@ invoke_off() {
 
 invoke_on() {
   local removed=0 base flag_path
-  for base in "$plugin_data" "$repo_base" "$home_base"; do
+  while IFS= read -r base; do
     [[ -z "$base" ]] && continue
     flag_path="$base/disabled"
     if [[ -f "$flag_path" ]]; then
@@ -69,7 +57,7 @@ invoke_on() {
         echo "skill-router: failed to remove disabled flag at $flag_path"
       fi
     fi
-  done
+  done < <(skill_router_disabled_candidates)
   echo "skill-router toggled ON (cleared $removed flag(s))"
 }
 

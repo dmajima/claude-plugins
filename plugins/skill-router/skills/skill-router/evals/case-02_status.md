@@ -21,7 +21,7 @@ router の状態を確認したい
 | Phase | 動作 |
 |-------|------|
 | 1 | skill-router スキルが起動する（high 帯） |
-| 2 | base ディレクトリ解決順位（`${CLAUDE_PLUGIN_DATA}` → `<repo>/.claude/.local/...` → `${HOME}/.claude/.local/...`）に従い `<base>` を特定 |
+| 2 | base ディレクトリ解決順位（`${CLAUDE_PLUGIN_DATA}` → `<repo>/.claude/.local/...` → `~/.claude/.local/...`）に従い `<base>` を特定 |
 | 3 | `<base>/index.json` / `inverted_index.json` を Read し統計を整形 |
 | 4 | `<base>/sessions/*/route_decisions.jsonl` の最終 10 件を tail し tier 別集計 |
 | 5 | `--clean` オプションの存在を補足説明 |
@@ -36,7 +36,7 @@ router の状態を確認したい
 
 ## 分岐の根拠
 
-`commands/router-status.md` と `references/scripts/lib/build_index.py` の `stats` 構造に基づく監視・診断のエントリポイント。チューニング時に `config.json` 編集と組み合わせて使う。
+`commands/router-status.md` と `references/scripts/routing/build_index.py` の `stats` 構造に基づく監視・診断のエントリポイント。チューニング時に `config.json` 編集と組み合わせて使う。
 
 ## 関連ケース
 

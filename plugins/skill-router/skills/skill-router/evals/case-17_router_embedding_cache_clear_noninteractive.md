@@ -26,14 +26,14 @@
 | 2 | `AskUserQuestion` を発行せず即時実行 |
 | 3 | `<base>/embeddings_cache/vectors.npz` を削除 |
 | 4 | `<base>/embeddings_cache/manifest.json` を削除 |
-| 5 | `<base>/embeddings_cache/models/` 配下の ONNX モデルは保持（再 DL コスト回避）|
-| 6 | 結果を 1 行で出力（対話的な補足案内なし） |
+| 5 | `<venv-base>/embeddings_cache/models/` 配下の ONNX モデルは保持（再 DL コスト回避）|
+| 6 | `clear_embedding_cache.sh` の出力 2 行をそのまま提示（対話的な確認・選択は発生しない） |
 
 ## 期待出力
 
 | 出力 | 内容 |
 |-----|------|
-| 標準出力 | `skill-router embedding cache cleared (vectors.npz + manifest.json)` のみ |
+| 標準出力 | `skill-router: embedding cache cleared at <base>/embeddings_cache/` と `次回 SessionStart で再生成されます (embedding.enabled=true 時のみ)。` の 2 行（`clear_embedding_cache.sh` の出力そのまま） |
 | 副作用 | `<base>/embeddings_cache/vectors.npz` / `manifest.json` 削除、`models/` 保持 |
 | ユーザ介入 | なし（確認・選択ダイアログ非発生） |
 
