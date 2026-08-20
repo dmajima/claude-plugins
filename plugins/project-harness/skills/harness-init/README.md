@@ -21,7 +21,9 @@
 2. 既存資産（ルート CLAUDE.md・README・docs/）の取り込み方針を確認される
 3. サブエージェントがプロジェクトを並列調査（技術スタック / 機能・画面 / アーキテクチャ / 規約・用語）
 4. 検出された機能一覧から、初期ドキュメントの生成範囲を選択する
-5. `.claude/CLAUDE.md` + `references/` 一式が生成され、`.sync-state.json` が初期化される
+5. `environments/` に記載する検証コマンドの実行可否を確認される（対象リポジトリのコード実行を伴うため）
+6. `.claude/CLAUDE.md` + `references/` 一式が生成され、検証スクリプトが実行され、`.sync-state.json` が初期化される
+7. ルート `CLAUDE.md` へ `@.claude/CLAUDE.md` の import 行を追記して入口をつなぐ（承認時のみ）
 
 ## 動作例
 
@@ -53,8 +55,9 @@
 
 | 変更したいこと | 変更箇所 |
 |--------------|---------|
-| ハーネスのフォルダ構成・frontmatter 規則 | プラグイン共有 `references/structure-spec.md`（SSOT） |
-| 生成ドキュメントの雛形 | プラグイン共有 `references/template/` 配下 |
+| ハーネスのフォルダ構成・frontmatter と sources 記法・モノレポ適用 | プラグイン共有 `references/structure-spec.md`（SSOT） |
+| 記載の原則・秘匿情報の扱い・検証項目 | プラグイン共有 `references/authoring-spec.md`（SSOT） |
+| 生成ドキュメントの雛形 | プラグイン共有 `references/templates/` 配下 |
 | 調査エージェントの観点 | `references/agents.md` |
 | 実行手順の詳細 | `references/procedures.md` |
 

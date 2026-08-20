@@ -1,6 +1,6 @@
 ---
 description: コード変更を検出して .claude ハーネスへ差分反映
-argument-hint: "[--non-interactive]"
+argument-hint: "[--full] [--non-interactive]"
 ---
 
 ユーザの引数: $ARGUMENTS
@@ -12,7 +12,10 @@ argument-hint: "[--non-interactive]"
 | 引数 | モード | 動作 |
 |-----|-------|------|
 | 空 | 対話 | 反映計画をスキル側で提示し、対象を確認してから反映する |
+| `--full` フラグ含む | 全量監査 | 差分検出をスキップし、全ドキュメントの記載とソース実態を突合する（`sources: []` の用語集・ADR も対象に含む） |
 | `--non-interactive` フラグ含む | 非対話 | フラグごとスキルへ渡す（更新・新規は全反映、整理候補は提案のみ） |
+
+`--full` と `--non-interactive` は併用できる。
 
 ## ルーティング
 
@@ -24,11 +27,14 @@ argument-hint: "[--non-interactive]"
 
 ハーネスが未構築（`.claude/references/.sync-state.json` が無い）の場合、スキルは `/project-harness:init` への切替を提案する。
 
+このコマンドは対象プロジェクトのドキュメント同期を行うものであり、Claude Code のプラグイン自体を更新する `/plugin update` や `maintenance` プラグインの `/maintenance:update` とは無関係。
+
 ## 共通の終了処理
 
 スキル完了後、以下を提示する:
 
-- 反映結果表（更新 / 新規 / 整理提案の件数と一覧）
+- 反映結果表（更新 / ソース移動 / 新規 / 整理提案の件数と一覧）
+- ハーネス検証スクリプトの結果
 - `TODO:`（未確認事項）の解消数・新規発生数
 - 未コミット変更の有無（あればコミット後の再実行案内）
 

@@ -1,6 +1,6 @@
 {
   "name": "project-harness",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "対象プロジェクトに .claude ハーネス（仕様・設計・検証環境の文書体系）を初期構築し、開発変更を随時同期する環境整備プラグイン",
   "license": "MIT",
   "author": {
@@ -9,9 +9,11 @@
   "keywords": [
     "harness",
     "harness-engineering",
+    "claude-harness",
     "project-setup",
     "claude-md",
     "documentation",
+    "spec-sync",
     "specs",
     "system-designs",
     "flows",

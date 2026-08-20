@@ -13,7 +13,8 @@
 1. Phase 1 の検査で「既存ハーネス（.sync-state.json）なし・部分的既存あり」と判定する
 2. 既存部分（`.claude/CLAUDE.md`・`specs/` 2 ファイル）を **保持** し、不足フォルダ・ドキュメントのみ生成する
 3. 既存ファイルの内容は Phase 4 でマージする（frontmatter 欠落等の構成仕様との差分は補完）。既存ファイルの上書きが必要な場合は個別に AskUserQuestion で確認する
-4. `.sync-state.json` を HEAD で初期化する
+4. `--non-interactive` 併用時: 上書きを行わず既存を保持し、マージできなかった差分を報告に列挙する
+5. `.sync-state.json` を HEAD で初期化する
 
 ## 期待出力
 
