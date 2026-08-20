@@ -270,6 +270,35 @@
       ]
     },
     {
+      "name": "project-harness",
+      "source": "./plugins/project-harness",
+      "description": "対象プロジェクトに .claude ハーネス（仕様・設計・検証環境の文書体系）を初期構築し、開発変更を随時同期する環境整備プラグイン",
+      "category": "developer-tools",
+      "author": {
+        "name": "dmajima"
+      },
+      "keywords": [
+        "harness",
+        "harness-engineering",
+        "project-setup",
+        "claude-md",
+        "documentation",
+        "specs",
+        "system-designs",
+        "flows",
+        "environments",
+        "conventions",
+        "architecture",
+        "adr",
+        "glossary",
+        "sync",
+        "freshness-check",
+        "session-start",
+        "init",
+        "update"
+      ]
+    },
+    {
       "name": "session-usage",
       "source": "./plugins/session-usage",
       "description": "セッションのトークン消費量をJSONLから集計し、AskUserQuestion対話メニューで操作する診断プラグイン",
