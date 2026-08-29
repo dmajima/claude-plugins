@@ -25,7 +25,7 @@ argument-hint: "[--full] [--non-interactive]"
 
 このコマンドは薄いラッパーであり、差分取得・影響分析・ドキュメント反映・索引同期・同期状態更新の実処理はすべて `harness-update` スキルが行う。
 
-ハーネスが未構築（`.claude/references/.sync-state.json` が無い）の場合、スキルは `/project-harness:init` への切替を提案する。
+`.claude/references/.sync-state.json` が無い場合、スキルは状態に応じて分岐する: ハーネス実体（`references/` のドキュメント群）があるなら HEAD での state 初期化を提案し（spec-first でコミット前に構築された場合の復旧経路）、実体も無いなら `/project-harness:init`（コード解析ベース）または `/project-harness:define`（spec-first）への切替を提案する。
 
 このコマンドは対象プロジェクトのドキュメント同期を行うものであり、Claude Code のプラグイン自体を更新する `/plugin update` や `maintenance` プラグインの `/maintenance:update` とは無関係。
 

@@ -9,7 +9,7 @@
 | パス | 用途 | 呼び出し元 |
 |------|------|-----------|
 | [hooks/freshness_check.sh](hooks/freshness_check.sh) | SessionStart 鮮度検知（乖離コミット数が閾値に達したとき `/project-harness:update` の実行を推奨通知） | `hooks/hooks.json` |
-| [validate/validate_harness.sh](validate/validate_harness.sh) | 生成済みハーネスの健全性検証（索引一致・frontmatter・行数・プレースホルダ・秘匿値・到達性・state） | harness-init / harness-update の検証フェーズ |
+| [validate/validate_harness.sh](validate/validate_harness.sh) | 生成済みハーネスの健全性検証（索引一致・frontmatter・行数・プレースホルダ・秘匿値・到達性・state・status 妥当値） | harness-init / harness-define / harness-update の検証フェーズ |
 
 ## 利用ルール
 

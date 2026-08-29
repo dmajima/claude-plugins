@@ -6,10 +6,10 @@ project-harness プラグインのプラグイン共通リソース（SSOT）の
 
 | パス | 内容 |
 |------|------|
-| [structure-spec.md](structure-spec.md) | 対象プロジェクトに構築する `.claude` ハーネスの構成仕様（フォルダ定義・CLAUDE.md 階層索引・frontmatter と sources 記法・命名・アーカイブ規則・モノレポ対応・仕様バージョン） |
-| [authoring-spec.md](authoring-spec.md) | ドキュメント作成・索引維持・検証の共通規則（記載の原則・秘匿情報の非記載・未信頼入力の扱い・書き込み境界・検証項目） |
-| [sync-spec.md](sync-spec.md) | 同期状態（`.sync-state.json`）・差分検出フロー・SessionStart 鮮度検知フック・全量監査モードの仕様 |
-| [templates/](templates/) | 対象プロジェクトへ配置するドキュメント雛形 11 種 |
+| [structure-spec.md](structure-spec.md) | 対象プロジェクトに構築する `.claude` ハーネスの構成仕様（フォルダ定義・CLAUDE.md 階層索引・frontmatter と sources 記法・`status` ライフサイクル・命名・アーカイブ規則・モノレポ対応・骨格生成順序・仕様バージョン） |
+| [authoring-spec.md](authoring-spec.md) | ドキュメント作成・索引維持・検証の共通規則（記載の原則と根拠種別・秘匿情報の非記載・未信頼入力の扱い・書き込み境界・検証項目） |
+| [sync-spec.md](sync-spec.md) | 同期状態（`.sync-state.json`）・差分検出フロー・実装追随（spec-first 仕様への実装の紐付け）・SessionStart 鮮度検知フック・全量監査モードの仕様 |
+| [templates/](templates/) | 対象プロジェクトへ配置するドキュメント雛形 12 種 |
 | [scripts/](scripts/) | フック実スクリプト（`hooks/freshness_check.sh`）と検証スクリプト（`validate/validate_harness.sh`） |
 
 ## SSOT とスキルの分担
@@ -18,16 +18,18 @@ project-harness プラグインのプラグイン共通リソース（SSOT）の
 |------|---------|
 | ハーネス構成の定義 / 書き方と検証の共通規則 / 同期の仕組み / ドキュメント雛形 / スクリプト | 本ディレクトリ（SSOT） |
 | 初期構築の実行手順・調査エージェント運用 | `skills/harness-init/references/` |
-| 差分反映の実行手順・反映エージェント運用 | `skills/harness-update/references/` |
+| 仕様先行作成（spec-first）の実行手順・資料調査エージェント運用 | `skills/harness-define/references/` |
+| 差分反映・実装追随の実行手順・反映エージェント運用 | `skills/harness-update/references/` |
 
 ## 構築されるハーネスの全体像
 
-`harness-init` は本ディレクトリの仕様と雛形に従い、対象プロジェクトへ次を生成する。
+`harness-init`（コード解析ベース）または `harness-define`（対話・資料ベースの spec-first）は本ディレクトリの仕様と雛形に従い、対象プロジェクトへ次を生成する。
 
 | 生成先 | 役割 |
 |--------|------|
 | `<repo-root>/CLAUDE.md` | ハーネス入口（`@.claude/CLAUDE.md` の import。既存があれば追記、無ければ最小スタブを作成） |
 | `.claude/CLAUDE.md` | プロジェクト概要・技術スタック（常時読込・100 行以内） |
+| `.claude/references/requirements/` | 要件定義書（任意。spec-first 運用時に `harness-define` が生成） |
 | `.claude/references/specs/` | 仕様設計書（画面遷移・画面構成・業務ルール・アプリ動作） |
 | `.claude/references/system-designs/` | 詳細設計書（specs 対応・実装で詳細化すべき設計情報） |
 | `.claude/references/flows/` | 画面位置・アクセス手順 |
@@ -42,6 +44,6 @@ project-harness プラグインのプラグイン共通リソース（SSOT）の
 
 1. ハーネスにフォルダ種別を追加する場合は [structure-spec.md](structure-spec.md) 節 9.1 の更新対象チェックリストに従う（節 2・3・5.1・templates・仕様バージョンを一括で更新する）
 2. 追加種別の雛形を [templates/](templates/) に作成し、[templates/CLAUDE.md](templates/CLAUDE.md) の一覧へ登録する
-3. 生成・同期の手順（`skills/harness-init/references/procedures.md` / `skills/harness-update/references/procedures.md`）を追随させる
+3. 生成・同期の手順（`skills/harness-init/references/procedures.md` / `skills/harness-define/references/procedures.md` / `skills/harness-update/references/procedures.md`）を追随させる
 4. 同期の判定ロジックを変える場合は [sync-spec.md](sync-spec.md) を更新し、[scripts/hooks/freshness_check.sh](scripts/hooks/freshness_check.sh) を追随させる
 5. 検証項目を変える場合は [authoring-spec.md](authoring-spec.md) 節 6 を更新し、[scripts/validate/validate_harness.sh](scripts/validate/validate_harness.sh) を追随させる

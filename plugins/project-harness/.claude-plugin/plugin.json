@@ -1,7 +1,7 @@
 {
   "name": "project-harness",
-  "version": "1.1.0",
-  "description": "対象プロジェクトに .claude ハーネス（仕様・設計・検証環境の文書体系）を初期構築し、開発変更を随時同期する環境整備プラグイン",
+  "version": "2.0.0",
+  "description": ".claude ハーネス（仕様・設計・検証環境の文書体系）の構築と開発変更の同期を担う環境整備プラグイン。要件定義からの仕様先行作成にも対応",
   "license": "MIT",
   "author": {
     "name": "dmajima"
@@ -14,6 +14,8 @@
     "claude-md",
     "documentation",
     "spec-sync",
+    "spec-first",
+    "requirements",
     "specs",
     "system-designs",
     "flows",
@@ -26,6 +28,7 @@
     "freshness-check",
     "session-start",
     "init",
+    "define",
     "update"
   ]
 }

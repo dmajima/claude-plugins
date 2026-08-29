@@ -11,7 +11,8 @@
 | git リポジトリ | `git rev-parse --show-toplevel` | `git init` の実施可否を `AskUserQuestion` で確認する（拒否時は中断。SHA 基準の同期ができないため）。**非対話モードでは確認せず中断**（無確認 `git init` 禁止） |
 | 既存ハーネス | `.claude/references/.sync-state.json` の存在 | `harness-update` への切替を提案。「再構築して」等の明示指示時のみ、既存内容の扱いを `AskUserQuestion` で確認して続行。**非対話モードでは切替提案のみで中断** |
 | 部分的既存 | `.claude/CLAUDE.md` や `references/` の一部のみ存在（`.sync-state.json` なし） | 既存部分は保持し、不足分のみ生成（既存内容は Phase 4 でマージ。既存ファイルの上書きが必要な場合は個別に `AskUserQuestion` で確認）。**非対話モードでは上書きを行わず既存を保持** し、マージできなかった差分を報告に列挙する |
-| コミット有無 | `git rev-parse HEAD` | コミットが 1 つもない場合、初回コミット後の実行を案内して中断 |
+| コミット有無 | `git rev-parse HEAD` | コミットが 1 つもない場合、初回コミット後の実行を案内して中断する。**解析対象のコード実態も無い（実装前の）プロジェクトの場合は、`harness-define`（spec-first）への切替を案内する**（define はコミット 0 件から実行できる） |
+| コード実態 | ソースファイルの規模を概観する（言語別ファイル数等） | コード実態が無い・僅少（README や設定ファイルのみ等）の場合、解析ベースの構築は TODO だらけのハーネスを生むため、SKILL.md の 2 軸判定表を提示して `harness-define`（対話・資料ベースの spec-first）への切替を `AskUserQuestion` で確認する。**非対話モードでは切替提案のみで中断** |
 
 再構築時の既存内容の扱い（`AskUserQuestion` の 3 択）:
 
@@ -66,16 +67,15 @@
 
 ### 生成順序
 
-1. フォルダ作成: `references/{specs,system-designs,flows,environments,conventions,architecture,decisions}/`
-2. 葉のドキュメント生成（テンプレート → 解析結果で置換）:
-   - `environments/`（検証コマンドの扱いは下記「検証コマンドの実行」を参照）
-   - `conventions/` / `architecture/` / `specs/` / `system-designs/` / `flows/`
-   - `decisions/`（既存資産・コード実態から読み取れた判断のみ。無ければ雛形なしで `CLAUDE.md` のみ）
-   - `glossary.md`（コード・既存ドキュメントから抽出した用語）
-3. 各フォルダの `CLAUDE.md` 索引生成（実体と一致させる）
-4. `references/CLAUDE.md` 生成
-5. `.claude/CLAUDE.md` 生成（100 行以内）
-6. `.sync-state.json` 初期化
+[structure-spec.md](../../../references/structure-spec.md) 節 10 の骨格生成順序（両スキル共通規則）に従う。本スキル固有の生成内容は以下。
+
+- 葉のドキュメントはテンプレートを **解析結果**（ソース根拠）で置換して生成する:
+  - `environments/`（検証コマンドの扱いは下記「検証コマンドの実行」を参照）
+  - `conventions/` / `architecture/` / `specs/` / `system-designs/` / `flows/`
+  - `decisions/`（既存資産・コード実態から読み取れた判断のみ。無ければ雛形なしで `CLAUDE.md` のみ）
+  - `glossary.md`（コード・既存ドキュメントから抽出した用語）
+- frontmatter の `status` は付与しない（code-first 生成のため。[structure-spec.md](../../../references/structure-spec.md) 節 5.2）。テンプレート内の `status` 行・合意ベース注記は削除する
+- `requirements/` は生成しない（spec-first 運用の任意構成。要件定義が必要な場合は `harness-define` で追加する）
 
 ### 検証コマンドの実行（承認必須）
 
@@ -90,12 +90,7 @@
 
 ### gitignore 検査（2 段階）
 
-| 段階 | 検査 | 動作 |
-|------|------|------|
-| 1 | `git check-ignore -q .claude/CLAUDE.md` でハーネス本体が無視されていないか | 無視されている場合、`!.claude/CLAUDE.md` / `!.claude/references/` の否定パターン追加をユーザ承認のうえ提案する。拒否時は「ローカル専用ハーネスとして運用され、チームで同期状態を共有できない」旨を報告に明記する |
-| 2 | `.claude/.local/` が `.gitignore` に含まれるか | 含まれない場合は追記を提案する |
-
-`.gitignore` の変更は `.claude/` 外への書き込みのため、非対話モードでは実施せず報告のみとする。
+[structure-spec.md](../../../references/structure-spec.md) 節 10 手順 7 に従う（ハーネス本体の無視検出 + `.claude/.local/` の登録確認。ユーザ承認必須・非対話モードでは報告のみ）。
 
 ### 生成量が多い場合のエージェント委譲
 
@@ -105,7 +100,7 @@
 
 ```json
 {
-  "harness_spec_version": "1.1",
+  "harness_spec_version": "1.2",
   "last_synced_commit": "<git rev-parse HEAD の結果>",
   "last_synced_at": "<現在時刻 ISO 8601>",
   "initialized_at": "<現在時刻 ISO 8601>",
@@ -125,7 +120,7 @@
 bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/validate/validate_harness.sh" "<対象リポジトリのルート>"
 ```
 
-終了コード 1（違反あり）の場合は検出内容を修正してから再実行する。スクリプトを実行できない環境では該当項目を人手で確認し、その旨を報告に明記する。加えて、`git status --porcelain` で `.claude/` 外への意図しない書き込みが無いことを確認する。
+終了コード 1（違反あり）の場合は検出内容を修正してから再実行する。ただし **承認保留・非対話モードに起因する既知の未達**（ルート `CLAUDE.md` 到達性等。[authoring-spec.md](../../../references/authoring-spec.md) 節 6.1）は修正を試みず、報告で通常の違反と区分して記載する。スクリプトを実行できない環境では該当項目を人手で確認し、その旨を報告に明記する。加えて、`git status --porcelain` で `.claude/` 外への意図しない書き込みが無いことを確認する。
 
 ## Phase 7: 報告
 

@@ -272,7 +272,7 @@
     {
       "name": "project-harness",
       "source": "./plugins/project-harness",
-      "description": "対象プロジェクトに .claude ハーネス（仕様・設計・検証環境の文書体系）を初期構築し、開発変更を随時同期する環境整備プラグイン",
+      "description": ".claude ハーネス（仕様・設計・検証環境の文書体系）の構築と開発変更の同期を担う環境整備プラグイン。要件定義からの仕様先行作成にも対応",
       "category": "developer-tools",
       "author": {
         "name": "dmajima"
@@ -280,9 +280,13 @@
       "keywords": [
         "harness",
         "harness-engineering",
+        "claude-harness",
         "project-setup",
         "claude-md",
         "documentation",
+        "spec-sync",
+        "spec-first",
+        "requirements",
         "specs",
         "system-designs",
         "flows",
@@ -295,6 +299,7 @@
         "freshness-check",
         "session-start",
         "init",
+        "define",
         "update"
       ]
     },
