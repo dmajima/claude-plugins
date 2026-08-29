@@ -21,6 +21,12 @@
 | case-13 | ソースの移動（rename）を検出 | sync-spec 節 2「ソース移動」分類 |
 | case-14 | 全量監査モード（--full） | sync-spec 節 4 |
 | case-15 | 構成仕様バージョンの差異を検出 | sync-spec 節 5 |
+| case-16 | 実装追随の標準（未実装仕様への実装の紐付け） | sync-spec 節 2.1 + Phase 2 手順 4 / Phase 4 |
+| case-17 | 実装追随の対応が一意に推定できない | sync-spec 節 2.1 手順 3 |
+| case-18 | 非対話モードでの実装追随（提案のみ） | SKILL.md 実行モード判定 + sync-spec 節 2.1 手順 5 |
+| case-19 | 全量監査での未実装仕様の保護 | sync-spec 節 4 + Phase 2F |
+| case-20 | 実装追随の突合で記載と実装の乖離を検出 | Phase 4「実装追随の反映」手順 2〜4 |
+| case-21 | ハーネス実体あり・state 不在での起動（state 初期化の提案） | Phase 1 ハーネス存在・コミット有無検査 + sync-spec 節 1 |
 
 ## 実行確認方法
 

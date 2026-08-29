@@ -9,7 +9,8 @@
 | 検査 | 方法 | NG 時の動作 |
 |------|------|------------|
 | git リポジトリ | `git rev-parse --show-toplevel` | 差分検出が成立しないため中断する。`.sync-state.json` が残存しているのに `.git` が無い状態（リポジトリ削除・zip 配布・git 管理外へのコピー）である旨と、git 管理下での再実行を案内する。対話 / 非対話とも動作は同じ（自動 `git init` は行わない。初期化はハーネス再構築を伴うため `harness-init` の責務） |
-| ハーネス存在 | `.claude/references/.sync-state.json` の存在 | `harness-init`（`/project-harness:init`）への切替を提案して終了 |
+| コミット有無 | `git rev-parse HEAD` | コミットが 1 つもない場合、同期基準（HEAD の SHA）が存在せず差分検出も state 初期化も成立しないため中断する。初回コミット後の再実行、またはハーネス未完成なら `harness-define` の再実行（初回コミットの承認ゲートを含む）を案内する |
+| ハーネス存在 | `.claude/references/.sync-state.json` の存在 | 不在でも `.claude/references/` の実体（`CLAUDE.md`・ドキュメント群）が存在する場合は「ハーネス実体あり・state 不在」（spec-first でコミット前に構築され初回コミットが見送られた等）と判定し、**HEAD での state 初期化を提案** する（コミット有無検査を通過済みのため HEAD は存在する）。承認後は全量監査モード（Phase 2F）で記載とソース実態を突合してから state を確立する（**非対話モードでは実施せず中断**）。実体も無い場合は `harness-init`（`/project-harness:init`）または `harness-define`（spec-first）への切替を提案して終了 |
 | state 妥当性 | valid JSON + `last_synced_commit` 保持 | 破損時: HEAD での state 再初期化を提案し、承認後は全量監査モード（Phase 2F）へ切り替える。**非対話モードでは実施せず中断** |
 | SHA 到達可能性 | `git merge-base --is-ancestor <sha> HEAD`（オブジェクト存在のみを見る `cat-file -e` では rebase 後の孤立コミットを検出できない） | rebase / force-push / シャロークローンで到達不能時: 直近の到達可能な基準（`git merge-base <sha> HEAD` の結果 / ユーザ指定コミット）を `AskUserQuestion` で確認。**非対話モードでは実施せず中断** |
 | 仕様バージョン | `.sync-state.json` の `harness_spec_version` と現行仕様の照合 | 下記「仕様バージョンの照合」に従う |
@@ -28,15 +29,18 @@ git diff --name-status -M <last_synced_commit>..HEAD
 | 状態 | 動作 |
 |------|------|
 | 一致 | 通常の差分反映を続行する |
-| 現行がマイナー上位 | 不足フォルダ・不足 frontmatter フィールドを検出し、ユーザ承認のうえ補完してから差分反映へ進む。完了時に `harness_spec_version` を更新する（非対話モードでは補完せず差分を報告のみ） |
+| 現行がマイナー上位 | **必須構成** の不足フォルダ・不足 frontmatter フィールドを検出し、ユーザ承認のうえ補完してから差分反映へ進む。任意要素（`status` フィールド・`requirements/` フォルダ。[structure-spec.md](../../../references/structure-spec.md) 節 9.0）は補完しない。完了時に `harness_spec_version` を更新する（非対話モードでは補完せず差分を報告のみ） |
 | 現行がメジャー上位 | 破壊的変更のため update では移行できない旨を報告し、`harness-init` の再構築（保持マージ）を案内して終了する |
 
 ## Phase 2: 影響分析
 
-1. `references/` 配下全ドキュメント（`CLAUDE.md` / `.sync-state.json` を除く）の frontmatter `sources` を収集する。ドキュメント数が多い場合は本文を読まず、先頭の `---` から次の `---` までの frontmatter ブロックのみを抽出して収集コストを抑える（`sources` / `related` が複数エントリでも取りこぼさないよう固定行数では切らない）
+1. `references/` 配下全ドキュメント（`CLAUDE.md` / `.sync-state.json` を除く）の frontmatter `sources` と `status` を収集する。ドキュメント数が多い場合は本文を読まず、先頭の `---` から次の `---` までの frontmatter ブロックのみを抽出して収集コストを抑える（`sources` / `related` が複数エントリでも取りこぼさないよう固定行数では切らない）
 2. 変更ファイルをグロブ照合し、[sync-spec.md](../../../references/sync-spec.md) 節 2 の 5 分類（既存更新 / ソース移動 / 新規候補 / 整理候補 / ハーネス直接編集）へ仕分ける。グロブ記法は [structure-spec.md](../../../references/structure-spec.md) 節 5.1
 3. rename（`R` ステータス）は旧パスで既存 `sources` を照合し、マッチしたドキュメントの `sources` を新パスへ書き換える対象とする（整理候補として扱わない）
-4. 新規候補は「まとまった機能単位」でグルーピングする（1 ファイルの追加ごとに 1 ドキュメントを乱造しない。既存ドキュメントの `sources` 拡張で足りる場合はそちらを優先）
+4. どの `sources` にもマッチしない追加ファイル群は、新規候補とする前に **実装追随の照合** を行う（[sync-spec.md](../../../references/sync-spec.md) 節 2.1）:
+   - `status: draft` / `agreed` のドキュメント（`status` 明示が条件）を抽出し、追加ファイル群との対応をパス・命名の類似性 → 実装内容と仕様記載の一致の順で照合する
+   - 対応が一意に推定できる場合のみ「実装追随候補」とする。複数候補で絞り込めない場合は候補一覧をユーザに提示して選択させ、それも困難なら新規候補へフォールバックする
+5. 残った追加ファイル群を新規候補として「まとまった機能単位」でグルーピングする（1 ファイルの追加ごとに 1 ドキュメントを乱造しない。既存ドキュメントの `sources` 拡張で足りる場合はそちらを優先）
 
 ### コミットメッセージの活用
 
@@ -48,10 +52,11 @@ git diff --name-status -M <last_synced_commit>..HEAD
 
 差分検出を行わず、`references/` 配下 **全ドキュメント** を対象に、記載内容とソース実態の乖離を洗い出す。
 
-1. 全ドキュメントの `sources` が指すソースの実在を確認する（消失していれば整理候補）
-2. `sources: []` のドキュメント（用語集・根拠ファイルのない ADR 等）は記載内容とコード実態を突合する
-3. 検出した乖離を Phase 3 の反映計画として提示する
-4. 以降は通常モードと同じ（Phase 4 以降）
+1. 全ドキュメントの `sources` が指すソースの実在を確認する（消失していれば整理候補）。ただし **`status: draft` / `agreed` の未実装ドキュメントと `sources: []` のドキュメントは整理候補の対象外**（未実装の仕様は対応ソースが 0 件で正常。[sync-spec.md](../../../references/sync-spec.md) 節 4）
+2. `sources: []` のドキュメント（用語集・要件定義書・根拠ファイルのない ADR 等）は記載内容とコード実態を突合する（未実装仕様は実装が無いことが前提のため、記載の自己整合と索引整合のみ確認する）
+3. `status: draft` / `agreed` のドキュメントに対応する実装が既に存在していないかを確認する（存在すれば実装追随候補として提示する。[sync-spec.md](../../../references/sync-spec.md) 節 2.1）
+4. 検出した乖離を Phase 3 の反映計画として提示する
+5. 以降は通常モードと同じ（Phase 4 以降）
 
 ## Phase 3: 反映計画の確認
 
@@ -61,13 +66,14 @@ git diff --name-status -M <last_synced_commit>..HEAD
 |------|-------------|---------------------|-----------------|
 | 更新 | `specs/login-screen.md` | `src/auth/...`（M） | バリデーション仕様の変更反映 |
 | ソース移動 | `system-designs/report.md` | `src/report/ → src/features/report/`（R） | `sources` を新パスへ更新 |
+| 実装追随 | `specs/order-entry.md`（`status: agreed`） | `src/features/order/...`（A 群） | `sources` 設定 + 記載と実装の突合 + `implemented` 昇格 |
 | 新規 | `specs/{新機能名}.md`（提案） | `src/report/...`（A 群） | 新機能の仕様書作成 |
 | 整理候補 | `flows/legacy-menu.md` | `src/menu/...`（D） | 対応ソース全削除のためアーカイブ提案 |
 
 | モード | 確認方法 |
 |-------|---------|
-| 対話 | `AskUserQuestion`（全反映 / 更新のみ / 個別選択）。整理候補は削除・アーカイブ・保持を確認する |
-| 非対話 | 更新・ソース移動・新規を全反映。整理候補は **実施せず** 報告のみ |
+| 対話 | `AskUserQuestion`（全反映 / 更新のみ / 個別選択）。整理候補と実装追随は「全反映」の **対象外** であり、整理候補は削除・アーカイブ・保持を、実装追随は紐付け実施の可否を **常に個別に** 確認する |
+| 非対話 | 更新・ソース移動・新規を全反映。整理候補・**実装追随** は **実施せず** 報告のみ |
 
 整理候補・個別選択が複数件ある場合は、1 回の `AskUserQuestion` 呼び出しへまとめて提示する（選択肢の上限を超える場合のみ複数回に分割する）。1 件ずつ確認を繰り返して長い割り込みの連鎖を作らない。
 
@@ -81,6 +87,16 @@ git diff --name-status -M <last_synced_commit>..HEAD
 - 既存の `TODO:` が今回の変更で確認可能になった場合は解消する
 - 新規ドキュメントはテンプレート（`${CLAUDE_PLUGIN_ROOT}/references/templates/`）から生成し、frontmatter `sources` を必ず設定する
 - 秘匿値を転記しない（[authoring-spec.md](../../../references/authoring-spec.md) 節 2）
+
+### 実装追随の反映（承認済みの実装追随候補のみ）
+
+[sync-spec.md](../../../references/sync-spec.md) 節 2.1 に従う。
+
+1. 対象ドキュメントの `sources` へ実装パスのグロブを設定する（記法は [structure-spec.md](../../../references/structure-spec.md) 節 5.1）
+2. 記載内容と実装を突合し、乖離を **報告にまとめる**（ドキュメントの書き換え・実装の修正は行わない。扱いはユーザ判断）
+3. 乖離なし、または乖離をユーザが確認してドキュメント側の更新を承認した場合、更新を反映のうえ `status: implemented` へ昇格し、合意ベースの定型注記（[authoring-spec.md](../../../references/authoring-spec.md) 節 1.1）を除去する
+4. 乖離が未解消のままユーザが判断を保留した場合、`status` は昇格させず（`sources` 設定のみ実施し `agreed` のまま）、報告に「実装追随は部分完了（乖離未解消）」と明記する
+5. 実装で確定した `TODO(未確定事項)` があれば解消する
 
 ### エージェント委譲（反映対象 5 件超過時）
 
@@ -110,12 +126,13 @@ git diff --name-status -M <last_synced_commit>..HEAD
 bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/validate/validate_harness.sh" "<対象リポジトリのルート>"
 ```
 
-加えて、`git status --porcelain` で `.claude/` 外への意図しない書き込みが無いことを確認する。
+**承認保留・非対話モードに起因する既知の未達**（ルート `CLAUDE.md` 到達性等。[authoring-spec.md](../../../references/authoring-spec.md) 節 6.1）は修正を試みず、報告で通常の違反と区分して記載する。加えて、`git status --porcelain` で `.claude/` 外への意図しない書き込みが無いことを確認する。
 
 ## Phase 7: 報告
 
-- 反映結果表（更新 / ソース移動 / 新規 / 整理提案の各件数と一覧）
-- スキップしたもの（非対話時の整理候補等）とその理由
+- 反映結果表（更新 / ソース移動 / 実装追随 / 新規 / 整理提案の各件数と一覧）
+- 実装追随を実施した場合: 記載と実装の乖離の有無（乖離があれば内容と、ドキュメント修正 / 実装修正のどちらで解消するかの判断依頼）
+- スキップしたもの（非対話時の整理候補・実装追随等）とその理由
 - 検証スクリプトの結果
 - `TODO:` の解消数・新規発生数
 - 未コミット変更の有無（あれば「コミット後の再実行で反映される」旨）

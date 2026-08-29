@@ -1,6 +1,6 @@
 # project-harness references/
 
-Claude エージェントが `project-harness` プラグインで対象プロジェクトの `.claude` ハーネスを構築・同期する際の原則とナビゲーション。
+Claude エージェントが `project-harness` プラグインで対象プロジェクトの `.claude` ハーネスを構築（コード解析ベース / 対話・資料ベースの spec-first）・同期する際の原則とナビゲーション。
 
 ## 目的と範囲
 
@@ -23,11 +23,13 @@ Claude エージェントが `project-harness` プラグインで対象プロジ
 
 | タスク | 最初に読む | 次に読む |
 |-------|----------|---------|
-| **ハーネスを初期構築する** | [structure-spec.md](structure-spec.md) | `skills/harness-init/references/procedures.md` |
+| **ハーネスを初期構築する（コード解析）** | [structure-spec.md](structure-spec.md) | `skills/harness-init/references/procedures.md` |
+| **要件定義・仕様を先行作成する（spec-first）** | [structure-spec.md](structure-spec.md) 節 5.2・10 | `skills/harness-define/references/procedures.md` |
 | **構築するフォルダ・ファイルの定義を知る** | [structure-spec.md](structure-spec.md) 節 2〜3 | [templates/CLAUDE.md](templates/CLAUDE.md) |
-| **ドキュメントを書く（原則・秘匿値・未信頼入力）** | [authoring-spec.md](authoring-spec.md) 節 1〜3 | [templates/CLAUDE.md](templates/CLAUDE.md) |
-| **frontmatter・sources を書く / 読む** | [structure-spec.md](structure-spec.md) 節 5・5.1 | [sync-spec.md](sync-spec.md) 節 2（照合用途） |
+| **ドキュメントを書く（原則・根拠種別・秘匿値・未信頼入力）** | [authoring-spec.md](authoring-spec.md) 節 1〜3 | [templates/CLAUDE.md](templates/CLAUDE.md) |
+| **frontmatter・sources・status を書く / 読む** | [structure-spec.md](structure-spec.md) 節 5・5.1・5.2 | [sync-spec.md](sync-spec.md) 節 2（照合用途） |
 | **コード変更をハーネスへ反映する** | [sync-spec.md](sync-spec.md) 節 2 | `skills/harness-update/references/procedures.md` |
+| **実装を未実装仕様に紐付ける（実装追随）** | [sync-spec.md](sync-spec.md) 節 2.1 | `skills/harness-update/references/procedures.md` Phase 4 |
 | **同期状態（.sync-state.json）を扱う** | [sync-spec.md](sync-spec.md) 節 1・5 | [scripts/CLAUDE.md](scripts/CLAUDE.md) |
 | **不要になったドキュメントを整理する** | [structure-spec.md](structure-spec.md) 節 6.1 | `skills/harness-update/references/procedures.md` Phase 3 |
 | **生成物を検証する** | [authoring-spec.md](authoring-spec.md) 節 6 | [scripts/validate/validate_harness.sh](scripts/validate/validate_harness.sh) |

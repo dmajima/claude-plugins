@@ -6,6 +6,7 @@
 
 | フォルダ | 用途 | 索引 |
 |---------|------|------|
+| `requirements/` | 要件定義書（背景・目的・スコープ・機能要求・非機能要求）。spec-first 運用時のみ存在 | [requirements/CLAUDE.md](requirements/CLAUDE.md) |
 | `specs/` | 仕様設計書（画面遷移・画面構成・業務ルール・アプリ動作） | [specs/CLAUDE.md](specs/CLAUDE.md) |
 | `system-designs/` | 詳細設計書（specs 対応・実装で詳細化すべき設計情報） | [system-designs/CLAUDE.md](system-designs/CLAUDE.md) |
 | `flows/` | 画面位置・アクセス手順（URL・ナビゲーション経路・前提条件） | [flows/CLAUDE.md](flows/CLAUDE.md) |
@@ -15,12 +16,15 @@
 | `decisions/` | ADR（設計判断記録） | [decisions/CLAUDE.md](decisions/CLAUDE.md) |
 | `glossary.md` | ドメイン用語集 | （単一ファイル） |
 
+{requirements/ を生成しない場合（code-first 構築で要件定義書を持たない場合）は、上表の requirements/ 行と「情報の置き場所」の requirements/ 行を削除する}
+
 ## ドキュメント整理ルール
 
 ### 情報の置き場所
 
 | 情報の種類 | 置き場所 |
 |-----------|---------|
+| 「なぜ・何のために作るか」（背景・スコープ・機能要求・非機能要求） | `requirements/`（spec-first 運用時） |
 | 「何を作るか」（機能仕様・業務ルール） | `specs/` |
 | 「どう作るか」（クラス構成・処理フロー・データアクセス） | `system-designs/` |
 | 「どこにあるか・どう到達するか」（画面の場所・導線） | `flows/` |
@@ -32,8 +36,9 @@
 
 ### 記載規則
 
-- 各ドキュメントは先頭に frontmatter（`title` / `sources` / `related` / `updated`）を持つ
-- `sources` には対応するソースコードパスのグロブを記載する（変更同期の検出キー）
+- 各ドキュメントは先頭に frontmatter（`title` / `sources` / `related` / `updated`、任意で `status`）を持つ
+- `sources` には対応するソースコードパスのグロブを記載する（変更同期の検出キー）。未実装の仕様ドキュメント（`status: draft` / `agreed`）は `[]` とする
+- `status` は仕様ライフサイクル状態（`draft` = 作成中 / `agreed` = 合意済み・実装待ち / `implemented` = 実装済み）。不在は `implemented` 扱い
 - ファイル名は kebab-case。ADR のみ `ADR-NNN_<slug>.md` 形式
 - 図解は mermaid 記法を使用する
 - 未確認・不明箇所は `TODO:` として明示する（推測で記載しない）

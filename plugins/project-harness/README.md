@@ -1,6 +1,6 @@
 # project-harness
 
-対象プロジェクトに AI エージェントの足場となる `.claude` ハーネス（`CLAUDE.md` + `references/` 配下の仕様・設計・検証環境ドキュメント体系）を初期構築し、開発・修正で生じたコード変更を随時ドキュメントへ同期する環境整備プラグイン。
+対象プロジェクトに AI エージェントの足場となる `.claude` ハーネス（`CLAUDE.md` + `references/` 配下の仕様・設計・検証環境ドキュメント体系）を初期構築し、開発・修正で生じたコード変更を随時ドキュメントへ同期する環境整備プラグイン。プログラム実態がない状態からの要件定義・仕様先行作成（spec-first）にも対応する。
 
 ## このドキュメントについて
 
@@ -11,11 +11,13 @@
 | 機能 | 種別 | 説明 |
 |-----|------|------|
 | `harness-init` | スキル | プロジェクトを解析（サブエージェント並列調査）して `.claude` ハーネスを初期構築し、`.sync-state.json` を初期化 |
-| `harness-update` | スキル | 最終同期コミットと HEAD の差分から影響ドキュメントを特定し、記載・索引・同期状態を最新化（`--full` で全量監査） |
+| `harness-define` | スキル | プログラム実態がない状態で、対話・提供資料から要件定義書・仕様設計書（`status: draft` / `agreed`）とハーネス骨格を作成（spec-first） |
+| `harness-update` | スキル | 最終同期コミットと HEAD の差分から影響ドキュメントを特定し、記載・索引・同期状態を最新化。spec-first で作成した仕様への実装の紐付け（実装追随）も担う（`--full` で全量監査） |
 | `/project-harness:init` | コマンド | `harness-init` への薄いラッパー |
+| `/project-harness:define` | コマンド | `harness-define` への薄いラッパー |
 | `/project-harness:update` | コマンド | `harness-update` への薄いラッパー |
-| 鮮度検知フック | フック（SessionStart） | 最終同期からの乖離コミット数が閾値（既定 10）に達したとき `/project-harness:update` の実行を推奨通知 |
-| ハーネス検証スクリプト | スクリプト | 索引一致・frontmatter・行数・プレースホルダ・秘匿値・到達性を機械検証（両スキルの検証フェーズが実行） |
+| 鮮度検知フック | フック（SessionStart） | 最終同期からの乖離コミット数が閾値（既定 10。spec-first 構築時は 30）に達したとき `/project-harness:update` の実行を推奨通知 |
+| ハーネス検証スクリプト | スクリプト | 索引一致・frontmatter・行数・プレースホルダ・秘匿値・到達性・`status` 妥当値を機械検証（各スキルの検証フェーズが実行） |
 
 ## 構築されるハーネス構成
 
@@ -29,6 +31,7 @@
     └── references/
         ├── CLAUDE.md              # ドキュメント索引・整理ルール
         ├── .sync-state.json       # 同期状態（仕様バージョン・最終同期コミット・閾値）
+        ├── requirements/          # 要件定義書（任意。spec-first 運用時に harness-define が生成）
         ├── specs/                 # 仕様設計書（画面遷移・画面構成・業務ルール・アプリ動作）
         ├── system-designs/        # 詳細設計書（specs 対応・実装で詳細化すべき設計情報）
         ├── flows/                 # 画面位置・アクセス手順
@@ -39,7 +42,7 @@
         └── glossary.md            # ドメイン用語集
 ```
 
-各ドキュメントは frontmatter の `sources`（対応ソースパスのグロブ）を持ち、`harness-update` が git 差分と照合して影響ドキュメントだけを更新します。大規模・モノレポではパッケージ単位のサブ名前空間（`specs/<package>/<feature>.md`）を適用できます。
+各ドキュメントは frontmatter の `sources`（対応ソースパスのグロブ）を持ち、`harness-update` が git 差分と照合して影響ドキュメントだけを更新します。spec-first で作成した未実装の仕様は `status: draft` / `agreed` と `sources: []` を持ち、実装が始まると `harness-update` が実装パスの紐付け（実装追随）を提案します。大規模・モノレポではパッケージ単位のサブ名前空間（`specs/<package>/<feature>.md`）を適用できます。
 
 ## 導入手順
 
@@ -110,7 +113,7 @@ git checkout main
 
 ### 動作確認
 
-インストール後に Claude Code を再起動し、`/project-harness:` まで入力して `init` / `update` が補完候補に表示されることを確認します。
+インストール後に Claude Code を再起動し、`/project-harness:` まで入力して `init` / `define` / `update` が補完候補に表示されることを確認します。
 
 ## 使い方
 
@@ -136,6 +139,23 @@ git checkout main
 4. `environments/` に記載する検証コマンドの実行可否を確認（対象リポジトリのコード実行を伴うため）
 5. ハーネス一式が生成され、検証スクリプトが実行され、`.sync-state.json` が初期化される
 
+### 要件定義・仕様の先行作成（spec-first）
+
+コードが存在しない（またはこれから作る）プロジェクトでは、解析ベースの `init` の代わりに対話ベースの `define` を使います:
+
+```text
+/project-harness:define
+```
+
+1. git 未初期化なら `git init` の実施可否を確認（コミット 0 件でも実行可能）
+2. 提供資料（要件メモ・議事録等）があれば取り込み方針を確認（原本は変更されない）
+3. 対話で要件をヒアリング（目的 → 機能一覧 → 画面・フロー → ルール・用語 → 非機能・制約）
+4. `requirements/` + `specs/` 等の仕様先行ドキュメント（`status: draft`）とハーネス骨格が生成される
+5. 合意確認で承認したドキュメントが `status: agreed` になる
+6. コミット 0 件の場合、`.claude/` 配下の初回コミット（承認制）で同期基準が確立される
+
+実装が始まったら `/project-harness:update` を実行すると、未実装仕様と実装ファイルの対応が照合され、`sources` の紐付けと `status: implemented` への昇格が提案されます（実装追随）。以後は通常の同期サイクルに合流します。構築済みハーネスがあるプロジェクトでも、未実装機能の仕様を先行作成する用途で `define` を使えます。
+
 ### 開発変更の同期
 
 ```text
@@ -157,7 +177,8 @@ git checkout main
 | 発話例 | 起動 |
 |-------|-----|
 | 「プロジェクトの Claude 環境を整備して」「仕様・設計ドキュメント体系を作って」 | `harness-init` |
-| 「ハーネスを更新して」「変更をドキュメントに反映して」 | `harness-update` |
+| 「要件定義から始めたい」「実装前に仕様を作って」「新機能の仕様を先行作成して」 | `harness-define` |
+| 「ハーネスを更新して」「変更をドキュメントに反映して」「実装を仕様に紐付けて」 | `harness-update` |
 
 ### 他機能との関係
 
@@ -177,6 +198,7 @@ plugins/project-harness/
 ├── LICENSE
 ├── commands/
 │   ├── init.md                     # /project-harness:init
+│   ├── define.md                   # /project-harness:define
 │   └── update.md                   # /project-harness:update
 ├── hooks/
 │   └── hooks.json                  # SessionStart 鮮度検知フック
@@ -192,10 +214,15 @@ plugins/project-harness/
 │   │   │   └── freshness_check.sh  # 鮮度検知スクリプト
 │   │   └── validate/
 │   │       └── validate_harness.sh # ハーネス健全性の検証スクリプト
-│   └── templates/                  # 対象プロジェクトへ配るドキュメント雛形 11 種
+│   └── templates/                  # 対象プロジェクトへ配るドキュメント雛形 12 種
 │       └── CLAUDE.md
 └── skills/
     ├── harness-init/
+    │   ├── SKILL.md
+    │   ├── README.md
+    │   ├── references/             # procedures.md / agents.md
+    │   └── evals/                  # 動作分岐の期待挙動 13 ケース
+    ├── harness-define/
     │   ├── SKILL.md
     │   ├── README.md
     │   ├── references/             # procedures.md / agents.md
@@ -204,16 +231,16 @@ plugins/project-harness/
         ├── SKILL.md
         ├── README.md
         ├── references/             # procedures.md / agents.md
-        └── evals/                  # 動作分岐の期待挙動 15 ケース
+        └── evals/                  # 動作分岐の期待挙動 21 ケース
 ```
 
 ## カスタマイズ・拡張
 
 | 変更したいこと | 変更箇所 |
 |--------------|---------|
-| ハーネスのフォルダ構成・frontmatter と sources 記法・モノレポ適用 | `references/structure-spec.md`（SSOT。追加時の更新対象は節 9.1） |
-| 記載の原則・秘匿情報の扱い・検証項目 | `references/authoring-spec.md`（SSOT） |
-| 同期の仕組み（state スキーマ・検出フロー・フック挙動） | `references/sync-spec.md`（SSOT） |
+| ハーネスのフォルダ構成・frontmatter と sources 記法・`status` ライフサイクル・骨格生成順序・モノレポ適用 | `references/structure-spec.md`（SSOT。追加時の更新対象は節 9.1） |
+| 記載の原則（根拠種別）・秘匿情報の扱い・検証項目 | `references/authoring-spec.md`（SSOT） |
+| 同期の仕組み（state スキーマ・検出フロー・実装追随・フック挙動） | `references/sync-spec.md`（SSOT） |
 | 生成ドキュメントの雛形 | `references/templates/` 配下 |
 | 鮮度通知の閾値（プロジェクトごと） | 対象プロジェクトの `.claude/references/.sync-state.json` の `threshold_commits` |
 | フックの動作診断 | 環境変数 `PROJECT_HARNESS_DEBUG` を設定して起動すると、判定経路が stderr に出力されます |

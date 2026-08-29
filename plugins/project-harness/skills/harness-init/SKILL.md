@@ -1,6 +1,6 @@
 ---
 name: harness-init
-description: 対象プロジェクトを解析して .claude ハーネス（CLAUDE.md + references/ 配下の仕様・設計・検証環境ドキュメント体系）を初期構築するスキル。「プロジェクトの Claude 環境を整備して」「仕様・設計ドキュメント体系を作って」「.claude ハーネスを初期化して」等の依頼で起動する。Use when initializing or rebuilding the .claude harness. SKIP when the harness exists and only needs syncing (use harness-update).
+description: 対象プロジェクトを解析して .claude ハーネス（CLAUDE.md + references/ 配下の仕様・設計・検証環境ドキュメント体系）を初期構築するスキル。「プロジェクトの Claude 環境を整備して」「.claude ハーネスを初期化して」「ハーネスを作り直して」等の依頼で起動する。Use when building or rebuilding the .claude harness from code. SKIP when only syncing (use harness-update) or no code exists yet (use harness-define).
 ---
 
 # Harness Init
@@ -20,6 +20,7 @@ description: 対象プロジェクトを解析して .claude ハーネス（CLAU
 | 業務 | 担当スキル |
 |-----|----------|
 | 構築済みハーネスへのコード変更の差分反映 | `harness-update` |
+| プログラム実態がない状態での要件定義・仕様先行作成（spec-first） | `harness-define` |
 | 対象プロジェクトのコード実装・修正 | （本プラグイン対象外） |
 
 ## トリガー条件
@@ -33,6 +34,16 @@ description: 対象プロジェクトを解析して .claude ハーネス（CLAU
 このスキルを起動しないケース:
 
 - ハーネス構築済みプロジェクトでの変更反映（→ `harness-update`）
+- 解析対象のコードが無い・実装前の要件定義や仕様作成（→ `harness-define`）
+
+### スキル選択の 2 軸判定
+
+| コード実態 | ハーネス | 適切なスキル |
+|-----------|---------|-------------|
+| あり | なし | **harness-init**（コード解析で構築） |
+| あり | あり（コード変更を反映したい） | `harness-update` |
+| あり | あり（未実装機能の仕様を先行作成したい） | `harness-define` |
+| なし・僅少 | なし / あり | `harness-define`（対話・資料ベースの spec-first） |
 
 ## 前提
 

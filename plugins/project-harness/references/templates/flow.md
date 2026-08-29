@@ -1,13 +1,17 @@
 ---
 title: {画面・機能名}アクセス手順
 sources:
-  - {対応ソースのグロブ}
+  - {対応ソースのグロブ。未実装（status: draft / agreed）の場合はリスト全体を [] に置き換える}
 related:
   - specs/{対応する仕様書}.md
+status: {draft / agreed / implemented。spec-first（harness-define）生成時は draft。コード解析から生成した場合はこの行ごと削除}
 updated: {YYYY-MM-DD}
 ---
 
 # {画面・機能名}アクセス手順
+
+{status が draft / agreed の場合のみ次行の注記を残し、implemented への昇格時に削除する。コード解析から生成した場合は注記ごと削除}
+> **注記**: 本書は合意ベース（ユーザとの対話・提供資料に基づく記載）であり、実装による検証を経ていない。
 
 ## 画面の位置
 

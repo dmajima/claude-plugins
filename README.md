@@ -21,7 +21,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 | `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.11.2 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 | `maintenance` | Claude Code 環境のメンテナンス統合プラグイン（プラグイン一括更新 / 古い作業フォルダ整理 / Git 経由設定同期） | 1.0.0 | `/plugin install maintenance@dmajima-claude-plugins` |
 | `meeting-minutes` | 会議の文字起こし・録画データから構造化議事録を作成し Markdown / docx 出力 | 1.3.0 | `/plugin install meeting-minutes@dmajima-claude-plugins` |
-| `project-harness` | 対象プロジェクトに .claude ハーネス（仕様・設計・検証環境の文書体系）を初期構築し、開発変更を随時同期する環境整備プラグイン | 1.1.0 | `/plugin install project-harness@dmajima-claude-plugins` |
+| `project-harness` | .claude ハーネス（仕様・設計・検証環境の文書体系）の構築と開発変更の同期を担う環境整備プラグイン。要件定義からの仕様先行作成にも対応 | 2.0.0 | `/plugin install project-harness@dmajima-claude-plugins` |
 | `session-usage` | セッションのトークン消費量をJSONLから集計し、AskUserQuestion対話メニューで操作する診断プラグイン | 1.0.1 | `/plugin install session-usage@dmajima-claude-plugins` |
 | `skill-router` | プロンプト送信時に available-skills を自動スコアリングし、フック注入で適合スキルを推奨。完全ローカルの埋め込み意味判定をオプトインで搭載（既定無効・外部送信なし） | 1.0.0 | `/plugin install skill-router@dmajima-claude-plugins` |
 

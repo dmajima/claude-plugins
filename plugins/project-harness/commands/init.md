@@ -25,7 +25,7 @@ argument-hint: "[対象パス] [--non-interactive]"
 
 このコマンドは薄いラッパーであり、前提確認・既存資産調査・プロジェクト解析・ハーネス生成・同期状態初期化の実処理はすべて `harness-init` スキルが行う。
 
-ハーネスが構築済み（`.claude/references/.sync-state.json` が存在）の場合、スキルは `/project-harness:update` への切替を提案する。
+ハーネスが構築済み（`.claude/references/.sync-state.json` が存在）の場合、スキルは `/project-harness:update` への切替を提案する。解析対象のコード実態が無い（実装前の）プロジェクトでは `/project-harness:define`（spec-first の要件定義・仕様先行作成）への切替を提案する。
 
 このコマンドは対象プロジェクトに `.claude` ハーネスを構築するものであり、Claude Code 組み込みの `/init`（リポジトリルートの `CLAUDE.md` を生成する機能）とは別。組み込み `/init` で作られたルート `CLAUDE.md` が既にある場合、本コマンドはその内容を取り込んだうえで `@.claude/CLAUDE.md` の import 行を追記する（既存記述は削除しない）。
 
