@@ -1,0 +1,30 @@
+{
+  "name": "design-bridge",
+  "version": "0.1.0",
+  "description": "Markdown 画面設計書とモック HTML を claude.ai/design へ同期し未反映を Stop フックで防止",
+  "author": {
+    "name": "dmajima"
+  },
+  "homepage": "https://github.com/dmajima/claude-plugins/tree/main/plugins/design-bridge",
+  "repository": "https://github.com/dmajima/claude-plugins",
+  "license": "MIT",
+  "category": "developer-tools",
+  "keywords": [
+    "design",
+    "design-bridge",
+    "claude-design",
+    "design-system",
+    "design-sync",
+    "screen-design",
+    "screen-spec",
+    "mockup",
+    "markdown",
+    "specification",
+    "screenshot",
+    "playwright",
+    "hooks",
+    "ssot",
+    "ui"
+  ],
+  "dependencies": []
+}
