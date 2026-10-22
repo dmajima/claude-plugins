@@ -1,0 +1,14 @@
+# design-bridge プラグイン共通 依存パッケージ（全スキルの依存をマージ・ADR-024 準拠）
+# - design-push: playwright（モック HTML のスクリーンショット生成）
+# - design-init / design-mock / design-pull / design-status: 標準ライブラリのみ（依存追加なし）
+#
+# 【セットアップ】
+# venv 構築後、ブラウザバイナリの取得が別途必要:
+#   "<venv>/Scripts/python.exe" -m playwright install chromium
+#
+# 【CVE 監視ポリシー】
+# - 定期的に `pip-audit` または `osv-scanner` で CVE 公開状況を確認すること
+# - バージョン上げ時は pip install 後にスクリーンショット生成の動作確認を行い pin を更新する
+# - 同一マーケットプレイスの convert-doc と同じ pin を使用している（動作実績のあるバージョン）
+
+playwright==1.48.0

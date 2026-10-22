@@ -38,7 +38,7 @@ Markdown の画面設計書だけでは画面イメージが伝わらず、か�
 
 - Claude Code がインストール済み
 - claude.ai アカウントで `/design-login` を実行し、design-system へのアクセスを認可済みであること
-- Python 3.10 以上（スクリーンショット生成に使用。`design-init` がプラグイン専用 venv を構築します）
+- Python 3.9 以上（スクリーンショット生成に使用。`design-init` が venv を構築します）
 
 ### A. マーケットプレイス経由インストール（推奨）
 
@@ -92,7 +92,7 @@ git checkout main
 
 プラグイン依存なし（`plugin.json` の `dependencies` は空）。ただし以下の外部ツールが利用者環境に必要です。
 
-- Python 3.10+（`design-init` が構築する venv 上で Playwright を動かし、モックのスクリーンショットを生成します）
+- Python 3.9+（`design-init` が構築する venv 上で Playwright を動かし、モックのスクリーンショットを生成します）
 - Claude Code の `DesignSync` ツール（`/design-login` による design-system 認可が必要）
 
 ### 動作確認
