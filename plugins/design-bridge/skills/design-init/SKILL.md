@@ -121,7 +121,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" \
   --project-root "<プロジェクトルート>"
 ```
 
-venv は `.claude/.local/plugins/design-bridge/.venv` に永続構築される。Chromium のダウンロード（数百 MB）が初回に発生するため、所要時間をユーザーへ事前に伝える。すぐに構築しない場合は `--skip-browser` で Python 依存のみ入れ、後から `python -m playwright install chromium` を実行する案内を残す。
+venv は `.claude/.local/plugins/design-bridge/.venv` に永続構築される。Chromium のダウンロード（展開後 約 690 MB）が初回に発生するため、所要時間をユーザーへ事前に伝える。すぐに構築しない場合は `--skip-browser` で Python 依存のみ入れ、後から `python -m playwright install chromium` を実行する案内を残す。
 
 ### 7. 導入完了の報告
 

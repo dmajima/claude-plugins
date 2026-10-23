@@ -38,7 +38,7 @@
 ### Phase 6: venv の構築
 - `bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" --project-root "<プロジェクトルート>"` を実行する
 - 非対話モードは既定値で確定して進行するため `--skip-browser` は付けず、Chromium まで導入する
-- Chromium のダウンロード（数百 MB）が発生することを実行前に伝える
+- Chromium のダウンロード（展開後 約 690 MB）が発生することを実行前に伝える
 
 ### Phase 7: 導入完了の報告
 - 既定値で確定した項目一覧

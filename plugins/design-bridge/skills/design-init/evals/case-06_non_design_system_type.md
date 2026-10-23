@@ -36,7 +36,7 @@
 
 ### Phase 6: venv の構築
 - `bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh" --project-root "<プロジェクトルート>"` を実行する
-- Chromium のダウンロード（数百 MB）が初回に発生することを事前に伝える。後回しにする場合は `--skip-browser` を使う
+- Chromium のダウンロード（展開後 約 690 MB）が初回に発生することを事前に伝える。後回しにする場合は `--skip-browser` を使う
 
 ### Phase 7: 導入完了の報告
 - 最終的に採用した design-system プロジェクト名と ID

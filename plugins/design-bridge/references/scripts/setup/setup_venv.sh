@@ -5,7 +5,7 @@
 #
 # venv はセッション作業領域ではなく、プロジェクトのローカルデータ領域
 # （.claude/.local/plugins/design-bridge/.venv）へ永続構築する。Playwright の
-# Chromium バイナリは数百 MB あり、セッションごとに作り直すのは現実的でない
+# Chromium バイナリは展開後 約 690 MB あり、セッションごとに作り直すのは現実的でない
 # ため、本プラグインが自前でライフサイクルを管理する（teardown_venv.sh で
 # 明示的に削除できる）。
 #
@@ -97,7 +97,7 @@ else
 fi
 
 if [[ "$skip_browser" == false ]]; then
-  echo "[OK] Chromium を導入します（初回は数百 MB のダウンロードが発生します）"
+  echo "[OK] Chromium を導入します（初回はダウンロードが発生し、展開後 約 690 MB を使用します）"
   if ! "$python_exe" -m playwright install chromium; then
     echo "[WARN] Chromium の導入に失敗しました。スクリーンショット生成は動作しません。" >&2
     echo "       後から次を実行してください: \"$python_exe\" -m playwright install chromium" >&2

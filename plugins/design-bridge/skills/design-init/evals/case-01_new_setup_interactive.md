@@ -44,7 +44,7 @@
   ```
 
 - venv の作成先が `.claude/.local/plugins/design-bridge/.venv`（永続）であることを伝える
-- Chromium のダウンロード（数百 MB）が初回に発生するため、所要時間を実行前にユーザへ伝える
+- Chromium のダウンロード（展開後 約 690 MB）が初回に発生するため、所要時間を実行前にユーザへ伝える
 - 本ケースではユーザが「後で入れる」を選んだため、`--skip-browser` を付けて Python 依存のみを導入し、後から `python -m playwright install chromium` を実行する案内を報告に残す
 
 ### Phase 7: 導入完了の報告
@@ -72,7 +72,7 @@
 - venv の構築を他プラグイン（`environment-setup-toolkit` 等）へ委譲すること。design-bridge 同梱の `setup_venv.sh` を使う
 - venv をセッション作業領域（`workspace/.venv`）に作ること。作成先は `.claude/.local/plugins/design-bridge/.venv` に固定する
 - `blockLimit` などブロック挙動を変える値を `.claude/design-bridge.json` に書くこと
-- 数百 MB のダウンロードが発生することを伝えずに Chromium 取得を開始すること
+- ダウンロード（展開後 約 690 MB）が発生することを伝えずに Chromium 取得を開始すること
 
 ## 分岐の根拠
 

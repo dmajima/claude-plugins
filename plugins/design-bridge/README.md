@@ -64,7 +64,7 @@ git checkout main
 /design-status
 ```
 
-`design-init` が Playwright の Chromium を取得するため、初回は数百 MB のダウンロードが発生します。
+`design-init` が Playwright の Chromium を取得するため、初回にダウンロードが発生します（展開後 約 690 MB）。
 
 ## 解決する課題
 
