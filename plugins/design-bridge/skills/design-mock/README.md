@@ -83,7 +83,7 @@ design-bridge はこれを、正本をローカルに固定することで防ぎ
 | トンマナ | `<mocksDir>/_tokens.html` | 対象 |
 | 基礎レイアウト | `<mocksDir>/_layout.html` | 対象 |
 | 画面モック | `<mocksDir>/<画面 ID>.html` | 対象 |
-| 未反映リスト | `.claude/.local/plugins/design-bridge/pending.txt` | 対象外 |
+| 未反映リスト | `.claude/.local/plugins/design-bridge/pending.tsv` | 対象外 |
 
 未反映リストへの追記は通常 PostToolUse フックが自動で行います。フックが未適用の環境では、スキルが明示的に追記します。
 

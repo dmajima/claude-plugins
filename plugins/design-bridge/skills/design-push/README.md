@@ -24,7 +24,8 @@ design-bridge の設計上の前提と、それが design-push の形に落ち�
 - 対象モック HTML のスクリーンショットを再生成する
 - Markdown 設計書の「画面イメージ」セクション（画像 + モックへのリンク）を最新化する
 - push 対象をバンドルディレクトリへ集約し、`DesignSync` で design-system プロジェクトへ送る
-- push が成功したときにのみ、未反映リスト（`pending.txt`）と連続ブロックカウンタ（`block-count`）を削除する
+- push マニフェスト（`last-push.json`）を更新し、ドリフト判定の基準点を残す
+- push に成功した対象に限って、未反映記録を `clear_pending.sh` で解除する（対象外のエントリは残す）
 
 モック HTML の新規生成（`design-mock`）、導入・設定生成（`design-init`）、Claude Design 側を正とする取り込み（`design-pull`）、読み取りのみの状態確認（`design-status`）は責務外です。
 
@@ -54,18 +55,18 @@ design-bridge の設計上の前提と、それが design-push の形に落ち�
 > ログイン画面のモックを直したので Claude Design に反映して
 
 Claude（要約）:
-> `pending.txt` の対象を確認し、`S001_login` のスクリーンショットを再生成。設計書の画面イメージセクションを更新したうえで push 計画（更新 1 件・追加 0 件・削除 0 件）を提示。承認後に `DesignSync` で送信し、`pending.txt` と `block-count` を削除して反映結果を報告。
+> `pending.tsv` の対象を確認し、`S001_login` のスクリーンショットを再生成。設計書の画面イメージセクションを更新したうえで push 計画（更新 1 件・追加 0 件・削除 0 件）を提示。承認後に `DesignSync` で送信し、`last-push.json` を更新。`clear_pending.sh --path` で当該 2 件だけ記録を解除し、反映結果と残存件数を報告。
 
 ## 引数と対象範囲
 
 | 引数 | 対象 | モード |
 |-----|------|-------|
-| なし | `.claude/.local/plugins/design-bridge/pending.txt` の全件 | 対話 |
+| なし | `.claude/.local/plugins/design-bridge/pending.tsv` の全件 | 対話 |
 | 画面 ID | その画面の設計書・モックのみ | 非対話 |
 | `--all` | `mocksDir` 配下の全モック | 非対話 |
 | `--non-interactive` | 対象は上記の規則に従う | 非対話 |
 
-引数なしで `pending.txt` も空の場合は、「反映すべき変更はありません」と報告して正常終了します（空振りの push を行いません）。
+引数なしで `pending.tsv` も空の場合は、「反映すべき変更はありません」と報告して正常終了します（空振りの push を行いません）。
 
 **非対話モードでも push 計画の提示は省略されません。** リモートを上書きする操作のためです。
 
@@ -78,8 +79,9 @@ Claude（要約）:
 | 3 | Markdown の画面イメージセクション更新 |
 | 4 | バンドル（`foundations/` `screens/`）の作成と `@dsCard` マーカー付与 |
 | 5 | `DesignSync` による push（`get_project` → `list_files` → 計画提示 → `finalize_plan` → `write_files`） |
-| 6 | 未反映記録（`pending.txt` / `block-count`）のクリア |
-| 7 | 反映結果の報告 |
+| 6 | push マニフェスト（`last-push.json`）の更新 |
+| 7 | `clear_pending.sh` による未反映記録の解除（push に成功した対象のみ） |
+| 8 | 反映結果と残存件数の報告 |
 
 手順 5 の呼び出し順序は `DesignSync` の仕様で固定されています。`finalize_plan` を経ずに `write_files` を呼ぶと拒否されます。
 
@@ -87,7 +89,8 @@ Claude（要約）:
 
 | 要点 | 理由 |
 |-----|------|
-| push が成功しなかった場合、`pending.txt` を削除しない | 中途半端な削除は「反映済みのつもりで未反映」という最悪の状態を生む。未反映のまま Stop フックに再度ブロックさせる |
+| push が成功しなかった場合、未反映記録を解除しない | 中途半端な解除は「反映済みのつもりで未反映」という最悪の状態を生む。未反映のまま Stop フックに再度ブロックさせる |
+| 対象が一部のときは該当分だけ解除する | 画面 ID 指定の push で他画面の記録まで消えると、その画面の未反映が検知対象から外れる。解除は `clear_pending.sh --path` で明示的に行う |
 | 認可エラー時は `/design-login` を案内して中断する | 認可なしでは送信できず、記録だけ消えると未反映が見えなくなる |
 | 削除対象がある場合は必ずユーザーに確認する | ローカルで意図的に消したのか、Claude Design 側で誰かが追加したのかを区別できない |
 | `localDir` の外にあるファイルを `localPath` に指定しない | `DesignSync` の仕様上、バンドルディレクトリ配下しか送れない |
@@ -117,7 +120,7 @@ Claude（要約）:
 |---------|------|
 | [`SKILL.md`](SKILL.md) | スキル定義・トリガー条件・実行フロー |
 | [`references/procedures.md`](references/procedures.md) | 各手順の具体的な実行方法、`DesignSync` の呼び出し順序、失敗時の扱い |
-| `${CLAUDE_PLUGIN_ROOT}/references/scripts/screenshot/capture.py` | スクリーンショット生成スクリプト |
+| `${CLAUDE_PLUGIN_ROOT}/skills/design-push/references/scripts/screenshot/capture.py` | スクリーンショット生成スクリプト |
 | [`../design-init/references/config-schema.md`](../design-init/references/config-schema.md) | `design-bridge.json` のスキーマと状態ファイルの一覧 |
 | [`evals/`](evals/) | 動作分岐の期待挙動 |
 
@@ -131,10 +134,10 @@ skills/design-push/
 │   └── procedures.md                     # 実行手順の詳細
 └── evals/
     ├── README.md                         # evals の概要とケース一覧
-    ├── case-01_pending_all.md            # 引数なし（pending.txt 全件・対話モード）
+    ├── case-01_pending_all.md            # 引数なし（pending.tsv 全件・対話モード）
     ├── case-02_screen_id.md              # 画面 ID 指定（非対話モード）
     ├── case-03_all_mocks.md              # --all（全モック・削除候補の確認）
     ├── case-04_pending_empty.md          # pending 空 → 正常終了
-    ├── case-05_push_failure.md           # push 失敗 → pending.txt を残す
+    ├── case-05_push_failure.md           # push 失敗 → pending.tsv を残す
     └── case-06_auth_error.md             # 認可エラー → /design-login 案内で中断
 ```

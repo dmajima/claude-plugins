@@ -33,9 +33,10 @@ design-bridge は「正本は常にローカル（`specs/` と `mocks/`）、cla
 ### 前提
 
 1. 対象が git リポジトリであること（`.git` をプロジェクトルート判定に使う）
-2. `jq` が利用可能であること（フックが設定を読むために使用）
-3. `/design-login` で claude.ai の design-system 認可が済んでいること
-4. Python 3.9 以上が利用可能であること（スクリーンショット生成に使用）
+2. `/design-login` で claude.ai の design-system 認可が済んでいること
+3. Python 3.9 以上が利用可能であること（スクリーンショット生成に使用）
+
+`jq` は任意依存です。無い場合も導入・動作しますが、`watch` 設定が読めず既定の監視対象（`specs` 配下の `.md`、`mocks` 配下の `.html`）に縮退します。既定以外の構成にする場合のみ必要です。
 
 前提が欠けている場合は、スキルが不足している項目を提示してから進めます。`/design-login` はユーザ操作が必要なため、スキルが代行実行することはありません。
 
@@ -94,17 +95,18 @@ design-bridge は「正本は常にローカル（`specs/` と `mocks/`）、cla
   "assetsDir": "specs/assets",
   "mocksDir": "mocks",
   "watch": [
-    { "dir": "specs", "ext": "md" },
-    { "dir": "mocks", "ext": "html" }
+    { "dir": "specs", "ext": "md", "kind": "spec" },
+    { "dir": "mocks", "ext": "html", "kind": "mock" }
   ],
-  "blockLimit": 3,
   "viewport": { "width": 1280, "height": 800 }
 }
 ```
 
 各フィールドの意味・既定値・フックが読むフィールドは [`references/config-schema.md`](references/config-schema.md) を参照してください。
 
-一方、未反映リスト（`pending.txt`）・連続ブロック回数・push 用バンドルは `.claude/.local/plugins/design-bridge/` 配下に置かれる **コミット対象外** の状態ファイルです。これらが誤ってコミットされないよう、`.gitignore` の `.claude/.local/` 登録を必須チェック項目にしています。
+ブロックの強さ（連続通知の上限）はこのファイルには書けません。リポジトリ同梱の設定から応答終了のブロック挙動を変えられると、そのリポジトリを開いた人全員が影響を受けるためです。調整は利用者個人の `~/.claude/.local/plugins/design-bridge/user-config.json` で行います。
+
+一方、未反映リスト（`pending.tsv`）・連続ブロック回数・push 用バンドルは `.claude/.local/plugins/design-bridge/` 配下に置かれる **コミット対象外** の状態ファイルです。これらが誤ってコミットされないよう、`.gitignore` の `.claude/.local/` 登録を必須チェック項目にしています。
 
 ## カスタマイズ・拡張
 
@@ -112,7 +114,8 @@ design-bridge は「正本は常にローカル（`specs/` と `mocks/`）、cla
 |--------------|---------|
 | 設定ファイルの項目・既定値・判定ルール | [`references/config-schema.md`](references/config-schema.md) |
 | ディレクトリ構成（`specsDir` / `assetsDir` / `mocksDir`） | 生成後の `.claude/design-bridge.json` を編集 |
-| フックの監視対象・連続ブロック上限 | `.claude/design-bridge.json` の `watch` / `blockLimit` |
+| フックの監視対象 | `.claude/design-bridge.json` の `watch`（`kind` で誘導先が変わる） |
+| 連続ブロックの上限 | `~/.claude/.local/plugins/design-bridge/user-config.json` の `blockLimit`（1〜10） |
 | スクリーンショットのビューポート | `.claude/design-bridge.json` の `viewport` |
 | スクリーンショット生成の依存パッケージ | `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/requirements.txt` |
 
@@ -121,7 +124,7 @@ design-bridge は「正本は常にローカル（`specs/` と `mocks/`）、cla
 - 既存の `specs/` `mocks/` の中身は書き換えません（構成の作成のみ）
 - `.claude/design-bridge.json` が既にある場合は更新モードとなり、差分を提示してから上書き可否を確認します
 - `projectId` には design-system 型のプロジェクトのみを設定します。型は作成時に固定され、後から変更できません
-- venv 構築後、`playwright install chromium` によるブラウザバイナリ取得が別途必要です
+- venv は `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh` が `.claude/.local/plugins/design-bridge/.venv` へ永続構築します。Chromium の取得（数百 MB）も同スクリプトが行うため、初回は時間がかかります（`--skip-browser` で後回しにできます）
 - フックは Claude Code の再起動後に有効になります
 - 社内マーケットプレイス `customerep-claudecode` の `prod-asset-import` プラグインにある `design-sync` スキルは、本番サーバーからフロントリソースを取り込む別物です。名前が似ていますが本スキルとは無関係です
 
