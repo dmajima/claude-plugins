@@ -134,15 +134,18 @@ skills/design-push/
 │   ├── procedures.md                     # 実行手順の詳細
 │   └── scripts/screenshot/capture.py     # スクリーンショット生成
 └── evals/
-    ├── README.md                           # evals の概要とケース一覧
-    ├── case-01_pending_all.md              # 引数なし（pending.tsv 全件・対話）
-    ├── case-02_screen_id.md                # 画面 ID 指定（部分解除）
-    ├── case-03_all_mocks.md                # --all（削除候補の確認）
-    ├── case-04_pending_empty.md            # pending 空 → 正常終了
-    ├── case-05_push_failure.md             # 完全失敗 → 解除しない
-    ├── case-06_partial_push_failure.md     # 一部失敗 → 成功分のみ解除
-    ├── case-07_auth_error.md               # 認可エラー → /design-login 案内
-    ├── case-08_not_design_system.md        # 型違い → design-init 案内
-    ├── case-09_screenshot_venv_missing.md  # venv 未整備 → 構築案内
-    └── case-10_plan_rejected.md            # 計画拒否 → 何も変更しない
+    ├── README.md                                 # evals の概要とケース一覧
+    ├── case-01_pending_all.md                    # 引数なし（pending.tsv 全件・対話）
+    ├── case-02_screen_id.md                      # 画面 ID 指定（部分解除）
+    ├── case-03_all_mocks.md                      # --all（削除候補の確認）
+    ├── case-04_pending_empty.md                  # pending 空 → 正常終了
+    ├── case-05_push_failure.md                   # 完全失敗 → 解除しない
+    ├── case-06_partial_push_failure.md           # 一部失敗 → 成功分のみ解除
+    ├── case-07_auth_error.md                     # 認可エラー → /design-login 案内
+    ├── case-08_not_design_system.md              # 型違い → design-init 案内
+    ├── case-09_screenshot_venv_missing.md        # venv 未整備 → 構築案内
+    ├── case-10_plan_rejected.md                  # 計画拒否 → 何も変更しない
+    ├── case-11_invalid_config_value.md           # 設定値が異常 → capture.py を実行しない
+    ├── case-12_capture_containment_violation.md  # 封じ込め違反 → capture.py が exit 2
+    └── case-13_capture_partial_failure.md        # 撮影一部失敗（exit 1）→ 続行可否を確認
 ```

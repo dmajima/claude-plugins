@@ -10,7 +10,7 @@
 | `hooks/block_unsynced_design.sh` | Stop フック。未反映があれば終了コード 2 でブロックし、種別ごとの誘導を stderr へ出す |
 | `hooks/clear_pending.sh` | 未反映記録の解除（`--path` で部分、`--all` で全件、`--drop-bundle` でバンドル破棄） |
 | `hooks/lib/design_bridge_common.sh` | パス正規化・プロジェクトルート検出・監視対象判定・上限値取得の共通関数 |
-| `hooks/tests/test_hooks.sh` | フック 3 本の回帰テスト（36 ケース） |
+| `hooks/tests/test_hooks.sh` | フック 3 本の回帰テスト（20 セクション・54 チェック） |
 | `setup/setup_venv.sh` / `setup/teardown_venv.sh` | スクリーンショット用 venv の構築 / 削除 |
 | `setup/requirements.txt` | 全スキル分の依存をマージ（バージョン固定） |
 

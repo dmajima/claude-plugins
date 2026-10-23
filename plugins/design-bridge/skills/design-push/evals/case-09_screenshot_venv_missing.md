@@ -62,7 +62,7 @@ exit 2 の原因は複数あり、案内先が異なる。
 | 原因 | 案内 |
 |-----|------|
 | playwright・Chromium 未導入（本ケース） | venv 構築（`design-init` / `setup_venv.sh`） |
-| 封じ込め違反（`mocksDir` / `assetsDir` がプロジェクトルート外） | `.claude/design-bridge.json` の設定修正 |
+| 封じ込め違反（`mocksDir` / `assetsDir` がプロジェクトルート外） | `.claude/design-bridge.json` の設定修正（case-12） |
 | `--only` の空振り | 画面 ID の確認（誤記、またはモックの削除・改名） |
 
 中断が正しい振る舞いである理由は、スクリーンショットが無いまま手順 3 へ進むと、設計書が存在しない画像を参照したまま「反映済み」として扱われうるためである。procedures.md はこれを「安全策なので、無視して続行しない」と明示している。
@@ -71,4 +71,6 @@ exit 2 の原因は複数あり、案内先が異なる。
 
 - [case-04_pending_empty.md](case-04_pending_empty.md)（venv が未整備でも、対象 0 件なら `capture.py` を呼ばないため中断に至らない）
 - [case-06_partial_push_failure.md](case-06_partial_push_failure.md)（`capture.py` の exit 1 も「失敗分は解除しない」という同じ原則で扱うが、残りで続行するかをユーザーに確認する点が exit 2 と異なる）
+- [case-13_capture_partial_failure.md](case-13_capture_partial_failure.md)（`capture.py` の exit 1 を正面から扱うケース。続行可否の確認と、続行・中止それぞれの帰結を定義する）
+- [case-12_capture_containment_violation.md](case-12_capture_containment_violation.md)（同じ exit 2 だが原因が封じ込め違反で、案内先が設定・パスの修正になる）
 - [case-07_auth_error.md](case-07_auth_error.md)（同じく前提不足による中断だが、手順 5 まで進むためローカル側の更新は完了している）

@@ -54,6 +54,7 @@ design-bridge は、Markdown の画面設計書・ローカルのモック HTML�
 ```text
 /design-status            # 未反映一覧 + リモート照合
 /design-status --local    # ローカルの未反映一覧のみ（リモート照合なし・高速）
+/design-status --deep     # 記録と一致するファイルも取得し、リモート先行まで判定（低速）
 ```
 
 ## 利用方法（最小例）
@@ -152,5 +153,6 @@ skills/design-status/
     ├── case-02_local_only.md             # --local（リモート照合なし）
     ├── case-03_full_drift_check.md       # 全照合（last-push.json を基準に絞り込み）
     ├── case-04_unauthorized_remote.md    # 未認可 → ローカル情報のみ報告
-    └── case-05_no_baseline.md            # 基準点なし → push を提案
+    ├── case-05_no_baseline.md            # 基準点なし → push を提案
+    └── case-06_deep_remote_ahead.md      # --deep → リモート先行を判定
 ```
