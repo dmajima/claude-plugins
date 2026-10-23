@@ -7,7 +7,7 @@
 | 起動フレーズ | 「全部まとめて Claude Design に反映して」 |
 | 引数 | `--all` |
 | フラグ | `--all`（引数で対象を指定しているため非対話モード） |
-| 既存状態 | `.claude/design-bridge.json` あり（design-system 型）。認可済み・venv 構築済み。`mocksDir` に `_tokens.html` `_layout.html` `S001_login.html` `S002_home.html` の 4 件。`specsDir` に `S001_login.md` `S002_home.md` `S003_report.md`（`S003_report` にはモックがまだ無い）。リモートには加えて `screens/S900_old.html` が存在し、ローカルに対応ファイルが無い。`last-push.json` に `screens/S900_old.html` の記録は無い。`pending.tsv` は次の 3 行 |
+| 既存状態 | `.claude/design-bridge.json` あり（design-system 型）。認可済み・venv 構築済み。`mocksDir` に `_tokens.html` `_layout.html` `S001_login.html` `S002_home.html` の 4 件。`specsDir` に `S001_login.md` `S002_home.md` `S003_report.md`（`S003_report` にはモックがまだ無い）。リモートには加えて `screens/S900_old.html`（`last-push.json` に記録なし）と `screens/S003_report.html`（`last-push.json` に記録あり・ローカルのモックは削除済み）が存在する。`list_files` はこの 2 件に加えてディレクトリ名 `foundations` `screens` と、Claude Design 側が生成する `_ds_manifest.json` も同じ配列で返す。`pending.tsv` は次の 3 行 |
 
 ```text
 mock	mocks/S001_login.html
@@ -60,11 +60,11 @@ bundle/
 
 ### Phase 5: DesignSync による push と削除確認
 - `get_project` で `type` が `PROJECT_TYPE_DESIGN_SYSTEM` であることを確認する
-- `list_files` の結果とバンドルを突き合わせ、追加 / 更新 / 削除を判定する
-- リモートのみに存在する `screens/S900_old.html` を **削除候補** として検出する
-- 削除候補はローカルで意図的に消したものか、Claude Design 側で別経路に追加されたものかを区別できないため、**削除してよいかを必ずユーザーに確認する**
+- `list_files` の戻り値を正規化する。`foundations` と `screens` は他のエントリが `<entry>/` で始まるため **ディレクトリとして除外する**。これを怠ると実在しないパスを削除しようとする
+- 正規化後の一覧とバンドルを突き合わせ、追加 / 更新 / 削除候補 / 別経路を判定する
+- `screens/S003_report.html` は `last-push.json` に記録があり、バンドルに無い。**削除候補** として検出し、ローカルで意図的に消したものか判断できないため **削除してよいかを必ずユーザーに確認する**
 - 本ケースではユーザーが削除を承認しなかったものとし、`deletes` から除外して `writes` のみで計画を確定する
-- `screens/S900_old.html` は `last-push.json` に記録が無いリモートファイルであるため、上書き前に `design-status` または `design-pull` での確認をユーザーへ提案する
+- `screens/S900_old.html` と `_ds_manifest.json` は `last-push.json` に記録が無い。**削除候補に入れない**（自分が送っていないものを消す根拠が無く、後者は Claude Design 側のアプリ生成物である）。別経路で置かれたものとして報告に留め、上書き前に `design-status` または `design-pull` での確認をユーザーへ提案する
 - `finalize_plan`（`writes` / 空の `deletes` / `localDir`）→ `write_files`（`localPath` 指定）の順で実行する。4 件すべて成功
 - 承認されていれば同じ `planId` で `delete_files` を呼ぶが、本ケースでは呼ばない
 - 対象が 256 ファイルを超える場合は同一 `planId` で複数回に分割する（本ケースは 4 件のため分割なし）
@@ -91,20 +91,20 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/clear_pending.sh" \
 - `specs/screens/S003_report.md` の 1 行が残るため、`pending.tsv` は削除されず `block-count` も削除されない
 
 ### Phase 8: 報告
-- 反映したカード 4 件、削除候補の扱い（見送り）、リモート先行の疑いと `design-status` / `design-pull` での確認提案を提示する
+- 反映したカード 4 件、削除候補 `screens/S003_report.html` の扱い（見送り）、記録に無いリモートファイル 2 件を削除対象にしなかったこと、リモート先行の疑いと `design-status` / `design-pull` での確認提案を提示する
 - 未反映のまま残った `specs/screens/S003_report.md` を明示し、モック未作成のため `design-mock` でのモック生成が次の手であることを案内する
 
 ## 期待出力
 
 | 項目 | 期待値 |
 |-----|-------|
-| ユーザへの確認 | 2 回以上（push 計画の提示、削除候補 `screens/S900_old.html` の可否確認） |
+| ユーザへの確認 | 2 回以上（push 計画の提示、削除候補 `screens/S003_report.html` の可否確認） |
 | 生成ファイル | `specs/assets/S001_login.png`・`specs/assets/S002_home.png`、バンドル内 `foundations/` 2 件 + `screens/` 2 件、`last-push.json` |
 | 更新ファイル | `specs/screens/S001_login.md` と `specs/screens/S002_home.md` の画面イメージセクションのみ |
-| 削除しないもの | リモートの `screens/S900_old.html`（ユーザーが承認しなかったため `deletes` に含めない） |
+| 削除しないもの | `screens/S003_report.html`（ユーザーが承認しなかったため `deletes` に含めない）、`screens/S900_old.html` と `_ds_manifest.json`（`last-push.json` に記録が無く、そもそも削除候補にしない）、`foundations` と `screens`（ディレクトリのため対象外） |
 | 残存ファイル | `pending.tsv`（`spec` / `specs/screens/S003_report.md` の 1 行が残る） |
 | `clear_pending.sh` の出力 | `解除: 2 件 / 残存: 1 件` |
-| 標準出力（要約） | 反映カード 4 件、削除候補の扱い、`design-status` / `design-pull` での確認提案、残存 1 件の明示 |
+| 標準出力（要約） | 反映カード 4 件、削除候補の扱い、記録に無いリモートファイルを削除しなかったこと、`design-status` / `design-pull` での確認提案、残存 1 件の明示 |
 | 終了状態 | 成功 |
 
 ## 分岐の根拠
@@ -113,7 +113,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/clear_pending.sh" \
 
 ここで解除方法が `--all --drop-bundle` にならないのは、**対象集合と `pending.tsv` の内容が一致しない**ためである。`--all` はモックを起点に対象を決めるため、モックを持たない設計書の未反映記録（`specs/screens/S003_report.md`）が対象外として残る。
 
-第二のトリガーは `list_files` の結果に **バンドルへ存在しないリモートファイルが含まれること** であり、これが削除確認フローとリモート先行の提案を発火させる。
+第二のトリガーは `list_files` の結果に **バンドルへ存在しないリモートファイルが含まれること** であり、これが削除確認フローとリモート先行の提案を発火させる。ただし削除候補になるのは `last-push.json` に記録があるものだけで、記録の無いものは報告に留まる。この二分がこのケースの中心にある。
 
 ## 関連ケース
 
