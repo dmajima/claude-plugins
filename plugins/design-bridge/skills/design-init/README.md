@@ -126,7 +126,7 @@ design-bridge は「正本は常にローカル（`specs/` と `mocks/`）、cla
 - `projectId` には design-system 型のプロジェクトのみを設定します。型は作成時に固定され、後から変更できません
 - venv は `${CLAUDE_PLUGIN_ROOT}/references/scripts/setup/setup_venv.sh` が `.claude/.local/plugins/design-bridge/.venv` へ永続構築します。Chromium の取得（数百 MB）も同スクリプトが行うため、初回は時間がかかります（`--skip-browser` で後回しにできます）
 - フックは Claude Code の再起動後に有効になります
-- 社内マーケットプレイス `customerep-claudecode` の `prod-asset-import` プラグインにある `design-sync` スキルは、本番サーバーからフロントリソースを取り込む別物です。名前が似ていますが本スキルとは無関係です
+- 名前の似た `design-sync` というスキルが別のマーケットプレイスに存在する場合がありますが、本番サーバーからフロントリソースを取り込む別物であり、本スキルとは無関係です
 
 ## 関連スキル
 

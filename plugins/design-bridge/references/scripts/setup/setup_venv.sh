@@ -4,10 +4,10 @@
 # スクリーンショット生成（Playwright）用の venv を構築する。
 #
 # venv はセッション作業領域ではなく、プロジェクトのローカルデータ領域
-# （.claude/.local/plugins/design-bridge/.venv）へ永続構築する。Chromium の
-# ブラウザバイナリは数百 MB あり、セッションごとに作り直すのは現実的でない
-# ため。python-venv.md 5.1 の例外規定（プラグイン内蔵のライフサイクル管理）
-# に沿った運用とする。
+# （.claude/.local/plugins/design-bridge/.venv）へ永続構築する。Playwright の
+# Chromium バイナリは数百 MB あり、セッションごとに作り直すのは現実的でない
+# ため、本プラグインが自前でライフサイクルを管理する（teardown_venv.sh で
+# 明示的に削除できる）。
 #
 # 使い方:
 #   bash setup_venv.sh                         # 現在地からプロジェクトルートを探索
@@ -31,7 +31,13 @@ skip_browser=false
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project-root)
-      project_root="${2:-}"; shift 2 ;;
+      # 値なしで渡されたときに shift 2 が失敗すると、$1 が変わらないまま
+      # ループが回り続けて出力ゼロのまま固まる。先にガードする。
+      if [[ -z "${2:-}" ]]; then
+        echo "エラー: --project-root に値が必要です" >&2
+        exit 2
+      fi
+      project_root="$2"; shift 2 ;;
     --skip-browser)
       skip_browser=true; shift ;;
     -h|--help)
