@@ -98,7 +98,7 @@ Markdown の画面設計書を入力に、トンマナ（`_tokens.html`）と基
 
 ### 5. 未反映としての記録
 
-生成・更新したパスは PostToolUse フックが `pending.tsv` に `mock` 種別で記録する。フックが動作しない環境（`.claude/design-bridge.json` 不在など）では記録されないため、その旨を報告に含める。
+生成・更新したパスは PostToolUse フックが `pending.tsv` に `mock` 種別で記録する。プラグイン導入直後で Claude Code を再起動していない場合はフックが未ロードで記録されないため、その場合はその旨を報告に含める。`pending.tsv` を直接編集して代替しない。
 
 ### 6. 報告
 

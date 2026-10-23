@@ -137,5 +137,7 @@ skills/design-pull/
     ├── case-02_ambiguous_direction.md       # 方向が曖昧 → 確認（自動起動の禁止）
     ├── case-03_non_interactive_path.md      # パス引数指定でも差分提示と承認を省略しない
     ├── case-04_uncommitted_changes.md       # 未コミット変更あり → 警告して判断を仰ぐ
-    └── case-05_pending_preserved.md         # 取り込み後に pending.tsv をクリアしない
+    ├── case-05_pending_preserved.md         # 取り込み後に pending.tsv をクリアしない
+    ├── case-06_auth_error.md                # 認可エラー → ローカル不変で中断
+    └── case-07_injected_content_quarantine.md  # 指示めいた記述 → 取り込まず検疫
 ```

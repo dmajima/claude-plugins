@@ -139,3 +139,18 @@ Claude（要約）:
 | `evals/` | 動作分岐の期待挙動 |
 
 プラグイン内からスキル自身を参照する場合は `${CLAUDE_PLUGIN_ROOT}/skills/design-status/` を基点とします（絶対パスは書きません）。
+
+## ファイル構成
+
+```text
+skills/design-status/
+├── SKILL.md                              # スキル定義
+├── README.md                             # 人間向けリファレンス（本ファイル）
+└── evals/
+    ├── README.md                         # evals の概要とケース一覧
+    ├── case-01_not_initialized.md        # 未導入 → design-init を案内
+    ├── case-02_local_only.md             # --local（リモート照合なし）
+    ├── case-03_full_drift_check.md       # 全照合（last-push.json を基準に絞り込み）
+    ├── case-04_unauthorized_remote.md    # 未認可 → ローカル情報のみ報告
+    └── case-05_no_baseline.md            # 基準点なし → push を提案
+```
