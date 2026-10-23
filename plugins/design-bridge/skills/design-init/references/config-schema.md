@@ -1,8 +1,10 @@
-# design-bridge.json スキーマ
+# 設定と状態ファイルのスキーマ
 
-`<repo>/.claude/design-bridge.json` の形式。プロジェクトと claude.ai/design の紐付けを記録する設定ファイルで、**コミット対象**（チームで共有する）。
+design-bridge が読み書きするファイルの形式。
 
-## 全体像
+## 1. プロジェクト設定 `.claude/design-bridge.json`
+
+プロジェクトと claude.ai/design の紐付けを記録する。**コミット対象**（チームで共有する）。
 
 ```json
 {
@@ -12,15 +14,12 @@
   "assetsDir": "specs/assets",
   "mocksDir": "mocks",
   "watch": [
-    { "dir": "specs", "ext": "md" },
-    { "dir": "mocks", "ext": "html" }
+    { "dir": "specs", "ext": "md", "kind": "spec" },
+    { "dir": "mocks", "ext": "html", "kind": "mock" }
   ],
-  "blockLimit": 3,
   "viewport": { "width": 1280, "height": 800 }
 }
 ```
-
-## フィールド
 
 | フィールド | 型 | 必須 | 既定値 | 用途 |
 |----------|---|------|-------|------|
@@ -30,62 +29,93 @@
 | `assetsDir` | string | 任意 | `specs/assets` | スクリーンショットの出力先 |
 | `mocksDir` | string | 任意 | `mocks` | モック HTML の置き場 |
 | `watch` | array | 任意 | 下記 | フックの監視対象 |
-| `blockLimit` | number | 任意 | `3` | Stop フックの連続ブロック上限 |
 | `viewport` | object | 任意 | `1280x800` | スクリーンショットのビューポート |
 
-パスはすべてプロジェクトルートからの相対パスで書く。
+パスはすべてプロジェクトルートからの相対パスで書く。`..` や絶対パスは使わない（スクリーンショット生成時に拒否される）。
 
-## watch
+### このファイルに書けないもの
 
-PostToolUse フックが「未反映として記録すべき変更か」を判定するために読む。
+ブロックの強さ（連続通知の上限）は**ここには書けない**。リポジトリ同梱の設定ファイルは、そのリポジトリを開いた人全員の挙動を左右する。悪意あるリポジトリが応答終了のブロックを恒久化できてしまうため、挙動を変える値は読まない設計にしている。調整は 2 節のユーザースコープ設定で行う。
 
-```json
-"watch": [
-  { "dir": "specs", "ext": "md" },
-  { "dir": "mocks", "ext": "html" }
-]
-```
+### watch
+
+PostToolUse フックが「未反映として記録すべき変更か」「どちらの種別か」を判定するために読む。
 
 | キー | 意味 |
 |-----|------|
 | `dir` | プロジェクトルートからの相対ディレクトリ。この配下（再帰）が対象 |
 | `ext` | 対象の拡張子（ドットなし） |
+| `kind` | `spec`（設計書）または `mock`（モック）。省略時は `dir` 名に `mock` を含むかで推定 |
 
-判定は「相対パスが `<dir>/` で始まり、かつ `.<ext>` で終わる」。`watch` が未設定・空・解析不能の場合は既定値（`specs` の `.md` と `mocks` の `.html`）が使われる。
+判定は「相対パスが `<dir>/` で始まり、かつ `.<ext>` で終わる」。`watch` が未設定・空・解析不能の場合、および `jq` が無い環境では既定値（`specs` の `.md` を spec、`mocks` の `.html` を mock）へ縮退する。
 
-`specsDir` を `specs/screens` にしている場合でも、`watch` の `dir` は `specs` のままでよい（配下すべてを対象にするため）。設計書を `specs/` 直下にも置くなら、この既定のままが扱いやすい。
+`kind` は Stop フックの誘導先を決める。モックの未反映は `design-push`、設計書の未反映は `design-mock`（モック再生成）へ案内される。設計書だけ直してモックが古いまま放置される事態を防ぐための区別なので、独自の `watch` を書くときも `kind` を明示することを推奨する。
 
-## blockLimit
+`assetsDir` はどの `watch` エントリにも一致させないこと。一致すると、`design-push` が生成したスクリーンショットが未反映として記録され、解除できないループになる。既定構成では `assetsDir`（`specs/assets`）が `watch` の `specs` 配下にあるが、拡張子が `md` でないため一致しない。
 
-Stop フックが連続してブロックできる回数の上限。この回数に達すると警告のみを出して応答の終了を許可し、カウンタをリセットする。push が繰り返し失敗する状況でセッションが固まることを防ぐための安全弁。
+## 2. ユーザースコープ設定 `~/.claude/.local/plugins/design-bridge/user-config.json`
 
-| 値 | 挙動 |
-|---|------|
-| `1` | 1 回ブロックしたら次は通す（最も緩い） |
-| `3`（既定） | 3 回ブロック、4 回目で通す |
-| 大きな値 | 強制力は上がるが、復旧不能な状況で固まるリスクも上がる |
+利用者個人の設定。リポジトリには含めない。
 
-`0` 以下や数値以外を設定した場合は既定値 `3` が使われる。
+```json
+{
+  "blockLimit": 3
+}
+```
 
-## viewport
+| フィールド | 型 | 既定値 | 範囲 | 用途 |
+|----------|---|-------|------|------|
+| `blockLimit` | number | `3` | 1〜10 | 同じ未反映内容について Stop フックが連続でブロックする上限 |
 
-`design-push` がスクリーンショットを撮る際のビューポート。`capture.py` の `--width` / `--height` に渡される。全画面を縦に収める撮影（full page）が既定のため、`height` は初期表示の折り返し位置の目安として働く。
+範囲外・非数値・ファイル不在の場合は既定値 3 が使われる。`jq` が無い環境でも既定値で動作する。
 
-## フックが読むフィールド
+上限に達すると、その時点の未反映内容を「却下済み」として記録し、**内容が変わるまで再びブロックしない**。回数を使い切るたびに再武装する作りではないため、反映できない事情がある変更を抱えたままでも作業を続けられる。
 
-フック（`mark_design_dirty.sh` / `block_unsynced_design.sh`）が読むのは次の 2 つだけ。
+## 3. 状態ファイル（コミット対象外）
 
-- `watch`
-- `blockLimit`
+すべて `<プロジェクトルート>/.claude/.local/plugins/design-bridge/` 配下。`.gitignore` に `.claude/.local/` を登録しておくこと。
 
-それ以外はスキル側が読む。**このファイルが存在すること自体** が「design-bridge 導入済み」の判定条件であり、中身が空の `{}` でもフックは既定値で動作する。
+| パス | 形式 | 書き手 | 内容 |
+|-----|------|-------|------|
+| `pending.tsv` | `<kind>\t<相対パス>` の行 | PostToolUse フック | 未反映の変更。追記のみ。重複排除は読み取り側が行う |
+| `block-count` | 整数 | Stop フック | 同じ内容に対する連続ブロック回数 |
+| `dismissed` | ハッシュ文字列 | Stop フック | 上限到達時の `pending.tsv` の内容ハッシュ。一致する間は再通知しない |
+| `last-push.json` | JSON | `design-push` | push マニフェスト。ドリフト判定の基準点 |
+| `bundle/` | ディレクトリ | `design-push` | push 用に集約したファイル |
+| `.venv/` | ディレクトリ | `design-init` | スクリーンショット生成用の Python 環境 |
 
-## 関連する状態ファイル（コミット対象外）
+### pending.tsv
 
-| パス | 内容 |
-|-----|------|
-| `.claude/.local/plugins/design-bridge/pending.txt` | 未反映パスの一覧（1 行 1 パス） |
-| `.claude/.local/plugins/design-bridge/block-count` | 連続ブロック回数 |
-| `.claude/.local/plugins/design-bridge/bundle/` | push 用に集約したファイル |
+```text
+mock	mocks/S001_login.html
+spec	specs/screens/S001_login.md
+```
 
-`.gitignore` に `.claude/.local/` を登録しておくこと。
+記録してよいのは `[A-Za-z0-9._/-]` のみで構成される 200 文字以内の相対パス。`..` を含むもの、絶対パスは記録しない。Stop フックがこの内容を stderr 経由でモデルへ渡すため、検証を通らない行は記録も表示もしない。
+
+このファイルを手で編集しない。解除は `clear_pending.sh` を使う。
+
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/clear_pending.sh" \
+  --project-root "<ルート>" --path "mocks/S001_login.html"
+```
+
+### last-push.json
+
+```json
+{
+  "projectId": "<uuid>",
+  "pushedAt": "2026-10-23T12:34:56Z",
+  "files": {
+    "screens/S001_login.html": { "sha256": "<hash>", "localPath": "mocks/S001_login.html" }
+  }
+}
+```
+
+`design-status` はこれとリモートの `list_files` を突き合わせてドリフトを検出する。`DesignSync` にはリモート変更の通知機構が無いため、この記録が唯一の比較基準になる。
+
+## 4. フックが読むもの
+
+フック（`mark_design_dirty.sh` / `block_unsynced_design.sh`）がプロジェクト設定から読むのは `watch` だけである。それ以外のフィールドはスキルが読む。
+
+**`.claude/design-bridge.json` が存在すること自体** が「design-bridge 導入済み」の判定条件であり、中身が空の `{}` でもフックは既定の監視対象で動作する。

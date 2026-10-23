@@ -137,6 +137,7 @@ dmajima-claude-plugins/
     ├── credentials-manager/
     ├── deep-code-review/
     ├── deep-test/
+    ├── design-bridge/
     ├── extension-toolkit/
     ├── maintenance/
     ├── meeting-minutes/
