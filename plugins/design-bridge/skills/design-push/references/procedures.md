@@ -144,6 +144,8 @@ DesignSync(method: "list_files", projectId: "<projectId>")
 | 削除候補 | リモートにあり、バンドルに無く、**`last-push.json` に記録がある** | ユーザーに確認して判断 |
 | 別経路 | リモートにあり、バンドルに無く、`last-push.json` に記録が無い | **削除しない**。報告に留める |
 
+アプリ生成物は push 直後には現れない。`_ds_manifest.json` は Claude Design 側でプロジェクトを開いたときに生成されるため、初回 push の `list_files` には無く、2 回目以降に現れる。初回に見えなかったことを理由に「アプリ生成物は無い」と決めつけない。
+
 **`last-push.json` に記録が無いリモートファイルを削除候補に入れてはならない。** 自分が送っていないものを消す根拠が無いうえ、Claude Design 側のアプリが生成するファイル（`_ds_manifest.json`・`_ds_bundle.js`・`_adherence.oxlintrc.json` 等）や、他の利用者が別経路で置いたものを巻き込む。これらは報告に留め、上書き前に `design-status` での確認を提案する。
 
 削除候補が残る場合も、ローカルで意図的に消したのか判断できないため、**必ずユーザーに確認する**。
@@ -161,6 +163,8 @@ DesignSync(
 ```
 
 - `writes` / `deletes` はパスまたはグロブ（`*` は 1 セグメント、`**` は任意深さ）
+- **`deletes` は省略できない。** 削除が無くても `deletes: []` を明示する（省略すると `finalize_plan requires: deletes.` で弾かれる）
+- **削除する可能性があるなら、この 1 回で `writes` と `deletes` の両方を宣言する。** `deletes` を空で確定すると、あとから削除するには計画を取り直すことになり、ユーザーへの確認が 2 度発生する
 - 1 パターンあたりワイルドカードは 3 個まで、エントリは 256 件まで
 - `localDir` 配下のファイルしか `localPath` で送れない
 - 返る `planId` を以降の呼び出しで使う
