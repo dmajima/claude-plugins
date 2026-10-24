@@ -8,8 +8,8 @@ design-bridge が読み書きするファイルの形式。
 
 ```json
 {
-  "projectId": "ffa33a4a-0000-0000-0000-000000000000",
-  "projectName": "BANSHO",
+  "projectId": "00000000-0000-0000-0000-000000000000",
+  "projectName": "My Design System",
   "specsDir": "specs/screens",
   "assetsDir": "specs/assets",
   "mocksDir": "mocks",
