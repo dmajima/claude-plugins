@@ -12,6 +12,7 @@
 | P-1-4 | High | プラグイン直下に `scripts/` ディレクトリが存在しない（ADR-025 違反検知。実スクリプトは `references/scripts/` に集約） | [conventions.md](../../../references/policies/conventions-structure.md) 節 2.3 / [scripts-policy.md](../../../references/policies/scripts-policy.md) |
 | P-1-5 | High | プラグイン直下に `teams/` `templates/` `shared/` `common/` `lib/` `docs/` 等の禁止ディレクトリが存在しない（`references/` 配下に集約） | [conventions.md](../../../references/policies/conventions-structure.md) 節 2.3 |
 | P-1-6 | High | 許可リスト外のエントリを追加する場合、新 ADR がある（`architecture-decisions.md` で明示） | [conventions.md](../../../references/policies/conventions-structure.md) 節 2.4 |
+| P-1-7 | Critical | `commands/<name>.md` の `<name>` と `skills/<name>/` のディレクトリ名が一致しない（一致すると修飾名 `{plugin}:{name}` が衝突し、コマンドの委譲が自分自身へ解決されて再帰呼び出しになり、同名スキルは available-skills から遮蔽され起動不能になる。回避はスキル側への接頭辞付与） | [conventions-naming.md](../../../../references/policies/conventions-naming.md) 節 1.1 |
 
 ## P-2. plugin.json
 
