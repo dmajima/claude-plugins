@@ -18,7 +18,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 | `credentials-manager` | 認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン | 2.1.2 | `/plugin install credentials-manager@dmajima-claude-plugins` |
 | `deep-code-review` | 観点別マルチエージェントでコード変更・PR をレビュー（Anthropic 公式 code-review とは別）。Azure DevOps/オンプレTFS・GitHub PR 対応、8言語+主要FW・信頼度スコアで統合サマリと判定を返す | 1.1.0 | `/plugin install deep-code-review@dmajima-claude-plugins` |
 | `deep-test` | テスト設計→環境構築→実施→報告→再テストを支援。8レベル・Playwright実動作・手動/探索的・YAML実績管理。コードレビュー（deep-code-review）の差分テストとは別 | 1.5.0 | `/plugin install deep-test@dmajima-claude-plugins` |
-| `design-bridge` | Markdown 画面設計書とモック HTML を claude.ai/design へ同期し未反映を Stop フックで防止 | 0.1.0 | `/plugin install design-bridge@dmajima-claude-plugins` |
+| `design-bridge` | Markdown 画面設計書とモック HTML を claude.ai/design へ同期し未反映を Stop フックで防止 | 0.2.0 | `/plugin install design-bridge@dmajima-claude-plugins` |
 | `extension-toolkit` | Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援 | 1.11.2 | `/plugin install extension-toolkit@dmajima-claude-plugins` |
 | `maintenance` | Claude Code 環境のメンテナンス統合プラグイン（プラグイン一括更新 / 古い作業フォルダ整理 / Git 経由設定同期） | 1.0.0 | `/plugin install maintenance@dmajima-claude-plugins` |
 | `meeting-minutes` | 会議の文字起こし・録画データから構造化議事録を作成し Markdown / docx 出力 | 1.3.0 | `/plugin install meeting-minutes@dmajima-claude-plugins` |
