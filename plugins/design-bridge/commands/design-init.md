@@ -24,10 +24,10 @@ git リポジトリ配下で、かつ `/design-login` による design-system �
 
 ## スキル委譲
 
-引数解釈完了後、`design-init` スキルを起動して結果を待つ:
+引数解釈完了後、`bridge-init` スキルを起動して結果を待つ:
 
 ```text
-Skill(skill: "design-bridge:design-init", args: "<引数>")
+Skill(skill: "design-bridge:bridge-init", args: "<引数>")
 ```
 
 スキルが導入処理を実行し、結果報告と対話結果をユーザに直接返す。
@@ -37,4 +37,4 @@ Skill(skill: "design-bridge:design-init", args: "<引数>")
 
 - 反映: [`design-push.md`](design-push.md)（`/design-push`）
 - モック生成: [`design-mock.md`](design-mock.md)（`/design-mock`）
-- 実作業スキル: [`../skills/design-init/SKILL.md`](../skills/design-init/SKILL.md)
+- 実作業スキル: [`../skills/bridge-init/SKILL.md`](../skills/bridge-init/SKILL.md)

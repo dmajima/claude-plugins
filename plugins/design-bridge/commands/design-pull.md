@@ -26,10 +26,10 @@ design-bridge は **ローカル正本** を原則とするため、これは例
 
 ## スキル委譲
 
-引数解釈完了後、`design-pull` スキルを起動して結果を待つ:
+引数解釈完了後、`bridge-pull` スキルを起動して結果を待つ:
 
 ```text
-Skill(skill: "design-bridge:design-pull", args: "<引数>")
+Skill(skill: "design-bridge:bridge-pull", args: "<引数>")
 ```
 
 差分提示と承認はスキル側で行う。引数指定の有無にかかわらず、
@@ -39,4 +39,4 @@ Skill(skill: "design-bridge:design-pull", args: "<引数>")
 
 - 反映: [`design-push.md`](design-push.md)（`/design-push`）
 - 変更せず差分だけ見る: [`design-status.md`](design-status.md)（`/design-status`）
-- 実作業スキル: [`../skills/design-pull/SKILL.md`](../skills/design-pull/SKILL.md)
+- 実作業スキル: [`../skills/bridge-pull/SKILL.md`](../skills/bridge-pull/SKILL.md)

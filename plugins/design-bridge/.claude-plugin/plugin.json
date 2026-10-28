@@ -1,6 +1,6 @@
 {
   "name": "design-bridge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Markdown 画面設計書とモック HTML を claude.ai/design へ同期し未反映を Stop フックで防止",
   "author": {
     "name": "dmajima"
