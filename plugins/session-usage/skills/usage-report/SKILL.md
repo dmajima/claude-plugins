@@ -1,9 +1,9 @@
 ---
-name: session-usage
+name: usage-report
 description: カレントセッション（または指定セッション）のトークン消費量を JSONL から直接集計し、Claude UI の対話ループ（AskUserQuestion）でクリップボードコピー・再集計・終了を選択できるスキル。「セッションのトークン使用量を見せて」「session-usage」「今回の消費量教えて」等で起動する。Use when reporting Claude Code session token consumption interactively in the Claude UI. SKIP when only a one-shot dump suffices (call aggregate.sh directly).
 ---
 
-# session-usage
+# usage-report
 
 カレントセッション（または引数指定セッション）の JSONL を直接パースし、
 トークン消費量を `/doctor` 風レイアウトで Claude UI に表示する。
@@ -58,7 +58,7 @@ description: カレントセッション（または指定セッション）の�
 Bash 経由で以下を実行する:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.sh" \
+bash "${CLAUDE_PLUGIN_ROOT}/skills/usage-report/scripts/aggregate/aggregate.sh" \
   --stdout [--session-id <UUID>]
 ```
 `-Stdout` のみ（`-Copy` は付けない）。**この時点ではクリップボードへのコピーは行わない**。

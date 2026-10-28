@@ -1,6 +1,6 @@
 # 実行手順詳細
 
-`session-usage` スキルの動作手順を詳細化する。SKILL.md の実行フローを補足する。
+`usage-report` スキルの動作手順を詳細化する。SKILL.md の実行フローを補足する。
 
 ## ステップ 1: 引数解釈
 
@@ -17,7 +17,7 @@
 Bash で以下を実行する:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.sh" \
+bash "${CLAUDE_PLUGIN_ROOT}/skills/usage-report/scripts/aggregate/aggregate.sh" \
   --stdout [--session-id <UUID>]
 ```
 | フラグ | 役割 |
@@ -72,7 +72,7 @@ AskUserQuestion({
 ### 選択: クリップボードへコピー
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/session-usage/scripts/aggregate/aggregate.sh" \
+bash "${CLAUDE_PLUGIN_ROOT}/skills/usage-report/scripts/aggregate/aggregate.sh" \
   --copy [--session-id <UUID>]
 ```
 - `--copy` のみ指定（`--stdout` なし）

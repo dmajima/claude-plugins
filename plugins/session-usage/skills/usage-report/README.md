@@ -1,4 +1,4 @@
-# session-usage スキル
+# usage-report スキル
 
 このディレクトリは `session-usage` プラグインの実作業スキル本体である。
 本 README は人間向けリファレンスであり、Claude スキルの動作では使用されない。
@@ -16,7 +16,7 @@
 ## ファイル構成
 
 ```
-skills/session-usage/
+skills/usage-report/
 ├── SKILL.md                        # スキル定義（Claude が読む）
 ├── README.md                       # 本ファイル（人間向け）
 ├── scripts/

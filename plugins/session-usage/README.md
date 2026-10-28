@@ -36,7 +36,7 @@ claude plugin install session-usage@dmajima-claude-plugins
 ### 自然言語起動
 
 「セッションのトークン使用量を見せて」「今回の消費量教えて」等で自動的に
-`session-usage` スキルがトリガーされる。
+`usage-report` スキルがトリガーされる。
 
 ## 動作環境
 
@@ -77,7 +77,7 @@ plugins/session-usage/
 ├── commands/
 │   └── session-usage.md                 # スラッシュコマンド（スキル呼び出しのみ）
 └── skills/
-    └── session-usage/
+    └── usage-report/
         ├── SKILL.md                     # スキル定義
         ├── README.md                    # 人間向けリファレンス
         ├── scripts/
