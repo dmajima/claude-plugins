@@ -200,6 +200,31 @@
       ]
     },
     {
+      "name": "design-bridge",
+      "source": "./plugins/design-bridge",
+      "description": "Markdown 画面設計書とモック HTML を claude.ai/design へ同期し未反映を Stop フックで防止",
+      "author": {
+        "name": "dmajima"
+      },
+      "category": "developer-tools",
+      "keywords": [
+        "design",
+        "design-bridge",
+        "claude-design",
+        "design-system",
+        "screen-design",
+        "screen-spec",
+        "mockup",
+        "markdown",
+        "specification",
+        "screenshot",
+        "playwright",
+        "hooks",
+        "ssot",
+        "ui"
+      ]
+    },
+    {
       "name": "extension-toolkit",
       "source": "./plugins/extension-toolkit",
       "description": "Claude Code 拡張要素（プラグイン/スキル/コマンド/エージェント/フック）の作成・レビュー・公開を統括支援",

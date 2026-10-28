@@ -1,0 +1,51 @@
+# Case 04: design-system 未認可で list_projects が認可エラー（中断）
+
+## 入力
+
+| 項目 | 値 |
+|-----|---|
+| 起動フレーズ | 「デザイン同期をセットアップして」 |
+| 引数 | なし |
+| フラグ | なし |
+| 既存状態 | git リポジトリ。Python 3.9 以上が利用可。`jq` 利用可。`/design-login` による design-system 認可が未実施。`.claude/design-bridge.json` なし |
+
+## 期待動作
+
+### Phase 1: 前提チェック
+- プロジェクトルート・Python 3.9 以上・`jq` の確認までは通常どおり完了する
+
+### Phase 2: Claude Design プロジェクトの決定
+- `DesignSync` の `list_projects` が認可エラーを返す
+- 認可が済んでいないことを検出し、ユーザに `/design-login` の実行を依頼する
+- スキルをその場で中断する
+
+### 以降の Phase
+- ディレクトリ構成の作成・設定ファイルの生成・`.gitignore` の追記・venv 構築は **実行しない**（`projectId` が確定しないため、中途半端な導入状態を残さない）
+
+## 期待出力
+
+| 項目 | 期待値 |
+|-----|-------|
+| 生成ファイル | なし（`.claude/design-bridge.json`・`specs/`・`mocks/`・`.claude/.local/plugins/design-bridge/.venv` のいずれも作成しない） |
+| 標準出力（要約） | design-system への認可が未完了である旨、`/design-login` の実行依頼、認可後に `/design-init` を再実行する案内 |
+| 終了状態 | 中断（未導入のまま） |
+
+## 禁止事項（このケースで起きてはならないこと）
+
+- `/design-login` をスキルが代行実行しようとすること（ユーザ操作が必要）
+- `projectId` を空・ダミー値にして `.claude/design-bridge.json` を生成すること
+- 認可エラーを無視してディレクトリ構成だけ先に作ること（フックが「導入済み」と誤判定する状態を作らないため）
+- 認可が通らない段階で venv を構築し、Chromium のダウンロード（展開後 約 690 MB）を走らせること
+- 候補 0 件（case-05）と混同して `create_project` を試みること。認可エラーでは一覧自体が取得できていない
+
+## 分岐の根拠
+
+このケースが分岐するトリガーは「実行フロー 2 の `list_projects` の応答 = 認可エラー」である。SKILL.md は「`list_projects` が認可エラーを返した場合は `/design-login` の実行をユーザーに依頼し、このスキルを中断する」と定めており、重要な制約にも「認可エラー時に `/design-login` を代行実行しようとしない」が挙げられている。前提 3（`/design-login` による design-system 認可）の NG パスにあたる。
+
+同じ前提の NG でも、`jq` 不在（case-02）は任意依存のため警告付きで続行する。中断するのは `projectId` が確定しない認可エラーだけである。
+
+## 関連ケース
+
+- [case-01](case-01_new_setup_interactive.md): 認可済みで `list_projects` が候補を返す正常系
+- [case-02](case-02_new_setup_non_interactive.md): 前提の一部（`jq`）が欠けても続行できるケース（認可エラーとは異なり中断しない）
+- [case-05](case-05_no_candidate_create_project.md): 認可は通っているが候補が 0 件の場合（中断せず新規作成に進む）

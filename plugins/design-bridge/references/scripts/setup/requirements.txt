@@ -1,0 +1,33 @@
+# design-bridge プラグイン共通 依存パッケージ（全スキルの依存をマージ・ADR-024 準拠）
+# - design-push: playwright（モック HTML のスクリーンショット生成）
+# - design-init / design-mock / design-pull / design-status: 標準ライブラリのみ（依存追加なし）
+#
+# 【セットアップ】
+# venv 構築後、ブラウザバイナリの取得が別途必要:
+#   "<venv>/Scripts/python.exe" -m playwright install chromium
+# ディスク使用量の目安: venv 約 130 MB + Chromium 約 690 MB
+#
+# 【pin の根拠】2026-10-23 に実機検証
+# playwright 1.60.0 が引く Chromium は 148.0.7778.96（Requires-Python >= 3.9）。
+# Python 3.9.8 / Windows 11 上で capture.py の次を実測で確認済み。
+#   通常撮影 / full_page の 20000px クランプ / JavaScript 無効化 /
+#   mocksDir 外サブリソースの遮断 / symlink 除外 / 終了コード 0・2
+#
+# 【CVE 監視ポリシー】
+# - 定期的に `pip-audit` または `osv-scanner` で CVE 公開状況を確認すること
+# - バージョン上げ時は pip install 後にスクリーンショット生成の動作確認を行い pin を更新する
+#
+# 【重要】Chromium 本体は pip の管理外のため pip-audit に捕捉されない。
+# capture.py は design-pull 経由で他者が書いた HTML を描画しうるため、
+# レンダラの世代が古いままだと攻撃面になる。playwright の pin を上げると
+# 同梱 Chromium も更新されるので、CVE 確認は pip パッケージだけでなく
+# 「この pin が引く Chromium のバージョン」まで含めて行うこと。
+# 対応表は playwright パッケージ内の driver/package/browsers.json で確認できる。
+# 緩和として capture.py 側で JavaScript 無効化・サブリソース遮断・
+# オフライン描画を行っているが、pin の定期更新を代替するものではない。
+#
+# 【convert-doc との差異】同一マーケットプレイスの convert-doc は 1.48.0（Chromium 130）
+# のまま。design-bridge は第三者が書いた HTML を描画しうるためレンダラ更新の優先度が
+# 高く、pin を揃えずこちらを先行させている。
+
+playwright==1.60.0
