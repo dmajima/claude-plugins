@@ -31,7 +31,7 @@
 | グローバル | `~/.claude/agents/{name}.md` |
 | プラグイン同梱 | `plugins/extension-toolkit/agents/{name}.md` |
 
-詳細は [`../agent-utilization.md`](../agent-utilization.md) を参照。
+詳細は [`../guides/agent-utilization.md`](../guides/agent-utilization.md) を参照。
 
 ## 起動方法
 

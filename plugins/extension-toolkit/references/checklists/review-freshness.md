@@ -178,5 +178,5 @@ Agent({ subagent_type: "security-engineer", prompt: "..." })                 # �
 |-----|---------|
 | エージェント全般の活用方針 | [`agent-utilization.md`](../guides/agent-utilization.md) |
 | アーキテクチャ決定 | [`architecture-decisions.md`](../architecture/)（ADR-021） |
-| `extension-review` のチーム選定 | [`../skills/extension-review/references/team-selection.md`](../skills/extension-review/references/team-selection.md) |
+| `extension-review` のチーム選定 | [`../../skills/extension-review/references/team-selection.md`](../../skills/extension-review/references/team-selection.md) |
 | 完了前自己検証 | [`completion-checklist.md`](completion-checklist.md) |

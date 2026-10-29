@@ -234,7 +234,7 @@ plugins/{plugin-name}/references/scripts/
 | 拡張子別サブフォルダ（`references/scripts/py/` `references/scripts/sh/` 等） | 業務単位で分けるべき |
 | **スキル直下 `references/scripts/` に Python venv 構築・撤去スクリプトを置く** | プラグイン直下 `references/scripts/setup/` に集約（ADR-024） |
 | **スキルごとの個別 `requirements.txt` を作る** | プラグイン直下に統合（ADR-024） |
-| **md ファイル内に実行スクリプトをインライン記載する** | `references/scripts/{業務単位}/` にファイル化（ADR-025、詳細は [`../scripts-policy.md`](../scripts-policy.md)）|
+| **md ファイル内に実行スクリプトをインライン記載する** | `references/scripts/{業務単位}/` にファイル化（ADR-025、詳細は [`scripts-policy.md`](scripts-policy.md)）|
 
 ### 5.4 venv の配置と運用
 
@@ -245,4 +245,4 @@ plugins/{plugin-name}/references/scripts/
 | 各スキルの呼び出し方 | `bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/setup_venv.sh" -WorkDir "$WorkDir" -RequirementsPath "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/requirements.txt"`  |
 | `environment-setup-toolkit` の役割 | プラグイン直下スクリプト呼び出しのオーケストレーション（自前で setup を持たない、ADR-024） |
 
-詳細は [`../scripts-policy.md`](../scripts-policy.md) 節 5 を参照。
+詳細は [`scripts-policy.md`](scripts-policy.md) 節 5 を参照。

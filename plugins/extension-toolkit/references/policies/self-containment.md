@@ -59,7 +59,7 @@
 | 別プラグイン提供のスキルを Skill ツール経由で呼び出す | 利用者環境にそのプラグインがあるか不明 | 不在時のフォールバック設計を SKILL.md / references に明示 |
 | グローバルスキル（`~/.claude/skills/`）への依存 | 利用者環境のセットアップに依存 | 不在時のフォールバック動作を必ず定義（OK） |
 
-**例**: `marketplace-publish` は認証エラー時に `credentials-manager` グローバルスキルへの接続を提案する。`credentials-manager` 不在時のフォールバックは「ユーザに直接認証情報の確認を依頼」とする（[`../skills/marketplace-publish/references/secret-scan.md`](../skills/marketplace-publish/references/secret-scan.md) および [`../skills/marketplace-publish/references/publish-workflow.md`](../skills/marketplace-publish/references/publish-workflow.md) で明記）。
+**例**: `marketplace-publish` は認証エラー時に `credentials-manager` グローバルスキルへの接続を提案する。`credentials-manager` 不在時のフォールバックは「ユーザに直接認証情報の確認を依頼」とする（[`../../skills/marketplace-publish/references/secret-scan.md`](../../skills/marketplace-publish/references/secret-scan.md) および [`../../skills/marketplace-publish/references/publish-workflow.md`](../../skills/marketplace-publish/references/publish-workflow.md) で明記）。
 
 ### 2.5 外部ツール依存（git / python / gh 等）
 

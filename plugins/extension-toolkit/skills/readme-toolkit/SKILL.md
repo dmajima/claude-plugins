@@ -87,7 +87,7 @@ Claude Code のプラグイン・スキル等の `README.md`（人間向けリ�
 | ファイル構成 | ツリー形式（実構成と一致、プラグインの場合は `LICENSE` を含める） |
 | 依存システム | 該当時のみ（外部 URL・特定システム参照） |
 | カスタマイズ | 編集ポイントの一覧 |
-| **ライセンス**（プラグイン: 必須、ADR-029） | プラグイン直下 `LICENSE` への相対リンク（`[MIT License](LICENSE) の下で配布されています。`）。LICENSE / `plugin.json.license` の整備自体は `mit-license-toolkit` の責務で、本スキルは README への記載のみ担当 |
+| **ライセンス**（プラグイン: 必須、ADR-029） | プラグイン直下 `LICENSE` への相対リンク（`[MIT License](../../LICENSE) の下で配布されています。`）。LICENSE / `plugin.json.license` の整備自体は `mit-license-toolkit` の責務で、本スキルは README への記載のみ担当 |
 
 ### 5. 過去履歴の除去（更新時）
 
