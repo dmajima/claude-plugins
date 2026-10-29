@@ -3,7 +3,7 @@
 `deep-test` プラグインの全 worker スキル 13 種が共通参照するリファレンスの集約インデックス。
 各スキルの SKILL.md は本ファイルを 1 行参照するだけで共通規範一式に到達できる。
 
-> **位置付け**: `${CLAUDE_PLUGIN_ROOT}/references/common-references.md`（プラグイン共通 references）。対象は worker スキル（フェーズスキル 7 + 実行スキル 6）。オーケストレータ `test` は制御専任のため本ファイルの参照契約の対象外（必要な references を直接参照する）。本ファイル → 個別スキルへの依存は持たない（適用先スキルを示す一覧の記載は許容）。
+> **位置付け**: `${CLAUDE_PLUGIN_ROOT}/references/common-references.md`（プラグイン共通 references）。対象は worker スキル（フェーズスキル 7 + 実行スキル 6）。`orchestrator-test` は制御専任のため本ファイルの参照契約の対象外（必要な references を直接参照する）。本ファイル → 個別スキルへの依存は持たない（適用先スキルを示す一覧の記載は許容）。
 > 特定スキル起動時のみ必要な節（1 章スキル一覧・3.5 セットアップ時・3.8 環境構築時）は `common-references-details.md` に分離し、本ファイルには見出しとポインタを温存する。
 
 ---
@@ -97,7 +97,7 @@
 
 実行スキル 6 種は以下の共通契約に従う。
 
-- 実行結果は**中間データとして返却するのみ**。`test-results.yaml` への書き込みはオーケストレータ `test` が専用スクリプト経由で一元実行する（並列競合防止・LLM 直接編集禁止）
+- 実行結果は**中間データとして返却するのみ**。`test-results.yaml` への書き込みは`orchestrator-test` が専用スクリプト経由で一元実行する（並列競合防止・LLM 直接編集禁止）
 - 返却する中間データの項目は `yaml-schema-results.md` の results 項目（status / reason / executed_by / duration_sec / actual / evidence / defect / extras）に対応させる
 - 実行手段が利用不可（MCP 未ロード・テストランナー不在・外部接続不可）の場合は実行を偽装せず `skipped` または `blocked` + reason で返却する（使い分けは `execution-policy.md`）
 - fail 時は defect 3 点セット（再現手順・検証データ・エビデンス）を `evidence-policy.md` に従い**その場で**収集して返却する（一次バリデーションはオーケストレータの record 時に行われる）

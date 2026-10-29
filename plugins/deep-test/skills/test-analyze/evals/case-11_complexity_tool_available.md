@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `対象説明=./ target-slug=orderapp-web base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | 対象環境に複雑度計測ツール（例: Python の radon / 多言語の lizard）が導入済みで read-only 実行可能 / リポジトリソースは full で取得可 / `spec=` `diff=` 指定なし |
 
 ## 分岐の根拠

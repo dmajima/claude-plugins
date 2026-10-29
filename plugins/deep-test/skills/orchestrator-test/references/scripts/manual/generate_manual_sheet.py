@@ -8,7 +8,7 @@ test-cases.yaml の手動系ケース（automation: manual-assist / exploratory�
 検証データ・記入欄）、exploratory ケースはチャーターシート様式（チャーター・発見目標・
 タイムボックス・セッション記入欄）で出力する。
 
-起動主体は **オーケストレータ `test` のみ**。実行スキルは本スクリプトを起動せず、
+起動主体は **`orchestrator-test` のみ**。実行スキルは本スクリプトを起動せず、
 オーケストレータから Skill args `manual-sheet={path}` で受領したパスを skipped の reason に
 転記するだけとする（スクリプト実行の責務一元化）。用途は (1) 非対話時の一括生成
 (2) 対話時の「後で実施」縮退時のオンデマンド生成 (3) 単独依頼（手順書だけ欲しい）。
@@ -52,7 +52,7 @@ except ImportError:
     sys.exit(1)
 
 # テストレベル表示名の共有モジュール（<plugin>/references/scripts/common/levels.py）を import する。
-# 本ファイル（skills/test/references/scripts/manual/）からプラグインルート直下の
+# 本ファイル（skills/orchestrator-test/references/scripts/manual/）からプラグインルート直下の
 # references/scripts/common/ までの相対深度は 5 階層（../ を 5 個。results_manager.py と同じ）。
 sys.path.insert(
     0,

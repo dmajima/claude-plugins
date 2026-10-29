@@ -7,7 +7,7 @@ Playwright MCP が登録済みかつ現セッションでロード済みの環�
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `levels=functional,system session=.claude/.local/work/20260717_01_webapp_test` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | `claude mcp list` に登録名 `playwright` のサーバーが存在 / 現セッションで `mcp__playwright__*` ツールがロード済み / venv は構築済み |
 
 ## 分岐の根拠

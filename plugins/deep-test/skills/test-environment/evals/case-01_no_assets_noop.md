@@ -8,7 +8,7 @@ SUT に docker 資産（compose / Dockerfile）が存在しない対象に対し
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=static-site project=./ base=<base> action=provision levels=functional` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.7）/ 単独起動でも同一挙動 |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.7）/ 単独起動でも同一挙動 |
 | 前提 | `project=` 配下に `compose.y*ml` / `docker-compose.y*ml` / `Dockerfile*` が存在しない。`analysis.yaml` は存在（target_type=web-app・外部ホスティング前提） |
 
 ## 分岐の根拠

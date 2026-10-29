@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `context=results target-slug=orderapp-web run=R20260717-143000` + 実行結果サマリ（functional: 対象 10 / pass 8 / fail 2） |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由・run 後の結果レビュー） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由・run 後の結果レビュー） |
 | 前提 | test-results.yaml に対象 run の fail 2 件（defect 付き）が記録済み。うち 1 件は severity: medium だが他ユーザーの情報が閲覧できる内容（過小評価）、もう 1 件は reproduction_steps に環境情報がない |
 
 ## 分岐の根拠

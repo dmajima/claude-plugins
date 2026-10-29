@@ -2,7 +2,7 @@
 
 ## 目的と範囲
 
-`deep-test` プラグインの全スキル（オーケストレータ `test` / フェーズスキル 7 種 / 実行スキル 6 種）が共通参照する **SSOT 規範群** のナビゲーション。
+`deep-test` プラグインの全スキル（`orchestrator-test` / フェーズスキル 7 種 / 実行スキル 6 種）が共通参照する **SSOT 規範群** のナビゲーション。
 テストレベル定義・YAML スキーマ・severity 基準・エビデンス要件・再テスト判定・データ配置・Playwright MCP 規約・エージェント運用・実行共通規範を集約する。
 
 ## 原則
@@ -10,7 +10,7 @@
 - **依存方向は個別スキル → 共通 references の一方向**。共通 references は個別スキルのロジック・手順本体に依存しない（適用先スキルを示すポインタ・適用一覧の記載は許容）
 - 欠陥重要度（severity）の enum 値・判定基準は **`severity-policy.md` が唯一の定義場所**。`yaml-schema-results.md` / `evidence-policy.md` / `report-format.md` は severity-policy.md への片方向参照のみ行い、基準を複製しない
 - 各 worker スキル（13 スキル）の SKILL.md からの共通参照は `common-references.md` への 1 行参照に集約する
-- `test-results.yaml` は LLM が Edit/Write で直接編集しない（オーケストレータ `test` の専用スクリプト経由に一元化）。共通規約・操作規約は `yaml-schema.md`、スキーマ本体は `yaml-schema-results.md`、配置は `data-locations.md` を参照
+- `test-results.yaml` は LLM が Edit/Write で直接編集しない（`orchestrator-test` の専用スクリプト経由に一元化）。共通規約・操作規約は `yaml-schema.md`、スキーマ本体は `yaml-schema-results.md`、配置は `data-locations.md` を参照
 - 実行手段（Playwright MCP・テストランナー・外部ツール）が利用不可の場合は実行を偽装せず `skipped` + reason で記録する（`execution-policy.md`）
 - 各スキル frontmatter の Playwright MCP ツール列挙は `playwright-mcp.md` の正本ツールリストから同期する（同期義務）
 - 本ディレクトリへのファイル追加・改名時は本ファイルのナビゲーション表と SSOT 所有権一覧を同期する

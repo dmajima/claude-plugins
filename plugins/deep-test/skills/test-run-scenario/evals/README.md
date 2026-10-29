@@ -39,7 +39,7 @@
 
 ## 注記
 
-- 本スキルの実行結果は中間データとして返却するのみで、`test-results.yaml` への書き込みはオーケストレータ `test` が行う。evals は「返却する中間結果 JSON の内容」と「実行中の判断」を検証対象とする
+- 本スキルの実行結果は中間データとして返却するのみで、`test-results.yaml` への書き込みは`orchestrator-test` が行う。evals は「返却する中間結果 JSON の内容」と「実行中の判断」を検証対象とする
 - 対話/非対話モードの確認・実績記録・ゲート判定はオーケストレータの責務のため、実行スキル単体の evals では扱わない
 - `automation: playwright-test`（`npx playwright test` 実走）経路は case-09（全 pass）/ case-10（実走前提不在の skipped）で扱い、MCP 経路（`automation: playwright`）と併存する分岐を検証する
 - 手動 / 探索の軸: `automation: manual-assist`（case-07 / 08 / 13）と `exploratory`（チャーターベース人間セッション。case-11 / 12 / 14 / 16 / 17）は対話 = human-assisted 記録・非対話 = 手順書（チャーターシート）縮退の skipped を対で検証する（規範は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md`）。対話の「後で実施」縮退は case-13（manual-assist）と case-14 副分岐（exploratory）が扱う

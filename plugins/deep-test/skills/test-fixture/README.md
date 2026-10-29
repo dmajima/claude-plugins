@@ -14,7 +14,7 @@ deep-test プラグインの Phase 1.6（フィクスチャ基盤の構築 → �
 
 本スキル `test-fixture` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の Phase 1.6（fixture フェーズ）からの委譲、または「このアプリのフィクスチャ基盤を作って」等の自然言語依頼・`/deep-test:test-fixture` コマンドでの単独起動
+- **起動トリガー**: `orchestrator-test` の Phase 1.6（fixture フェーズ）からの委譲、または「このアプリのフィクスチャ基盤を作って」等の自然言語依頼・`/deep-test:test-fixture` での単独起動
 
 ## 何をするか
 
@@ -42,8 +42,8 @@ deep-test プラグインの Phase 1.6（フィクスチャ基盤の構築 → �
 
 | 経路 | 説明 |
 |------|------|
-| test オーケストレータ経由 | フルフローの Phase 1.6（fixture 有効判定時）として Skill ツール経由で委譲される |
-| 単独起動 | 上記トリガーフレーズ、または `/deep-test:test-fixture` コマンドで本スキルのみを直接実行する |
+| orchestrator-test 経由 | フルフローの Phase 1.6（fixture 有効判定時）として Skill ツール経由で委譲される |
+| 単独起動 | 上記トリガーフレーズ、または `/deep-test:test-fixture` で本スキルのみを直接起動する |
 
 ### 引数
 
@@ -110,7 +110,7 @@ plugins/deep-test/skills/test-fixture/
 
 ## 関連スキル
 
-- `test` — オーケストレータ（Phase 1.6 の委譲元）
+- `orchestrator-test` — オーケストレータ（Phase 1.6 の委譲元）
 - `test-analyze` — Phase 1.5。`analysis.yaml` の生成元（本スキルの材料供給元）
 - `test-design` — Phase 2。`fixtures.yaml` を材料に `fixtures:` と `automation: playwright-test` を決定する消費先
 - `test-setup` — Phase 1。既存フィクスチャ基盤の有無検出情報の供給元

@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `context=design target-slug=orderapp-web`（plan / cases は `{target-slug}/` 直下の既定パス） |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由・フルフローの設計レビュー） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由・フルフローの設計レビュー） |
 | 前提 | test-plan.md と test-cases.yaml（draft ケース 12 件・approved 0 件）が存在 / 各エージェントの指摘は統合後 Medium 2 件・Low 3 件（Critical / High なし） |
 
 ## 分岐の根拠

@@ -1,4 +1,4 @@
-# test スキル（オーケストレータ）
+# orchestrator-test スキル
 
 `deep-test` プラグインのテストライフサイクル全体（設計 → 設計レビュー → 実行 → 結果レビュー → 報告 → 再テスト）を制御するオーケストレータ。
 モード判定・target-slug 解決・フェーズ委譲・ゲート判定・実績記録（専用スクリプト経由）を担当し、テストの実務はフェーズスキル・実行スキルへ委譲する。
@@ -10,9 +10,9 @@
 
 ## 導入手順
 
-本スキル `test` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
+本スキル `orchestrator-test` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: 「このアプリをテストして」等の自然言語、または `/deep-test:test`・`/deep-test:test-retest`・`/deep-test:test-report` コマンド（テストライフサイクル全体を制御するオーケストレータ）
+- **起動トリガー**: 「このアプリをテストして」等の自然言語、または `/deep-test:test`・`/deep-test:test-retest` コマンド（テストライフサイクル全体を制御するオーケストレータ）
 
 ## 役割
 
@@ -82,14 +82,14 @@ results_manager.py の依存は PyYAML のみです。venv はセッション作
 # プラグインルート（plugins/deep-test/）からの相対パスで例示
 bash references/scripts/setup/setup_venv.sh ".claude/.local/work/{session}/workspace"
 ".claude/.local/work/{session}/workspace/.venv/Scripts/python.exe" \
-  skills/test/references/scripts/results/results_manager.py summary \
+  skills/orchestrator-test/references/scripts/results/results_manager.py summary \
   --base ".claude/.local/plugins/deep-test" --target "my-app"
 ```
 
 ## ファイル構成
 
 ```
-skills/test/
+skills/orchestrator-test/
 ├── SKILL.md                        # スキル定義（Claude が読み込むエントリポイント）
 ├── README.md                       # 本ファイル（人間向け）
 ├── references/

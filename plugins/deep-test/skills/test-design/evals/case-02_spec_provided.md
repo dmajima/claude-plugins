@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=orderapp-web 対象説明=https://localhost:5001 spec=docs/requirements/spec.md levels=functional,system` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | `docs/requirements/spec.md` に要件 ID（REQ-AUTH-01 等）と受入基準を含む仕様書が存在 / `{target-slug}/` は初期化済みでケース未作成 |
 
 ## 分岐の根拠

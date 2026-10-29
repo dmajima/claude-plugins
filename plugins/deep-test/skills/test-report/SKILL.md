@@ -26,26 +26,26 @@ allowed-tools:
 | 業務 | 担当 |
 |------|------|
 | テストの実行 | `test-run-*` 実行スキル 6 種 |
-| 実績 YAML（test-results.yaml）への書き込み・修正 | オーケストレータ `test`（results_manager.py 経由のみ） |
-| 一次バリデーション（fail 記録直後の 3 点セット検証） | オーケストレータ `test` の record 時 |
-| 欠陥の修正・再テストの起動 | 修正は対象プロジェクト側 / 再テストはオーケストレータ `test` |
+| 実績 YAML（test-results.yaml）への書き込み・修正 | `orchestrator-test`（results_manager.py 経由のみ） |
+| 一次バリデーション（fail 記録直後の 3 点セット検証） | `orchestrator-test` の record 時 |
+| 欠陥の修正・再テストの起動 | 修正は対象プロジェクト側 / 再テストは`orchestrator-test` |
 | テスト設計・成果物レビュー | `test-design` / `test-review` |
 | リリース可否・受入可否の判断 | 人間（報告書の総合判定は機械的集計にとどまる） |
 
 ## トリガー条件
 
-- オーケストレータ `test` の report フェーズ（フルフロー末尾・再テスト末尾・report-only モード）から Skill ツール経由で委譲された
+- `orchestrator-test` の report フェーズ（フルフロー末尾・再テスト末尾・report-only モード）から Skill ツール経由で委譲された
 - 「テスト報告書を作成して」「テスト結果を Excel にまとめて」「実績から報告書を再生成して」と言われた
 
 起動しないケース:
 
-- テスト実行そのものの依頼（オーケストレータ `test` / `test-run-*` へ）
-- 実績 YAML の修正・記録の依頼（オーケストレータ `test` へ）
+- テスト実行そのものの依頼（`orchestrator-test` / `test-run-*` へ）
+- 実績 YAML の修正・記録の依頼（`orchestrator-test` へ）
 
 ## 前提
 
 - `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` の基準ディレクトリ配下に `{target-slug}/test-cases.yaml` と `{target-slug}/test-results.yaml` が存在し、run が 1 件以上記録されている
-- results_manager.py（`${CLAUDE_PLUGIN_ROOT}/skills/test/references/scripts/results/results_manager.py`）が存在する（validate 実行に使用）
+- results_manager.py（`${CLAUDE_PLUGIN_ROOT}/skills/orchestrator-test/references/scripts/results/results_manager.py`）が存在する（validate 実行に使用）
 - evidence-auditor エージェント定義が `${CLAUDE_PLUGIN_ROOT}/agents/` に存在する
 - Python 3.9+ / Bash が利用可能である（venv 構築は `${CLAUDE_SKILL_DIR}/references/setup.md`）
 
@@ -77,7 +77,7 @@ flowchart TD
 target-slug を解決（委譲時は引数値をそのまま使用。単独起動時は `${CLAUDE_PLUGIN_ROOT}/references/data-locations.md` 4 章の解決フロー）。報告対象は既定で**全 run（推移表示） + latest 集計**（集計規則は `${CLAUDE_PLUGIN_ROOT}/references/retest-policy.md` 5 章）。
 
 ### 2. 最終バリデーション
-venv の Python で results_manager.py の `validate` サブコマンドを実行（引数の詳細はオーケストレータ `test` スキルのドキュメントに従う）。fail の defect 3 点セット（reproduction_steps / test_data / evidence）欠落と、run の scope vs results 不整合（欠落ケース）を検出する。**違反あり → 報告書を生成せず、違反一覧を「引き渡し」の差し戻しフォーマットで返却して中断する**。
+venv の Python で results_manager.py の `validate` サブコマンドを実行（引数の詳細は`orchestrator-test` スキルのドキュメントに従う）。fail の defect 3 点セット（reproduction_steps / test_data / evidence）欠落と、run の scope vs results 不整合（欠落ケース）を検出する。**違反あり → 報告書を生成せず、違反一覧を「引き渡し」の差し戻しフォーマットで返却して中断する**。
 
 ### 3. エビデンス監査
 evidence-auditor を Agent ツールで起動（`${CLAUDE_PLUGIN_ROOT}/references/agents.md` 準拠。単独起動・共通注入事項を必ず含める）。エビデンスファイルの実在確認と機微情報のマスキング状態を監査させ、欠落・未マスクの指摘（高信頼のもの）があれば生成を中断して差し戻す。
@@ -102,7 +102,7 @@ evidence-auditor を Agent ツールで起動（`${CLAUDE_PLUGIN_ROOT}/reference
 
 ## 引き渡し
 
-正常時（呼び出し元 = オーケストレータ `test` またはユーザー）:
+正常時（呼び出し元 = `orchestrator-test` またはユーザー）:
 
 ```markdown
 ## テスト報告結果

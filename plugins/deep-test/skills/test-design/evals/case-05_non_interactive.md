@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `対象説明=./ --non-interactive`（`target-slug=` と `levels=` の指定なし） |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由・非対話） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由・非対話） |
 | 前提 | 基準ディレクトリ配下に既存 `{target-slug}/` が **2 件**存在する（`orderapp-web/` と `inventory-app/`） |
 
 ## 分岐の根拠

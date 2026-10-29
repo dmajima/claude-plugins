@@ -43,14 +43,14 @@ allowed-tools:
 | 環境構築・検証（Playwright MCP・ランナー・venv） | `test-setup` |
 | ケースの多観点レビュー・PASS / NEEDS REVISION 判定・承認（`review_status: approved` 化） | `test-review`（設計文脈） |
 | テストの実行 | `test-run-*` 実行スキル 6 種 |
-| 実績記録（test-results.yaml）・報告書生成 | オーケストレータ `test` / `test-report` |
-| 設計レビューゲートの判定・修正ループ制御 | オーケストレータ `test`（`execution-policy.md` 1.1 章） |
+| 実績記録（test-results.yaml）・報告書生成 | `orchestrator-test` / `test-report` |
+| 設計レビューゲートの判定・修正ループ制御 | `orchestrator-test`（`execution-policy.md` 1.1 章） |
 
 ## トリガー条件
 
 起動する:
 
-- オーケストレータ `test` から Skill ツール経由で委譲（フルフローの design フェーズ、design-only モード、設計レビュー NEEDS REVISION 後の修正）
+- `orchestrator-test` から Skill ツール経由で委譲（フルフローの design フェーズ、design-only モード、設計レビュー NEEDS REVISION 後の修正）
 - 「テスト計画を作って」「テストケースを設計して」「テストケースを追加・更新して」と依頼された
 
 起動しない:

@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=orderapp-web project=./ base=<base> --non-interactive` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由・非対話） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由・非対話） |
 | 前提 | `analysis.yaml` 存在（web-app・認証 EP / 外部依存あり）/ 既存 Playwright 基盤なし / target-slug / base / project はオーケストレータが付与済み |
 
 ## 分岐の根拠

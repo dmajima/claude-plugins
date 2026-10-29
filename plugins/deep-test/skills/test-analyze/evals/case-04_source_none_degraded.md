@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `対象説明=https://example.test の受注管理 Web spec=docs/spec.md target-slug=orderapp-web base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | 対象はデプロイ済み外部システムでソースツリー非提供（Glob / Read で取得不能）/ 仕様書 `docs/spec.md` と公開 API ドキュメントのみ取得可 / 複雑度計測・git churn の対象リポジトリなし |
 
 ## 分岐の根拠

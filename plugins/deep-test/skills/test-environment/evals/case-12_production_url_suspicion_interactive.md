@@ -8,7 +8,7 @@ provision の派生生成過程で、`analysis.yaml` の `external_dependencies[
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=orderapp-web project=./ base=<base> action=provision levels=functional`（対話。`--non-interactive` なし） |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.7） |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.7） |
 | 前提 | docker 資産あり・v2 疎通 OK。`analysis.yaml` の `external_dependencies[]` に決済 API 等の外部依存があり、SUT compose の interpolation 変数（例: `PAYMENT_API_URL`）が SaaS 実 URL / 本番ドメインを指す疑義がある。モック差替の可否判断がつかない接続が 1 件含まれる |
 
 ## 分岐の根拠

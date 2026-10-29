@@ -36,7 +36,7 @@
 
 ## 注記
 
-- 本スキルの実行結果は中間データとして返却するのみで、`test-results.yaml` への書き込みはオーケストレータ `test` が行う
+- 本スキルの実行結果は中間データとして返却するのみで、`test-results.yaml` への書き込みは`orchestrator-test` が行う
 - 実行は承認済みケースの範囲・非破壊操作に限定し、破壊的攻撃・対象外領域（ペネトレーションテスト・SCA・SAST）は行わない
 - evals は「返却する中間結果 JSON の内容」と「操作境界・マスキングの遵守」を検証対象とする
 - `automation: playwright-test`（`npx playwright test` 実走）経路は case-11（認証フィクスチャ storageState 切替の全 pass）/ case-12（実走前提不在の skipped）で扱い、MCP・`curl` 経路と併存する（0 章の非破壊境界は不変）

@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=orderapp-web 対象説明=./ spec=docs/requirements/spec.md base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | `docs/requirements/spec.md` に要件 ID・主要ルート / ルールを含む仕様書が存在 / リポジトリソースは full で取得可 / `diff=` 指定なし |
 
 ## 分岐の根拠

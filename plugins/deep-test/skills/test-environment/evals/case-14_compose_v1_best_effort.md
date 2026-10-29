@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=orderapp-web project=./ base=<base> action=provision levels=functional` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.7）/ 単独起動でも同一挙動 |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.7）/ 単独起動でも同一挙動 |
 | 前提 | docker 資産あり。`docker compose version` が失敗し `docker-compose --version` のみ成功する（v1 のみ検出。v1 は EOL 済み） |
 
 ## 分岐の根拠

@@ -11,7 +11,7 @@
 | 項目 | 内容 |
 |------|------|
 | 対象ケース | `automation: manual-assist`（人手の確認が不可欠な個別ケース）/ `exploratory`（チャーターベースの人間探索セッション。6 章） |
-| 適用主体 | 実行スキル 6 種（`test-run-unit` / `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security`）のケース処理と、オーケストレータ `test`（人間承認ゲートでの手動件数提示・手順書生成の起動） |
+| 適用主体 | 実行スキル 6 種（`test-run-unit` / `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security`）のケース処理と、`orchestrator-test`（人間承認ゲートでの手動件数提示・手順書生成の起動） |
 | 構図 | `playwright-test.md` と同型の「共通 references + 各 SKILL.md から参照 1 行」 |
 
 ### 1.1 記録は自動実行と完全同一経路（MANDATORY）
@@ -141,7 +141,7 @@
 
 | 項目 | 規範 |
 |------|------|
-| 生成主体 | `generate_manual_sheet.py`（オーケストレータ `test` が起動する決定論生成。LLM の手動転記では作らない） |
+| 生成主体 | `generate_manual_sheet.py`（`orchestrator-test` が起動する決定論生成。LLM の手動転記では作らない） |
 | 出力先 | `{base}/{target-slug}/manual/manual-sheet_{yyyyMMdd-HHmmss}.md`（タイムスタンプ命名で上書きしない。配置は `data-locations.md` 2 章） |
 | ヘッダ | 対象・生成日時・絞込条件・ケース revision 一覧・注意書き「記入結果は deep-test へ回付し record 経由で実績記録する。本書への記入は実績記録ではない」 |
 | マスキング | 転載する `data` / `preconditions` 等に `evidence-policy.md` 5 章の既知パターン決定論マスキングを適用する |

@@ -1,4 +1,4 @@
-# resume 復帰・実行コマンド集（test オーケストレータ）
+# resume 復帰・実行コマンド集（orchestrator-test）
 
 `flow.md` から移管した **resume の途中復帰位置判定（5 章）** と **Phase 別の実行コマンド集（6 章）** を定義する。
 `flow.md` 本体は状態遷移・フェーズ順序・ゲート判定・遡行ループを定義し、本書はその **実行時・resume 時に Read する詳細**（Phase 別コマンド・resume 復帰手順）を担う。

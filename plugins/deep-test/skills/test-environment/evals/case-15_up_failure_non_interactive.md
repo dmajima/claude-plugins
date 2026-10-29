@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=orderapp-web base=<base> action=up run-id=R20260719-150000 --non-interactive` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 5 手順 0・非対話） |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 5 手順 0・非対話） |
 | 前提 | provision 済み（`environment.yaml` あり・`config_validated: true`）。`up --wait --wait-timeout 120` がビルド失敗または起動即死で非 0 終了する |
 
 ## 分岐の根拠

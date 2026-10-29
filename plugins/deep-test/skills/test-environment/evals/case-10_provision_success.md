@@ -8,7 +8,7 @@ docker 資産のある SUT に対する `action=provision` の主成功経路を
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=orderapp-web project=./ base=<base> action=provision levels=functional,integration` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.7。疑義確認が不要のため非対話でも同一挙動） |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.7。疑義確認が不要のため非対話でも同一挙動） |
 | 前提 | `project=` 配下に `docker-compose.yml`・`Dockerfile`・`.env` が存在。`docker compose version` 成功（v2）。`analysis.yaml` 存在（build_run / external_dependencies / target_type=web-app / entry_points あり・本番誤爆疑義なし）。派生後の `config --quiet` は exit 0 |
 
 ## 分岐の根拠

@@ -1,6 +1,6 @@
 # 実行共通規範（execution-policy）
 
-`deep-test` の実行フェーズ（run）に関わる全スキル共通規範の SSOT。オーケストレータ（`test`）のゲート判定と、実行スキル 6 種（`test-run-unit` / `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security`）の共通動作を定義する。
+`deep-test` の実行フェーズ（run）に関わる全スキル共通規範の SSOT。オーケストレータ（`orchestrator-test`）のゲート判定と、実行スキル 6 種（`test-run-unit` / `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security`）の共通動作を定義する。
 
 ## 1. 実行フェーズのゲート（4 種）
 

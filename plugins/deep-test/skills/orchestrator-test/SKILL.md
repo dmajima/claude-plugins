@@ -1,5 +1,5 @@
 ---
-name: test
+name: orchestrator-test
 description: deep-test のテストライフサイクル全体のオーケストレータ。「テストして」「テスト設計して」（design-only）「ユニットテストだけ実行して」（run-only）「再テストして」「テスト報告書を作って」（report-only）や /deep-test:test で起動。モード判定・target-slug 解決・フェーズ委譲・ゲート判定・実績 YAML 記録を担い実務は各 worker へ委譲。Use when orchestrating deep-test. コードレビューの差分ユニットテスト（deep-code-review:code-review-testing）は対象外。
 allowed-tools:
   - Read
@@ -16,7 +16,7 @@ allowed-tools:
 > - `Bash` は **results_manager.py の実行・venv 構築（setup_venv.sh）・`environment.yaml` の parse 検証（venv Python。`${CLAUDE_SKILL_DIR}/references/flow-resume.md` 6 章 Phase 1.7 節）** に使用する。`test-results.yaml` / `test-cases.yaml` を Edit / Write で直接編集することは禁止
 > - MCP ゲートの実利用可否判定に `ToolSearch` を使用する（`${CLAUDE_PLUGIN_ROOT}/references/playwright-mcp.md` 4 章）
 
-# test スキル（オーケストレータ）
+# orchestrator-test スキル
 
 テストライフサイクル全体を制御し、フェーズスキル・実行スキルへの委譲とゲート判定・実績記録を一元管理する。
 テストの知識・実務は持たず、**制御（いつ・何を・どの順で・進めてよいか）** に徹する。
@@ -51,7 +51,7 @@ allowed-tools:
 
 - 「テストして」「テストを実施して」「テスト設計して」と言われた場合
 - 「再テストして」「NG だけ再テストして」「テスト報告書を作って」と言われた場合
-- `/deep-test:test` / `/deep-test:test-retest` / `/deep-test:test-report` コマンドで起動された場合
+- `/deep-test:test` / `/deep-test:test-retest` コマンドで起動された場合（report-only は `/deep-test:test report-only`）
 - Claude Code 再起動後に「resume」「続きから再開して」と言われた場合（中断 run の継続）
 
 テストレベル単体の実行依頼（例:「ユニットテストだけ実行して」）も本スキルが受け、`run-only` モードで該当実行スキルへ委譲する（実行スキルの直接起動は行わない）。

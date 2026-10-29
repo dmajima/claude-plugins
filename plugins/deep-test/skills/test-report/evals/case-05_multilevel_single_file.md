@@ -7,7 +7,7 @@
 
 | 項目 | 内容 |
 |-----|------|
-| 起動 | オーケストレータ `test` の report フェーズから委譲（対話・Excel 選択） |
+| 起動 | `orchestrator-test` の report フェーズから委譲（対話・Excel 選択） |
 | 前提 | latest に 3 レベル以上の結果が存在する（例: unit / functional / integration-external / system / performance）。uat / security 等の未実施レベルもケース定義上は存在しうる |
 
 ## 分岐の根拠

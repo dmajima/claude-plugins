@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=orderapp-web project=./ base=<base> action=provision levels=functional --non-interactive` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.7・非対話） |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.7・非対話） |
 | 前提 | case-12 と同じ疑義構成（外部依存の SaaS 実 URL 疑義）。(i) モック / ダミー値で差替可能な接続と、(ii) 差替不能な疑義（モック化もダミー化も成立しない本番接続）が残る系の両方を対象とする |
 
 ## 分岐の根拠

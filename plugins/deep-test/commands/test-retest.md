@@ -1,19 +1,19 @@
 ---
-description: オーケストレータ deep-test:test を再テストモードで起動する
+description: オーケストレータ deep-test:orchestrator-test を再テストモードで起動する
 argument-hint: "[full | ng-only | ids=TC-... | resume] [--non-interactive]"
 allowed-tools:
   - Skill
   - AskUserQuestion
 ---
 
-オーケストレータスキル `deep-test:test` を**再テストモード**で起動する。
+オーケストレータスキル `deep-test:orchestrator-test` を**再テストモード**で起動する。
 
 ## 起動方法
 
 引数からモードを特定し、下表の「引き渡す引数」に変換して Skill ツールで起動する。モード以外の引数（`--non-interactive` 等）はそのまま後ろに付けて引き渡す。
 
 ```
-Skill(skill: "deep-test:test", args: "<引き渡す引数>")
+Skill(skill: "deep-test:orchestrator-test", args: "<引き渡す引数>")
 ```
 
 - 本コマンドはモード引数の特定とバトン渡しに徹する。対象抽出（select）・承認済みケースゲート・MCP ゲート・実行・実績マージのロジックはすべてオーケストレータが行う（本コマンドで複製しない）
@@ -36,7 +36,7 @@ Skill(skill: "deep-test:test", args: "<引き渡す引数>")
 
 | 動作モード | 動作 |
 |-----------|------|
-| 対話 | AskUserQuestion で 4 モード（full / ng-only / ids / resume）から選択させる。各選択肢には上表の意味を 1 行で添える。`ids` 選択時はコマンド層では実績を照会せず、`retest ids` としてオーケストレータ（`deep-test:test`）へ委譲する。オーケストレータが `summary` の `latest_fails` から直近 NG ケースの選択肢を提示（AskUserQuestion・複数選択可）して対象 case_id を確定し、取得不能時（`latest_fails` が取得できない・空・一覧外の ID を指定したい場合）は自由入力（カンマ区切り）にフォールバックする |
+| 対話 | AskUserQuestion で 4 モード（full / ng-only / ids / resume）から選択させる。各選択肢には上表の意味を 1 行で添える。`ids` 選択時はコマンド層では実績を照会せず、`retest ids` としてオーケストレータ（`deep-test:orchestrator-test`）へ委譲する。オーケストレータが `summary` の `latest_fails` から直近 NG ケースの選択肢を提示（AskUserQuestion・複数選択可）して対象 case_id を確定し、取得不能時（`latest_fails` が取得できない・空・一覧外の ID を指定したい場合）は自由入力（カンマ区切り）にフォールバックする |
 | 非対話（`--non-interactive`） | エラーとして中断する（モードを自動選択しない）。モードの指定方法（`full` / `ng-only` / `ids=TC-...` / `resume`）を案内する |
 
 ## 動作モード判定

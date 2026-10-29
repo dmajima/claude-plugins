@@ -16,7 +16,7 @@
 | 06 | case-06_health_timeout_degraded.md | health 未達（--wait-timeout 超過）で degraded + blocked 材料（対話: 維持 / down をユーザー確認。非対話は case-16） | 委譲・対話 |
 | 07 | case-07_non_interactive_up_one_cycle.md | 非対話での up 許可（down までのワンサイクル完結を条件とする一時的副作用・確認なしで進行） | 委譲・非対話 |
 | 08 | case-08_resume_reuse.md | resume / retest 時の再利用（ps + health 再確認で健全なら再 up 不要・不健全なら down → up） | 委譲・非対話 |
-| 09 | case-09_standalone_down.md | 単独 down（コマンド起動・logs 保存 → down -v --remove-orphans → ps 残存確認。中断後の片付け） | 単独・対話 |
+| 09 | case-09_standalone_down.md | 単独 down（スキル直接起動・logs 保存 → down -v --remove-orphans → ps 残存確認。中断後の片付け） | 単独・対話 |
 | 10 | case-10_provision_success.md | provision 主成功経路（資産あり → analysis 消費 → 派生生成 → config --quiet 成功 → environment.yaml 完全出力 → env-architect 自己チェック → Markdown 要約返却） | 委譲 |
 | 11 | case-11_lifecycle_without_provision.md | up / down / status で environment.yaml 不在 → 推定でコマンドを組み立てず「先に provision が必要」と案内して終了 | 単独・対話 |
 | 12 | case-12_production_url_suspicion_interactive.md | 本番誤爆疑義（外部 URL 突合で疑義検出）→ 差替不能・判断不能な接続をユーザーへ明示確認 | 委譲・対話 |

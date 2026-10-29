@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """deep-test 実績 YAML（test-results.yaml）操作スクリプト。
 
-test-results.yaml への書き込みの唯一経路（test オーケストレータが使用）。加えて test-report
+test-results.yaml への書き込みの唯一経路（orchestrator-test が使用）。加えて test-report
 スキルが validate / summary を読み取り目的で実行する共有スクリプトでもある。実績 YAML の追記・
 集計・抽出・検証を本スクリプトに一元化する（LLM による test-results.yaml の直接編集は禁止）。
 書き込み系（init / start-run / record / finish-run / annotate）と読み取り系（select / validate /
@@ -67,7 +67,7 @@ except ImportError:
     sys.exit(1)
 
 # テストレベル定数の共有モジュール（<plugin>/references/scripts/common/levels.py）を import する。
-# 本ファイル（skills/test/references/scripts/results/）からプラグインルート直下の
+# 本ファイル（skills/orchestrator-test/references/scripts/results/）からプラグインルート直下の
 # references/scripts/common/ までの相対深度は 5 階層（../ を 5 個）。
 sys.path.insert(
     0,
@@ -1554,7 +1554,7 @@ def build_parser():
         prog="results_manager.py",
         description=(
             "deep-test 実績 YAML（test-results.yaml）操作スクリプト"
-            "（書き込みは test オーケストレータ経由。test-report は validate / summary を読み取り実行）"
+            "（書き込みは orchestrator-test 経由。test-report は validate / summary を読み取り実行）"
         ),
     )
     sub = parser.add_subparsers(dest="command", required=True)

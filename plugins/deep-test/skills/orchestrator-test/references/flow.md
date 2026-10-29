@@ -1,6 +1,6 @@
-# フェーズ遷移詳細（test オーケストレータ）
+# フェーズ遷移詳細（orchestrator-test）
 
-オーケストレータ `test` のフェーズ遷移・各フェーズの入出力・ゲート判定手順・NEEDS REVISION 時の遡行ループを定義する。
+`orchestrator-test` のフェーズ遷移・各フェーズの入出力・ゲート判定手順・NEEDS REVISION 時の遡行ループを定義する。
 ゲートそのものの定義（4 種）と非対話既定値は `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` が SSOT であり、本書は**オーケストレータ側の運用手順**（判定の実施方法・遷移制御）のみを定義する。
 resume の途中復帰位置判定（5 章）と Phase 別の実行コマンド集（6 章）は `${CLAUDE_SKILL_DIR}/references/flow-resume.md` へ移管した。**各 Phase の実行時・resume 時に** `flow-resume.md` を Read すること（本書は状態遷移・フェーズ順序・ゲート判定・遡行ループの定義に徹する。節番号は 5 章・6 章を維持）。
 

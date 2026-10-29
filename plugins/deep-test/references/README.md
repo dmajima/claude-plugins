@@ -1,6 +1,6 @@
 # プラグイン共通 references（人間向けインデックス）
 
-`deep-test` プラグインの全スキル（オーケストレータ `test` / フェーズスキル 6 種 / 実行スキル 6 種）が共通参照する SSOT 規範群のディレクトリです。
+`deep-test` プラグインの全スキル（`orchestrator-test` / フェーズスキル 6 種 / 実行スキル 6 種）が共通参照する SSOT 規範群のディレクトリです。
 本ファイルは **人間（利用者・開発者）向けのリファレンス** であり、Claude のスキル動作では参照されません。スキル動作時のナビゲーションには `references/CLAUDE.md` が使われます。
 
 ## ファイル一覧
@@ -30,7 +30,7 @@
 
 - ここに置く規範は **複数スキルから参照される横断的関心事** に限り、各規範の唯一の定義場所（SSOT）を `CLAUDE.md` の所有権一覧で管理します
 - 欠陥重要度（severity）の enum 値・判定基準は `severity-policy.md` にのみ定義し、他ファイルへは複製しません
-- `test-results.yaml` は LLM が直接編集せず、オーケストレータ `test` の専用スクリプト（results_manager.py）経由に一元化します
+- `test-results.yaml` は LLM が直接編集せず、`orchestrator-test` の専用スクリプト（results_manager.py）経由に一元化します
 
 ## 編集時の注意
 

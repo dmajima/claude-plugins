@@ -12,7 +12,7 @@ deep-test プラグインのテスト設計フェーズを担うスキル。テ�
 
 本スキル `test-design` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の design フェーズ・design-only モードからの委譲、または「テスト計画を作って」「このアプリのテストケースを設計して」等の自然言語依頼での単独起動
+- **起動トリガー**: `orchestrator-test` の design フェーズ・design-only モードからの委譲、または「テスト計画を作って」「このアプリのテストケースを設計して」等の自然言語依頼での単独起動
 
 ## 何をするか
 
@@ -38,7 +38,7 @@ deep-test プラグインのテスト設計フェーズを担うスキル。テ�
 
 | 経路 | 説明 |
 |------|------|
-| test オーケストレータ経由 | フルフローの design フェーズ・design-only モードとして Skill ツール経由で委譲される |
+| orchestrator-test 経由 | フルフローの design フェーズ・design-only モードとして Skill ツール経由で委譲される |
 | 単独起動 | 上記トリガーフレーズで本スキルのみを直接実行する |
 
 ### 引数
@@ -81,12 +81,12 @@ plugins/deep-test/skills/test-design/
 ## スコープ外
 
 - ケースのレビュー・承認（`test-review` 設計文脈が担当。本スキルは review_status を approved にしない）
-- テストの実行・実績記録（`test-run-*` / オーケストレータ `test`）
+- テストの実行・実績記録（`test-run-*` / `orchestrator-test`）
 - 環境構築（`test-setup`）・報告書生成（`test-report`）
 - ユニットテストのテストコード実装（ケース定義の設計まで）
 
 ## 関連スキル
 
-- `test` — オーケストレータ（design フェーズの委譲元・設計レビューゲートの判定）
+- `orchestrator-test` — オーケストレータ（design フェーズの委譲元・設計レビューゲートの判定）
 - `test-review` — 設計文脈で本スキルの成果物をレビュー・承認する
 - `test-setup` — 実行環境の事前検証（feasibility 評価の環境情報源）

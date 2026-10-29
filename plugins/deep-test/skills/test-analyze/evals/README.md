@@ -37,7 +37,7 @@
 
 ## 軸と不変条件について
 
-本スキルの evals は「委譲（オーケストレータ `test` 経由）/ 単独」と「対話 / 非対話」、および入力オプション（`spec=` / `diff=` の有無）と `source_availability`（full / partial / none）の縮退軸で分岐を検証する。
+本スキルの evals は「委譲（`orchestrator-test` 経由）/ 単独」と「対話 / 非対話」、および入力オプション（`spec=` / `diff=` の有無）と `source_availability`（full / partial / none）の縮退軸で分岐を検証する。
 縮退軸は両端点（full = case-01 / none = case-04）と中間（partial = case-06。取得可能範囲のみ解析し欠落を `open_questions` へ）をケース化し、同じ不変条件で扱う。partial はコード解析を全スキップせず、取得済み EP・hotspots と欠落 open_questions が 1 材料内に併存してセクションごとに `confidence` / 充足度が分かれる（full 一律 / none 一律のいずれとも異なる独立経路）。
 
 さらに、入力欠落に関わる 2 軸を独立して検証する。

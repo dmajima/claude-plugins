@@ -1,6 +1,6 @@
 # case-24 Phase 1 で test-setup が PARTIAL を返す（非対話・停止せず自動続行し skipped 見込みを記録）
 
-オーケストレータ `test` の Phase 1（setup 確認）で `test-setup` が総合判定 **PARTIAL** を返した場合の**非対話モード**の挙動を検証する。case-22（対話・主軸）の対として、ユーザー提示を伴わず停止せず自動続行し、利用不可項目に対応するレベルのケースが実行時 skipped + reason になる見込みを記録することを扱う。
+`orchestrator-test` の Phase 1（setup 確認）で `test-setup` が総合判定 **PARTIAL** を返した場合の**非対話モード**の挙動を検証する。case-22（対話・主軸）の対として、ユーザー提示を伴わず停止せず自動続行し、利用不可項目に対応するレベルのケースが実行時 skipped + reason になる見込みを記録することを扱う。
 
 ## 入力
 

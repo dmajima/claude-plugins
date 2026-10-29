@@ -1,6 +1,6 @@
 # フェーズ間の成果物引き継ぎ規約（state-handoff）
 
-オーケストレータ `test` と worker スキルの間で受け渡すデータ（Skill args・返却データ・スクリプト入出力）の規約を定義する。
+`orchestrator-test` と worker スキルの間で受け渡すデータ（Skill args・返却データ・スクリプト入出力）の規約を定義する。
 実行スキルからの**中間結果フォーマットは `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 4 章が SSOT** であり、本書では構造を複製しない。
 
 ---

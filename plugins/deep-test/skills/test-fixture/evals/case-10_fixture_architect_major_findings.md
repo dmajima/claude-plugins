@@ -7,7 +7,7 @@ fixture-architect 自己チェックが**重大指摘**を返し、`fixture-proc
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=orderapp-web project=./ base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.6）/ 単独起動でも同一挙動 |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.6）/ 単独起動でも同一挙動 |
 | 前提 | web-app・`analysis.yaml` 消費済みで認証/モック/base を生成済み（Phase 1 完了）/ fixture-architect が総合所見「NEEDS REVISION 相当」で**重大指摘を根拠付きで返す**（例: storageState 出力先を SUT プロダクションコード配下に書く**書き込み境界の逸脱**・`auth.setup.ts` に実ユーザー名/パスワードを直書きした**認証情報のハードコード**・auth と mock を 1 fixture に混載した**責務分離の崩れ**・`analysis.yaml` に根拠の無い外部依存をモックした**存在しない依存**）/ 併せて信頼度の低い指摘・入力不足で確認できない指摘も混在する |
 
 ## 分岐の根拠

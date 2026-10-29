@@ -7,7 +7,7 @@ fixture-architect 自己チェックが重大指摘を返さず、軽微な指�
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=orderapp-web project=./ base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.6）/ 単独起動でも同一挙動 |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.6）/ 単独起動でも同一挙動 |
 | 前提 | web-app・`analysis.yaml` 消費済みで認証/モック/base を生成済み（Phase 1 完了）/ fixture-architect が総合所見「PASS 相当」で軽微な指摘（例: fixture の `provides` 表現改善・任意の `usage` コメント追記提案・命名の一貫性提案）のみを返す / 重大指摘（書き込み境界の逸脱・認証情報のハードコード・責務分離の崩れ・再利用性の欠如・存在しない依存）はなし |
 
 ## 分岐の根拠

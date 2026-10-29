@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=orderapp-web project=./ base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.6） |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.6） |
 | 前提 | `analysis.yaml` 存在（web-app・認証 EP〔session。ログインにユーザー名 / パスワード必要〕・外部依存に決済 API）/ SUT にはプロダクションコード（アプリ本体・DB スキーマ）とテストディレクトリが併存 |
 
 ## 分岐の根拠

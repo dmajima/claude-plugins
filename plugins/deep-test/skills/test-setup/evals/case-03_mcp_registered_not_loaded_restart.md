@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `levels=functional --non-interactive` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由・非対話） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由・非対話） |
 | 前提 | `claude mcp list` に playwright 系の登録あり / 現セッションで `mcp__playwright__*` ツールが未ロード（ToolSearch で 1 件もマッチしない） |
 
 ## 分岐の根拠

@@ -8,7 +8,7 @@ provision 未実施の対象へ `action=up`（down / status も同型）が要�
 | 項目 | 内容 |
 |-----|------|
 | 起動フレーズ | `/deep-test:test-environment action=up target=orderapp-web`（または「テスト用コンテナ環境を起動して」。down / status でも同一挙動） |
-| 起動形態 | 単独（コマンド → スキル。対話） |
+| 起動形態 | 単独（スキル直接起動。対話） |
 | 前提 | `{base}/{target-slug}/environment.yaml` が存在しない（provision 未実施。`environment/` 配下の派生成果物もない） |
 
 ## 分岐の根拠

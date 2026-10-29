@@ -7,7 +7,7 @@ source-analyst 自己チェックが重大指摘を返さず、軽微な指摘�
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `対象説明=./ target-slug=orderapp-web base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | full で解析済みの analysis.yaml / target-analysis.md を生成済み / source-analyst が総合所見「PASS 相当」で軽微な指摘（例: `rationale` の表現改善・任意項目 `seam_suggestion` の追記提案）のみを返す / 重大指摘（EP / 依存 / リスク / 品質特性の抜け・弱い根拠・捏造の疑い・縮退整合の不備・責務境界の逸脱）はなし |
 
 ## 分岐の根拠

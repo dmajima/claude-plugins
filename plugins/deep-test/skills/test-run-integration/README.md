@@ -12,7 +12,7 @@
 
 本スキル `test-run-integration` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の run フェーズから scope に結合レベル（IT-a／IT-b）のケースが含まれる場合に自動委譲される（MCP ゲート通過後）。必須入力（target-slug／run_id／対象ケース／対象 URL）が揃わない直接依頼時は実行せずオーケストレータ経由を案内する
+- **起動トリガー**: `orchestrator-test` の run フェーズから scope に結合レベル（IT-a／IT-b）のケースが含まれる場合に自動委譲される（MCP ゲート通過後）。必須入力（target-slug／run_id／対象ケース／対象 URL）が揃わない直接依頼時は実行せずオーケストレータ経由を案内する
 
 ## 担当範囲
 
@@ -79,7 +79,7 @@ plugins/deep-test/skills/test-run-integration/
 
 ## 関連スキル
 
-- `test` — オーケストレータ（MCP ゲート・run_id 採番・実績記録・フェーズ制御）
+- `orchestrator-test` — オーケストレータ（MCP ゲート・run_id 採番・実績記録・フェーズ制御）
 - `test-setup` — Playwright MCP の登録・検出・再起動ハンドオフ
 - `test-run-unit` / `test-run-functional` / `test-run-scenario` / `test-run-performance` / `test-run-security` — 他レベルの実行スキル
 - `test-review` — 実行結果のレビュー（結果文脈）

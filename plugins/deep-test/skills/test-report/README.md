@@ -13,7 +13,7 @@ fail の defect 3 点セット欠落・scope/results 不整合・未マスクの
 
 本スキル `test-report` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の report フェーズ・report-only モード（`/deep-test:test-report`）からの委譲、または「テスト報告書を作成して」「テスト結果を Excel にまとめて」等の自然言語依頼での単独起動
+- **起動トリガー**: `orchestrator-test` の report フェーズ・report-only モード（`/deep-test:test-report`）からの委譲、または「テスト報告書を作成して」「テスト結果を Excel にまとめて」等の自然言語依頼での単独起動
 
 ## 使い方
 
@@ -29,7 +29,7 @@ fail の defect 3 点セット欠落・scope/results 不整合・未マスクの
 
 | 経路 | 説明 |
 |------|------|
-| オーケストレータ `test` 経由 | フルフロー / 再テストの report フェーズ、または `/deep-test:test-report`（report-only モード）から Skill ツールで委譲される |
+| `orchestrator-test` 経由 | フルフロー / 再テストの report フェーズ、または `/deep-test:test-report`（report-only モード）から Skill ツールで委譲される |
 | 単独起動 | 上記トリガーフレーズで本スキルのみを直接実行する（target-slug 解決から実施） |
 
 ### 形式選択
@@ -109,12 +109,12 @@ plugins/deep-test/skills/test-report/
 ## スコープ外
 
 - テストの実行（`test-run-*` スキルが担当）
-- 実績 YAML（test-results.yaml）への書き込み（オーケストレータ `test` が results_manager.py 経由で一元実行）
+- 実績 YAML（test-results.yaml）への書き込み（`orchestrator-test` が results_manager.py 経由で一元実行）
 - 欠陥修正・再テストの起動
 - リリース可否・受入可否の判断（総合判定は機械的集計であり、判断は人間が行う）
 
 ## 関連スキル
 
-- `test` — オーケストレータ（report フェーズから本スキルへ委譲・実績記録の一元管理）
+- `orchestrator-test` — オーケストレータ（report フェーズから本スキルへ委譲・実績記録の一元管理）
 - `test-run-unit` / `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security` — 実績を生む実行スキル
 - `test-review` — 結果レビュー（severity 妥当性・欠陥分析。報告の前段）

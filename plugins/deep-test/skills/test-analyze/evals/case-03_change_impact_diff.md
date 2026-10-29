@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=orderapp-web 対象説明=./ diff=main..feature/x base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | リポジトリソースは full で取得可 / `main..feature/x` に変更コミットが存在 / `spec=` 指定なし |
 
 ## 分岐の根拠

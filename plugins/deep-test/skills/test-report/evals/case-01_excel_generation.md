@@ -7,7 +7,7 @@
 
 | 項目 | 内容 |
 |-----|------|
-| 起動 | オーケストレータ `test` の report フェーズから Skill ツール経由で委譲（対話モード・target-slug 確定済み） |
+| 起動 | `orchestrator-test` の report フェーズから Skill ツール経由で委譲（対話モード・target-slug 確定済み） |
 | 前提 | `{target-slug}/test-results.yaml`（run 1 件以上・fail 1 件以上、defect 3 点セット完備）と `test-cases.yaml` が存在。venv 構築可能 |
 | 形式選択 | AskUserQuestion で「Excel」を選択 |
 

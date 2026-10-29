@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=orderapp-web project=./ base=<base> action=provision levels=functional` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.7） |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.7） |
 | 前提 | docker 資産あり・v2 疎通 OK・`analysis.yaml` 存在。派生生成後の `config --quiet` が非 0 で失敗する（例: 実環境の compose が `!override` タグを受理しない・未定義変数・構文エラー） |
 
 ## 分岐の根拠

@@ -43,7 +43,7 @@ SUT の docker 資産（compose / Dockerfile / `.env` 系）から**非破壊で
 | 対象ソースの解析（analysis.yaml 生成） | `test-analyze`（Phase 1.5。本スキルは消費のみ） |
 | フィクスチャ・seed コードの生成 | `test-fixture`（Phase 1.6。seed が使うテスト用接続情報は本スキルが environment.yaml で提供） |
 | ケース設計・レベル / 優先度決定 | `test-design`（Phase 2。environment.yaml を preconditions 材料に消費する側） |
-| 実績記録（test-results.yaml）・`start-run --environment` の実行 | オーケストレータ `test`（本スキルは環境文字列の材料を提供） |
+| 実績記録（test-results.yaml）・`start-run --environment` の実行 | `orchestrator-test`（本スキルは環境文字列の材料を提供） |
 | 認証情報のフル値の管理・保存・取得 | `credentials-manager`（本スキルは `.env.test` に参照形を書くまで） |
 | SUT イメージ・アプリの品質保証（ビルドエラーの修正等） | 対象外（up 失敗はそのまま理由として返す） |
 
@@ -51,7 +51,7 @@ SUT の docker 資産（compose / Dockerfile / `.env` 系）から**非破壊で
 
 起動する:
 
-- オーケストレータ `test` から Skill ツール経由で委譲（フルフローの Phase 1.7 provision・全ゲート通過後の up〔Phase 5 手順 0〕・Phase 6 判定後の down）
+- `orchestrator-test` から Skill ツール経由で委譲（フルフローの Phase 1.7 provision・全ゲート通過後の up〔Phase 5 手順 0〕・Phase 6 判定後の down）
 - 「テスト用のコンテナ環境を作って」「テスト用コンテナ環境を起動して」「テスト用コンテナ環境を片付けて」「compose からテスト環境を派生して」と依頼された
 
 起動しない:
