@@ -19,9 +19,9 @@ Claude エージェントが convert-doc の変換・デザイン追加作業を
 
 | タスク | 最初に読む | 次に読む |
 |-------|----------|---------|
-| デザインの配置先・探索順序を知る | `design-locations.md` | 利用側スキルの選択ルール（`../skills/convert-html/references/css-js-selection.md` / `../skills/convert-pptx/references/theme-selection.md`） |
-| HTML デザイン CSS を検証する | `../skills/add-design-html/references/css-contract.md` | `scripts/add-design-html/validate_css.py` |
-| PPTX テーマを検証する | `../skills/add-design-pptx/references/theme-schema.md` | `scripts/add-design-pptx/validate_theme.py` |
+| デザインの配置先・探索順序を知る | `design-locations.md` | 利用側スキルの選択ルール（`../skills/doc-convert-html/references/css-js-selection.md` / `../skills/doc-convert-pptx/references/theme-selection.md`） |
+| HTML デザイン CSS を検証する | `../skills/doc-add-design-html/references/css-contract.md` | `scripts/add-design-html/validate_css.py` |
+| PPTX テーマを検証する | `../skills/doc-add-design-pptx/references/theme-schema.md` | `scripts/add-design-pptx/validate_theme.py` |
 | venv を構築・削除する | 各スキルの `references/setup.md` | `scripts/setup/setup_venv.sh` / `teardown_venv.sh` |
 
 ## ディレクトリ構成

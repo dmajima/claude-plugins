@@ -3,7 +3,7 @@ description: Markdown を Wiki スタイル HTML に変換する（全 JS 機能
 argument-hint: <入力MDパス> [出力HTMLパス] [--title タイトル]
 ---
 
-`convert-html` スキルを **対話プロンプトを一切出さずに、全機能有効** で呼び出してください。
+`doc-convert-html` スキルを **対話プロンプトを一切出さずに、全機能有効** で呼び出してください。
 
 引数: $ARGUMENTS
 
@@ -27,7 +27,7 @@ argument-hint: <入力MDパス> [出力HTMLパス] [--title タイトル]
 5. Skill ツール経由で実行
 
    ```
-   Skill(skill: "convert-html", args: "<入力MD> <出力HTML> [--title <タイトル>]")
+   Skill(skill: "convert-doc:doc-convert-html", args: "<入力MD> <出力HTML> [--title <タイトル>]")
    ```
 
 6. 完了後、出力ファイルの絶対パスをユーザーに報告する

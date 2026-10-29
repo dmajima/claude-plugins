@@ -2,8 +2,8 @@
 
 convert-doc プラグインのデザインアセット（HTML 用 CSS / HTML テンプレート / PPTX テーマ JSON）の
 配置場所・探索順序・配置先決定ルールを定義する共通規約。
-`convert-html` / `convert-pdf` / `convert-pptx`（利用側）と
-`add-design-html` / `add-design-pptx`（作成側）の全スキルがこの規約に従う。
+`doc-convert-html` / `doc-convert-pdf` / `doc-convert-pptx`（利用側）と
+`doc-add-design-html` / `doc-add-design-pptx`（作成側）の全スキルがこの規約に従う。
 
 ## 1. デザインの単位
 

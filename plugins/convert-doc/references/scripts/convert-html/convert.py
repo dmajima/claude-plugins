@@ -616,7 +616,7 @@ def main():
         plugin_root = Path(env_plugin_root)
     else:
         plugin_root = script_dir.parent.parent.parent    # plugins/convert-doc/
-    skill_root = plugin_root / "skills" / "convert-html"
+    skill_root = plugin_root / "skills" / "doc-convert-html"
 
     def _resolve_asset(relative_path: str) -> Path:
         """Return the first existing path for ``relative_path``.

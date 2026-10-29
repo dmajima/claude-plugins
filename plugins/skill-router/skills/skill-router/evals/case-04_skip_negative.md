@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 起動フレーズ | "HTML にして" |
-| 既存状態 | `<base>/index.json` 生成済 / インデックス内に `convert-doc:convert-pptx` と `convert-doc:convert-html` が共存 |
+| 既存状態 | `<base>/index.json` 生成済 / インデックス内に `convert-doc:doc-convert-pptx` と `convert-doc:doc-convert-html` が共存 |
 | モード | 自動（UserPromptSubmit フック発火） |
 
 ## トリガープロンプト
@@ -21,7 +21,7 @@ HTML にして
 | Phase | 動作 |
 |-------|------|
 | 1 | `route.py` の `extract_5w1h` がトークン `html`（および `file_ext`）を抽出 |
-| 2 | 逆引き索引で候補に `convert-doc:convert-html` と `convert-doc:convert-pptx` が挙がる |
+| 2 | 逆引き索引で候補に `convert-doc:doc-convert-html` と `convert-doc:doc-convert-pptx` が挙がる |
 | 3 | `convert-pptx` の `skip_keywords_noun = [HTML]` がプロンプトトークンと一致し `skip_phrase_single` 発火（重み -1.0） |
 | 4 | （`skip_keywords_verb = [変換, 出力]` がプロンプトに動詞として共起する場合は `skip_phrase_combo` 発火、重み -5.0） |
 | 5 | スコア順位で `convert-html` が top1、`convert-pptx` が大幅減点で下位 |
@@ -31,8 +31,8 @@ HTML にして
 | 出力 | 内容 |
 |-----|------|
 | ルータ tier | `convert-html` のスコアが閾値到達なら high、そうでなければ mid |
-| 推奨スキル | `convert-doc:convert-html`（または mid 帯候補トップ） |
-| 抑制対象 | `convert-doc:convert-pptx` は推奨されない |
+| 推奨スキル | `convert-doc:doc-convert-html`（または mid 帯候補トップ） |
+| 抑制対象 | `convert-doc:doc-convert-pptx` は推奨されない |
 | `route_decisions.jsonl` | `tier`, `top1`, `top2`, `ratio`, `candidate`, `alternatives` の各フィールドが記録される |
 
 ## 分岐の根拠

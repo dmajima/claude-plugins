@@ -3,7 +3,7 @@ description: Markdown を Wiki スタイルの自己完結型 HTML に変換す�
 argument-hint: <入力MDパス> [出力HTMLパス] [--title タイトル]
 ---
 
-`convert-html` スキルを呼び出して Markdown を自己完結型 HTML に変換してください。
+`doc-convert-html` スキルを呼び出して Markdown を自己完結型 HTML に変換してください。
 
 引数: $ARGUMENTS
 
@@ -19,7 +19,7 @@ argument-hint: <入力MDパス> [出力HTMLパス] [--title タイトル]
 3. **Skill ツール経由で実行**
 
    ```
-   Skill(skill: "convert-html", args: "<入力MD> <出力HTML> [--title <タイトル>] [--css-template <絶対パス>] [--js-features <カンマ区切り>]")
+   Skill(skill: "convert-doc:doc-convert-html", args: "<入力MD> <出力HTML> [--title <タイトル>] [--css-template <絶対パス>] [--js-features <カンマ区切り>]")
    ```
 
 4. 完了後、出力ファイルの絶対パスをユーザーに報告する
@@ -27,4 +27,4 @@ argument-hint: <入力MDパス> [出力HTMLパス] [--title タイトル]
 ## 注意
 
 - 対話プロンプトが不要な場合は `/convert-html-full` を使用すること
-- CSS / JS 機能の選択ルールの詳細は `convert-html` スキルの SKILL.md を参照
+- CSS / JS 機能の選択ルールの詳細は `doc-convert-html` スキルの SKILL.md を参照

@@ -3,7 +3,7 @@ description: convert-html / convert-pdf 用の新しいデザイン CSS を作�
 argument-hint: "[デザイン名] [コンセプト・基調色などの要望]"
 ---
 
-`add-design-html` スキルを呼び出して、Markdown → HTML / PDF 変換用の新しいデザインを追加してください。
+`doc-add-design-html` スキルを呼び出して、Markdown → HTML / PDF 変換用の新しいデザインを追加してください。
 
 引数: $ARGUMENTS
 
@@ -15,11 +15,11 @@ argument-hint: "[デザイン名] [コンセプト・基調色などの要望]"
 2. **Skill ツール経由で実行**
 
    ```
-   Skill(skill: "add-design-html", args: "<デザイン名> <要望...>")
+   Skill(skill: "convert-doc:doc-add-design-html", args: "<デザイン名> <要望...>")
    ```
 
 3. スキル内で CSS 生成 → 契約検証（`validate_css.py`）→ サンプル変換 → 配置が行われる
-4. 完了後、配置先の絶対パスと `convert-html` / `convert-pdf` での使い方をユーザーに報告する
+4. 完了後、配置先の絶対パスと `doc-convert-html` / `doc-convert-pdf` での使い方をユーザーに報告する
 
 ## 注意
 

@@ -21,16 +21,16 @@ Markdown を PDF に変換したい
 | Phase | 動作 |
 |-------|------|
 | 1 | `route.route` がヒューリスティックで候補スキルをスコアリング |
-| 2 | `convert-doc:convert-pdf` / `convert-doc:convert-html` / `convert-doc:convert-pptx` のスコアが近接（mid 帯境界） |
+| 2 | `convert-doc:doc-convert-pdf` / `convert-doc:doc-convert-html` / `convert-doc:doc-convert-pptx` のスコアが近接（mid 帯境界） |
 | 3 | `embedding.enabled=true` のため `embedding_enrich.load_manifest` + `load_vectors` を `expected_sha256` 付きで読み込み |
 | 4 | `embedding_route.boost_rows` がプロンプトをベクトル化し、各候補とのコサイン類似度を `weight * max(0, sim - min_similarity)` で加算 |
-| 5 | 再ソート後、`convert-doc:convert-pdf` が `top1` として固定（意味的に最近接のため） |
+| 5 | 再ソート後、`convert-doc:doc-convert-pdf` が `top1` として固定（意味的に最近接のため） |
 
 ## 期待出力
 
 | 出力 | 内容 |
 |-----|------|
-| `route_decisions.jsonl` の最終行 | `{"tier": "high" or "mid", "embedding_used": true, "candidate": "convert-doc:convert-pdf", ...}` |
+| `route_decisions.jsonl` の最終行 | `{"tier": "high" or "mid", "embedding_used": true, "candidate": "convert-doc:doc-convert-pdf", ...}` |
 | `route.log` | `tier=... embedding=on` の行 |
 | reasons 列 | 各候補の `reasons` に `embedding_sim=+0.XX (+Y.YY)` または `embedding_sim=+0.XX (gated)` が含まれる |
 

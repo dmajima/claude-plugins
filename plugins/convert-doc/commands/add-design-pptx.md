@@ -3,7 +3,7 @@ description: convert-pptx 用の新しいデザインテーマ（テーマ JSON�
 argument-hint: "[デザイン名] [コンセプト・基調色などの要望]"
 ---
 
-`add-design-pptx` スキルを呼び出して、Markdown → PPTX 変換用の新しいデザインテーマを追加してください。
+`doc-add-design-pptx` スキルを呼び出して、Markdown → PPTX 変換用の新しいデザインテーマを追加してください。
 
 引数: $ARGUMENTS
 
@@ -15,11 +15,11 @@ argument-hint: "[デザイン名] [コンセプト・基調色などの要望]"
 2. **Skill ツール経由で実行**
 
    ```
-   Skill(skill: "add-design-pptx", args: "<デザイン名> <要望...>")
+   Skill(skill: "convert-doc:doc-add-design-pptx", args: "<デザイン名> <要望...>")
    ```
 
 3. スキル内でテーマ JSON 生成 → スキーマ検証（`validate_theme.py`）→ サンプル変換 → 配置が行われる
-4. 完了後、配置先の絶対パスと `convert-pptx` での使い方をユーザーに報告する
+4. 完了後、配置先の絶対パスと `doc-convert-pptx` での使い方をユーザーに報告する
 
 ## 注意
 

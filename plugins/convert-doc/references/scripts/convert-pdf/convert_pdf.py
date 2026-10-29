@@ -95,7 +95,7 @@ def generate_html(
     css_template: Optional[str] = None,
     html_template: Optional[str] = None,
 ) -> Path:
-    """Generate a self-contained HTML from Markdown using the sibling convert-html skill.
+    """Generate a self-contained HTML from Markdown using the sibling doc-convert-html skill.
     The HTML is written into a temp directory and its path is returned.
 
     ``css_template`` / ``html_template`` are forwarded verbatim to convert.py
