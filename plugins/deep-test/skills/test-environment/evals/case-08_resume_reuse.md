@@ -8,12 +8,12 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=orderapp-web base=<base> action=status --non-interactive` |
-| 起動形態 | 委譲（オーケストレータ `test` の resume 復帰手順から。MCP ゲート再判定の直後の環境再確認） |
+| 起動形態 | 委譲（`orchestrator-test` の resume 復帰手順から。MCP ゲート再判定の直後の環境再確認） |
 | 前提 | 前セッションで up 済み・down 未実施（`status.state: up` のまま中断）。コンテナは稼働継続中で health も到達可能 |
 
 ## 分岐の根拠
 
-SKILL.md「action 分岐」（status = resume / retest の再利用判定・健全なら再 up 不要）、`${CLAUDE_SKILL_DIR}/references/environment-procedures.md` 8.3 章（status 手順・再利用判定: 健全なら再利用〔再 up 不要〕・不健全なら down → up）・9 章縮退表 9〜10 行目（中断ハンドオフは `status.state: up` のまま・resume 時に再利用判定）、`${CLAUDE_PLUGIN_ROOT}/skills/test/references/flow-resume.md` 5.2 章（resume 時は環境再確認で再利用 / 作り直しを判定・resume しない場合は手動 down 案内）。オーケストレータ側の起動条件は同 flow-resume.md 6 章 Phase 1.7 節（run-only / retest / resume では provision 済み environment.yaml があれば up / down のライフサイクル呼出のみ）。
+SKILL.md「action 分岐」（status = resume / retest の再利用判定・健全なら再 up 不要）、`${CLAUDE_SKILL_DIR}/references/environment-procedures.md` 8.3 章（status 手順・再利用判定: 健全なら再利用〔再 up 不要〕・不健全なら down → up）・9 章縮退表 9〜10 行目（中断ハンドオフは `status.state: up` のまま・resume 時に再利用判定）、`${CLAUDE_PLUGIN_ROOT}/skills/orchestrator-test/references/flow-resume.md` 5.2 章（resume 時は環境再確認で再利用 / 作り直しを判定・resume しない場合は手動 down 案内）。オーケストレータ側の起動条件は同 flow-resume.md 6 章 Phase 1.7 節（run-only / retest / resume では provision 済み environment.yaml があれば up / down のライフサイクル呼出のみ）。
 
 ## 期待動作
 

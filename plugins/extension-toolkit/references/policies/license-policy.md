@@ -156,7 +156,7 @@ ADR-003（テンプレートの 2 階層管理）は通常「横断 → スキ�
 ```markdown
 ## ライセンス
 
-[MIT License](LICENSE) の下で配布されています。
+[MIT License](../../LICENSE) の下で配布されています。
 ```
 
 スキル README ではライセンス記載は任意（プラグイン直下の `LICENSE` がスキルにも適用される）。
@@ -170,7 +170,7 @@ ADR-003（テンプレートの 2 階層管理）は通常「横断 → スキ�
 | `marketplace-publish` | 公開前検証で `LICENSE` / `plugin.json.license` を fail-closed 検証。不備時は `mit-license-toolkit` への接続を案内 |
 | `extension-review` | レビュー対象プラグインの LICENSE 整備状況を機械チェック項目として確認 |
 
-`mit-license-toolkit` の起動方法・引数仕様・実行フロー詳細は [`../skills/mit-license-toolkit/SKILL.md`](../skills/mit-license-toolkit/SKILL.md) を参照。
+`mit-license-toolkit` の起動方法・引数仕様・実行フロー詳細は [`../../skills/mit-license-toolkit/SKILL.md`](../../skills/mit-license-toolkit/SKILL.md) を参照。
 
 ## 7. 検証
 
@@ -203,5 +203,5 @@ ADR-003（テンプレートの 2 階層管理）は通常「横断 → スキ�
 | 検証ルール（プラグイン LICENSE 検証） | [`validation-rules.md`](../checklists/validation-rules.md) 節 2.2 |
 | 命名・配置（`LICENSE` 許可リスト追加） | [`conventions.md`](conventions-naming.md) 節 2.1 |
 | ユーザ対話（AskUserQuestion 優先） | [`user-interaction.md`](../guides/user-interaction.md) |
-| 担当スキル | [`../skills/mit-license-toolkit/SKILL.md`](../skills/mit-license-toolkit/SKILL.md) |
+| 担当スキル | [`../../skills/mit-license-toolkit/SKILL.md`](../../skills/mit-license-toolkit/SKILL.md) |
 | MIT 標準文の出典 | https://opensource.org/licenses/MIT / https://spdx.org/licenses/MIT.html |

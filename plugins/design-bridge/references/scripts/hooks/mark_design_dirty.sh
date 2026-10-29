@@ -16,7 +16,7 @@
 #     ただし保護が外れたことは stderr へ 1 行出す。
 #   - 追記のみで重複排除を行わない。read-modify-write にすると、同一ターンで
 #     複数ファイルが並列編集されたときに lost update で記録が消える。
-#     重複排除は読み取り側（Stop フック・design-status）が sort -u で行う。
+#     重複排除は読み取り側（Stop フック・bridge-status）が sort -u で行う。
 #   - 書き込み前に経路上の symlink を拒否する。リポジトリに symlink を同梱
 #     されると、追記が ~/.bashrc 等へ流れ込む。
 #   - jq は任意依存。無ければ sed で抽出する（縮退するが機能は止めない）。

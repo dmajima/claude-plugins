@@ -2,7 +2,7 @@
 """check_default_composition.py - Verify the default-composition reference.
 
 The SSOT for the default composition is convert_pptx.build_default_composition().
-theme-schema.md (add-design-pptx skill) carries a human-readable reference copy
+theme-schema.md (doc-add-design-pptx skill) carries a human-readable reference copy
 between `<!-- default-composition-16x9:begin/end -->` markers; this script
 compares that copy against the code so the two can never silently drift.
 
@@ -30,7 +30,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 # installed: add-design-pptx/ -> scripts/ -> references/ -> plugin root.
 _PLUGIN_ROOT = Path(__file__).resolve().parents[3]
 _CONVERT_PPTX_DIR = _PLUGIN_ROOT / "references" / "scripts" / "convert-pptx"
-_SCHEMA_MD = _PLUGIN_ROOT / "skills" / "add-design-pptx" / "references" / "theme-schema.md"
+_SCHEMA_MD = _PLUGIN_ROOT / "skills" / "doc-add-design-pptx" / "references" / "theme-schema.md"
 
 sys.path.insert(0, str(_CONVERT_PPTX_DIR))
 

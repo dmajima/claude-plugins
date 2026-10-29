@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=orderapp-web base=<base> action=up run-id=R20260719-160000 --non-interactive` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 5 手順 0・非対話） |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 5 手順 0・非対話） |
 | 前提 | provision 済み・`config_validated: true`。`up --wait --wait-timeout 120` がタイムアウトで非 0 終了する（コンテナは running だが healthy 未達）。healthcheck 未定義サービスは curl 補助ポーリングでも到達しない |
 
 ## 分岐の根拠

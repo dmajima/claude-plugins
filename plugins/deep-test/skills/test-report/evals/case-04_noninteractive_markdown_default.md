@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=<確定値> --non-interactive`（オーケストレータの report-only モード等） |
-| 起動 | オーケストレータ `test` から Skill ツール経由 |
+| 起動 | `orchestrator-test` から Skill ツール経由 |
 | 前提 | 実績 YAML は完全（バリデーション通過可能） |
 
 ## 分岐の根拠

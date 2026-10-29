@@ -25,10 +25,10 @@ argument-hint: "[--local] [--deep]"
 
 ## スキル委譲
 
-引数解釈完了後、`design-status` スキルを起動して結果を待つ:
+引数解釈完了後、`bridge-status` スキルを起動して結果を待つ:
 
 ```text
-Skill(skill: "design-bridge:design-status", args: "<引数>")
+Skill(skill: "design-bridge:bridge-status", args: "<引数>")
 ```
 
 このコマンドはユーザへの問い合わせを行わない（読み取りのみのため）。
@@ -37,4 +37,4 @@ Skill(skill: "design-bridge:design-status", args: "<引数>")
 
 - 反映: [`design-push.md`](design-push.md)（`/design-push`）
 - 取り込み: [`design-pull.md`](design-pull.md)（`/design-pull`）
-- 実作業スキル: [`../skills/design-status/SKILL.md`](../skills/design-status/SKILL.md)
+- 実作業スキル: [`../skills/bridge-status/SKILL.md`](../skills/bridge-status/SKILL.md)

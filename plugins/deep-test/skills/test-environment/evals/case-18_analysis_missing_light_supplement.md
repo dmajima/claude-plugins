@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 起動フレーズ | `/deep-test:test-environment action=provision target=orderapp-web project=./`（または「compose からテスト環境を派生して」） |
-| 起動形態 | 単独（コマンド → スキル・対話。test-analyze 未実行の単独運用） |
+| 起動形態 | 単独（スキル直接起動・対話。test-analyze 未実行の単独運用） |
 | 前提 | `project=` 配下に `docker-compose.yml`・`Dockerfile` が存在。`docker compose version` 成功（v2）。`{base}/orderapp-web/analysis.yaml` が**存在しない**。派生後の `config --quiet` は exit 0 |
 
 ## 分岐の根拠

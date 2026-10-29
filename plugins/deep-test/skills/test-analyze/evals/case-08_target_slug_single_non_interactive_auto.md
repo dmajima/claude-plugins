@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `対象説明=./ --non-interactive`（`target-slug=` の指定なし） |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由・非対話） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由・非対話） |
 | 前提 | 基準ディレクトリ配下の既存 `{target-slug}/` は **1 件のみ**（`orderapp-web/`）/ リポジトリソースは full で取得可 / `spec=` `diff=` 指定なし |
 
 ## 分岐の根拠

@@ -1,7 +1,7 @@
 # test-run-performance スキル
 
 性能テスト（`performance` / TC-PERF）のケースを、Playwright のタイミング計測で実行する実行スキル。
-単一セッション応答時間の複数回計測（既定 3 回・中央値採用）と閾値判定を第一線とし、外部負荷ツール検出時のみ多重負荷を条件付き実行する。結果は中間データとしてオーケストレータ `test` に返却する。
+単一セッション応答時間の複数回計測（既定 3 回・中央値採用）と閾値判定を第一線とし、外部負荷ツール検出時のみ多重負荷を条件付き実行する。結果は中間データとして`orchestrator-test` に返却する。
 
 ## このドキュメントについて
 
@@ -12,7 +12,7 @@
 
 本スキル `test-run-performance` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の run フェーズから scope に performance レベルのケースが含まれる場合に委譲される。必須入力（target-slug／run_id／ケースリスト／アプリ情報）が揃わない直接依頼時は実行せずオーケストレータ経由を案内する
+- **起動トリガー**: `orchestrator-test` の run フェーズから scope に performance レベルのケースが含まれる場合に委譲される。必須入力（target-slug／run_id／ケースリスト／アプリ情報）が揃わない直接依頼時は実行せずオーケストレータ経由を案内する
 
 ## 担当テストレベル
 
@@ -88,6 +88,6 @@ plugins/deep-test/skills/test-run-performance/
 
 ## 関連スキル
 
-- `test`（オーケストレータ） — ライフサイクル制御・実績記録・ゲート判定
+- `orchestrator-test`（オーケストレータ） — ライフサイクル制御・実績記録・ゲート判定
 - `test-run-functional` / `test-run-scenario` — 機能・シナリオレベルの Playwright 実行
 - `test-report` — 実績 YAML からの報告書生成

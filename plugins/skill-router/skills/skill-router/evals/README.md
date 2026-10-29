@@ -80,7 +80,7 @@ python plugins/skill-router/references/scripts/routing/parse_evals.py \
 
 1. `/router-rebuild` で `<base>/index.json` を生成
 2. プロンプト「HTML にして」を送信
-3. `<base>/sessions/<id>/route_decisions.jsonl` を tail し、`candidate` が `convert-doc:convert-html` であること（`convert-pptx` ではないこと）を確認
+3. `<base>/sessions/<id>/route_decisions.jsonl` を tail し、`candidate` が `convert-doc:doc-convert-html` であること（`convert-pptx` ではないこと）を確認
 
 ### フェイルオープン確認
 

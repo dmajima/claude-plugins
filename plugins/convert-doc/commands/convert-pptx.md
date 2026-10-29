@@ -3,7 +3,7 @@ description: Markdown を Wiki スタイルの PowerPoint (PPTX) に変換する
 argument-hint: <入力MDパス> [出力PPTXパス] [--title タイトル] [--subtitle 副題]
 ---
 
-`convert-pptx` スキルを呼び出して Markdown を PowerPoint (PPTX) に変換してください。
+`doc-convert-pptx` スキルを呼び出して Markdown を PowerPoint (PPTX) に変換してください。
 
 引数: $ARGUMENTS
 
@@ -26,7 +26,7 @@ argument-hint: <入力MDパス> [出力PPTXパス] [--title タイトル] [--sub
 3. **Skill ツール経由で実行**
 
    ```
-   Skill(skill: "convert-pptx", args: "<入力MD> <出力PPTX> [オプション...]")
+   Skill(skill: "convert-doc:doc-convert-pptx", args: "<入力MD> <出力PPTX> [オプション...]")
    ```
 
 4. 完了後、出力ファイルの絶対パスをユーザーに報告する

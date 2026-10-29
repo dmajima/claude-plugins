@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=inventory-app 対象説明=./ levels=functional,integration-external` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | 対象リポジトリに画面実装はあるが、外部システム・外部 API 連携が**存在しない**（integration-external の根拠がない） |
 
 ## 分岐の根拠

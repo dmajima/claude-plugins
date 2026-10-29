@@ -35,7 +35,7 @@
 
 ## 分岐の軸について
 
-実行スキルはオーケストレータ `test` からの委譲起動が標準のため、本 evals の主軸は **担当 2 レベル（IT-a / IT-b）の実行分岐**である。
+実行スキルは`orchestrator-test` からの委譲起動が標準のため、本 evals の主軸は **担当 2 レベル（IT-a / IT-b）の実行分岐**である。
 IT-a はデータ受け渡し突合（pass / fail）、IT-b は外部接続可否とスタブポリシー判断（スタブ実行 / skipped）・API 補助確認（マスキング・認証情報の取り扱い）を検証する。
 `automation: playwright-test`（`npx playwright test` 実走）経路は case-10（モックフィクスチャで IT-b を再現可能に実走する全 pass）/ case-11（実走前提不在の skipped）で扱い、MCP 経路（`automation: playwright`）と併存する。
 起動形態の軸（委譲 / 単独）は case-06 のみで扱う。

@@ -1,19 +1,19 @@
 <!-- TEST-ENVIRONMENT-EVAL-09-SENTINEL-v1 -->
-# case-09 単独 down（コマンド起動・logs 保存 → down -v --remove-orphans → ps 残存確認）
+# case-09 単独 down（スキル直接起動・logs 保存 → down -v --remove-orphans → ps 残存確認）
 
-`/deep-test:test-environment action=down` によるコマンド単独起動で、run 外の片付け（中断後の残存コンテナの撤収）を行う分岐を検証する。logs 保存 → down → 残存確認の teardown 完全性と、run_id 不在時のログ保存先（`environment/logs/{timestamp}/`）を固定する。
+`/deep-test:test-environment action=down` によるスキル直接起動で、run 外の片付け（中断後の残存コンテナの撤収）を行う分岐を検証する。logs 保存 → down → 残存確認の teardown 完全性と、run_id 不在時のログ保存先（`environment/logs/{timestamp}/`）を固定する。
 
 ## 入力
 
 | 項目 | 内容 |
 |-----|------|
 | 起動フレーズ | `/deep-test:test-environment action=down target=orderapp-web`（または「テスト用コンテナ環境を片付けて」） |
-| 起動形態 | 単独（コマンド → スキル。対話・`run-id=` なし） |
+| 起動形態 | 単独（スキル直接起動。対話・`run-id=` なし） |
 | 前提 | 前セッションの中断で `{slug}-test` プロジェクトのコンテナが残存（`status.state: up` のまま）。environment.yaml は存在し `lifecycle.down_command` を保持 |
 
 ## 分岐の根拠
 
-commands/test-environment.md（委譲型コマンド・action=down の単独運用は中断後の片付けに有用）、SKILL.md「責務 7」（logs 保存 → down -v --remove-orphans〔up と同一 -f 群 + -p に固定〕→ ps 残存確認 → status 更新）、`${CLAUDE_SKILL_DIR}/references/environment-procedures.md` 8.2 章（down 手順: logs が down より先・run_id なしは `environment/logs/{timestamp}/`・external volume の非削除記録）・8.5 章（中断ハンドオフの手動 down と同一のコマンド形）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 10.1 章（down は up と同一の `-f` 群 + `-p` を必ず付与・`-p` 単独 down のラベル解決に依存しない）、`${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md` 5 章（ログ保存時のマスキング）。
+`/deep-test:test-environment`（スキル直接起動・action=down の単独運用は中断後の片付けに有用）、SKILL.md「責務 7」（logs 保存 → down -v --remove-orphans〔up と同一 -f 群 + -p に固定〕→ ps 残存確認 → status 更新）、`${CLAUDE_SKILL_DIR}/references/environment-procedures.md` 8.2 章（down 手順: logs が down より先・run_id なしは `environment/logs/{timestamp}/`・external volume の非削除記録）・8.5 章（中断ハンドオフの手動 down と同一のコマンド形）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 10.1 章（down は up と同一の `-f` 群 + `-p` を必ず付与・`-p` 単独 down のラベル解決に依存しない）、`${CLAUDE_PLUGIN_ROOT}/references/evidence-policy.md` 5 章（ログ保存時のマスキング）。
 
 ## 期待動作
 

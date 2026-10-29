@@ -35,6 +35,35 @@
 | CamelCase / snake_case のディレクトリ名 | エコシステム慣用に反する | kebab-case |
 | `§` 記号を含むファイル名・本文 | 文書ルール違反 | `1.` / `セクション1` / `第1節` |
 
+### 1.1 コマンド名とスキル名の衝突禁止（同一プラグイン内）
+
+同一プラグイン内で、`commands/<name>.md` の `<name>` と `skills/<name>/` のディレクトリ名を
+**一致させてはならない**。両者は `{plugin}:{name}` という同一の名前空間へ解決されるため、
+名前が一致すると修飾名が衝突する。
+
+衝突した場合に起きること:
+
+| 症状 | 内容 |
+|-----|------|
+| コマンドの自己再帰呼び出し | コマンド本文の `Skill(skill: "{plugin}:{name}")` が、委譲先のスキルではなく **コマンド自身** に解決される |
+| スキルの遮蔽 | available-skills 一覧にコマンド側だけが現れ、同名スキルは列挙されず **起動できなくなる** |
+
+いずれもコマンド・スキル個別の検証では現れず、両者を突き合わせて初めて検出できる。
+
+回避方法: **コマンド名は利用者向けの公開インタフェースとして維持し、スキル側に接頭辞を付ける**。
+
+| プラグイン | コマンド（維持） | スキル（接頭辞付き） |
+|---|---|---|
+| `project-harness` | `init` / `define` / `update` | `harness-init` / `harness-define` / `harness-update` |
+| `coding` | `coding` / `design` | `orchestrator-coding` / `orchestrator-design` |
+| `design-bridge` | `design-init` 〜 `design-status` | `bridge-init` 〜 `bridge-status` |
+
+スキル名は公開インタフェースであるため、既存プラグインで衝突を解消する改称は破壊的変更として扱い、
+[`versioning.md`](versioning.md) の基準でバージョンを更新する。
+
+検査項目は `skills/extension-review/references/checklists/plugin.md` の P-1-7、
+機械的検出は同スキルの `references/scripts/checks/run_checks.py` が担う。
+
 ## 6. コマンドファイル構造
 
 ```markdown

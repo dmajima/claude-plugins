@@ -7,7 +7,7 @@ latest に自動実行（playwright-mcp / test-framework 等）と手動実施�
 
 | 項目 | 内容 |
 |-----|------|
-| 起動 | オーケストレータ `test` の report フェーズから委譲（対話・Excel 選択。Markdown でも同一規範） |
+| 起動 | `orchestrator-test` の report フェーズから委譲（対話・Excel 選択。Markdown でも同一規範） |
 | 前提 | latest に `executed_by: playwright-mcp` / `test-framework` の自動結果と、`human-assisted` の手動結果（`automation: manual-assist` の pass 1 件 + `exploratory` の fail 1 件〔defect + `extras.session_findings` あり〕）が混在する。自動結果には performance の **pass** 1 件（results[] 直下 `extras.measured_value: 1.42 秒（中央値）` / `extras.threshold: 2.0 秒`）を含む。バリデーション・エビデンス監査は通過する |
 
 ## 分岐の根拠

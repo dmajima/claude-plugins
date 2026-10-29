@@ -14,7 +14,7 @@ Markdown の画面設計書とローカルのモック HTML を正本（SSOT）�
 |------|------|------|
 | Claude Code | 必須 | — |
 | claude.ai の design-system 認可（`/design-login`） | 必須 | `DesignSync` ツールの利用 |
-| Python 3.9 以上 | 必須 | モックのスクリーンショット生成（`design-init` が venv を構築） |
+| Python 3.9 以上 | 必須 | モックのスクリーンショット生成（`bridge-init` が venv を構築） |
 | git リポジトリ | 必須 | プロジェクトルートの判定に `.git` を使う |
 | `jq` | 任意 | 既定以外の監視対象を設定する場合。無い場合は既定（`specs` の `.md`、`mocks` の `.html`）に縮退します |
 
@@ -64,7 +64,7 @@ git checkout main
 /design-status
 ```
 
-`design-init` が Playwright の Chromium を取得するため、初回にダウンロードが発生します（展開後 約 690 MB）。
+`bridge-init` が Playwright の Chromium を取得するため、初回にダウンロードが発生します（展開後 約 690 MB）。
 
 ## 解決する課題
 
@@ -76,7 +76,7 @@ Markdown の画面設計書だけでは画面イメージが伝わらず、か�
 |------|------|
 | 正本はローカル | `specs/` の Markdown と `mocks/` の HTML だけが正本。Claude Design は表示・承認用の鏡 |
 | push は自動強制 | 設計書・モックを変更した応答は、反映が終わるまで Stop フックで終了できない |
-| 種別で誘導先を変える | モックの未反映は `design-push`、設計書の未反映は `design-mock`（モック再生成）へ案内する |
+| 種別で誘導先を変える | モックの未反映は `bridge-push`、設計書の未反映は `bridge-mock`（モック再生成）へ案内する |
 | pull は明示のみ | Claude Design 側を正とする取り込みは、ユーザーが明示的に指示したときだけ実行する |
 | 画面イメージは実体化 | モックのスクリーンショットをリポジトリに置き、Markdown から相対参照する |
 
@@ -84,11 +84,11 @@ Markdown の画面設計書だけでは画面イメージが伝わらず、か�
 
 | 機能 | 種別 | 説明 |
 |-----|------|------|
-| `design-init` | スキル | 導入。ディレクトリ構成の作成、Claude Design プロジェクトの紐付け、venv 構築 |
-| `design-mock` | スキル | 設計書とトンマナから画面モック HTML を生成する |
-| `design-push` | スキル | スクショ再生成 → 画面イメージ更新 → Claude Design へ反映 → 記録解除 |
-| `design-pull` | スキル | 明示指示時のみ。リモートと照合し、承認を得てローカルを更新する |
-| `design-status` | スキル | 未反映一覧とドリフト状況を読み取り専用で表示する |
+| `bridge-init` | スキル | 導入。ディレクトリ構成の作成、Claude Design プロジェクトの紐付け、venv 構築 |
+| `bridge-mock` | スキル | 設計書とトンマナから画面モック HTML を生成する |
+| `bridge-push` | スキル | スクショ再生成 → 画面イメージ更新 → Claude Design へ反映 → 記録解除 |
+| `bridge-pull` | スキル | 明示指示時のみ。リモートと照合し、承認を得てローカルを更新する |
+| `bridge-status` | スキル | 未反映一覧とドリフト状況を読み取り専用で表示する |
 | `/design-init` `/design-mock` `/design-push` `/design-pull` `/design-status` | コマンド | 各スキルの明示起動 |
 | PostToolUse フック | フック | 設計書・モックの変更を種別付きで記録する |
 | Stop フック | フック | 未反映が残っていれば応答の終了をブロックする |
@@ -120,11 +120,11 @@ Markdown の画面設計書だけでは画面イメージが伝わらず、か�
 
 | 発話例 | 起動 |
 |-------|-----|
-| 「このリポジトリに design-bridge を導入して」 | `design-init` |
-| 「ログイン画面のモックを作って」 | `design-mock` |
-| 「Claude Design に反映して」 | `design-push` |
-| 「Claude Design 側の変更を取り込んで」 | `design-pull` |
-| 「設計書とデザインのずれを確認して」 | `design-status` |
+| 「このリポジトリに design-bridge を導入して」 | `bridge-init` |
+| 「ログイン画面のモックを作って」 | `bridge-mock` |
+| 「Claude Design に反映して」 | `bridge-push` |
+| 「Claude Design 側の変更を取り込んで」 | `bridge-pull` |
+| 「設計書とデザインのずれを確認して」 | `bridge-status` |
 
 ### 通知の強さを変える
 
@@ -159,7 +159,7 @@ plugins/design-bridge/
 
 | システム | 用途 | 参照箇所 |
 |---------|------|---------|
-| claude.ai/design | 画面モックを design-system プロジェクトのカードとして表示・承認する | `skills/design-push/`、`skills/design-pull/` |
+| claude.ai/design | 画面モックを design-system プロジェクトのカードとして表示・承認する | `skills/bridge-push/`、`skills/bridge-pull/` |
 
 ## 注意事項
 
@@ -172,7 +172,7 @@ plugins/design-bridge/
 
 ### 仕組み上の制約
 
-- `DesignSync` にリモート変更の通知機構がないため、`design-pull` と `design-status` のドリフト検出は、セッション中の自動検知ではなく明示実行時の照合として動作します
+- `DesignSync` にリモート変更の通知機構がないため、`bridge-pull` と `bridge-status` のドリフト検出は、セッション中の自動検知ではなく明示実行時の照合として動作します
 - 変更の検出は Edit / Write / MultiEdit を対象としています。`git pull` や `git checkout`、シェル経由の書き換えによる変更は記録されません
 - スクリーンショット生成はオフラインのブラウザコンテキストで行うため、外部 CDN に依存するモックは画像化時にその部分が欠落します
 

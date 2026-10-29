@@ -11,7 +11,7 @@ allowed-tools:
 # test-run-unit スキル
 
 ユニットテスト（`level: unit` / `TC-UNIT`）を、テストフレームワーク（pytest / jest / vitest / dotnet test 等）で実施する実行スキル。
-オーケストレータ `test` から受領した scope をテストランナーで実行し、出力を解析してケース単位の中間結果 JSON を返却する（実績 YAML への書き込みは行わない）。
+`orchestrator-test` から受領した scope をテストランナーで実行し、出力を解析してケース単位の中間結果 JSON を返却する（実績 YAML への書き込みは行わない）。
 
 ## 責務
 
@@ -29,16 +29,16 @@ allowed-tools:
 | 責務外 | 担当 |
 |--------|------|
 | unit 以外のテストレベルの実行 | `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security` |
-| 実績 YAML（test-results.yaml）への書き込み | オーケストレータ `test`（results_manager.py 経由で一元実行） |
+| 実績 YAML（test-results.yaml）への書き込み | `orchestrator-test`（results_manager.py 経由で一元実行） |
 | 報告書生成 | `test-report` |
 | テストランナー・実行環境の導入・構築 | `test-setup` |
 | テストケースの設計・修正（test-cases.yaml の生成・更新） | `test-design` |
 | 実行結果のレビュー・severity 妥当性の検証 | `test-review`（結果文脈） |
-| run_id 採番・ゲート判定・再テスト対象選択 | オーケストレータ `test` |
+| run_id 採番・ゲート判定・再テスト対象選択 | `orchestrator-test` |
 
 ## トリガー条件
 
-- オーケストレータ `test` の run フェーズから、scope に unit レベル（TC-UNIT）のケースを含む実行として Skill 経由で委譲された場合
+- `orchestrator-test` の run フェーズから、scope に unit レベル（TC-UNIT）のケースを含む実行として Skill 経由で委譲された場合
 - ユーザーが「ユニットテストレベルのケースを実行して」等と直接依頼した場合（後述の実行モード判定に従う）
 
 ## 前提

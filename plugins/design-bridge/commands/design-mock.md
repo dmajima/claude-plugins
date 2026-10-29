@@ -26,10 +26,10 @@ Markdown 設計書が `specsDir` にあることが必要（トンマナ・レ�
 
 ## スキル委譲
 
-引数解釈完了後、`design-mock` スキルを起動して結果を待つ:
+引数解釈完了後、`bridge-mock` スキルを起動して結果を待つ:
 
 ```text
-Skill(skill: "design-bridge:design-mock", args: "<引数>")
+Skill(skill: "design-bridge:bridge-mock", args: "<引数>")
 ```
 
 既存ファイルの上書き確認はスキル側で行う。コマンド本体は結果を加工せず透過する。
@@ -38,4 +38,4 @@ Skill(skill: "design-bridge:design-mock", args: "<引数>")
 
 - 反映: [`design-push.md`](design-push.md)（`/design-push`）
 - 導入: [`design-init.md`](design-init.md)（`/design-init`）
-- 実作業スキル: [`../skills/design-mock/SKILL.md`](../skills/design-mock/SKILL.md)
+- 実作業スキル: [`../skills/bridge-mock/SKILL.md`](../skills/bridge-mock/SKILL.md)

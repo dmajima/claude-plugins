@@ -10,7 +10,7 @@ claude.ai/design へ反映する。スクリーンショットの再生成、設
 DesignSync による push、未反映記録のクリアまでを一括で行う。
 
 Stop フックが未反映を理由に応答の終了をブロックしている状態は、このコマンド
-（または `design-push` スキル）での反映によってのみ正規に解除される。
+（または `bridge-push` スキル）での反映によってのみ正規に解除される。
 
 ## 引数解釈
 
@@ -28,10 +28,10 @@ Stop フックが未反映を理由に応答の終了をブロックしている
 
 ## スキル委譲
 
-引数解釈完了後、`design-push` スキルを起動して結果を待つ:
+引数解釈完了後、`bridge-push` スキルを起動して結果を待つ:
 
 ```text
-Skill(skill: "design-bridge:design-push", args: "<引数>")
+Skill(skill: "design-bridge:bridge-push", args: "<引数>")
 ```
 
 push 計画の提示と確認はスキル側で行う。コマンド本体は結果を加工せず透過する。
@@ -40,4 +40,4 @@ push 計画の提示と確認はスキル側で行う。コマンド本体は結
 
 - 取り込み: [`design-pull.md`](design-pull.md)（`/design-pull`）
 - 状態確認: [`design-status.md`](design-status.md)（`/design-status`）
-- 実作業スキル: [`../skills/design-push/SKILL.md`](../skills/design-push/SKILL.md)
+- 実作業スキル: [`../skills/bridge-push/SKILL.md`](../skills/bridge-push/SKILL.md)

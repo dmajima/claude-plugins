@@ -9,7 +9,7 @@ allowed-tools: Bash(bash:*)
 ユーザの引数: $ARGUMENTS
 
 `/session-usage` コマンド本体は **トリガーと引数解釈のみ** を担当し、実作業は
-`session-usage` スキルへ委譲する（責務分離）。
+`usage-report` スキルへ委譲する（責務分離）。
 
 ## 引数解釈
 
@@ -23,10 +23,10 @@ UUID 検証は `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$` 
 
 ## スキル委譲
 
-引数解釈完了後、`session-usage` スキルを起動する:
+引数解釈完了後、`usage-report` スキルを起動する:
 
 ```text
-Skill(skill: "session-usage", args: "$ARGUMENTS")
+Skill(skill: "session-usage:usage-report", args: "$ARGUMENTS")
 ```
 
 スキルが以下を実施する:
@@ -39,5 +39,5 @@ Skill(skill: "session-usage", args: "$ARGUMENTS")
 
 ## 関連
 
-- 実作業スキル: [`../skills/session-usage/SKILL.md`](../skills/session-usage/SKILL.md)
-- 実行手順: [`../skills/session-usage/references/procedures.md`](../skills/session-usage/references/procedures.md)
+- 実作業スキル: [`../skills/usage-report/SKILL.md`](../skills/usage-report/SKILL.md)
+- 実行手順: [`../skills/usage-report/references/procedures.md`](../skills/usage-report/references/procedures.md)

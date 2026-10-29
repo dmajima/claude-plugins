@@ -12,7 +12,7 @@
 
 本スキル `test-run-unit` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の run フェーズから scope に unit レベルのケースが含まれる場合に自動委譲される。必須入力（target-slug／run_id／対象ケース）が揃わない直接依頼時は実行せずオーケストレータ経由を案内する
+- **起動トリガー**: `orchestrator-test` の run フェーズから scope に unit レベルのケースが含まれる場合に自動委譲される。必須入力（target-slug／run_id／対象ケース）が揃わない直接依頼時は実行せずオーケストレータ経由を案内する
 
 ## 担当範囲
 
@@ -77,7 +77,7 @@ plugins/deep-test/skills/test-run-unit/
 
 ## 関連スキル
 
-- `test` — オーケストレータ（run_id 採番・ゲート判定・実績記録・フェーズ制御）
+- `orchestrator-test` — オーケストレータ（run_id 採番・ゲート判定・実績記録・フェーズ制御）
 - `test-setup` — テストランナー検出・実行環境の構築
 - `test-run-functional` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security` — 他レベルの実行スキル
 - `test-review` — 実行結果のレビュー（結果文脈）

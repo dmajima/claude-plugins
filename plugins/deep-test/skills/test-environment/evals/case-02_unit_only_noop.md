@@ -8,12 +8,12 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=calc-lib project=./ base=<base> action=provision levels=unit --non-interactive` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.7。本来は委譲前にスキップされるが、起動された場合の自己限定を検証） |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.7。本来は委譲前にスキップされるが、起動された場合の自己限定を検証） |
 | 前提 | `project=` 配下に `docker-compose.yml` が存在する（資産はある）。`analysis.yaml` 存在（target_type=library・UI 経路なし）。`levels=unit` のみ |
 
 ## 分岐の根拠
 
-SKILL.md「責務 1」（`levels=` が unit のみなら no-op）・「前提」の引数表（`levels=` は環境要否判定の材料）、`${CLAUDE_SKILL_DIR}/references/environment-procedures.md` 5 章（unit のみ → 環境不要。MCP ゲートの「unit のみ判定不要」と同型）・9 章縮退表 2 行目（委譲前にオーケストレータでも抑制・生成しない or not-applicable）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 12 章（levels=unit のみ = 影響なし）。オーケストレータ側の抑制は `${CLAUDE_PLUGIN_ROOT}/skills/test/references/flow-resume.md` 6 章 Phase 1.7 節（フルフローで docker 資産が見込まれる場合のみ委譲・見込みレベルが unit のみ / design-only / run-only / retest / report-only ではスキップ）。
+SKILL.md「責務 1」（`levels=` が unit のみなら no-op）・「前提」の引数表（`levels=` は環境要否判定の材料）、`${CLAUDE_SKILL_DIR}/references/environment-procedures.md` 5 章（unit のみ → 環境不要。MCP ゲートの「unit のみ判定不要」と同型）・9 章縮退表 2 行目（委譲前にオーケストレータでも抑制・生成しない or not-applicable）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema-environment.md` 12 章（levels=unit のみ = 影響なし）。オーケストレータ側の抑制は `${CLAUDE_PLUGIN_ROOT}/skills/orchestrator-test/references/flow-resume.md` 6 章 Phase 1.7 節（フルフローで docker 資産が見込まれる場合のみ委譲・見込みレベルが unit のみ / design-only / run-only / retest / report-only ではスキップ）。
 
 ## 期待動作
 

@@ -12,7 +12,7 @@
 
 ## 分岐の根拠
 
-SKILL.md「実行モード判定」（ユーザーが直接起動〔引数不足〕→ 単独: オーケストレータ `test` 経由〔`/deep-test:test`〕での実行を案内する。実績記録・ゲート判定を伴うため単独完結はしない）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema.md` 2.2（run_id は results_manager.py start-run が採番）、`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 3 章（実績 YAML 書き込みはオーケストレータの責務）。
+SKILL.md「実行モード判定」（ユーザーが直接起動〔引数不足〕→ 単独: `orchestrator-test` 経由〔`/deep-test:test`〕での実行を案内する。実績記録・ゲート判定を伴うため単独完結はしない）、`${CLAUDE_PLUGIN_ROOT}/references/yaml-schema.md` 2.2（run_id は results_manager.py start-run が採番）、`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` 3 章（実績 YAML 書き込みはオーケストレータの責務）。
 
 ## 期待動作
 
@@ -27,7 +27,7 @@ SKILL.md「実行モード判定」（ユーザーが直接起動〔引数不足
 | 区分 | 内容 |
 |-----|------|
 | 生成ファイル | なし（実行しないためエビデンス生成なし。test-results.yaml も操作しない） |
-| 標準出力（要約） | オーケストレータ `test` 経由での起動案内・単独では実績が記録されない旨 |
+| 標準出力（要約） | `orchestrator-test` 経由での起動案内・単独では実績が記録されない旨 |
 | 終了状態 | 実行せず案内に留める（run_id 未採番） |
 
 ## 関連ケース

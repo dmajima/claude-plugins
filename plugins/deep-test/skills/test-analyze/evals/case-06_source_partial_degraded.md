@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `対象説明=./ target-slug=orderapp-web base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | 一部ディレクトリ（例: `web/` `api/` のみ提供・`payment/` サブモジュールと一部外部依存が非公開で Glob / Read 取得不能）/ 複雑度計測ツール（radon / lizard 等）は未導入 / `spec=` `diff=` 指定なし |
 
 ## 分岐の根拠

@@ -1,6 +1,6 @@
 {
   "name": "session-usage",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "セッションのトークン消費量をJSONLから集計し、AskUserQuestion対話メニューで操作する診断プラグイン",
   "author": {
     "name": "dmajima"

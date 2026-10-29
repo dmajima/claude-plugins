@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `context=design target-slug=orderapp-web scope=TC-FUNC-003,TC-FUNC-004`（承認済みケースゲートからの委譲想定） |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | test-cases.yaml に TC-FUNC-001（approved / revision: 1）・TC-FUNC-002（approved / revision: 2）・TC-FUNC-003（draft / revision: 2・内容変更で draft に戻ったケース）・TC-FUNC-004（draft / revision: 1・新規）が存在 / レビュー結果は Low 指摘のみで PASS 見込み / 同ディレクトリに test-results.yaml が存在 |
 
 ## 分岐の根拠

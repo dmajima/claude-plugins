@@ -3,7 +3,7 @@ description: Markdown を Wiki スタイルの PDF に変換する
 argument-hint: <入力MD> [出力PDF] [--title タイトル] [--format A4] [--landscape]
 ---
 
-`convert-pdf` スキルを呼び出して Markdown を PDF に変換してください。
+`doc-convert-pdf` スキルを呼び出して Markdown を PDF に変換してください。
 
 引数: $ARGUMENTS
 
@@ -27,12 +27,12 @@ argument-hint: <入力MD> [出力PDF] [--title タイトル] [--format A4] [--la
 3. **Skill ツール経由で実行**
 
    ```
-   Skill(skill: "convert-pdf", args: "<入力MD> <出力PDF> [オプション...]")
+   Skill(skill: "convert-doc:doc-convert-pdf", args: "<入力MD> <出力PDF> [オプション...]")
    ```
 
 4. 完了後、出力ファイルの絶対パスをユーザーに報告する
 
 ## 注意
 
-- 内部で `convert-html` を呼び出して HTML を生成し、Playwright (Chromium) で PDF 化する
+- 内部で `doc-convert-html` を呼び出して HTML を生成し、Playwright (Chromium) で PDF 化する
 - 初回実行時は Chromium のダウンロード（~120MB）が発生する

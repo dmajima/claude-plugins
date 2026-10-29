@@ -2,7 +2,7 @@
 # environment.yaml スキーマ（yaml-schema-environment）
 
 `environment.yaml`（test-environment が生成するテスト用派生環境のマニフェスト）の完全スキーマを定義する SSOT である（`yaml-schema.md` のスキーマ定義群ハブから参照される environment 系スキーマ）。
-`environment.yaml` は test-environment（Phase 1.7）が SUT の docker 資産（compose / Dockerfile / `.env` 系）から**非破壊で派生**させたテスト用環境（`environment/compose.test.yml` / `environment/.env.test`）の内訳と、そのライフサイクル状態（provision / up / down / status）を記録する **機械可読のマニフェスト** であり、下流（test-design / browser 系実行スキル / オーケストレータ `test` / test-fixture の seed）が **単方向に消費** する。
+`environment.yaml` は test-environment（Phase 1.7）が SUT の docker 資産（compose / Dockerfile / `.env` 系）から**非破壊で派生**させたテスト用環境（`environment/compose.test.yml` / `environment/.env.test`）の内訳と、そのライフサイクル状態（provision / up / down / status）を記録する **機械可読のマニフェスト** であり、下流（test-design / browser 系実行スキル / `orchestrator-test` / test-fixture の seed）が **単方向に消費** する。
 生成主体は test-environment の LLM（Write で直接生成・更新）であり、`test-results.yaml`（results_manager.py 経由）とは別系統である。test-environment は `test-results.yaml` / `test-cases.yaml` / `analysis.yaml` / `fixtures.yaml` に一切書き込まない。
 共通の YAML 記述規約（UTF-8・スペース 2・ISO8601 等）は `yaml-schema.md` 2.1 を継承する。フィールド・enum 値の追加・変更・改廃は本ファイルを起点に行い、他 references・スキルへは参照のみで内容を複製しない。
 

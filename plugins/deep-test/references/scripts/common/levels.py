@@ -3,7 +3,7 @@
 """deep-test 共通レベル定数モジュール（テストレベル定数のコード上の SSOT）。
 
 テストレベルに関する定数（正準順序・ケース ID プレフィクス対応・表示名・用語注記）を一元管理し、
-results_manager.py（skills/test/references/scripts/results/）と
+results_manager.py（skills/orchestrator-test/references/scripts/results/）と
 report_model.py（skills/test-report/references/scripts/report/）が共有する。
 両スクリプトはそれぞれ sys.path にこの common ディレクトリを追加して本モジュールを import する。
 

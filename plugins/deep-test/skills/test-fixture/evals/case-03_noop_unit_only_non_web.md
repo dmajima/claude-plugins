@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=calc-lib project=./ base=<base> --non-interactive` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.6）/ 単独起動でも同一挙動 |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.6）/ 単独起動でも同一挙動 |
 | 前提 | `analysis.yaml` 存在（`meta.target_type: library`・UI 経路なし・`entry_points` は public-function のみで認証なし・`external_dependencies` なし）。見込みは unit テストのみ |
 
 ## 分岐の根拠

@@ -7,7 +7,7 @@ fail の defect 3 点セット欠落（例: test_data 未記録）や run の sc
 
 | 項目 | 内容 |
 |-----|------|
-| 起動 | オーケストレータ `test` から委譲（対話 / 非対話いずれでも同一挙動） |
+| 起動 | `orchestrator-test` から委譲（対話 / 非対話いずれでも同一挙動） |
 | 前提 | test-results.yaml に、defect の `test_data` が欠落した fail、または scope に含まれるが results 未記録のケースを持つ run が存在する |
 
 ## 分岐の根拠

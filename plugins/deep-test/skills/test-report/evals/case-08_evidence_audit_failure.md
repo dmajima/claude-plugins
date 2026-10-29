@@ -6,7 +6,7 @@ results_manager.py の validate は通過するが、evidence-auditor の監査�
 
 | 項目 | 内容 |
 |-----|------|
-| 起動 | オーケストレータ `test` から委譲（対話 / 非対話いずれでも同一挙動） |
+| 起動 | `orchestrator-test` から委譲（対話 / 非対話いずれでも同一挙動） |
 | 前提 | validate は通過する（fail の defect 3 点セットは YAML 上すべて記録済み・scope/results 突合も一致）。しかし（1）fail 1 件の `defect.evidence` に記録されたパスの実体ファイルが `evidence/{run_id}/{case_id}/` に存在せず、（2）別の fail 1 件のテキストログ（evidence 実体）にマスクされていない認証情報（Bearer トークン）が残っている |
 
 ## 分岐の根拠

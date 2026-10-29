@@ -7,7 +7,7 @@ SUT に既に Playwright 基盤（`playwright.config.ts` / 一部 fixtures）が
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=orderapp-web project=./ base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.6） |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.6） |
 | 前提 | `analysis.yaml` 存在（web-app・認証 EP に admin/general 2 ロール・外部依存にメール送信 API）/ SUT に既存 `playwright.config.ts` と `tests/fixtures/auth.fixture.ts`（general ロールのみ）が存在。メール API のモックは未整備 |
 
 ## 分岐の根拠

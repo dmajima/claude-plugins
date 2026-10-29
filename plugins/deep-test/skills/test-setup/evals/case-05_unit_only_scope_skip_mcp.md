@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `levels=unit --non-interactive` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由・非対話） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由・非対話） |
 | 前提 | Playwright MCP は未登録 / jest が `package.json` から検出可能 / venv 未構築で setup スクリプトあり |
 
 ## 分岐の根拠

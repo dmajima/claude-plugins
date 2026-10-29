@@ -47,7 +47,7 @@ Playwright フィクスチャ基盤（認証 storageState・API モック・シ�
 
 起動する:
 
-- オーケストレータ `test` から Skill ツール経由で委譲（フルフローの Phase 1.6・fixture 有効判定時）
+- `orchestrator-test` から Skill ツール経由で委譲（フルフローの Phase 1.6・fixture 有効判定時）
 - 「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」「テストの下地を拡充して」と依頼された
 
 起動しない:

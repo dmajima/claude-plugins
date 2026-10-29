@@ -1,7 +1,7 @@
 # test-run-security スキル
 
 セキュリティテスト（`security` / TC-SEC）のケースを、Playwright MCP + Bash による OWASP 観点の動的チェックとして実行する実行スキル。
-承認済みケースに記載された範囲でのみ確認し、結果を中間データとしてオーケストレータ `test` に返却する。
+承認済みケースに記載された範囲でのみ確認し、結果を中間データとして`orchestrator-test` に返却する。
 
 ## このドキュメントについて
 
@@ -12,7 +12,7 @@
 
 本スキル `test-run-security` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の run フェーズから scope に security レベルのケースが含まれる場合に委譲される。必須入力（target-slug／run_id／ケースリスト／アプリ情報）が揃わない直接依頼時は実行せずオーケストレータ経由を案内する
+- **起動トリガー**: `orchestrator-test` の run フェーズから scope に security レベルのケースが含まれる場合に委譲される。必須入力（target-slug／run_id／ケースリスト／アプリ情報）が揃わない直接依頼時は実行せずオーケストレータ経由を案内する
 
 ## 担当テストレベル
 
@@ -86,6 +86,6 @@ plugins/deep-test/skills/test-run-security/
 
 ## 関連スキル
 
-- `test`（オーケストレータ） — ライフサイクル制御・実績記録・ゲート判定
+- `orchestrator-test`（オーケストレータ） — ライフサイクル制御・実績記録・ゲート判定
 - `test-run-functional` / `test-run-scenario` — 機能・シナリオレベルの Playwright 実行
 - `test-report` — 実績 YAML からの報告書生成

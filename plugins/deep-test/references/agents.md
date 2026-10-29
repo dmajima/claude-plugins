@@ -3,7 +3,7 @@
 `deep-test` プラグイン配下のスキルが参加させるエージェントの選定ルール・起動方式・プロンプト組み立て方・共通注入事項を定義する。
 
 > **構造**: エージェントの直接起動は **worker スキル**（`test-analyze` / `test-fixture` / `test-environment` / `test-design` / `test-review` / `test-report`）が担当する。
-> オーケストレータ `test` はフェーズスキルの Skill 起動のみを行い、エージェントを直接起動しない。
+> `orchestrator-test` はフェーズスキルの Skill 起動のみを行い、エージェントを直接起動しない。
 > エージェントはレビュー・分析・監査のみを担当し、成果物（test-cases.yaml / test-results.yaml / 報告書）の修正・書き込みは行わない。
 
 ---

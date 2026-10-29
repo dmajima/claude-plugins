@@ -3,7 +3,7 @@
 
 deep-test プラグインの Phase 1.7（テスト用派生環境の生成 → ライフサイクル管理 → マニフェスト出力）を担うスキル。
 SUT の docker 資産（compose / Dockerfile / `.env` 系）を**一切変更せず**、deep-test のデータ領域にテスト用の派生ファイル（`environment/compose.test.yml` / `environment/.env.test`）を生成し、`docker compose` の分離プロジェクト（`-p {slug}-test`）として起動・撤収する。
-生成・更新される機械可読マニフェスト `environment.yaml` は、`test-design`（環境前提の材料）・browser 系実行スキル（`endpoints[]` の base URL）・オーケストレータ `test`（`start-run --environment` の材料・up / down の呼出）が単方向に消費する。本スキルは**環境の用意に徹し、テストの実行はしない**。
+生成・更新される機械可読マニフェスト `environment.yaml` は、`test-design`（環境前提の材料）・browser 系実行スキル（`endpoints[]` の base URL）・`orchestrator-test`（`start-run --environment` の材料・up / down の呼出）が単方向に消費する。本スキルは**環境の用意に徹し、テストの実行はしない**。
 
 ## このドキュメントについて
 
@@ -14,7 +14,7 @@ SUT の docker 資産（compose / Dockerfile / `.env` 系）を**一切変更せ
 
 本スキル `test-environment` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の Phase 1.7（provision）・Phase 5（up）・Phase 6（down）からの委譲、または「このアプリのテスト用コンテナ環境を作って／起動して／片付けて」等の自然言語依頼・`/deep-test:test-environment` コマンドでの単独起動
+- **起動トリガー**: `orchestrator-test` の Phase 1.7（provision）・Phase 5（up）・Phase 6（down）からの委譲、または「このアプリのテスト用コンテナ環境を作って／起動して／片付けて」等の自然言語依頼・`/deep-test:test-environment` での単独起動
 
 ## 何をするか
 
@@ -40,8 +40,8 @@ compose からテスト環境を派生して
 
 | 経路 | 説明 |
 |------|------|
-| test オーケストレータ経由 | フルフローの Phase 1.7（provision）・Phase 5 手順 0（up）・Phase 6 判定後（down）として Skill ツール経由で委譲される |
-| 単独起動 | 上記トリガーフレーズ、または `/deep-test:test-environment` コマンドで本スキルのみを直接実行する（中断後の残存確認・手動 down に有用） |
+| orchestrator-test 経由 | フルフローの Phase 1.7（provision）・Phase 5 手順 0（up）・Phase 6 判定後（down）として Skill ツール経由で委譲される |
+| 単独起動 | 上記トリガーフレーズ、または `/deep-test:test-environment` で本スキルのみを直接起動する（中断後の残存確認・手動 down に有用） |
 
 ### 引数
 
@@ -112,7 +112,7 @@ plugins/deep-test/skills/test-environment/
 
 ## 関連スキル
 
-- `test` — オーケストレータ（Phase 1.7 / up / down の委譲元。`start-run --environment` の材料消費先）
+- `orchestrator-test` — オーケストレータ（Phase 1.7 / up / down の委譲元。`start-run --environment` の材料消費先）
 - `test-analyze` — Phase 1.5。`analysis.yaml` の生成元（本スキルの材料供給元）
 - `test-fixture` — Phase 1.6。seed が参照するテスト用接続情報（env var 名・endpoints）の提供先
 - `test-design` — Phase 2。environment.yaml を preconditions / 環境前提の材料に消費する

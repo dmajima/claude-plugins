@@ -19,7 +19,7 @@ deep-test プラグインが状態管理に用いる `test-cases.yaml`（テス�
 | ファイル | 目的 | 生成・更新主体（詳細は 3 章） |
 |---------|------|------------------------------|
 | `test-cases.yaml` | テストケース定義。`revision` による版管理と `review_status` による承認管理を担う | `test-design` スキル |
-| `test-results.yaml` | 実行実績。run 履歴の **append-only** 記録と `latest` 集計インデックス（ケースごとの最新結果への O(1) 参照）を担う | オーケストレータ `test`（results_manager.py 経由のみ） |
+| `test-results.yaml` | 実行実績。run 履歴の **append-only** 記録と `latest` 集計インデックス（ケースごとの最新結果への O(1) 参照）を担う | `orchestrator-test`（results_manager.py 経由のみ） |
 
 - 両ファイルの配置場所（`{target-slug}/` 直下）と基準ディレクトリは `data-locations.md` 参照
 - 実績 YAML が状態の SSOT であり、報告書はここから何度でも再生成できる派生物である（`report-format.md`）
@@ -69,11 +69,11 @@ deep-test プラグインが状態管理に用いる `test-cases.yaml`（テス�
 
 ### 3.1 test-results.yaml は results_manager.py 経由のみ
 
-- 追記・集計・抽出・検証は、オーケストレータ `test` スキルの専用スクリプト `${CLAUDE_PLUGIN_ROOT}/skills/test/references/scripts/results/results_manager.py` に一元化する
+- 追記・集計・抽出・検証は、`orchestrator-test` スキルの専用スクリプト `${CLAUDE_PLUGIN_ROOT}/skills/orchestrator-test/references/scripts/results/results_manager.py` に一元化する
 - **LLM が test-results.yaml を Edit / Write で直接編集することを禁止**する（肥大 YAML の誤編集・集計ミスの防止）
 - 実行スキル（test-run-*）は実行結果を中間データとして返却するのみとし、書き込みはオーケストレータが一元実行する（並列競合の防止）
 
-サブコマンド概要（実装・引数の詳細はオーケストレータ `test` スキル側のドキュメントに従う）:
+サブコマンド概要（実装・引数の詳細は`orchestrator-test` スキル側のドキュメントに従う）:
 
 | サブコマンド | 機能 |
 |------------|------|

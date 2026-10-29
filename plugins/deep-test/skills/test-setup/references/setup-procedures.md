@@ -152,7 +152,7 @@ flowchart TD
 
 ## 5. Step 4: venv の確認・構築
 
-venv はオーケストレータ `test` の実績管理スクリプト（PyYAML）と `test-report` の報告書生成スクリプト（openpyxl）が使用する。
+venv は`orchestrator-test` の実績管理スクリプト（PyYAML）と `test-report` の報告書生成スクリプト（openpyxl）が使用する。
 
 1. セッション作業領域を確定する: `session=` 指定があればその値、無ければ現行セッションの作業領域（`.claude/.local/work/{yyyyMMdd_nn_summary}/`）を解決する
 2. `<セッション作業領域>/workspace/.venv/Scripts/python.exe`（Windows）または `<...>/workspace/.venv/bin/python` の存在を確認する
@@ -216,4 +216,4 @@ SKILL.md「引き渡し」のフォーマットに従い、以下を必ず含め
 | `claude mcp list` がエラーになる | `claude` CLI の導入状態を確認する。解消しない場合は登録状態を `not-checked` とし、理由を詳細欄に記録して続行する |
 | 登録コマンドが失敗する | エラー出力を詳細欄に記録し `failed` とする。1 回だけ再試行してよい。規約コマンドの改変による回避はしない |
 | ToolSearch で別名プレフィクスが見つかる | 実プレフィクスを引き継ぎ事項に記録する（実行スキルは実プレフィクスで読み替える。`playwright-mcp.md` 2 章の注記） |
-| setup スクリプトが見つからない | venv 状態を `failed` とし、オーケストレータ `test` スキルの導入状態の確認を促す文言を詳細欄に記録する |
+| setup スクリプトが見つからない | venv 状態を `failed` とし、`orchestrator-test` スキルの導入状態の確認を促す文言を詳細欄に記録する |

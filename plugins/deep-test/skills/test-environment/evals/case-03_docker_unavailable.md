@@ -8,7 +8,7 @@ SUT に docker 資産はあるが、docker CLI が不在またはデーモンが
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=orderapp-web project=./ base=<base> action=provision levels=functional,integration` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.7）/ 単独起動でも同一挙動 |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.7）/ 単独起動でも同一挙動 |
 | 前提 | `project=` 配下に `docker-compose.yml`・`Dockerfile`・`.env` が存在する。`docker compose version` / `docker-compose --version` がいずれも失敗する（CLI 不在）、または `docker version` がデーモン接続エラーになる |
 
 ## 分岐の根拠

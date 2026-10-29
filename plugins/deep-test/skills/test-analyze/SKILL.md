@@ -53,13 +53,13 @@ allowed-tools:
 | レビュー判定・承認（`review_status: approved` 化） | `test-review` |
 | テストの実行・**カバレッジの実測** | `test-run-*`（カバレッジの実測は現状 deep-test 未実装の将来拡張。本スキルは責務#11 のとおり必要網羅基準・計測コマンド案の提示に留める） |
 | 動的セキュリティ検査 | `test-run-security`（本スキルは静的な攻撃面把握のみ） |
-| 実績記録（test-results.yaml）・報告書生成 | オーケストレータ `test` / `test-report` |
+| 実績記録（test-results.yaml）・報告書生成 | `orchestrator-test` / `test-report` |
 
 ## トリガー条件
 
 起動する:
 
-- オーケストレータ `test` から Skill ツール経由で委譲（フルフローの Phase 1.5 analyze フェーズ、変更影響分析 / 仕様乖離検出の依頼）
+- `orchestrator-test` から Skill ツール経由で委譲（フルフローの Phase 1.5 analyze フェーズ、変更影響分析 / 仕様乖離検出の依頼）
 - 「テスト対象を解析して」「解析材料を作って」「テスト対象のリスクを洗い出して」と依頼された
 
 起動しない:

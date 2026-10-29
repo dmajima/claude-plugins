@@ -47,17 +47,17 @@ allowed-tools:
 | 責務外 | 担当 |
 |--------|------|
 | functional 以外のテストレベルの実行 | `test-run-unit` / `test-run-integration` / `test-run-scenario` / `test-run-performance` / `test-run-security` |
-| 実績 YAML（test-results.yaml）への書き込み | オーケストレータ `test`（results_manager.py 経由で一元実行） |
+| 実績 YAML（test-results.yaml）への書き込み | `orchestrator-test`（results_manager.py 経由で一元実行） |
 | 報告書生成 | `test-report` |
 | Playwright MCP の登録・再起動ハンドオフ・環境構築 | `test-setup` |
-| MCP ゲート判定（run 前の実利用可否判定） | オーケストレータ `test`（本スキルは二重防御としての確認のみ行う） |
+| MCP ゲート判定（run 前の実利用可否判定） | `orchestrator-test`（本スキルは二重防御としての確認のみ行う） |
 | テストケースの設計・修正（test-cases.yaml の生成・更新） | `test-design` |
 | 実行結果のレビュー・severity 妥当性の検証 | `test-review`（結果文脈） |
-| run_id 採番・再テスト対象選択 | オーケストレータ `test` |
+| run_id 採番・再テスト対象選択 | `orchestrator-test` |
 
 ## トリガー条件
 
-- オーケストレータ `test` の run フェーズから、scope に functional レベル（TC-FUNC）のケースを含む実行として Skill 経由で委譲された場合
+- `orchestrator-test` の run フェーズから、scope に functional レベル（TC-FUNC）のケースを含む実行として Skill 経由で委譲された場合
 - ユーザーが「単体テストレベル（画面・機能単位）のケースを実行して」等と直接依頼した場合（後述の実行モード判定に従う）
 
 ## 前提

@@ -1,7 +1,7 @@
 # test-run-scenario スキル
 
 システムテスト（`system` / TC-SYS）と受入テスト（`uat` / TC-UAT）のケースを、Playwright MCP による業務シナリオ E2E で実行する実行スキル。
-ログインから業務操作・結果確認・ログアウトまでを通しで実行し、ケースごとの結果を中間データとしてオーケストレータ `test` に返却する。
+ログインから業務操作・結果確認・ログアウトまでを通しで実行し、ケースごとの結果を中間データとして`orchestrator-test` に返却する。
 
 ## このドキュメントについて
 
@@ -12,7 +12,7 @@
 
 本スキル `test-run-scenario` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の run フェーズから scope に system／uat レベルのケースが含まれる場合に委譲される。必須入力（target-slug／run_id／ケースリスト／アプリ情報）が揃わない直接依頼時は実行せず `/deep-test:test` 経由を案内する
+- **起動トリガー**: `orchestrator-test` の run フェーズから scope に system／uat レベルのケースが含まれる場合に委譲される。必須入力（target-slug／run_id／ケースリスト／アプリ情報）が揃わない直接依頼時は実行せず `/deep-test:test` 経由を案内する
 
 ## 担当テストレベル
 
@@ -25,7 +25,7 @@
 
 ```mermaid
 flowchart LR
-    ORCH[test オーケストレータ] -->|"Skill 委譲: run フェーズ"| SCEN[test-run-scenario]
+    ORCH[orchestrator-test] -->|"Skill 委譲: run フェーズ"| SCEN[test-run-scenario]
     SCEN -->|"中間結果 JSON"| ORCH
     ORCH -->|"results_manager.py record"| YAML[(test-results.yaml)]
 ```
@@ -84,6 +84,6 @@ plugins/deep-test/skills/test-run-scenario/
 
 ## 関連スキル
 
-- `test`（オーケストレータ） — ライフサイクル制御・実績記録・ゲート判定
+- `orchestrator-test`（オーケストレータ） — ライフサイクル制御・実績記録・ゲート判定
 - `test-run-functional` / `test-run-integration` — 単体・結合レベルの Playwright 実行
 - `test-report` — 実績 YAML からの報告書生成

@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=orderapp-web base=<base> --non-interactive`（`対象説明=` も位置引数も `spec=` も無し。対象の実体を示す情報が皆無） |
-| 起動形態 | 委譲（オーケストレータ `test` の design フェーズ）/ 単独起動でも同一挙動 |
+| 起動形態 | 委譲（`orchestrator-test` の design フェーズ）/ 単独起動でも同一挙動 |
 | 前提 | target-slug は解決済み（データ配置先は確定）だが、何をテスト対象とするか（アプリ URL・リポジトリパス・対象名）の入力が一切ない。既存 test-cases.yaml も無い（新規設計） |
 
 ## 分岐の根拠

@@ -1385,6 +1385,51 @@ def check_version_bump(target: pathlib.Path, collector: IssueCollector) -> None:
             )
 
 
+def check_command_skill_name_collision(target: pathlib.Path, collector: IssueCollector) -> None:
+    """17. 同一プラグイン内のコマンド名とスキル名の衝突検査（conventions-naming.md 節 1.1 / P-1-7）。
+
+    対象: target 配下のすべてのプラグイン（.claude-plugin/plugin.json を持つディレクトリ）。
+
+    commands/<name>.md と skills/<name>/ が同名だと、両者が同一の修飾名 {plugin}:{name} へ
+    解決されるため衝突する。結果として次の 2 つが同時に起きる。
+        - コマンド本文の Skill(skill: "{plugin}:{name}") が委譲先のスキルではなく
+          コマンド自身へ解決され、再帰呼び出しになる
+        - 同名スキルが available-skills から遮蔽され、起動できなくなる
+    コマンド単体・スキル単体の検査では現れないため、両者を突き合わせてここで検出する。
+    """
+    for plugin_json in target.rglob("plugin.json"):
+        if is_excluded_dir(plugin_json, target):
+            continue
+        if plugin_json.parent.name != ".claude-plugin":
+            continue
+        # references/templates/ 配下のテンプレートファイルは実体ではないため除外
+        if "templates" in plugin_json.parts:
+            continue
+        plugin_dir = plugin_json.parent.parent
+
+        commands_dir = plugin_dir / "commands"
+        skills_dir = plugin_dir / "skills"
+        if not commands_dir.is_dir() or not skills_dir.is_dir():
+            continue
+
+        command_names = {p.stem for p in commands_dir.glob("*.md") if p.is_file()}
+        skill_names = {p.name for p in skills_dir.iterdir() if p.is_dir()}
+
+        for name in sorted(command_names & skill_names):
+            collector.add(
+                "Critical",
+                "P-1-7: コマンド名とスキル名が衝突（conventions-naming.md 節 1.1）",
+                commands_dir / f"{name}.md",
+                (
+                    f"'{name}' が commands/{name}.md と skills/{name}/ の双方に存在する。"
+                    f"修飾名 '{plugin_dir.name}:{name}' が衝突するため、コマンドの委譲が"
+                    "自分自身へ解決されて再帰呼び出しになり、同名スキルは available-skills から"
+                    "遮蔽されて起動不能になる。コマンド名は公開インタフェースとして維持し、"
+                    "スキル側に接頭辞を付けて改称すること（例: harness-* / orchestrator-* / bridge-*）"
+                ),
+            )
+
+
 # --------------------------------------------------------------------------- #
 # メインフロー
 # --------------------------------------------------------------------------- #
@@ -1407,6 +1452,7 @@ CHECKS = [
     # PSScriptAnalyzer 静的解析（B-1）は extension-toolkit から削除済み (Bash 標準移行)
     ("Python 直起動禁止 / Start-Job ラッパー必須（automated-checks.md §15）", check_python_start_job_wrapper),
     ("バージョン更新漏れ検出（versioning.md V-2-1）", check_version_bump),
+    ("コマンド名とスキル名の衝突（conventions-naming.md 節 1.1 / P-1-7）", check_command_skill_name_collision),
 ]
 
 

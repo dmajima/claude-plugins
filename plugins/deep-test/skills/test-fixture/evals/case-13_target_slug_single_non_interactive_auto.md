@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `対象説明=./ project=./ --non-interactive`（`target-slug=` の指定なし） |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.6・非対話）/ 単独起動でも同一挙動 |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.6・非対話）/ 単独起動でも同一挙動 |
 | 前提 | 基準ディレクトリ配下の既存 `{target-slug}/` は **1 件のみ**（`orderapp-web/`）/ SUT ソース・`analysis.yaml` は取得可 / `spec=` 等の他分岐要因なし |
 
 ## 分岐の根拠

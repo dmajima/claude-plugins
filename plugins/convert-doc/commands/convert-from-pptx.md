@@ -3,7 +3,7 @@ description: PowerPoint (PPTX) を Claude が読み込める Markdown に変換�
 argument-hint: <入力PPTX> [出力MD] [--no-mermaid] [--include-notes]
 ---
 
-`convert-from-pptx` スキルを呼び出して PowerPoint (PPTX) を Markdown に変換してください。
+`doc-convert-from-pptx` スキルを呼び出して PowerPoint (PPTX) を Markdown に変換してください。
 
 引数: $ARGUMENTS
 
@@ -26,7 +26,7 @@ argument-hint: <入力PPTX> [出力MD] [--no-mermaid] [--include-notes]
 3. **Skill ツール経由で実行**
 
    ```
-   Skill(skill: "convert-from-pptx", args: "<入力PPTX> <出力MD> [オプション...]")
+   Skill(skill: "convert-doc:doc-convert-from-pptx", args: "<入力PPTX> <出力MD> [オプション...]")
    ```
 
 4. 完了後、出力 MD と画像ディレクトリの絶対パスをユーザーに報告する

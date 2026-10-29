@@ -30,7 +30,7 @@ allowed-tools:
 # test-run-security スキル
 
 セキュリティテスト（`security` / TC-SEC）のケースを、Playwright MCP + Bash による OWASP 観点の動的チェックとして実行する実行スキル。
-承認済みケースに記載された範囲でのみ確認し、結果を中間データとしてオーケストレータ `test` に返却する（`test-results.yaml` への書き込みは行わない）。
+承認済みケースに記載された範囲でのみ確認し、結果を中間データとして`orchestrator-test` に返却する（`test-results.yaml` への書き込みは行わない）。
 
 ## 責務
 
@@ -51,17 +51,17 @@ scope の security レベルのケースについて、OWASP 観点（`${CLAUDE_
 | 責務外の事項 | 担当 / 扱い |
 |------------|-----------|
 | unit / functional / integration / system / uat / performance の各レベル実行 | 各 `test-run-*` スキル |
-| `test-results.yaml` への書き込み・latest 更新 | オーケストレータ `test`（`results_manager.py` 経由） |
+| `test-results.yaml` への書き込み・latest 更新 | `orchestrator-test`（`results_manager.py` 経由） |
 | 報告書の生成 | `test-report` |
 | ケース設計・承認 | `test-design` / `test-review` |
 | **ペネトレーションテスト（攻撃連鎖・エクスプロイト実証）の代替** | 対象外（`test-levels.md` 8 章。未確認として報告書に明示） |
 | **SCA（依存ライブラリ脆弱性スキャン）・SAST（静的解析）の代替** | 対象外 |
 | **破壊的攻撃（実データ改変・削除・DoS・総当たり）の実行** | **禁止**（`security-execution.md` の禁止操作。承認済みケースの範囲=対象システム所有者の合意範囲内でのみ実行） |
-| MCP ゲート・人間承認ゲートの判定 | オーケストレータ `test`（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md`） |
+| MCP ゲート・人間承認ゲートの判定 | `orchestrator-test`（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md`） |
 
 ## トリガー条件
 
-- オーケストレータ `test` の run フェーズから Skill ツール経由で security レベルの実行を委譲された場合
+- `orchestrator-test` の run フェーズから Skill ツール経由で security レベルの実行を委譲された場合
 - 「セキュリティテストを実行して」「OWASP 観点で動的チェックして」「ヘッダ・セッション・入力検証を確認して」と指示された場合（単独起動時は実行モード判定を参照）
 
 ## 前提
@@ -79,7 +79,7 @@ scope の security レベルのケースについて、OWASP 観点（`${CLAUDE_
 | 入力 | 起動形態 | 動作 |
 |-----|---------|------|
 | オーケストレータから委譲（引数が確定） | 委譲（既定） | 非対話で承認済みケース範囲の動的チェックを実行し、中間結果 JSON を返却する |
-| ユーザーが直接起動（引数不足） | 単独 | オーケストレータ `test` 経由での実行を案内する（実績記録・ゲート判定・承認済み範囲の確認を伴うため単独完結しない） |
+| ユーザーが直接起動（引数不足） | 単独 | `orchestrator-test` 経由での実行を案内する（実績記録・ゲート判定・承認済み範囲の確認を伴うため単独完結しない） |
 
 観点の分岐（各 security ケースの確認観点で自動分岐。手順は `references/security-execution.md`）:
 

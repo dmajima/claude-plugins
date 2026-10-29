@@ -7,7 +7,7 @@ source-analyst 自己チェックが**重大指摘**を返し、procedures.md 1 
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `対象説明=./ target-slug=orderapp-web base=<base>` |
-| 起動形態 | 委譲（オーケストレータ `test` から Skill ツール経由） |
+| 起動形態 | 委譲（`orchestrator-test` から Skill ツール経由） |
 | 前提 | full で解析済みの analysis.yaml / target-analysis.md を生成済み（Phase 1 材料生成は完了）/ source-analyst が総合所見「NEEDS REVISION 相当」で**重大指摘を根拠付きで返す**（例: 公開エントリポイント〔`exposure: public`〕の取りこぼし・risk_register の `likelihood_basis` / `impact_basis` が薄い「リスク根拠の弱さ」・計測ツール無しなのに実数が入った複雑度の「捏造の疑い」・web-app なのにインタラクション能力 / セキュリティの「品質特性マッピングの欠落」）/ 併せて信頼度の低い指摘・入力不足で確認できない指摘も混在する |
 
 ## 分岐の根拠

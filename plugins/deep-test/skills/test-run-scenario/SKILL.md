@@ -30,7 +30,7 @@ allowed-tools:
 # test-run-scenario スキル
 
 システムテスト（`system` / TC-SYS）と受入テスト（`uat` / TC-UAT）のケースを、Playwright MCP による業務シナリオ E2E で実行する実行スキル。
-複数機能を跨ぐ業務フローを通しで実行し、ケースごとの結果を中間データとしてオーケストレータ `test` に返却する（`test-results.yaml` への書き込みは行わない）。
+複数機能を跨ぐ業務フローを通しで実行し、ケースごとの結果を中間データとして`orchestrator-test` に返却する（`test-results.yaml` への書き込みは行わない）。
 
 ## 責務
 
@@ -48,15 +48,15 @@ allowed-tools:
 | 責務外の事項 | 担当 |
 |------------|------|
 | unit / functional / integration-internal / integration-external / performance / security の各レベル実行 | 各 `test-run-*` スキル |
-| `test-results.yaml` への書き込み・latest 更新 | オーケストレータ `test`（`results_manager.py` 経由） |
+| `test-results.yaml` への書き込み・latest 更新 | `orchestrator-test`（`results_manager.py` 経由） |
 | **UAT の最終受入判断（顧客・業務担当者のサインオフ）** | 人間（本スキルは検証支援のみ。`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` 6 章免責） |
 | 報告書（Excel / Markdown）の生成 | `test-report` |
 | ケース設計・test-cases.yaml の生成・承認 | `test-design` / `test-review` |
-| MCP ゲート・人間承認ゲートの判定 | オーケストレータ `test`（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md`） |
+| MCP ゲート・人間承認ゲートの判定 | `orchestrator-test`（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md`） |
 
 ## トリガー条件
 
-- オーケストレータ `test` の run フェーズから Skill ツール経由で system / uat レベルの実行を委譲された場合
+- `orchestrator-test` の run フェーズから Skill ツール経由で system / uat レベルの実行を委譲された場合
 - 「システムテストを実行して」「業務シナリオを通しで検証して」「受入観点でシナリオを流して」と指示された場合（単独起動時は実行モード判定を参照）
 
 ## 前提
@@ -72,7 +72,7 @@ allowed-tools:
 | 入力 | 起動形態 | 動作 |
 |-----|---------|------|
 | オーケストレータから委譲（`target-slug` / `run_id` / ケースリスト / アプリ情報が引数で確定） | 委譲（既定） | 非対話で scope を通しで実行し、中間結果 JSON を返却する |
-| ユーザーが直接起動（引数不足） | 単独 | オーケストレータ `test` 経由（`/deep-test:test`）での実行を案内する。実績記録・ゲート判定を伴うため単独完結はしない |
+| ユーザーが直接起動（引数不足） | 単独 | `orchestrator-test` 経由（`/deep-test:test`）での実行を案内する。実績記録・ゲート判定を伴うため単独完結はしない |
 
 レベル文脈の判定（scope 内の各ケースの `level` で自動分岐）:
 

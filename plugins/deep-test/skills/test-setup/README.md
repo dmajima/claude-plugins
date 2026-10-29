@@ -12,7 +12,7 @@ deep-test プラグインのテスト実行環境（Playwright MCP・テスト�
 
 本スキル `test-setup` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の setup フェーズからの委譲、または「テストツールチェーンを準備して」「Playwright MCP をセットアップして」等の自然言語依頼での単独起動
+- **起動トリガー**: `orchestrator-test` の setup フェーズからの委譲、または「テストツールチェーンを準備して」「Playwright MCP をセットアップして」等の自然言語依頼での単独起動
 
 注記: `test-setup` という名称のスキルは他マーケットプレイス由来のものが存在する場合があります。本スキルは `deep-test` プラグインに属する test-setup であり、deep-test のテストツールチェーン（Playwright MCP・テストランナー・venv）検証に特化しています。名称が同じでも役割・依存が異なるため、`deep-test:test-setup` として起動・参照してください。
 
@@ -23,7 +23,7 @@ deep-test プラグインのテスト実行環境（Playwright MCP・テスト�
 | Playwright MCP 登録 | `claude mcp list` で既存登録を検出。未登録なら規約コマンド（ローカルスコープ・ヘッドレス・出力先固定・SSL エラー無視）で新規登録 |
 | Playwright MCP ロード | ToolSearch で `mcp__playwright__*` ツールの実利用可否を判定（登録の有無だけでは判定しない） |
 | テストランナー | pyproject.toml / package.json / *.csproj 等から pytest / jest / vitest / dotnet test 等を検出（検出のみ・実行しない） |
-| venv | セッション作業領域 `workspace/.venv` の確認。無ければオーケストレータ `test` の setup スクリプトで構築 |
+| venv | セッション作業領域 `workspace/.venv` の確認。無ければ`orchestrator-test` の setup スクリプトで構築 |
 
 MCP を新規登録した場合や、登録済みでも現セッションで未ロードの場合は、**再起動ハンドオフ**（状態保存の確認・再起動依頼・再開手順）を出力して停止します。MCP ツールは Claude Code の起動時にのみロードされるためです。
 
@@ -41,7 +41,7 @@ Playwright MCP をセットアップして
 
 | 経路 | 説明 |
 |------|------|
-| test オーケストレータ経由 | フルフローの setup フェーズとして Skill ツール経由で委譲される |
+| orchestrator-test 経由 | フルフローの setup フェーズとして Skill ツール経由で委譲される |
 | 単独起動 | 上記トリガーフレーズで本スキルのみを直接実行する |
 
 ### 引数（任意）
@@ -92,11 +92,11 @@ plugins/deep-test/skills/test-setup/
 ## スコープ外
 
 - テストの実行（`test-run-*` 実行スキルが担当）
-- MCP ゲートの判定そのもの（オーケストレータ `test` が担当。本スキルは判定材料の提供まで）
+- MCP ゲートの判定そのもの（`orchestrator-test` が担当。本スキルは判定材料の提供まで）
 - テスト計画・ケース設計（`test-design`）、成果物レビュー（`test-review`）
 
 ## 関連スキル
 
-- `test` — オーケストレータ（ライフサイクル制御・ゲート判定）
+- `orchestrator-test` — オーケストレータ（ライフサイクル制御・ゲート判定）
 - `test-run-unit` — 検出したテストランナーを実際に実行する実行スキル
 - `test-run-functional` ほか実行スキル 5 種 — Playwright MCP を利用する実行スキル

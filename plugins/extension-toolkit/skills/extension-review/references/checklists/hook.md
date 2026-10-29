@@ -6,15 +6,15 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-1-1 | High | フック設定ファイルが `hooks/hooks.json` または `settings.json` の `hooks` セクションに配置されている | [conventions.md](../../../references/policies/conventions-structure.md) 節 1 |
-| H-1-2 | High | フック実スクリプトが `references/scripts/hooks/` 配下に配置されている（ADR-025） | [scripts-policy.md](../../../references/policies/scripts-policy.md) 節 9 |
+| H-1-1 | High | フック設定ファイルが `hooks/hooks.json` または `settings.json` の `hooks` セクションに配置されている | [conventions.md](../../../../references/policies/conventions-structure.md) 節 1 |
+| H-1-2 | High | フック実スクリプトが `references/scripts/hooks/` 配下に配置されている（ADR-025） | [scripts-policy.md](../../../../references/policies/scripts-policy.md) 節 9 |
 | H-1-3 | High | フック実スクリプトが `.sh` で実装されている | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
 
 ## H-2. JSON valid
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-2-1 | Critical | `hooks.json` が JSON valid（パース可能） | [validation-rules.md](../../../references/checklists/validation-rules.md) 節 2.6 |
+| H-2-1 | Critical | `hooks.json` が JSON valid（パース可能） | [validation-rules.md](../../../../references/checklists/validation-rules.md) 節 2.6 |
 
 ## H-3. イベント名・matcher
 
@@ -28,18 +28,18 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-4-1 | Critical | `command` フィールド内で動的データ（tool_input 等）を **文字列補間していない** | [hook-security-team.md](../../../references/teams/hook-security-team.md) 節「必須チェック観点」 |
+| H-4-1 | Critical | `command` フィールド内で動的データ（tool_input 等）を **文字列補間していない** | [hook-security-team.md](../../../../references/teams/hook-security-team.md) 節「必須チェック観点」 |
 | H-4-2 | Critical | `$(...)` / バッククォート（コマンド置換）の使用が必要最小限である | 同上 |
 | H-4-3 | Critical | `eval` / `Invoke-Expression` を使っていない | 同上 |
 | H-4-4 | High | 動的データが必要な場合は外部スクリプトに委譲し、引数として安全に受け渡されている | 同上 |
-| H-4-5 | Critical | `command` にローカル絶対パスのハードコードがない（`${CLAUDE_PLUGIN_ROOT}` を使用） | [validation-rules.md](../../../references/checklists/validation-rules.md) 節 2.6 |
+| H-4-5 | Critical | `command` にローカル絶対パスのハードコードがない（`${CLAUDE_PLUGIN_ROOT}` を使用） | [validation-rules.md](../../../../references/checklists/validation-rules.md) 節 2.6 |
 | H-4-6 | High | `command` は `bash "${CLAUDE_PLUGIN_ROOT}/.../*.sh"` 形式（`bash ...sh` は使わない） | [shell-preference.md](https://github.com/dmajima/claude-plugins) |
 
 ## H-5. PreToolUse 警告型フック（ADR-026）
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-5-1 | High | PreToolUse Edit/Write/MultiEdit フックは **exit 0**（fail-open、ブロックしない） | [architecture-decisions.md](../../../references/architecture/decisions-001-010.md) ADR-026 |
+| H-5-1 | High | PreToolUse Edit/Write/MultiEdit フックは **exit 0**（fail-open、ブロックしない） | [architecture-decisions.md](../../../../references/architecture/decisions-001-010.md) ADR-026 |
 | H-5-2 | High | `plugins/{name}/` 配下への直接編集を検知して、対応する `*-toolkit` スキル名を stderr に提示する | 同上 |
 | H-5-3 | High | `.claude/.local/` `.git/` `/tmp/` 配下を無条件で通過する除外ロジックがある | 同上 |
 
@@ -55,7 +55,7 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-7-1 | High | `matcher: "Bash"` で `references/scripts/hooks/check_version_bump_on_commit.sh` が登録されている | [architecture-decisions.md](../../../references/architecture/decisions-001-010.md) ADR-027 / [shell-preference.md](https://github.com/dmajima/claude-plugins) |
+| H-7-1 | High | `matcher: "Bash"` で `references/scripts/hooks/check_version_bump_on_commit.sh` が登録されている | [architecture-decisions.md](../../../../references/architecture/decisions-001-010.md) ADR-027 / [shell-preference.md](https://github.com/dmajima/claude-plugins) |
 | H-7-2 | High | tool_input.command に `git commit` を含む場合のみ `check_version_bump.sh` に委譲する | 同上 |
 | H-7-3 | Medium | 非対象は exit 0 で即離脱（重い処理は git commit 検出時のみ実行） | 同上 |
 
@@ -63,13 +63,13 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-8-1 | Critical | `settings.json` への追加は既存エントリをマージで書き戻している（既存設定を破壊していない） | [validation-rules.md](../../../references/checklists/validation-rules.md) 節 2.6 |
+| H-8-1 | Critical | `settings.json` への追加は既存エントリをマージで書き戻している（既存設定を破壊していない） | [validation-rules.md](../../../../references/checklists/validation-rules.md) 節 2.6 |
 
 ## H-9. レビューエージェント並列起動（フックレビュー時）
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-9-1 | High | `hook-security-team`（3 名: `security-engineer`（リード）/ `implementation-engineer` / `infrastructure-engineer`）または等価のフォールバック構成で並列起動された | [team-selection.md](../team-selection.md) / [hook-security-team.md](../../../references/teams/hook-security-team.md) |
+| H-9-1 | High | `hook-security-team`（3 名: `security-engineer`（リード）/ `implementation-engineer` / `infrastructure-engineer`）または等価のフォールバック構成で並列起動された | [team-selection.md](../team-selection.md) / [hook-security-team.md](../../../../references/teams/hook-security-team.md) |
 | H-9-2 | High | リード `security-engineer` が脅威モデリング・コマンドインジェクション観点で評価している | 同上 |
 | H-9-3 | High | 攻撃シナリオの相互検証ラウンドが最低 3 回実施されている | 同上 |
 
@@ -97,7 +97,7 @@
 
 | 項目 | 重大度 | 確認方法 | 出典 |
 |-----|-------|---------|-----|
-| H-12-1 | High | `hooks.json` の各 hook エントリに `"shell": "bash"` が **明示** されている（`type: "command"` と同階層） | [hook-events.md](../../../../hook-toolkit/references/hook-events.md) 節「shell 指定（MANDATORY）」 |
+| H-12-1 | High | `hooks.json` の各 hook エントリに `"shell": "bash"` が **明示** されている（`type: "command"` と同階層） | [hook-events.md](../../../hook-toolkit/references/hook-events.md) 節「shell 指定（MANDATORY）」 |
 | H-12-2 | High | `settings.json` の `hooks` セクションに追加するエントリも同様に `"shell"` を明示している | 同上 |
 | H-12-3 | Medium | `"shell"` の値が `"bash"` である | 同上 |
 | H-12-4 | High | `run_checks.py` の `check_hook_shell_field` （automated-checks.md #13）が High 指摘として報告していない | [automated-checks.md](../automated-checks.md) #13 |

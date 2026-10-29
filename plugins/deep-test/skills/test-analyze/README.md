@@ -13,7 +13,7 @@ deep-test プラグインの Phase 1.5（ソース理解 → 材料生成）を�
 
 本スキル `test-analyze` は `deep-test` プラグインに同梱されており、**追加インストールは不要**です。プラグインの導入手順（マーケットプレイス登録・インストール・自動更新の設定）は [`deep-test` プラグインの README](../../README.md) を参照してください。
 
-- **起動トリガー**: オーケストレータ `test` の Phase 1.5（analyze フェーズ）からの委譲、または「このリポジトリのテスト対象を解析して」等の自然言語依頼での単独起動
+- **起動トリガー**: `orchestrator-test` の Phase 1.5（analyze フェーズ）からの委譲、または「このリポジトリのテスト対象を解析して」等の自然言語依頼での単独起動
 
 ## 何をするか
 
@@ -42,7 +42,7 @@ diff=main..feature/x の変更影響を解析して
 
 | 経路 | 説明 |
 |------|------|
-| test オーケストレータ経由 | フルフローの Phase 1.5（analyze フェーズ）として Skill ツール経由で委譲される |
+| orchestrator-test 経由 | フルフローの Phase 1.5（analyze フェーズ）として Skill ツール経由で委譲される |
 | 単独起動 | 上記トリガーフレーズで本スキルのみを直接実行する |
 
 ### 引数
@@ -103,11 +103,11 @@ plugins/deep-test/skills/test-analyze/
 
 - テストケース設計・テストレベル / 技法 / 優先度の決定・テスト計画（test-plan.md）の生成（`test-design` が担当。本スキルは材料生成まで）
 - テストの実行・カバレッジの実測（`test-run-*`。本スキルは計測コマンドの提案まで）
-- 成果物のレビュー・承認（`test-review`）・実績記録 / 報告書（オーケストレータ `test` / `test-report`）
+- 成果物のレビュー・承認（`test-review`）・実績記録 / 報告書（`orchestrator-test` / `test-report`）
 - 稼働アプリへの動的探索・動的セキュリティ検査（`test-run-*` / `test-setup`）
 
 ## 関連スキル
 
-- `test` — オーケストレータ（Phase 1.5 の委譲元）
+- `orchestrator-test` — オーケストレータ（Phase 1.5 の委譲元）
 - `test-setup` — Phase 1。検出したランナー・複雑度 / カバレッジツール情報の供給元
 - `test-design` — Phase 2。analysis.yaml を材料にレベル / 技法 / 優先度 / ケースを決定する消費先

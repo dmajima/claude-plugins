@@ -136,4 +136,4 @@ plugins/extension-toolkit/skills/mit-license-toolkit/
 
 ## ライセンス
 
-[MIT License](../../../LICENSE) の下で配布されています。
+[MIT License](../../LICENSE) の下で配布されています。

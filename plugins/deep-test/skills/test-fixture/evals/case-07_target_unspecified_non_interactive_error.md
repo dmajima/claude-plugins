@@ -7,7 +7,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target-slug=orderapp-web base=<base> --non-interactive`（`対象説明=` も位置引数も無し・`project=` 起点に SUT ソースを特定できない〔存在しない/空/到達不能〕・`{base}/{target-slug}/analysis.yaml` も非存在。作る対象の実体を示す情報が皆無） |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 1.6）/ 単独起動でも同一挙動 |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 1.6）/ 単独起動でも同一挙動 |
 | 前提 | target-slug は解決済み（データ配置先は確定）だが、何のフィクスチャ基盤を作るか（アプリ URL・リポジトリパス・対象名）の入力が一切なく、材料 `analysis.yaml` も非存在で `meta` からの対象補完もできない。SUT ソースも Read で辿れず case-05 の軽量補完もできない |
 
 ## 分岐の根拠

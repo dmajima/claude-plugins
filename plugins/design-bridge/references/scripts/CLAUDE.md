@@ -14,7 +14,7 @@
 | `setup/setup_venv.sh` / `setup/teardown_venv.sh` | スクリーンショット用 venv の構築 / 削除 |
 | `setup/requirements.txt` | 全スキル分の依存をマージ（バージョン固定） |
 
-スキル固有のスクリプトはここに置かない。`capture.py` は `design-push` 専用のため `../../skills/design-push/references/scripts/screenshot/` にある。
+スキル固有のスクリプトはここに置かない。`capture.py` は `bridge-push` 専用のため `../../skills/bridge-push/references/scripts/screenshot/` にある。
 
 ## 利用ルール
 
@@ -33,5 +33,5 @@
 
 ```bash
 "<project>/.claude/.local/plugins/design-bridge/.venv/Scripts/python.exe" \
-  "${CLAUDE_PLUGIN_ROOT}/skills/design-push/references/scripts/screenshot/capture.py" --help
+  "${CLAUDE_PLUGIN_ROOT}/skills/bridge-push/references/scripts/screenshot/capture.py" --help
 ```

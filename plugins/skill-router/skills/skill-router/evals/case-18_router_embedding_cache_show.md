@@ -6,23 +6,23 @@
 
 | 項目 | 内容 |
 |-----|------|
-| 起動フレーズ | "/router-embedding-cache --show convert-doc:convert-pdf" |
-| 既存状態 | `embedding.enabled=true`、`<base>/embeddings_cache/manifest.json` に `convert-doc:convert-pdf` エントリ存在 |
+| 起動フレーズ | "/router-embedding-cache --show convert-doc:doc-convert-pdf" |
+| 既存状態 | `embedding.enabled=true`、`<base>/embeddings_cache/manifest.json` に `convert-doc:doc-convert-pdf` エントリ存在 |
 | モード | 非対話（引数指定）|
 
 ## トリガープロンプト
 
 ```text
-/router-embedding-cache --show convert-doc:convert-pdf
+/router-embedding-cache --show convert-doc:doc-convert-pdf
 ```
 
 ## 期待動作
 
 | Phase | 動作 |
 |-------|------|
-| 1 | コマンド解釈で `--show convert-doc:convert-pdf` を確定 |
+| 1 | コマンド解釈で `--show convert-doc:doc-convert-pdf` を確定 |
 | 2 | `<base>/embeddings_cache/manifest.json` を Read |
-| 3 | `entries["convert-doc:convert-pdf"]` を取得 |
+| 3 | `entries["convert-doc:doc-convert-pdf"]` を取得 |
 | 4 | `content_hash` / `model` / `idx` / `generated_at` を 4 行で表示 |
 | 5 | 該当エントリが無ければ「`<qn>` のキャッシュ entry は存在しません」と案内 |
 
@@ -40,7 +40,7 @@ generated_at: 2026-05-12T10:23:45+09:00
 ### entry 不在系
 
 ```text
-convert-doc:convert-pdf のキャッシュ entry は存在しません
+convert-doc:doc-convert-pdf のキャッシュ entry は存在しません
 （embedding.enabled=true で /router-rebuild を実行してください）
 ```
 
@@ -56,6 +56,6 @@ convert-doc:convert-pdf のキャッシュ entry は存在しません
 
 ## 備考
 
-- `qualified_name` は `<plugin-name>:<skill-name>` 形式（例: `convert-doc:convert-pdf`）
+- `qualified_name` は `<plugin-name>:<skill-name>` 形式（例: `convert-doc:doc-convert-pdf`）
 - `content_hash` は SHA-256 hex 64 文字、表示時は先頭 8 文字 + `...` の省略形を推奨
 - 副作用なし（読み取り専用）、フェイルオープン

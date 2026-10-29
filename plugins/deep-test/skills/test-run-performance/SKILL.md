@@ -30,7 +30,7 @@ allowed-tools:
 # test-run-performance スキル
 
 性能テスト（`performance` / TC-PERF）のケースを、Playwright のタイミング計測で実行する実行スキル。
-単一セッション応答時間の複数回計測（既定 3 回・中央値採用）と閾値判定を第一線とし、外部負荷ツール検出時のみ多重負荷を条件付き実行する。結果は中間データとしてオーケストレータ `test` に返却する（`test-results.yaml` への書き込みは行わない）。
+単一セッション応答時間の複数回計測（既定 3 回・中央値採用）と閾値判定を第一線とし、外部負荷ツール検出時のみ多重負荷を条件付き実行する。結果は中間データとして`orchestrator-test` に返却する（`test-results.yaml` への書き込みは行わない）。
 
 ## 責務
 
@@ -48,15 +48,15 @@ allowed-tools:
 | 責務外の事項 | 担当 |
 |------------|------|
 | unit / functional / integration / system / uat / security の各レベル実行 | 各 `test-run-*` スキル |
-| `test-results.yaml` への書き込み・latest 更新 | オーケストレータ `test`（`results_manager.py` 経由） |
+| `test-results.yaml` への書き込み・latest 更新 | `orchestrator-test`（`results_manager.py` 経由） |
 | **専用負荷試験（キャパシティプランニング・ソーク・スパイク等）の代替** | 対象外。本スキルは実施しない（`${CLAUDE_PLUGIN_ROOT}/references/test-levels.md` 7 章。報告書に免責記載） |
 | 報告書の生成 | `test-report` |
 | ケース設計・閾値の定義 | `test-design` / `test-review` |
-| MCP ゲート・人間承認ゲートの判定 | オーケストレータ `test`（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md`） |
+| MCP ゲート・人間承認ゲートの判定 | `orchestrator-test`（`${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md`） |
 
 ## トリガー条件
 
-- オーケストレータ `test` の run フェーズから Skill ツール経由で performance レベルの実行を委譲された場合
+- `orchestrator-test` の run フェーズから Skill ツール経由で performance レベルの実行を委譲された場合
 - 「性能テストを実行して」「応答時間を計測して閾値判定して」と指示された場合（単独起動時は実行モード判定を参照）
 
 ## 前提
@@ -73,7 +73,7 @@ allowed-tools:
 | 入力 | 起動形態 | 動作 |
 |-----|---------|------|
 | オーケストレータから委譲（引数が確定） | 委譲（既定） | 非対話で応答時間計測を実行し、中間結果 JSON を返却する |
-| ユーザーが直接起動（引数不足） | 単独 | オーケストレータ `test` 経由での実行を案内する（実績記録・ゲート判定を伴うため単独完結しない） |
+| ユーザーが直接起動（引数不足） | 単独 | `orchestrator-test` 経由での実行を案内する（実績記録・ゲート判定を伴うため単独完結しない） |
 
 計測種別の分岐（各 performance ケースの計測目的で自動分岐）:
 

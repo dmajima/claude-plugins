@@ -86,13 +86,13 @@ git checkout main
 
 ### 動作確認
 
-自然言語で「deep-test でテストしたい」と入力し、オーケストレータ（`test` スキル）がテスト対象の確認（target-slug の選択・新規作成）から開始することを確認します。対象確認の質問が表示されれば導入成功です（この時点ではテストはまだ実行されません）。
+自然言語で「deep-test でテストしたい」と入力し、オーケストレータ（`orchestrator-test` スキル）がテスト対象の確認（target-slug の選択・新規作成）から開始することを確認します。対象確認の質問が表示されれば導入成功です（この時点ではテストはまだ実行されません）。
 
 ## 提供機能
 
 | 機能 | 種別 | 説明 |
 |-----|------|------|
-| `test` | スキル | オーケストレータ。ライフサイクル全体の制御（モード判定・フェーズ委譲・ゲート判定・実績記録・再テスト対象選択） |
+| `orchestrator-test` | スキル | オーケストレータ。ライフサイクル全体の制御（モード判定・フェーズ委譲・ゲート判定・実績記録・再テスト対象選択） |
 | `test-setup` | スキル | 実行環境の構築・検証（Playwright MCP 登録・テストランナー検出・venv） |
 | `test-analyze` | スキル | テスト対象ソースを read-only で理解し解析材料を生成（analysis.yaml / target-analysis.md・Phase 1.5・test-design の前段） |
 | `test-fixture` | スキル | Playwright フィクスチャ基盤（認証 storageState / API モック / シード / base）の作成・拡充（fixtures.yaml 生成・analysis.yaml 消費・Phase 1.6） |
@@ -108,9 +108,6 @@ git checkout main
 | `test-report` | スキル | 実績 YAML からの報告書生成（Excel / Markdown・1 ファイル）+ エビデンス完全性バリデーション |
 | `/deep-test:test` | コマンド | フルフロー起動（設計→レビュー→実施→結果レビュー→報告） |
 | `/deep-test:test-retest` | コマンド | 再テスト起動（full / ng-only / ids / resume） |
-| `/deep-test:test-report` | コマンド | 報告書のみ再生成 |
-| `/deep-test:test-fixture` | コマンド | フィクスチャ基盤の単独構築・拡充（Phase 1.6・実行はしない） |
-| `/deep-test:test-environment` | コマンド | テスト用派生環境の単独操作（provision / up / down / status・Phase 1.7・テスト実行はしない） |
 | `source-analyst` | エージェント | 解析材料の網羅性・根拠妥当性の自己チェック |
 | `fixture-architect` | エージェント | フィクスチャ設計の妥当性・再利用性・分離・書き込み境界・認証情報ハードコードの自己チェック |
 | `env-architect` | エージェント | 派生環境の分離妥当性・read-only 境界・秘匿値の非出力・本番誤爆疑義・teardown 完全性の自己チェック |
@@ -142,15 +139,15 @@ git checkout main
 
 | 発話例 | 起動 |
 |-------|-----|
-| 「このアプリのテストをして」「テスト計画から報告まで一式お願い」 | `test`（フルフロー） |
-| 「テストケースを設計して」 | `test`（design-only）または `test-design` |
-| 「テスト対象を解析して」「解析材料を作って」 | `test`（analyze フェーズ）または `test-analyze` |
-| 「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」 | `test`（fixture フェーズ）または `test-fixture` |
-| 「テスト用の Docker 環境を作って」「テスト用コンテナ環境を起動して」「テスト用コンテナ環境を片付けて」 | `test`（environment フェーズ）または `test-environment` |
-| 「手動テストも混ぜて」「目視確認のケースも入れて」 | `test`（フルフロー。`automation: manual-assist` のケースを対話で人手確認・非対話時は手順書生成に縮退） |
-| 「探索的テストをやりたい」「探索セッションで気になるところを見たい」 | `test`（フルフロー。`automation: exploratory` のチャーターベース探索セッションを実施・記録） |
-| 「前回 NG だったテストだけ再実行して」 | `test`（retest ng-only） |
-| 「テスト報告書を Excel で作って」 | `test`（report-only） |
+| 「このアプリのテストをして」「テスト計画から報告まで一式お願い」 | `orchestrator-test`（フルフロー） |
+| 「テストケースを設計して」 | `orchestrator-test`（design-only）または `test-design` |
+| 「テスト対象を解析して」「解析材料を作って」 | `orchestrator-test`（analyze フェーズ）または `test-analyze` |
+| 「フィクスチャ基盤を作って」「認証 storageState を用意して」「API モックを追加して」 | `orchestrator-test`（fixture フェーズ）または `test-fixture` |
+| 「テスト用の Docker 環境を作って」「テスト用コンテナ環境を起動して」「テスト用コンテナ環境を片付けて」 | `orchestrator-test`（environment フェーズ）または `test-environment` |
+| 「手動テストも混ぜて」「目視確認のケースも入れて」 | `orchestrator-test`（フルフロー。`automation: manual-assist` のケースを対話で人手確認・非対話時は手順書生成に縮退） |
+| 「探索的テストをやりたい」「探索セッションで気になるところを見たい」 | `orchestrator-test`（フルフロー。`automation: exploratory` のチャーターベース探索セッションを実施・記録） |
+| 「前回 NG だったテストだけ再実行して」 | `orchestrator-test`（retest ng-only） |
+| 「テスト報告書を Excel で作って」 | `orchestrator-test`（report-only） |
 | 「テストツールチェーンを準備して」 | `test-setup` |
 
 ### 実行フロー（フルフロー時）

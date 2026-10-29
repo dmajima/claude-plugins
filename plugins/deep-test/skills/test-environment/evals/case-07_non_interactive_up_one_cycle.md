@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 委譲 args | `target=orderapp-web base=<base> action=up run-id=R20260719-140000 --non-interactive` |
-| 起動形態 | 委譲（オーケストレータ `test` の Phase 5 手順 0。全ゲート通過後・start-run 直前） |
+| 起動形態 | 委譲（`orchestrator-test` の Phase 5 手順 0。全ゲート通過後・start-run 直前） |
 | 前提 | provision 済み（`config_validated: true`・endpoints の health は `unknown`）。docker デーモン疎通 OK。`up --wait --wait-timeout 120` が成功し全サービス healthy 到達 |
 
 ## 分岐の根拠

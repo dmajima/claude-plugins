@@ -32,16 +32,16 @@ allowed-tools:
 | 責務外 | 担当 |
 |-------|------|
 | テストの実行（検出したランナーの実行を含む） | `test-run-*` 実行スキル 6 種 |
-| MCP ゲートの判定（run 直前の通過 / 停止の決定） | オーケストレータ `test`（本スキルは判定材料の提供まで） |
+| MCP ゲートの判定（run 直前の通過 / 停止の決定） | `orchestrator-test`（本スキルは判定材料の提供まで） |
 | テスト計画・ケース設計 | `test-design` |
 | テスト成果物のレビュー | `test-review` |
-| 実績 YAML（test-results.yaml）への記録 | オーケストレータ `test`（専用スクリプト経由） |
+| 実績 YAML（test-results.yaml）への記録 | `orchestrator-test`（専用スクリプト経由） |
 
 ## トリガー条件
 
 起動する:
 
-- オーケストレータ `test` から Skill ツール経由で委譲（フルフローの setup フェーズ、MCP ゲート前の事前検証）
+- `orchestrator-test` から Skill ツール経由で委譲（フルフローの setup フェーズ、MCP ゲート前の事前検証）
 - 「テストツールチェーンを準備して」「Playwright MCP をセットアップして」「テストランナーを検出して」と依頼された
 
 起動しない:

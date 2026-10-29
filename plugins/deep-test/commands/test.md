@@ -6,17 +6,17 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-オーケストレータスキル `deep-test:test` を**フルフロー**（既定モード）で起動する。
+オーケストレータスキル `deep-test:orchestrator-test` を**フルフロー**（既定モード）で起動する。
 
 ## 起動方法
 
 Skill ツールで起動し、ユーザー引数を**解釈せずそのまま**引き渡す。
 
 ```
-Skill(skill: "deep-test:test", args: "$ARGUMENTS")
+Skill(skill: "deep-test:orchestrator-test", args: "$ARGUMENTS")
 ```
 
-- 本コマンドは起動とバトン渡しに徹する。フェーズ制御・target-slug 解決・ゲート判定・実績記録のロジックはすべてオーケストレータ `test` スキルが行う（本コマンドで複製しない）
+- 本コマンドは起動とバトン渡しに徹する。フェーズ制御・target-slug 解決・ゲート判定・実績記録のロジックはすべて`orchestrator-test` スキルが行う（本コマンドで複製しない）
 - フルフロー: setup 確認 → 解析（analyze・Phase 1.5）→ design → review（設計文脈）→ 承認ゲート → run → review（結果文脈）→ report。ゲートの定義は `${CLAUDE_PLUGIN_ROOT}/references/execution-policy.md` を SSOT とする
 
 ## 引数の解釈（オーケストレータへの引き渡し内容）

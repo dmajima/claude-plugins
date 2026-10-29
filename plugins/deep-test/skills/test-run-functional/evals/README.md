@@ -36,7 +36,7 @@
 
 ## 分岐の軸について
 
-実行スキルはオーケストレータ `test` からの委譲起動が標準のため、本 evals の主軸は **実行手段（Playwright MCP・対象アプリ）の可否と結果 status の分岐**（pass / fail / blocked / skipped）である。
+実行スキルは`orchestrator-test` からの委譲起動が標準のため、本 evals の主軸は **実行手段（Playwright MCP・対象アプリ）の可否と結果 status の分岐**（pass / fail / blocked / skipped）である。
 特に blocked と skipped の使い分け（skipped = 実行手段不在 / blocked = 前提不成立・タイムアウト等のテスト論理上のブロック。yaml-schema-results.md 6 章）を case-03〜05 で検証する。
 `automation: playwright-test`（`npx playwright test` 実走）経路は case-09（全 pass）/ case-10（実走前提不在の skipped）で扱い、MCP 経路（`automation: playwright`）と併存する分岐を検証する。
 手動 / 探索の軸は `automation: manual-assist`（case-07 / 08 / 13 / 14）と `exploratory`（チャーターベース人間セッションの発見事象記録。case-12）で扱う（規範は `${CLAUDE_PLUGIN_ROOT}/references/manual-execution.md`。非対話縮退は manual-assist / exploratory 共通機構のため case-08 が代表する）。

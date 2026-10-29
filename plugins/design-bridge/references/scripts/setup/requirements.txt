@@ -1,6 +1,6 @@
 # design-bridge プラグイン共通 依存パッケージ（全スキルの依存をマージ・ADR-024 準拠）
-# - design-push: playwright（モック HTML のスクリーンショット生成）
-# - design-init / design-mock / design-pull / design-status: 標準ライブラリのみ（依存追加なし）
+# - bridge-push: playwright（モック HTML のスクリーンショット生成）
+# - bridge-init / bridge-mock / bridge-pull / bridge-status: 標準ライブラリのみ（依存追加なし）
 #
 # 【セットアップ】
 # venv 構築後、ブラウザバイナリの取得が別途必要:
@@ -18,7 +18,7 @@
 # - バージョン上げ時は pip install 後にスクリーンショット生成の動作確認を行い pin を更新する
 #
 # 【重要】Chromium 本体は pip の管理外のため pip-audit に捕捉されない。
-# capture.py は design-pull 経由で他者が書いた HTML を描画しうるため、
+# capture.py は bridge-pull 経由で他者が書いた HTML を描画しうるため、
 # レンダラの世代が古いままだと攻撃面になる。playwright の pin を上げると
 # 同梱 Chromium も更新されるので、CVE 確認は pip パッケージだけでなく
 # 「この pin が引く Chromium のバージョン」まで含めて行うこと。

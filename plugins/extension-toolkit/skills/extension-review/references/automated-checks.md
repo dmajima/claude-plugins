@@ -72,6 +72,7 @@ bash "$CLAUDE_PLUGIN_ROOT/references/scripts/setup/teardown_venv.sh" \
 | ~~14~~ | ~~PSScriptAnalyzer 静的解析（B-1）~~ | — | — | Phase 9a で削除済み |
 | 15 | Python 直起動禁止 / Start-Job ラッパー必須 | `.py` を含むプラグイン | High / Medium | `check_python_start_job_wrapper` |
 | 16 | バージョン更新漏れ検出（V-2-1 機械チェック） | `plugin.json` を含むプラグイン | High | `check_version_bump` |
+| 17 | コマンド名とスキル名の衝突（P-1-7 / conventions-naming.md 節 1.1） | `commands/*.md` + `skills/*/` を持つプラグイン | Critical | `check_command_skill_name_collision` |
 
 `run_checks.py` の出力 JSON 構造:
 
@@ -280,6 +281,33 @@ Windows + PowerShell + python-pptx 等で Python 子プロセスがハングす�
 - templates 配下のテンプレート plugin.json → 除外
 
 実装関数: `check_version_bump`
+
+### 17. コマンド名とスキル名の衝突検出（P-1-7 / conventions-naming.md 節 1.1）
+
+同一プラグイン内で `commands/<name>.md` の `<name>` と `skills/<name>/` のディレクトリ名が
+一致していないかを検証する。両者は同一の修飾名 `{plugin}:{name}` へ解決されるため、
+一致すると衝突して次の 2 つが同時に起きる。
+
+| 症状 | 内容 |
+|-----|------|
+| コマンドの自己再帰呼び出し | コマンド本文の `Skill(skill: "{plugin}:{name}")` が委譲先のスキルではなくコマンド自身へ解決される |
+| スキルの遮蔽 | available-skills 一覧にコマンド側だけが現れ、同名スキルは起動できなくなる |
+
+| 検査項目 | 重大度 | 検出方法 |
+|---------|-------|---------|
+| `commands/*.md` のベース名集合と `skills/*/` のディレクトリ名集合に共通要素がある | Critical | 両集合の積を取り、非空なら衝突名ごとに 1 件報告 |
+
+コマンド単体・スキル単体の検査では現れず、両者を突き合わせて初めて検出できる種類の不具合。
+
+回避方法: コマンド名は利用者向けの公開インタフェースとして維持し、スキル側に接頭辞を付ける
+（前例: `harness-*` / `orchestrator-*` / `bridge-*`）。
+
+スキップ条件:
+- `target` 配下にプラグイン（`.claude-plugin/plugin.json`）がない → 何もしない
+- `commands/` または `skills/` が存在しないプラグイン → 当該プラグインをスキップ
+- `templates` 配下のテンプレート `plugin.json` → 除外
+
+実装関数: `check_command_skill_name_collision`
 
 ## 指摘出力フォーマット
 

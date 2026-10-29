@@ -8,7 +8,7 @@
 | 項目 | 内容 |
 |-----|------|
 | 起動フレーズ | `/deep-test:test-environment action=provision project=./`（`target=` 未指定・`--non-interactive` なし） |
-| 起動形態 | 単独（コマンド → スキル・対話） |
+| 起動形態 | 単独（スキル直接起動・対話） |
 | 前提 | 基準ディレクトリ `{base}` 配下に既存 slug が複数（例: `orderapp-web/` と `static-site/`）存在する |
 
 ## 分岐の根拠

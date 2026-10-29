@@ -39,8 +39,8 @@ allowed-tools:
 | 責務外 | 担当 |
 |-------|------|
 | 指摘に基づく成果物（計画・ケース）の修正 | `test-design`（NEEDS REVISION 時の差し戻し先） |
-| 設計レビューゲートの判定・修正ループ制御（上限 3 回） | オーケストレータ `test`（`execution-policy.md` 1.1 章） |
-| テストの実行・実行結果の記録（test-results.yaml への書き込み） | `test-run-*` / オーケストレータ `test` |
+| 設計レビューゲートの判定・修正ループ制御（上限 3 回） | `orchestrator-test`（`execution-policy.md` 1.1 章） |
+| テストの実行・実行結果の記録（test-results.yaml への書き込み） | `test-run-*` / `orchestrator-test` |
 | エビデンス完全性の最終監査（報告書生成前の validate） | `test-report`（evidence-auditor） |
 | 報告書の生成 | `test-report` |
 
@@ -48,7 +48,7 @@ allowed-tools:
 
 起動する:
 
-- オーケストレータ `test` から Skill ツール経由で委譲（設計フェーズ後の設計レビュー・run 後の結果レビュー・承認済みケースゲートで要求された draft ケースの承認レビュー）
+- `orchestrator-test` から Skill ツール経由で委譲（設計フェーズ後の設計レビュー・run 後の結果レビュー・承認済みケースゲートで要求された draft ケースの承認レビュー）
 - 「テストケースをレビューして」「テスト計画をレビューして」「テスト結果をレビューして」と依頼された
 
 起動しない:
