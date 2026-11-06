@@ -26,7 +26,7 @@
 ## 起動契機
 
 - ユーザが URL / API エンドポイントへのアクセスを依頼した場合（暗黙トリガー）
-- `Bash` で `curl` / `wget` / `gh api` 等を呼び出す場合（PreToolUse フック経由）
+- `Bash` / `PowerShell` で `curl` / `wget` / `gh api` / `Invoke-RestMethod` 等を呼び出す場合（PreToolUse フック経由）
 - 会話中に認証情報パターンが検出された場合（UserPromptSubmit フック経由）
 - 認証情報系ファイル（`.env` / `id_rsa` / `*.pem` 等）を読み書きする場合（PreToolUse フック経由）
 - ユーザが「保存済みを一覧」「前のキーで API を叩いて」等と要求した場合（明示要求）

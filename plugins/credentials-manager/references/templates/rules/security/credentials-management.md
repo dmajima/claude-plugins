@@ -62,9 +62,9 @@ SessionStart フックによって自動配置されるテンプレートであ�
 | ツール / 条件 | 対象 |
 |------------|------|
 | `WebFetch` / `WebSearch` / `mcp__*` | 常に対象 |
-| `Bash` の `command` に外部通信 / IaC / シークレット管理コマンド | `curl` / `wget` / `gh` / `ssh` / `scp` / `sftp` / `rsync` / `aws` / `az` / `gcloud` / `kubectl` / `doctl` / `heroku` / `firebase` / `vercel` / `netlify` / `docker` / `podman` / `psql` / `mysql` / `mongosh` / `redis-cli` / `terraform` / `tofu` / `ansible` / `helm` / `pulumi` / `packer` / `vault` / `op` / `bw` / `Invoke-WebRequest` / `Invoke-RestMethod` / `iwr` / `irm` |
-| `Bash` の `command` で認証情報らしい環境変数を設定 | `export FOO_TOKEN=...` / `set FOO_KEY=...` 等 |
-| `Bash` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 1.2 のパターンを含む |
+| `Bash` / `PowerShell` の `command` に外部通信 / IaC / シークレット管理コマンド | `curl` / `wget` / `gh` / `ssh` / `scp` / `sftp` / `rsync` / `aws` / `az` / `gcloud` / `kubectl` / `doctl` / `heroku` / `firebase` / `vercel` / `netlify` / `docker` / `podman` / `psql` / `mysql` / `mongosh` / `redis-cli` / `terraform` / `tofu` / `ansible` / `helm` / `pulumi` / `packer` / `vault` / `op` / `bw`（`curl.exe` のような拡張子付きを含む） / `Invoke-WebRequest` / `Invoke-RestMethod` / `iwr` / `irm` / `Start-BitsTransfer` / `Net.WebClient` / `Net.Http.HttpClient` / `[Net.WebRequest]` |
+| `Bash` / `PowerShell` の `command` で認証情報らしい環境変数を設定 | `export FOO_TOKEN=...` / `set FOO_KEY=...` / `$env:FOO_TOKEN = ...` / `[Environment]::SetEnvironmentVariable('FOO_SECRET', ...)` / `setx FOO_PASSWORD ...` 等（変数名に認証情報キーワードを含むもの） |
+| `Bash` / `PowerShell` の `command`、`Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 1.2 のパターン（`Basic` 認証ヘッダと PEM 秘密鍵を除く） |
 | `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` が下記ファイルを対象とする | 認証情報系ファイル（次表） |
 
 認証情報系ファイル（`PreToolUse` で検出する `file_path`）:
@@ -175,7 +175,7 @@ SessionStart フックによって自動配置されるテンプレートであ�
 
 - 認証情報のフル値を会話出力・ログ・コミットメッセージに出すこと
 - `credentials.json` をリポジトリにコミットすること
-- 外部通信ツール（`WebFetch` / `Bash`(curl/wget/gh) / `mcp__*` 等）を呼び出す前に
+- 外部通信ツール（`WebFetch` / `Bash`・`PowerShell`（curl / wget / gh / Invoke-RestMethod 等） / `mcp__*` 等）を呼び出す前に
   `credentials-reader` での認証情報照合を省略すること
 - 「ローカルホストアクセス」「短いコマンド」等を理由に本ルールを省略すること
 - 参照系（retrieve / list / auto-match）に `credentials-manager` 全体を起動して不要なコンテキストを読み込むこと（`credentials-reader` を使う）
