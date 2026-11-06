@@ -36,10 +36,29 @@
 | case-25 | 環境変数欠如時の silent exit | SessionStart | エラー系・fail-open |
 | case-29 | Bash + 認証情報と無関係な環境変数の export → no-op | PreToolUse | 環境変数パターンの過検出抑制境界 |
 | case-30 | Bash + 認証情報らしい環境変数の export → trigger | PreToolUse | 変数名の認証情報キーワード検出 → reader 起動指示 |
+| case-31 | Read README.md → no-op | PreToolUse | Read 側の過検出抑制境界 |
+| case-32 | PowerShell + Invoke-RestMethod → trigger | PreToolUse | matcher と分岐の PowerShell 対応 → reader 起動指示 |
+| case-33 | PowerShell + 行頭の irm / 小文字表記 → trigger | PreToolUse | 大文字小文字を区別しない照合・別名の位置 |
+| case-34 | PowerShell + curl.exe / パス付きの gh.exe → trigger | PreToolUse | CLI 名の拡張子・パス・引用符 |
+| case-35 | PowerShell + `$env:GITHUB_TOKEN = ...` → trigger | PreToolUse | PowerShell / Windows の環境変数設定の検出 |
+| case-36 | PowerShell + コマンド中の秘密情報パターン → trigger | PreToolUse | シークレット / Bearer パターンの PowerShell 適用 |
+| case-37 | PowerShell + 必須プリフィクス付きのローカルコマンド → no-op | PreToolUse | PowerShell 側の過検出抑制境界 |
+| case-38 | PowerShell + 認証情報と無関係な環境変数の設定 → no-op | PreToolUse | 環境変数パターンの過検出抑制境界（case-29 の PowerShell 版） |
+| case-39 | Bash + `pwsh -c "$env:GITHUB_TOKEN = ..."` → trigger | PreToolUse | Bash から PowerShell を起動する経路 |
+| case-40 | PowerShell + 認証情報らしい環境変数の参照 → no-op | PreToolUse | 環境変数の設定と参照の境界 |
+| case-41 | PowerShell + CLI 名を含むパス → no-op | PreToolUse | パス付きの起動の検出に対する過検出抑制境界 |
+| case-42 | 不正な入力 → no-op | PreToolUse | エラー系・fail-open |
 
 ## 実行確認方法
 
 各ケースの「入力」セクションのフレーズで Claude Code を起動し、「期待動作」「期待出力」と一致することを目視確認する。
+
+PreToolUse のケース（case-18〜23・29〜42）の入力は、回帰テストで自動検証できる（副作用なし。`bash` と `jq` が必要。約 1 分）。
+秘密情報らしい値は、回帰テストの実行時に組み立てたダミーに置き換えている。
+
+```bash
+bash references/scripts/hooks/tests/test_preempt_credentials_check.sh   # プラグインのルートで実行（Windows では Git Bash）
+```
 
 ## 重要な検証観点
 

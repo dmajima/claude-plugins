@@ -14,7 +14,7 @@ Claude Code セッションをまたいで認証情報（API キー・トーク�
 | `credentials-manager` | スキル | 追加（save）／編集（update）／削除（delete）／修復（repair）。書き込み系の管理操作を担当 |
 | `/credentials-manager:manage` | コマンド | `AskUserQuestion` ベースの対話メニュー UI で reader と manager を呼び分ける設定 UI |
 | `install_rule_template.sh` | フック (SessionStart) | スコープ判定（user / project）に応じて最重要ルール `credentials-management.md` を `.claude/rules/security/` 配下へ自動配置（既存ファイルは温存） |
-| `preempt_credentials_check.sh` | フック (PreToolUse) | 外部通信・認証情報系ファイル・コンテンツ内シークレット検出時に Claude へ「`credentials-reader` を最優先起動」と注意喚起 |
+| `preempt_credentials_check.sh` | フック (PreToolUse) | 外部通信（`Bash` / `PowerShell` のコマンドを含む）・認証情報系ファイル・コンテンツ内シークレット検出時に Claude へ「`credentials-reader` を最優先起動」と注意喚起 |
 | `detect_credentials_in_prompt.sh` | フック (UserPromptSubmit) | ユーザー入力にシークレットパターン検出時、Claude へ「マスキング + `credentials-reader` 起動 + 必要時 `credentials-manager` 引き継ぎ」と通知 |
 
 ## 導入手順
@@ -22,7 +22,8 @@ Claude Code セッションをまたいで認証情報（API キー・トーク�
 ### 前提
 
 - Claude Code がインストール済み
-- 依存関係なし（外部プラグイン・外部 CLI に依存しない）
+- 外部プラグインには依存しない
+- 同梱フックの実行には `bash` と `jq` が必要（`jq` が無い環境ではフックは何もせずに終了し、`bash` を起動できない環境ではフックが動かない。いずれの場合もスキル・コマンドは影響を受けない）
 
 ### A. マーケットプレイス経由インストール（推奨）
 
@@ -156,11 +157,11 @@ Claude（要約）:
 |-----------|------|
 | `WebFetch` / `WebSearch` | 常に対象 |
 | `mcp__*`（任意の MCP サーバ呼び出し） | 常に対象 |
-| `Bash` の `command` に対象コマンドを含む | 下記 2 / 3 のいずれか |
+| `Bash` / `PowerShell` の `command` に対象のコマンド・設定・パターンを含む | 下記 2 / 3 / 5 のいずれか |
 | `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` の `file_path` が認証情報系 | 下記 4 のリストに該当 |
 | `Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 下記 5 のいずれか |
 
-#### 2. Bash matcher の外部通信 / 認証付きクライアント / IaC / シークレット管理 CLI
+#### 2. シェルコマンドの外部通信 / 認証付きクライアント / IaC / シークレット管理 CLI
 
 ```text
 curl / wget / http / httpie / aria2c
@@ -170,16 +171,39 @@ docker / podman / psql / mysql / mongosh / mongo / redis-cli
 terraform / tofu / ansible / ansible-playbook / helm / pulumi / packer
 vault / op / bw
 Invoke-WebRequest / Invoke-RestMethod / iwr / irm
+Start-BitsTransfer / Net.WebClient / Net.Http.HttpClient / [Net.WebRequest]
 ```
 
-#### 3. Bash matcher の認証情報環境変数設定
+CLI 名は `curl.exe` / `az.cmd` のような拡張子付きでも検出します。`PowerShell` ではさらに、パス付き（`C:\...\gh.exe` / `.\gh.exe`）・引用符付き（`& 'gh'` / `Start-Process -FilePath "curl.exe"`）の起動と、代入（`$u=gh api user`）やスクリプトブロック（`{gh api user}`）の中の起動も検出します。
+別名の `irm` / `iwr` は、行頭・区切りの後・代入の右辺・スクリプトブロックや引用符の中など、コマンドを置ける位置にあるものを検出します。
+`gh-pages` や `.\docs\op\` のように、CLI 名の直後に `-` や `\` が続くものは対象外です。
+
+#### 3. 認証情報らしい環境変数の設定
 
 ```text
 export FOO_TOKEN=...      / set FOO_KEY=...
 export FOO_SECRET=...     / export FOO_PASSWORD=...
 export FOO_API_KEY=...    / export FOO_AUTH=...
 export FOO_CREDENTIAL=... / export FOO_BEARER=...
+$env:FOO_TOKEN = ...      / ${env:FOO_KEY} = ...
+[Environment]::SetEnvironmentVariable('FOO_SECRET', ...)
+Set-Item -Path Env:FOO_PASSWORD ... / New-Item -Path Env: -Name FOO_API_KEY ...
+si Env:FOO_TOKEN ...      / ni Env:FOO_KEY ...（Set-Item / New-Item の別名）
+setx FOO_TOKEN ...        / setx /M FOO_SECRET ...
 ```
+
+変数名に認証情報キーワード（`TOKEN` / `KEY` / `SECRET` / `PASSWORD` / `PASSWD` / `API` / `AUTH` / `CREDENTIAL` / `SESSION` / `BEARER` / `PRIVATE`）を含む場合のみ検出し、値の参照（`$env:FOO_TOKEN` を読むだけ）は対象外です。
+設定は 1 行で完結するため、照合は改行をまたぎません。PowerShell の書き方は、`Bash` から `pwsh -c` / `powershell -c` で実行した場合も検出します。
+
+大文字小文字の扱いは、照合対象とツールによって次のように異なります（PowerShell はコマンド名の大文字小文字を区別しないため）。
+
+| 照合対象 | `Bash` | `PowerShell` |
+|---------|--------|--------------|
+| 2 の CLI 名（`curl` 〜 `bw`） | 区別する | 区別しない |
+| 2 の PowerShell 系の通信コマンド（`Invoke-WebRequest` 〜 `[Net.WebRequest]`） | 区別しない | 区別しない |
+| 3 の `export` / `set` | 区別する | 区別する |
+| 3 の PowerShell / Windows の書き方（`$env:` 〜 `setx`） | 区別しない | 区別しない |
+| 5 のシークレットパターン | 区別する | 区別する |
 
 #### 4. 認証情報系ファイルパス（Read/Write/Edit 等で対象化）
 
@@ -193,7 +217,7 @@ export FOO_CREDENTIAL=... / export FOO_BEARER=...
 | ディレクトリ全体 | `~/.ssh/*` / `~/.gnupg/*` |
 | 拡張子 | `*.pem` / `*.key` / `*.p12` / `*.pfx` / `*.jks` / `*.keystore` / `*.crt` / `*.cer` / `*.der` / `*.asc` / `*.gpg` |
 
-#### 5. シークレットパターン（Bash command / Write/Edit content）
+#### 5. シークレットパターン（`Bash` / `PowerShell` の command、`Write` / `Edit` 等のコンテンツ）
 
 ```text
 sk-*  ghp_*  gho_*  ghu_*  ghs_*  ghr_*
@@ -201,7 +225,18 @@ xoxb-*  xoxp-*  xoxa-*  xoxr-*  xoxs-*
 AKIA<16>  AIza<35>  glpat-*  eyJ*.*.*  Bearer ...
 ```
 
-ローカル完結の `ls` / `cat` / `git status` / `mkdir` / `grep` 等、無関係な `Read`/`Write` ファイル（`README.md` `package.json` 等）は通知対象外です。
+ローカル完結の `ls` / `cat` / `git status` / `mkdir` / `grep`、`Get-ChildItem` / `Get-Location` / `Get-Process` 等（PowerShell の文字コード設定のプリフィクスを含む）、無関係な `Read`/`Write` ファイル（`README.md` `package.json` 等）は通知対象外です。
+
+#### 既知の制約
+
+検出はコマンド文字列のパターン照合による念押しであり、次の誤検出・検出漏れがあります（回帰テストの「既知の制約」に同じ例を記録しています）。
+
+| 種別 | 例 |
+|-----|---|
+| 誤検出 | 変数名のキーワードへの部分一致（`GIT_AUTHOR_NAME` の `AUTH`、`API_BASE_URL` の `API`）。PowerShell で、パスの末尾の要素や引用符の中の語が CLI 名と一致するもの（`Set-Location .\terraform` / `Write-Output "HTTP status: 200"`）。引用符の中の `IRM` / `IWR` という語 |
+| 検出漏れ | `Bash` でのパス付きの起動（`/usr/bin/curl`）。`-Name` を `-Path Env:` より前に書く `New-Item`。レジストリ（`HKCU:\Environment`）経由の環境変数の設定。`git` 経由の通信。値の表示（`Write-Output $env:FOO_TOKEN`）。文字列の連結や `-EncodedCommand` 等で難読化したコマンド |
+
+フックはツールの実行を止めません。通知がモデルに届くのは、通知の対象となったツール呼び出しの後です。
 
 ### UserPromptSubmit — ユーザー入力に含まれるシークレットの保存提案
 
@@ -217,6 +252,19 @@ AKIA<16>  AIza<35>  glpat-*  eyJ*.*.*  Bearer ...
 - v2 系: フックが `credentials-reader` のみ（軽量・参照特化）を起動指示。書き込みが必要な場合のみ `credentials-manager` に引き継ぐ
 
 参照のみで完結するケース（自動マッチ・一覧・取得）が多くを占めるため、平均的なフック起動時のコンテキスト消費が抑えられます。
+
+### フックを変更する場合
+
+検出パターンや `hooks.json` の matcher を変更したら、回帰テストを実行してください（`bash` と `jq` が必要です。約 1 分かかります）。
+
+```bash
+bash references/scripts/hooks/tests/test_preempt_credentials_check.sh   # プラグインのルートで実行
+```
+
+Windows では Git Bash で実行してください（PowerShell から `bash` と呼ぶと、WSL の bash に解決されることがあります）。
+
+対象のツール名は、`hooks.json` の matcher とスクリプトの `case` 分岐の 2 か所に書かれています。片方だけを直しても検査は働かないため、回帰テストは matcher の一致と、分岐ごとの通知の両方を検証します。
+回帰テストは、空白の多い大きな入力（300 KB）を `hooks.json` の `timeout` の 8 割以内で判定できることも確かめます。`timeout` を超えるとフックは打ち切られ、通知は出ません。
 
 ### フックを無効化したい場合
 
@@ -273,7 +321,9 @@ plugins/credentials-manager/
 │   │   └── hooks/
 │   │       ├── install_rule_template.sh               # SessionStart：テンプレート配置
 │   │       ├── preempt_credentials_check.sh           # PreToolUse：reader 起動指示
-│   │       └── detect_credentials_in_prompt.sh       # UserPromptSubmit：マスキング + reader 起動指示
+│   │       ├── detect_credentials_in_prompt.sh       # UserPromptSubmit：マスキング + reader 起動指示
+│   │       └── tests/
+│   │           └── test_preempt_credentials_check.sh  # PreToolUse フックと matcher の回帰テスト
 │   └── templates/
 │       └── rules/
 │           └── security/
@@ -307,7 +357,8 @@ plugins/credentials-manager/
             ├── case-14〜25                            # 同梱フック動作の評価
             ├── case-26_update_with_confirm.md         # update
             ├── case-27_manage_command.md              # /credentials-manager:manage 経由
-            └── case-28_handoff_from_reader.md         # reader 引き継ぎ受け入れ
+            ├── case-28_handoff_from_reader.md         # reader 引き継ぎ受け入れ
+            └── case-29〜42                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等）
 ```
 
 ## 技術スタック・アーキテクチャ
@@ -322,7 +373,7 @@ plugins/credentials-manager/
 
 ### 採用技術
 
-- Markdown / JSON / Bash
+- Markdown / JSON / Bash（フックは `bash` と `jq` で動作）
 - Claude Code Skills API（`SKILL.md` の description ベースの自動トリガー判定を活用）
 - Claude Code Hooks API（SessionStart / PreToolUse / UserPromptSubmit）
 - Claude Code Commands API（`/credentials-manager:manage`）

@@ -24,12 +24,13 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "WebFetch|WebSearch|Bash|Read|Write|Edit|MultiEdit|NotebookEdit|mcp__.*",
+        "matcher": "WebFetch|WebSearch|Bash|PowerShell|Read|Write|Edit|MultiEdit|NotebookEdit|mcp__.*",
         "hooks": [
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/preempt_credentials_check.sh\"",
-            "shell": "bash"
+            "shell": "bash",
+            "timeout": 10
           }
         ]
       }
