@@ -34,6 +34,8 @@
 | case-23 | Write コンテンツにシークレット → trigger | PreToolUse | コンテンツ内 SECRET_PATTERN → reader 起動指示 |
 | case-24 | プロンプト中の Bearer トークン検出 | UserPromptSubmit | BEARER_PATTERN マッチ → reader 起動指示 |
 | case-25 | 環境変数欠如時の silent exit | SessionStart | エラー系・fail-open |
+| case-29 | Bash + 認証情報と無関係な環境変数の export → no-op | PreToolUse | 環境変数パターンの過検出抑制境界 |
+| case-30 | Bash + 認証情報らしい環境変数の export → trigger | PreToolUse | 変数名の認証情報キーワード検出 → reader 起動指示 |
 
 ## 実行確認方法
 
