@@ -135,7 +135,9 @@ case "$tool_name" in
       if printf '%s' "$cmd" | grep -qE "$ps_cmd_pattern"; then
         set_reason 'Bash で PowerShell 系外部通信コマンドを実行'
       fi
-      env_set_pattern='(^|[[:space:];&|(`])(export|set)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*((TOKEN|KEY|SECRET|PASSWORD|PASSWD|API|AUTH|CREDENTIAL|SESSION|BEARER|PRIVATE)[A-Za-z0-9_]*)?='
+      # 変数名に認証情報キーワードを含む場合のみ検出する（キーワードを任意にすると、
+      # MSYS_NO_PATHCONV や PATH など無関係な export / set まで検出してしまう）
+      env_set_pattern='(^|[[:space:];&|(`])(export|set)[[:space:]]+[A-Za-z0-9_]*(TOKEN|KEY|SECRET|PASSWORD|PASSWD|API|AUTH|CREDENTIAL|SESSION|BEARER|PRIVATE)[A-Za-z0-9_]*='
       if printf '%s' "$cmd" | grep -qE "$env_set_pattern"; then
         set_reason 'Bash で認証情報らしい環境変数を設定'
       fi
