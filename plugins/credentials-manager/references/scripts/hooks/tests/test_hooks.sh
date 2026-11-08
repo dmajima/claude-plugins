@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# test_preempt_credentials_check.sh
+# test_hooks.sh
 #
 # credentials-manager の PreToolUse フック（preempt_credentials_check.sh）と、
 # hooks.json の PreToolUse 登録の回帰テスト。実際のフック入力 JSON を流し、
 # 通知の有無・理由文・出力の形式・所要時間を検証する。
 #
-# 実行: bash references/scripts/hooks/tests/test_preempt_credentials_check.sh [検証するスクリプト]
+# 実行: bash references/scripts/hooks/tests/test_hooks.sh [検証するスクリプト]
 #   引数を省略するとプラグイン同梱の preempt_credentials_check.sh を検証する
 #   Windows では Git Bash で実行する（PowerShell から呼ぶ場合、PATH 上の bash は WSL に解決されることがある）
 # 前提: bash と jq（jq が無いとフックは常に何も出力せず、不具合と区別できないため中断する）

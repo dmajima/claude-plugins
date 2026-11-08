@@ -258,7 +258,7 @@ AKIA<16>  AIza<35>  glpat-*  eyJ*.*.*  Bearer ...
 検出パターンや `hooks.json` の matcher を変更したら、回帰テストを実行してください（`bash` と `jq` が必要です。約 1 分かかります）。
 
 ```bash
-bash references/scripts/hooks/tests/test_preempt_credentials_check.sh   # プラグインのルートで実行
+bash references/scripts/hooks/tests/test_hooks.sh   # プラグインのルートで実行
 ```
 
 Windows では Git Bash で実行してください（PowerShell から `bash` と呼ぶと、WSL の bash に解決されることがあります）。
@@ -323,7 +323,7 @@ plugins/credentials-manager/
 │   │       ├── preempt_credentials_check.sh           # PreToolUse：reader 起動指示
 │   │       ├── detect_credentials_in_prompt.sh       # UserPromptSubmit：マスキング + reader 起動指示
 │   │       └── tests/
-│   │           └── test_preempt_credentials_check.sh  # PreToolUse フックと matcher の回帰テスト
+│   │           └── test_hooks.sh                      # PreToolUse フックと matcher の回帰テスト
 │   └── templates/
 │       └── rules/
 │           └── security/

@@ -8,7 +8,7 @@
 # additionalContext で通知する。
 #
 # 対象のツール名は hooks.json の matcher と下の case 分岐の 2 か所にある。片方だけを
-# 変えると検査が働かないため、変更したら tests/test_preempt_credentials_check.sh を実行する。
+# 変えると検査が働かないため、変更したら tests/test_hooks.sh を実行する。
 #
 # 設計: フェイルオープン (例外時も exit 0)
 

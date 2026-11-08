@@ -57,7 +57,7 @@ PreToolUse のケース（case-18〜23・29〜42）の入力は、回帰テス�
 秘密情報らしい値は、回帰テストの実行時に組み立てたダミーに置き換えている。
 
 ```bash
-bash references/scripts/hooks/tests/test_preempt_credentials_check.sh   # プラグインのルートで実行（Windows では Git Bash）
+bash references/scripts/hooks/tests/test_hooks.sh   # プラグインのルートで実行（Windows では Git Bash）
 ```
 
 ## 重要な検証観点
