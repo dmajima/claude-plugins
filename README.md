@@ -15,7 +15,7 @@ dmajima 個人用 Claude Code プラグインマーケットプレイス。
 | `coding` | 多言語対応の実装・設計ワークフロープラグイン（言語スキル8種+SSOT規約管理・自動検出・プロジェクト規約優先） | 1.0.1 | `/plugin install coding@dmajima-claude-plugins` |
 | `connector` | 7サービス対応の外部連携プラグイン（安全ゲート・レンダリングチェック・承認付き） | 2.5.1 | `/plugin install connector@dmajima-claude-plugins` |
 | `convert-doc` | Markdown と HTML / PDF / PPTX を相互変換するドキュメント変換プラグイン（PPTX 取り込み・デザイン追加対応） | 5.0.0 | `/plugin install convert-doc@dmajima-claude-plugins` |
-| `credentials-manager` | 認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン | 2.2.0 | `/plugin install credentials-manager@dmajima-claude-plugins` |
+| `credentials-manager` | 認証情報の参照(reader)/管理(manager)/対話UI(/manage)を分離した責務特化型セキュリティプラグイン | 2.3.0 | `/plugin install credentials-manager@dmajima-claude-plugins` |
 | `deep-code-review` | 観点別マルチエージェントでコード変更・PR をレビュー（Anthropic 公式 code-review とは別）。Azure DevOps/オンプレTFS・GitHub PR 対応、8言語+主要FW・信頼度スコアで統合サマリと判定を返す | 1.1.0 | `/plugin install deep-code-review@dmajima-claude-plugins` |
 | `deep-test` | テスト設計→環境構築→実施→報告→再テストを支援。8レベル・Playwright実動作・手動/探索的・YAML実績管理。コードレビュー（deep-code-review）の差分テストとは別 | 2.0.0 | `/plugin install deep-test@dmajima-claude-plugins` |
 | `design-bridge` | Markdown 画面設計書とモック HTML を claude.ai/design へ同期し未反映を Stop フックで防止 | 0.2.1 | `/plugin install design-bridge@dmajima-claude-plugins` |
