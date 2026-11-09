@@ -23,7 +23,8 @@ Claude Code セッションをまたいで認証情報（API キー・トーク�
 
 - Claude Code がインストール済み
 - 外部プラグインには依存しない
-- 同梱フックの実行には `bash` と `jq` が必要（`jq` が無い環境ではフックは何もせずに終了し、`bash` を起動できない環境ではフックが動かない。いずれの場合もスキル・コマンドは影響を受けない）
+- 同梱フックの実行には `bash` 4 以上と `jq` が必要（macOS 標準の bash 3.2 では動かない）。前提を欠くと検出フックは何もせずに終了し、`bash` を起動できない環境ではフックそのものが動かない。いずれの場合もスキル・コマンドは影響を受けない
+- 前提を欠くときは、セッションの開始時に SessionStart のフックが「検出フックが動作していない」ことを知らせる（下記「SessionStart」参照）
 
 ### A. マーケットプレイス経由インストール（推奨）
 
@@ -146,6 +147,10 @@ Claude（要約）:
 - 既に同名ファイルが存在する場合は **何もしません**（ユーザーの編集を尊重）
 - 配置時のみ `additionalContext` で Claude に通知します
 - 配置後は `CLAUDE.md` から `rules/security/credentials-management.md` を参照する 1 行を追記してください（既存運用と整合）
+
+あわせて、検出フック（PreToolUse / UserPromptSubmit）が動く前提（`bash` 4 以上・`jq`・`references/scripts/hooks/lib/credential_patterns.sh`）を自己診断します。
+検出フックは前提を欠くと何もせずに終了する（フェイルオープン）ため、欠けているものがあれば、検出フックが動作していないことをセッションの開始時に Claude へ知らせます（`jq` が無い・`bash` が古い場合は JSON を組み立てられないため平文で出力します）。
+検出フック自身も、前提を欠くときは stderr に 1 行出してから終了します（詳細モードでのみ表示）。
 
 ### PreToolUse — 認証情報を扱い得る全ツール呼び出しの注意喚起
 
@@ -275,7 +280,7 @@ bash references/scripts/hooks/tests/test_hooks.sh   # プラグインのルー�
 Windows では Git Bash で実行してください（PowerShell から `bash` と呼ぶと、WSL の bash に解決されることがあります）。
 
 対象のツール名は、`hooks.json` の matcher とスクリプトの `case` 分岐の 2 か所に書かれています。片方だけを直しても検査は働かないため、回帰テストは matcher の一致と、分岐ごとの通知の両方を検証します。
-回帰テストは、空白の多い大きな入力（300 KB）を `hooks.json` の `timeout` の 8 割以内で判定できることも確かめます。`timeout` を超えるとフックは打ち切られ、通知は出ません。
+回帰テストは、空白の多い大きな入力（300 KB）を `hooks.json` の `timeout` の 8 割以内で判定できることと、README・ルールテンプレートに書かれたツール名が matcher と一致することも確かめます。`timeout` を超えるとフックは打ち切られ、通知は出ません。
 
 ### フックを無効化したい場合
 
@@ -371,7 +376,7 @@ plugins/credentials-manager/
             ├── case-26_update_with_confirm.md         # update
             ├── case-27_manage_command.md              # /credentials-manager:manage 経由
             ├── case-28_handoff_from_reader.md         # reader 引き継ぎ受け入れ
-            └── case-29〜49                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
+            └── case-29〜50                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
 ```
 
 ## 技術スタック・アーキテクチャ

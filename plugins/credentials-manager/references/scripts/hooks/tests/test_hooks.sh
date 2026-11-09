@@ -39,6 +39,9 @@ if [[ ! -f "$TARGET" || ! -f "$HOOKS_JSON" ]]; then
   echo "ERROR: 検証対象が見つかりません: $TARGET / $HOOKS_JSON"
   exit 2
 fi
+# SessionStart の配置先や前提を欠く環境の再現に使う一時ディレクトリ（終了時に削除する）
+TMP_ROOT="$(mktemp -d)"
+trap 'rm -rf "$TMP_ROOT"' EXIT
 
 pad24="$(printf '%24s' '')"
 fake_sk="sk-${pad24// /x}"
@@ -362,13 +365,19 @@ run miss - '' '空の標準入力'
 run miss - $' \n\t ' '空白だけの標準入力'
 run miss - '{not json' '不正な JSON'
 run miss PowerShell '{"tool_name":"PowerShell","tool_input":{}}' 'PowerShell: command が無い'
-out="$(shell_json Bash 'curl https://api.example.com' | PATH=/nonexistent "$SHELL_BIN" "$TARGET" 2>/dev/null)"
-rc=$?
-if [[ $rc -eq 0 && -z $out ]]; then
-  record PASS 'jq が無い環境（PATH に jq が無い）'
-else
-  record FAIL "jq が無い環境で終了コード $rc・出力あり"
-fi
+# jq が無い環境: 標準出力には何も出さず終了コード 0。保護が外れたことは stderr に 1 行出す
+for hook in "$TARGET" "$PROMPT_HOOK"; do
+  input="$(shell_json Bash 'curl https://api.example.com')"
+  [[ $hook == "$PROMPT_HOOK" ]] && input="$(jq -cn --arg p "key=$fake_sk" '{prompt: $p}' | tr -d '\r')"
+  printf '%s' "$input" | PATH=/nonexistent "$SHELL_BIN" "$hook" > "$TMP_ROOT/nojq.out" 2> "$TMP_ROOT/nojq.err"
+  rc=$?
+  name=${hook##*/}
+  if [[ $rc -eq 0 && ! -s "$TMP_ROOT/nojq.out" ]] && grep -q 'jq が無い' "$TMP_ROOT/nojq.err"; then
+    record PASS "jq が無い環境（$name）: 出力なし・終了コード 0・stderr に 1 行"
+  else
+    record FAIL "jq が無い環境（$name）: 終了コード $rc / 標準出力 $(wc -c < "$TMP_ROOT/nojq.out") バイト / stderr: $(head -c 100 "$TMP_ROOT/nojq.err")"
+  fi
+done
 
 echo "=== 11. 大きな入力（hooks.json の timeout の 8 割以内で判定する） ==="
 limit_ms=$(( ${timeout_sec:-60} * 800 ))
@@ -517,6 +526,96 @@ run miss Grep '{"tool_name":"Grep","tool_input":{"pattern":"TODO","glob":"*.md",
 run miss Glob '{"tool_name":"Glob","tool_input":{"pattern":"plugins/credentials-manager/**/*.md"}}' 'Glob: plugins/credentials-manager/**/*.md（語の一部の一致では判定しない）'
 run miss Glob '{"tool_name":"Glob","tool_input":{"pattern":"**/.env.example"}}' 'Glob: **/.env.example（除外リスト）'
 run miss Glob '{"tool_name":"Glob","tool_input":{}}' 'Glob: 入力が空'
+
+echo "=== 17. SessionStart: ルールの配置と自己診断（case-14〜16・25・50） ==="
+TEMPLATE="$PLUGIN_ROOT/references/templates/rules/security/credentials-management.md"
+# $1=ラベル $2=CLAUDE_PLUGIN_ROOT $3=配置先のプロジェクト $4=PATH（空なら現在の PATH）→ SESSION_OUT / SESSION_RC
+session_run() {
+  local root=$2 project=$3 path_val=${4:-$PATH}
+  printf '{}' | env PATH="$path_val" HOME="$TMP_ROOT/home" USERPROFILE="$TMP_ROOT/home" \
+    CLAUDE_PLUGIN_ROOT="$root" CLAUDE_PROJECT_DIR="$project" "$SHELL_BIN" "$root/references/scripts/hooks/install_rule_template.sh" \
+    > "$TMP_ROOT/session.out" 2>/dev/null
+  SESSION_RC=$?
+  SESSION_OUT="$(tr -d '\r' < "$TMP_ROOT/session.out")"
+}
+session_ctx() { printf '%s' "$SESSION_OUT" | jq -er 'select(.continue == true and .hookSpecificOutput.hookEventName == "SessionStart") | .hookSpecificOutput.additionalContext' 2>/dev/null | tr -d '\r'; }
+# project スコープ: プラグインが ~/.claude の外にある
+session_run "" "$PLUGIN_ROOT" "$TMP_ROOT/project"
+placed="$TMP_ROOT/project/.claude/rules/security/credentials-management.md"
+if [[ $SESSION_RC -eq 0 && "$(session_ctx)" == *project*配置しました* ]] && cmp -s "$placed" "$TEMPLATE"; then
+  record PASS 'project スコープ: テンプレートを配置して通知する'
+else
+  record FAIL "project スコープ: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:120}"
+fi
+session_run "" "$PLUGIN_ROOT" "$TMP_ROOT/project"
+if [[ $SESSION_RC -eq 0 && -z $SESSION_OUT ]] && cmp -s "$placed" "$TEMPLATE"; then
+  record PASS '配置済み: 何も出力せず、既存のファイルを上書きしない'
+else
+  record FAIL "配置済み: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:120}"
+fi
+# user スコープ: プラグインが ~/.claude の配下にある
+mkdir -p "$TMP_ROOT/home/.claude/plugins"
+cp -r "$PLUGIN_ROOT" "$TMP_ROOT/home/.claude/plugins/cm"
+session_run "" "$TMP_ROOT/home/.claude/plugins/cm" "$TMP_ROOT/project-u"
+if [[ $SESSION_RC -eq 0 && "$(session_ctx)" == *user*配置しました* ]] && cmp -s "$TMP_ROOT/home/.claude/rules/security/credentials-management.md" "$TEMPLATE"; then
+  record PASS 'user スコープ: ~/.claude/rules/security に配置する'
+else
+  record FAIL "user スコープ: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:120}"
+fi
+# 自己診断: jq が無い → 平文で知らせ、配置はしない
+session_run "" "$PLUGIN_ROOT" "$TMP_ROOT/project-nojq" /nonexistent
+if [[ $SESSION_RC -eq 0 && $SESSION_OUT == *'jq が見つからない'* && ! -e "$TMP_ROOT/project-nojq/.claude" ]]; then
+  record PASS '自己診断: jq が無いと、検出フックが動作しないことを平文で知らせる'
+else
+  record FAIL "自己診断（jq なし）: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:120}"
+fi
+# 自己診断: 共通のパターン定義が無い → 配置の通知に添えて知らせる
+cp -r "$PLUGIN_ROOT" "$TMP_ROOT/nolib"
+rm -rf "$TMP_ROOT/nolib/references/scripts/hooks/lib"
+session_run "" "$TMP_ROOT/nolib" "$TMP_ROOT/project-nolib"
+if [[ $SESSION_RC -eq 0 && "$(session_ctx)" == *'lib/credential_patterns.sh が無い'*配置しました* ]]; then
+  record PASS '自己診断: lib/credential_patterns.sh が無いと、配置の通知に添えて知らせる'
+else
+  record FAIL "自己診断（lib なし）: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:120}"
+fi
+# CLAUDE_PLUGIN_ROOT が無い（前提は満たす）→ 何も出力しない
+printf '{}' | env HOME="$TMP_ROOT/home" USERPROFILE="$TMP_ROOT/home" CLAUDE_PLUGIN_ROOT= CLAUDE_PROJECT_DIR="$TMP_ROOT/project-x" \
+  "$SHELL_BIN" "$HOOKS/install_rule_template.sh" > "$TMP_ROOT/session.out" 2>/dev/null
+rc=$?
+if [[ $rc -eq 0 && ! -s "$TMP_ROOT/session.out" && ! -e "$TMP_ROOT/project-x" ]]; then
+  record PASS 'CLAUDE_PLUGIN_ROOT が無い: 何も出力せず終了コード 0'
+else
+  record FAIL "CLAUDE_PLUGIN_ROOT が無い: 終了コード $rc / 出力 $(wc -c < "$TMP_ROOT/session.out") バイト"
+fi
+
+echo "=== 18. ルールテンプレート・README の記載と PreToolUse の matcher の突き合わせ ==="
+# 記載と実装の食い違い（記載にあるツールが matcher に無い、またはその逆）を検出する
+doc_tools() {  # $1=ファイル $2=表の開始の行（正規表現） $3=表の終了の行（正規表現）→ 1 列目に書かれたツール名
+  awk -v s="$2" -v e="$3" '$0 ~ s {f=1; next} f && $0 ~ e {f=0} f && /^\|/ {n=split($0, c, "|"); print c[2]}' "$1" \
+    | grep -oE '`(mcp__\*|[A-Z][A-Za-z]+)`' | tr -d '`' | sort -u
+}
+IFS='|' read -ra matcher_tools <<< "${matcher//mcp__.\*/mcp__*}"
+for doc in "ルールテンプレート 1.3|$TEMPLATE|^### 1\\.3|^認証情報系ファイル" "README の「1. ツール種別による検出」|$PLUGIN_ROOT/README.md|^#### 1\\. ツール種別による検出|^#### 2\\."; do
+  IFS='|' read -r dname dfile dstart dend <<< "$doc"
+  mapfile -t listed < <(doc_tools "$dfile" "$dstart" "$dend")
+  if [[ ${#listed[@]} -eq 0 ]]; then
+    record FAIL "$dname: ツール名を読み取れない（表の見出しが変わった可能性）"
+    continue
+  fi
+  missing_in_matcher=()
+  for tool in "${listed[@]}"; do
+    [[ " ${matcher_tools[*]} " == *" $tool "* ]] || missing_in_matcher+=("$tool")
+  done
+  missing_in_doc=()
+  for tool in "${matcher_tools[@]}"; do
+    [[ " ${listed[*]} " == *" $tool "* ]] || missing_in_doc+=("$tool")
+  done
+  if [[ ${#missing_in_matcher[@]} -eq 0 && ${#missing_in_doc[@]} -eq 0 ]]; then
+    record PASS "$dname と matcher のツールが一致する（${#listed[@]} 件）"
+  else
+    record FAIL "$dname と matcher が食い違う（記載のみ: ${missing_in_matcher[*]:-なし} / matcher のみ: ${missing_in_doc[*]:-なし}）"
+  fi
+done
 
 echo
 printf '結果: PASS=%s FAIL=%s（既知の制約 %s 件のうち挙動が変わったもの %s 件）\n' "$pass" "$fail" "$known" "$changed"

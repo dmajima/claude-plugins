@@ -11,7 +11,13 @@
 
 set +e
 
+# 前提を欠くときは、保護が外れたことを stderr に 1 行出して終了する（SessionStart のフックも同じ前提を自己診断して知らせる）
 if ! command -v jq >/dev/null 2>&1; then
+  echo "[credentials-manager] jq が無いため、検査を省略します" >&2
+  exit 0
+fi
+if [[ -z "${BASH_VERSINFO:-}" || "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+  echo "[credentials-manager] bash 4 以上が必要なため、検査を省略します（${BASH_VERSION:-?}）" >&2
   exit 0
 fi
 
