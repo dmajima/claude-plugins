@@ -1030,6 +1030,34 @@ u_scan miss "${sp}echo hello" '16 KB 超・手掛かりの語を含まない'
 u_scan miss "${sp}cat $(rep 'a.env1 ' 256)" '16 KB 超・手掛かりの語を含むトークン 256 個（上限ちょうど）'
 u_scan hit "${sp}cat $(rep 'a.env1 ' 257)" '16 KB 超・手掛かりの語を含むトークン 257 個（上限を超える）'
 
+echo "=== 22. 単体: 波括弧の展開（Grep の glob・Glob の pattern） ==="
+u_braces() {  # $1=パターン $2=期待する候補（空白区切り。OVERFLOW なら上限超え）
+  local got
+  cred_expand_braces "$1"
+  if [[ -n $CF_BRACE_OVERFLOW ]]; then got=OVERFLOW; else got="${CF_CANDIDATES[*]}"; fi
+  if [[ $got == "$2" ]]; then record PASS "展開: $1 → $got"; else record FAIL "展開: $1 （期待: $2 / 実際: $got）"; fi
+}
+u_braces '*.{pem,key}' '*.pem *.key'
+u_braces '**/{.env,*.pem}' '**/.env **/*.pem'
+u_braces 'a{b,c}d{e,f}' 'abde acde abdf acdf'
+u_braces 'x{a,}' 'xa x'
+u_braces 'x{,a}' 'x xa'
+u_braces '{a,{b,c}}' 'a b a c'
+u_braces 'no-braces' 'no-braces'
+u_braces '{single}' '{single}'
+u_braces "{$(rep 'a,' 62)b}" "$(rep 'a ' 62)b"
+u_braces "{$(rep 'a,' 63)b}" 'OVERFLOW'
+u_pattern() {  # $1=期待 $2=パターン $3=表示名
+  local got=miss
+  credential_pattern_reason "$2"
+  [[ -n $CF_REASON ]] && got=hit
+  u_check "$1" "$got" "$3"
+}
+u_pattern hit '{app,}.env' '{app,}.env（空の候補で .env になる）'
+u_pattern hit '.env{.local,}' '.env{.local,}'
+u_pattern miss '{app,web}.config' '{app,web}.config（どの候補も該当しない）'
+u_pattern hit "{$(rep 'a,' 63)b}" '候補が上限を超える（控えめに通知）'
+
 echo
 printf '結果: PASS=%s FAIL=%s（既知の制約 %s 件のうち挙動が変わったもの %s 件）\n' "$pass" "$fail" "$known" "$changed"
 [[ "$fail" -eq 0 ]]
