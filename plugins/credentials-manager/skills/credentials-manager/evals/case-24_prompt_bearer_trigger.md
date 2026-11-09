@@ -38,4 +38,4 @@
 ## 関連ケース
 
 - `case-17_prompt_secret_pattern_trigger.md`（CRED_SECRET_PATTERN 分岐）
-- `case-28_prompt_pem_key_trigger.md`（PEM 秘密鍵分岐、任意で追加）
+- `case-43_prompt_pem_private_key_trigger.md`（PEM 秘密鍵の分岐）

@@ -773,8 +773,10 @@ else
   record FAIL '自己診断（bash 4 未満）: 判定の閾値（-lt 4）が見つからず、再現できない'
 fi
 # SessionStart のスクリプトは bash 3.2 でも動く書き方に限る（検出フックが動かない環境でもルールを配置するため）。
-# bash 4 以降の構文が無いことを確かめる（コメント行は除く）
-b4="$(grep -nE ',,\}|\^\^\}|declare -A|local -A|mapfile|readarray|coproc|\|&|&>>|;;&|@Q\}|\[\[ -v ' "$HOOKS/install_rule_template.sh" | grep -vE '^[0-9]+:[[:space:]]*#')"
+# bash 4 以降の構文が無いことを確かめる（コメント行は除く）: 大文字小文字の変換（${x,,} ${x^} 等）・連想配列と名前参照（-A / -n）・
+# mapfile / readarray・coproc・|& / &>>・case の ;& / ;;&・${x@Q} 等の変換・[[ -v・負の添字・$BASHPID・globstar・wait -n・小数の read -t
+bash4_syntax=',,\}|\^\^\}|\$\{[A-Za-z_][A-Za-z0-9_]*[,^]\}|declare -[An]|local -[An]|mapfile|readarray|coproc|\|&|&>>|;;?&|@[QEPAaKk]\}|\[\[ -v |\[-[0-9]+\]|BASHPID|globstar|wait -n|read -t [0-9]*\.'
+b4="$(grep -nE -- "$bash4_syntax" "$HOOKS/install_rule_template.sh" | grep -vE '^[0-9]+:[[:space:]]*#')"
 if [[ -z $b4 ]]; then
   record PASS 'install_rule_template.sh に bash 4 以降の構文が無い'
 else

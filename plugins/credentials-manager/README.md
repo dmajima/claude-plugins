@@ -267,7 +267,7 @@ PEM は PGP の秘密鍵（先頭行が `PRIVATE KEY BLOCK` で終わるもの�
 | 検出漏れ | `Bash` でのパス付きの起動（`/usr/bin/curl`）。`-Name` を `-Path Env:` より前に書く `New-Item`。レジストリ（`HKCU:\Environment`）経由の環境変数の設定。コマンド名から `Env:` までが 100 文字を超える `Set-Item` / `New-Item`（`Set-Item -Value '<長い値>' -Path Env:FOO_TOKEN`）。`git` 経由の通信。値の表示（`Write-Output $env:FOO_TOKEN`）。文字列の連結や `-EncodedCommand` 等で難読化したコマンド。シェルで、パスを付けずに書いた `.` で始まる鍵ファイル（`cat .server.key`。jq のパスと区別できない）。シェルの波括弧（`cat {config,secrets}.json`。展開せずに区切りとして扱う）。Grep / Glob の範囲の波括弧（`id_rs{a..a}`）。`~/.aws` の `credentials` / `config` 以外のファイル（`~/.aws/sso/cache/*.json` 等）。Windows の 8.3 形式の短い名前（`CREDEN~1.JSO`） |
 
 フックはツールの実行を止めません。通知がモデルに届くのは、通知の対象となったツール呼び出しの後です。
-判定には、対象のツールの呼び出しごとに 1 回あたり約 0.2〜0.3 秒かかります（Windows の Git Bash での計測）。
+判定には、対象のツールの呼び出しごとに 1 回あたり約 0.15〜0.75 秒（中央値 約 0.3 秒）かかります（Windows の Git Bash での計測）。
 
 大きな入力でも `hooks.json` の `timeout`（10 秒）以内に判定を終えるよう、次のように扱います（3 MB の入力で約 1〜3.5 秒。同じ環境での計測）。
 正規表現は、区切りの無い長い行で入力長の二乗の時間がかからない形にしています（Linux の glibc の正規表現でも確認しています）。
@@ -294,7 +294,7 @@ PEM は PGP の秘密鍵（先頭行が `PRIVATE KEY BLOCK` で終わるもの�
 
 ### フックを変更する場合
 
-検出パターンや `hooks.json` の matcher を変更したら、回帰テストを実行してください（`bash` と `jq` が必要です。約 2〜3 分かかります）。
+検出パターンや `hooks.json` の matcher を変更したら、回帰テストを実行してください（`bash` と `jq` が必要です。約 3〜4 分かかります）。
 
 ```bash
 bash references/scripts/hooks/tests/test_hooks.sh   # プラグインのルートで実行
