@@ -5,7 +5,7 @@
 | 項目 | 値 |
 |-----|---|
 | トリガー | PreToolUse hook |
-| stdin (Claude → hook) 例 1 | `{"tool_name":"Write","tool_input":{"file_path":"/repo/id.txt","content":"<PEM の先頭行>\nMIIE..."}}`（先頭行は `-----BEGIN RSA PRIVATE KEY-----`） |
+| stdin (Claude → hook) 例 1 | `{"tool_name":"Write","tool_input":{"file_path":"/repo/id.txt","content":"<PEM の先頭行>\nMIIE..."}}`（先頭行は、ハイフン 5 個に挟まれた `BEGIN RSA PRIVATE KEY`） |
 | stdin (Claude → hook) 例 2 | 例 1 の先頭行が PGP の秘密鍵の形（`PRIVATE KEY` の後に ` BLOCK` が続く）のもの |
 | 既存状態 | 任意 |
 
