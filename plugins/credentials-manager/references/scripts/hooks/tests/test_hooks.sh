@@ -509,6 +509,35 @@ t miss Bash 'ls plugins/credentials-manager/skills'
 t miss Bash 'grep -rn secret-scan docs/'
 t miss PowerShell 'Get-Content README.md'
 t miss Bash 'npm run build'
+# 手掛かりの語を含むトークンが上限（256 個）を超えたら、判定を打ち切って控えめに通知する（無言で欠落させない）
+want='多数含むコマンド'
+decoys=""
+for ((i = 0; i < 300; i++)); do decoys+='a.env1 '; done
+t hit Bash "cat $decoys" 'Bash: cat a.env1 a.env1 …（300 個。判定の上限を超える）'
+# 最悪ケースの所要時間（timeout の 8 割以内）
+want=''
+limit_ms=$(( ${timeout_sec:-60} * 800 ))
+decoys=""
+for ((i = 0; i < 20000; i++)); do decoys+='a.env1 '; done
+seps=""
+for ((i = 0; i < 100000; i++)); do seps+=';'; done
+for kind in tokens seps; do
+  if [[ $kind == tokens ]]; then
+    json="$(printf 'cat %s~/.aws/credentials' "$decoys" | jq -Rsc '{tool_name: "Bash", tool_input: {command: .}}' | tr -d '\r')"
+    label='Bash: 手掛かりの語を含むトークン 2 万個の後に ~/.aws/credentials'
+  else
+    json="$(printf 'echo %s .env' "$seps" | jq -Rsc '{tool_name: "Bash", tool_input: {command: .}}' | tr -d '\r')"
+    label='Bash: 区切り文字 10 万個の後に .env'
+  fi
+  start=$(now_ms)
+  ctx="$(judge "$json")"
+  elapsed=$(( $(now_ms) - start ))
+  if [[ -n $ctx && $ctx != EXIT=* && $ctx != INVALID_OUTPUT && $elapsed -lt $limit_ms ]]; then
+    record PASS "$label → ${elapsed} ms"
+  else
+    record FAIL "$label （${elapsed} ms / 上限 ${limit_ms} ms / 結果: ${ctx:-通知なし}）"
+  fi
+done
 
 echo "=== 16. Grep / Glob の検索対象（case-48・49） ==="
 want='Grep で環境変数定義ファイル'

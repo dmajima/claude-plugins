@@ -41,6 +41,8 @@ credential_file_reason() {
   CF_REASON=""
   local path="$1"
   [[ -z "$path" ]] && return 0
+  # 実在するパスより十分長い文字列は判定しない（下の置換は、区切り文字の多い長い文字列で入力長の二乗の時間がかかる）
+  (( ${#path} > 4096 )) && return 0
 
   local lower="${path//\\/\/}"
   lower="${lower,,}"
@@ -64,37 +66,30 @@ credential_file_reason() {
     esac
   fi
 
-  # 完全一致 (ファイル名)
-  local exact_matches=(
-    'credentials.json' 'credentials.yml' 'credentials.yaml' 'credential.json'
-    'secrets.json' 'secrets.yml' 'secrets.yaml' 'secret.json'
-    '.npmrc' '.netrc' '.pgpass' '.git-credentials' '.dockercfg'
-    'id_rsa' 'id_dsa' 'id_ecdsa' 'id_ed25519' 'id_xmss'
-    'serviceaccountkey.json' 'service-account.json'
-    'application_default_credentials.json'
-    'gcloud-credentials.json'
-    'kubeconfig'
-  )
-  local match
-  for match in "${exact_matches[@]}"; do
-    if [[ "$plain" == "$match" ]]; then
+  # 完全一致 (ファイル名)。シェルのトークンごとに呼ぶため、ループではなく case で判定する
+  case "$plain" in
+    credentials.json|credentials.yml|credentials.yaml|credential.json|\
+    secrets.json|secrets.yml|secrets.yaml|secret.json|\
+    .npmrc|.netrc|.pgpass|.git-credentials|.dockercfg|\
+    id_rsa|id_dsa|id_ecdsa|id_ed25519|id_xmss|\
+    serviceaccountkey.json|service-account.json|application_default_credentials.json|gcloud-credentials.json|\
+    kubeconfig)
       CF_REASON="認証情報を含む可能性が高いファイル ($basename) を操作"
       return 0
-    fi
-  done
+      ;;
+  esac
 
   # 拡張子 (秘密鍵 / 証明書)。拡張子の前に 1 文字以上あるものに限る
   # （シェルのコマンドでは、jq のフィルタ '.key' のような語幹の無い語が頻出するため）
-  local secret_extensions=('.pem' '.key' '.p12' '.pfx' '.jks' '.keystore' '.crt' '.cer' '.der' '.asc' '.gpg')
-  local ext
-  for ext in "${secret_extensions[@]}"; do
-    if [[ "$basename" == ?*"$ext" ]]; then
+  case "$basename" in
+    ?*.pem|?*.key|?*.p12|?*.pfx|?*.jks|?*.keystore|?*.crt|?*.cer|?*.der|?*.asc|?*.gpg)
       CF_REASON="秘密鍵 / 証明書らしい拡張子のファイル ($basename) を操作"
       return 0
-    fi
-  done
+      ;;
+  esac
 
   # 特殊ディレクトリ配下（ディレクトリそのものを含む。Grep の path やシェルの ls ~/.ssh 等）
+  [[ "$lower" =~ (^|/)\.(aws|docker|kube|ssh|gnupg)(/|$) ]] || return 0
   if [[ "$lower" =~ (^|/)\.aws(/(credentials|config)(\.|$)|/?$) ]]; then
     CF_REASON="AWS 認証情報ファイル (~/.aws/...) を操作"
     return 0
@@ -122,8 +117,10 @@ credential_file_reason() {
 # シェルのコマンド中で認証情報系ファイルを指すトークンを探す手掛かり（大文字小文字を区別しない）。
 # これを含まないコマンドはトークンに分けずに済ませる
 CRED_FILE_HINT='(\.env|credential|secret|npmrc|netrc|pgpass|dockercfg|id_(rsa|dsa|ecdsa|ed25519|xmss)|serviceaccountkey|service-account|kubeconfig|\.(pem|key|p12|pfx|jks|keystore|crt|cer|der|asc|gpg)|\.aws|\.docker|\.kube|\.ssh|\.gnupg)'
-# トークンの区切り（空白・改行・シェルの区切り・括弧・引用符・= ・カンマ）。] は角括弧式の先頭に置く
-SHELL_SEPS=$']\n\r\t;|&()<>"\'=,`{}['
+# トークンの区切り（空白・改行・シェルの区切り・括弧・引用符・= ・カンマ）。IFS として使う
+SHELL_SEPS=$' \t\n\r;|&()<>"\'=,`{}[]'
+# 判定するトークンの上限（手掛かりの語を含むトークンが大量にあるコマンドで、timeout を超えないようにする）
+MAX_FILE_TOKENS=256
 
 stdin="$(cat)"
 # 空白以外の文字が無ければ終了する。"${stdin//[[:space:]]/}" で空白を除去する判定は、空白の多い大きな入力
@@ -206,11 +203,20 @@ case "$tool_name" in
         set_reason "$CRED_REASON"
       fi
       # 認証情報系ファイルの操作（cat .env / Get-Content ~/.aws/credentials / cp .env.example .env 等）。
-      # ファイル系ツールと同じ判定を、コマンドを区切り文字で分けたトークンごとに行う
+      # ファイル系ツールと同じ判定を、コマンドを区切り文字で分けたトークンごとに行う。
+      # 分割は IFS による読み取りで行う（置換で区切り文字を空白に変えると、区切り文字の多い大きな入力で二乗の時間がかかる）。
+      # 判定するトークンは MAX_FILE_TOKENS 個までとし、超えたら判定を打ち切って控えめに通知する（無言で欠落させない）
       if [[ -z "$reason" ]] && match_i "$cmd" "$CRED_FILE_HINT"; then
-        read -ra tokens <<< "${cmd//[$SHELL_SEPS]/ }"
+        IFS="$SHELL_SEPS" read -r -d '' -a tokens <<< "$cmd"
+        candidates=0
+        shopt -s nocasematch
         for tok in "${tokens[@]}"; do
-          match_i "$tok" "$CRED_FILE_HINT" || continue
+          [[ -n "$tok" && "$tok" =~ $CRED_FILE_HINT ]] || continue
+          candidates=$((candidates + 1))
+          if (( candidates > MAX_FILE_TOKENS )); then
+            set_reason "$tool_name で認証情報系ファイルらしい名前を多数含むコマンドを実行"
+            break
+          fi
           credential_file_reason "$tok"
           if [[ -n "$CF_REASON" ]]; then
             CRED_LABEL=$CF_REASON
@@ -219,6 +225,7 @@ case "$tool_name" in
             break
           fi
         done
+        shopt -u nocasematch
       fi
     fi
     ;;
