@@ -49,12 +49,14 @@
 | case-41 | PowerShell + CLI 名を含むパス → no-op | PreToolUse | パス付きの起動の検出に対する過検出抑制境界 |
 | case-42 | 不正な入力 → no-op | PreToolUse | エラー系・fail-open |
 | case-43 | プロンプト中の PEM 形式の秘密鍵 → trigger | UserPromptSubmit | PEM_PATTERN マッチ → reader 起動指示 |
+| case-44 | 語の途中の sk- / メタデータだけに含まれる語 → no-op | PreToolUse | トークン形式の左側の境界・照合対象を tool_input に限定 |
+| case-45 | Write のコンテンツ・シェルのコマンドに PEM / Basic → trigger | PreToolUse | UserPromptSubmit と共通のパターン |
 
 ## 実行確認方法
 
 各ケースの「入力」セクションのフレーズで Claude Code を起動し、「期待動作」「期待出力」と一致することを目視確認する。
 
-PreToolUse（case-18〜23・29〜42）と UserPromptSubmit（case-17・24・43）のケースの入力は、回帰テストで自動検証できる（副作用なし。`bash` と `jq` が必要。約 1 分）。
+PreToolUse（case-18〜23・29〜42・44・45）と UserPromptSubmit（case-17・24・43）のケースの入力は、回帰テストで自動検証できる（副作用なし。`bash` と `jq` が必要。約 1 分）。
 秘密情報らしい値は、回帰テストの実行時に組み立てたダミーに置き換えている。
 
 ```bash

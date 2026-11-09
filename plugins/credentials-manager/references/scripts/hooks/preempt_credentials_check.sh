@@ -18,9 +18,14 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
-# 検出パターン
-SECRET_PATTERN='(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,}|ghu_[A-Za-z0-9]{20,}|ghs_[A-Za-z0-9]{20,}|ghr_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|glpat-[A-Za-z0-9_-]{20,}|eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)'
-BEARER_PATTERN='[Bb]earer[[:space:]]+[A-Za-z0-9._~+/=-]{16,}'
+# 秘密情報のパターン（UserPromptSubmit のフックと共有する）
+hooks_dir="${BASH_SOURCE[0]%/*}"
+[[ $hooks_dir == "${BASH_SOURCE[0]}" ]] && hooks_dir=.
+# shellcheck source=lib/credential_patterns.sh
+if ! source "$hooks_dir/lib/credential_patterns.sh" 2>/dev/null; then
+  echo "[credentials-manager] lib/credential_patterns.sh を読み込めないため、検査を省略します" >&2
+  exit 0
+fi
 
 # テスト用のファイルパス判定関数
 # 戻り値: 該当する場合は理由文字列を stdout に、該当なしは空
@@ -177,16 +182,15 @@ case "$tool_name" in
       if match "$cmd" "$env_set_pattern" || match_i "$cmd" "$ps_env_pattern"; then
         set_reason "$tool_name で認証情報らしい環境変数を設定"
       fi
-      if match "$cmd" "$SECRET_PATTERN"; then
-        set_reason "$tool_name コマンドに認証情報パターンを検出"
-      fi
-      if match "$cmd" "$BEARER_PATTERN"; then
-        set_reason "$tool_name コマンドに Bearer トークンを検出"
+      if cred_find_secret "$cmd"; then
+        cred_reason "$tool_name コマンドに"
+        set_reason "$CRED_REASON"
       fi
     fi
     ;;
   Read|Write|Edit|MultiEdit|NotebookEdit)
-    file_path="$(printf '%s' "$stdin" | jq -er '.tool_input.file_path // empty' 2>/dev/null)"
+    # NotebookEdit はパスを notebook_path に持つ
+    file_path="$(printf '%s' "$stdin" | jq -er '.tool_input.file_path // .tool_input.notebook_path // empty' 2>/dev/null)"
     if [[ -n "$file_path" ]]; then
       file_reason="$(test_credential_file "$file_path")"
       if [[ -n "$file_reason" ]]; then
@@ -194,10 +198,12 @@ case "$tool_name" in
       fi
     fi
     if [[ "$tool_name" != "Read" && -z "$reason" ]]; then
-      if [[ "$stdin" =~ $SECRET_PATTERN ]]; then
-        set_reason "$tool_name のコンテンツに認証情報パターンを検出"
-      elif printf '%s' "$stdin" | grep -qE "$BEARER_PATTERN"; then
-        set_reason "$tool_name のコンテンツに Bearer トークンを検出"
+      # 照合するのは tool_input の文字列（内容・置換の前後・パス）だけにする。入力 JSON 全体を照合すると、
+      # cwd や transcript_path 等のメタデータに含まれる語にも一致し、JSON のエスケープ（\n 等）でパターンの境界も崩れるため
+      content="$(printf '%s' "$stdin" | jq -r '[.tool_input | .. | strings] | join("\n")' 2>/dev/null)"
+      if cred_find_secret "$content"; then
+        cred_reason "$tool_name のコンテンツに"
+        set_reason "$CRED_REASON"
       fi
     fi
     ;;

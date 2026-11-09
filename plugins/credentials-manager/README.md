@@ -158,7 +158,7 @@ Claude（要約）:
 | `WebFetch` / `WebSearch` | 常に対象 |
 | `mcp__*`（任意の MCP サーバ呼び出し） | 常に対象 |
 | `Bash` / `PowerShell` の `command` に対象のコマンド・設定・パターンを含む | 下記 2 / 3 / 5 のいずれか |
-| `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` の `file_path` が認証情報系 | 下記 4 のリストに該当 |
+| `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` の `file_path`（`NotebookEdit` は `notebook_path`）が認証情報系 | 下記 4 のリストに該当 |
 | `Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 下記 5 のいずれか |
 
 #### 2. シェルコマンドの外部通信 / 認証付きクライアント / IaC / シークレット管理 CLI
@@ -223,7 +223,12 @@ setx FOO_TOKEN ...        / setx /M FOO_SECRET ...
 sk-*  ghp_*  gho_*  ghu_*  ghs_*  ghr_*
 xoxb-*  xoxp-*  xoxa-*  xoxr-*  xoxs-*
 AKIA<16>  AIza<35>  glpat-*  eyJ*.*.*  Bearer ...
+Basic <base64>  -----BEGIN ... PRIVATE KEY-----
 ```
+
+パターンは UserPromptSubmit のフックと共通です（`references/scripts/hooks/lib/credential_patterns.sh`）。
+1〜2 行目の既知のトークン形式は、単語の途中（`task-management-system` 等の語に含まれる部分）には一致しません（左側に英数字・`_`・`-` が無いことを条件にしています）。
+`Write` / `Edit` 等は `tool_input` の文字列（内容・置換の前後・パス）だけを照合し、`cwd` などのメタデータは照合しません。
 
 ローカル完結の `ls` / `cat` / `git status` / `mkdir` / `grep`、`Get-ChildItem` / `Get-Location` / `Get-Process` 等（PowerShell の文字コード設定のプリフィクスを含む）、無関係な `Read`/`Write` ファイル（`README.md` `package.json` 等）は通知対象外です。
 
@@ -233,7 +238,7 @@ AKIA<16>  AIza<35>  glpat-*  eyJ*.*.*  Bearer ...
 
 | 種別 | 例 |
 |-----|---|
-| 誤検出 | 変数名のキーワードへの部分一致（`GIT_AUTHOR_NAME` の `AUTH`、`API_BASE_URL` の `API`）。PowerShell で、パスの末尾の要素や引用符の中の語が CLI 名と一致するもの（`Set-Location .\terraform` / `Write-Output "HTTP status: 200"`）。引用符の中の `IRM` / `IWR` という語 |
+| 誤検出 | 変数名のキーワードへの部分一致（`GIT_AUTHOR_NAME` の `AUTH`、`API_BASE_URL` の `API`）。PowerShell で、パスの末尾の要素や引用符の中の語が CLI 名と一致するもの（`Set-Location .\terraform` / `Write-Output "HTTP status: 200"`）。引用符の中の `IRM` / `IWR` という語。`Basic` の直後に英数字だけの長い語（16 文字以上）が続くもの（認証スキーム名のような識別子） |
 | 検出漏れ | `Bash` でのパス付きの起動（`/usr/bin/curl`）。`-Name` を `-Path Env:` より前に書く `New-Item`。レジストリ（`HKCU:\Environment`）経由の環境変数の設定。`git` 経由の通信。値の表示（`Write-Output $env:FOO_TOKEN`）。文字列の連結や `-EncodedCommand` 等で難読化したコマンド |
 
 フックはツールの実行を止めません。通知がモデルに届くのは、通知の対象となったツール呼び出しの後です。
@@ -319,6 +324,8 @@ plugins/credentials-manager/
 ├── references/
 │   ├── scripts/
 │   │   └── hooks/
+│   │       ├── lib/
+│   │       │   └── credential_patterns.sh             # 秘密情報のパターン（PreToolUse / UserPromptSubmit で共通）
 │   │       ├── install_rule_template.sh               # SessionStart：テンプレート配置
 │   │       ├── preempt_credentials_check.sh           # PreToolUse：reader 起動指示
 │   │       ├── detect_credentials_in_prompt.sh       # UserPromptSubmit：マスキング + reader 起動指示
@@ -358,7 +365,7 @@ plugins/credentials-manager/
             ├── case-26_update_with_confirm.md         # update
             ├── case-27_manage_command.md              # /credentials-manager:manage 経由
             ├── case-28_handoff_from_reader.md         # reader 引き継ぎ受け入れ
-            └── case-29〜43                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
+            └── case-29〜45                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
 ```
 
 ## 技術スタック・アーキテクチャ

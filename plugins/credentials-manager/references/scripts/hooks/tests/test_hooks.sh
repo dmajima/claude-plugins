@@ -278,7 +278,7 @@ done
 echo "=== 5. PowerShell: コマンド中の秘密情報パターン（case-36） ==="
 want='認証情報パターン'
 t hit PowerShell "Write-Output \"$fake_sk\"" 'PowerShell: Write-Output "sk-…"（24 文字のダミー）'
-want='Bearer'
+want='に Bearer'
 t hit PowerShell "\$h = @{ Authorization = \"$fake_bearer\" }" 'PowerShell: $h = @{ Authorization = "Bearer …" }（ダミー）'
 
 echo "=== 6. PowerShell: 通知しないもの（case-37・38・40・41） ==="
@@ -402,6 +402,7 @@ tk miss PowerShell "New-Item -Name API_KEY -Path Env: -Value '<dummy>'" 'PowerSh
 tk miss PowerShell "Set-ItemProperty -Path 'HKCU:\\Environment' -Name GITHUB_TOKEN -Value '<dummy>'" 'PowerShell: HKCU:\Environment への設定（レジストリ経由は検出しない）'
 tk miss Bash 'git push origin main' 'Bash: git push（git 経由の通信は検出しない）'
 tk miss PowerShell 'Write-Output $env:GITHUB_TOKEN' 'PowerShell: Write-Output $env:GITHUB_TOKEN（値の表示は検出しない）'
+tk hit Bash "echo \"Basic $(printf '%s%s' Authentication SchemeHandler)\"" 'Bash: echo "Basic <英字だけの 27 文字の識別子>"（Basic の後に 16 文字以上の英数字が続く語は通知される）'
 
 echo "=== 13. UserPromptSubmit: ユーザ入力の秘密情報（case-17・24） ==="
 JUDGE_SCRIPT=$PROMPT_HOOK
@@ -411,11 +412,11 @@ fake_basic="Basic $(printf '%s' 'demo-user:not-a-real-password' | base64 | tr -d
 printf -v fake_pem '%sBEGIN RSA PRIVATE %s' '-----' 'KEY-----'
 want='認証情報パターン'
 run hit - "$(prompt_json "OpenAI のキーは $fake_sk を使ってください")" 'プロンプト: OpenAI のキーは sk-…（ダミー）を使って'
-want='Bearer'
+want='に Bearer'
 run hit - "$(prompt_json "Authorization: $fake_bearer で API を呼んで")" 'プロンプト: Authorization: Bearer …（ダミー）'
-want='Basic'
+want='に Basic'
 run hit - "$(prompt_json "Authorization: $fake_basic を付けて")" 'プロンプト: Authorization: Basic …（ダミー）'
-want='PEM'
+want='に PEM'
 run hit - "$(prompt_json "$fake_pem"$'\nMIIE...\n')" 'プロンプト: PEM 形式の秘密鍵の先頭行（ダミー）'
 want=''
 run miss - "$(prompt_json 'README の誤字を直して')" 'プロンプト: README の誤字を直して'
@@ -445,6 +446,29 @@ for kind in secret none; do
     record PASS "$label → ${elapsed} ms"
   fi
 done
+JUDGE_SCRIPT=""
+JUDGE_EVENT=""
+
+echo "=== 14. 秘密情報のパターン（lib/credential_patterns.sh。PreToolUse と UserPromptSubmit で共通） ==="
+want='に Basic'
+t hit Bash "echo \"Authorization: $fake_basic\"" 'Bash: echo "Authorization: Basic …"（ダミー）'
+want='に PEM'
+t hit PowerShell "Set-Content key.txt '$fake_pem'" "PowerShell: Set-Content key.txt '<PEM の先頭行>'（ダミー）"
+run hit Write "$(jq -cn --arg c "$fake_pem"$'\nMIIE\n' '{tool_name: "Write", tool_input: {file_path: "/repo/id.txt", content: $c}}' | tr -d '\r')" 'Write: コンテンツに PEM の先頭行（ダミー）'
+want='認証情報パターン'
+run hit Write "$(jq -cn --arg c "line1"$'\n'"$fake_sk" '{tool_name: "Write", tool_input: {file_path: "/repo/a.txt", content: $c}}' | tr -d '\r')" 'Write: 2 行目の行頭に sk-…（JSON のエスケープ \n の直後でも一致する）'
+want='SSH'
+run hit NotebookEdit '{"tool_name":"NotebookEdit","tool_input":{"notebook_path":"/home/u/.ssh/notes.ipynb","new_source":"x = 1"}}' 'NotebookEdit: notebook_path が ~/.ssh/ 配下'
+want=''
+t miss Bash 'cat docs/task-management-system.md' 'Bash: cat docs/task-management-system.md（語の途中の sk- には一致しない）'
+run miss Write '{"tool_name":"Write","cwd":"C:/work/task-management-system-v2","transcript_path":"C:/x/risk-assessment-framework.jsonl","tool_input":{"file_path":"/repo/a.txt","content":"hello"}}' 'Write: cwd / transcript_path にだけ sk- を含む語がある（メタデータは照合しない）'
+run miss Edit '{"tool_name":"Edit","tool_input":{"file_path":"/repo/a.md","old_string":"a","new_string":"dev-task-runner-configuration"}}' 'Edit: dev-task-runner-configuration（語の途中の sk- には一致しない）'
+JUDGE_SCRIPT=$PROMPT_HOOK
+JUDGE_EVENT=UserPromptSubmit
+want='認証情報パターン'
+run hit - "$(prompt_json "キーは${fake_sk}です")" 'プロンプト: キーはsk-…です（日本語の直後でも一致する）'
+want=''
+run miss - "$(prompt_json 'task-management-system.md を読んで')" 'プロンプト: task-management-system.md を読んで'
 JUDGE_SCRIPT=""
 JUDGE_EVENT=""
 

@@ -90,7 +90,7 @@ skills/credentials-manager/
     ├── case-26_update_with_confirm.md       # update
     ├── case-27_manage_command.md            # /credentials-manager:manage コマンド経由
     ├── case-28_handoff_from_reader.md       # reader 引き継ぎ受け入れ
-    └── case-29〜43                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
+    └── case-29〜45                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
 ```
 
 ## 関連ドキュメント

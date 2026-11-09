@@ -64,7 +64,7 @@ SessionStart フックによって自動配置されるテンプレートであ�
 | `WebFetch` / `WebSearch` / `mcp__*` | 常に対象 |
 | `Bash` / `PowerShell` の `command` に外部通信 / IaC / シークレット管理コマンド | `curl` / `wget` / `gh` / `ssh` / `scp` / `sftp` / `rsync` / `aws` / `az` / `gcloud` / `kubectl` / `doctl` / `heroku` / `firebase` / `vercel` / `netlify` / `docker` / `podman` / `psql` / `mysql` / `mongosh` / `redis-cli` / `terraform` / `tofu` / `ansible` / `helm` / `pulumi` / `packer` / `vault` / `op` / `bw`（`curl.exe` のような拡張子付きを含む） / `Invoke-WebRequest` / `Invoke-RestMethod` / `iwr` / `irm` / `Start-BitsTransfer` / `Net.WebClient` / `Net.Http.HttpClient` / `[Net.WebRequest]` |
 | `Bash` / `PowerShell` の `command` で認証情報らしい環境変数を設定 | `export FOO_TOKEN=...` / `set FOO_KEY=...` / `$env:FOO_TOKEN = ...` / `[Environment]::SetEnvironmentVariable('FOO_SECRET', ...)` / `setx FOO_PASSWORD ...` 等（変数名に認証情報キーワードを含むもの） |
-| `Bash` / `PowerShell` の `command`、`Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 1.2 のパターン（`Basic` 認証ヘッダと PEM 秘密鍵を除く） |
+| `Bash` / `PowerShell` の `command`、`Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 1.2 のパターン（UserPromptSubmit と共通） |
 | `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` が下記ファイルを対象とする | 認証情報系ファイル（次表） |
 
 認証情報系ファイル（`PreToolUse` で検出する `file_path`）:
