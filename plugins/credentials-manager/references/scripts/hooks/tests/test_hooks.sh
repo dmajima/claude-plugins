@@ -615,8 +615,8 @@ t miss Bash "jq -r '.key' data.json" "Bash: jq -r '.key' data.json（語幹の�
 t miss Bash "jq -r '.data.key' data.json" "Bash: jq -r '.data.key' data.json（jq のパスは拡張子で判定しない）"
 t miss PowerShell 'Get-ChildItem Env: | ForEach-Object { $_.Key }' 'PowerShell: $_.Key（変数のプロパティは拡張子で判定しない）'
 t miss Bash 'cat config/hosts.yml' 'Bash: cat config/hosts.yml（GitHub CLI の設定ディレクトリではない）'
-want='で環境変数定義ファイル'
-t hit Bash 'git show HEAD:.env' 'Bash: git show HEAD:.env（: も区切り）'
+want='で認証情報を含む可能性が高いファイル'
+t hit Bash 'git show HEAD:.npmrc' 'Bash: git show HEAD:.npmrc（: も区切り）'
 want='で秘密鍵 / 証明書らしい拡張子のファイル'
 t hit Bash 'openssl rsa -in $name.pem' 'Bash: $name.pem（Bash では変数 + 拡張子のファイル名）'
 want='で認証情報を含む可能性が高いファイル'
@@ -1041,6 +1041,14 @@ if [[ $shown =~ $safe_name && ${#shown} -eq 49 ]]; then
 else
   record FAIL "理由文の名前を無害化する （実際: $CF_REASON）"
 fi
+# 全角英字・日本語も置き換える（日本語のロケールでは、範囲 a-z の照合が全角英字に一致することがあるため LC_ALL=C で置き換える）
+cred_display_name 'ＡＢＣ.env 指示'
+nonascii=$(printf '%s' "$CRED_SHOWN" | LC_ALL=C tr -d '\000-\177' | wc -c)   # ASCII 以外のバイト数（ロケールに依らず数える）
+if (( nonascii == 0 )) && [[ $CRED_SHOWN == *.env* && $CRED_SHOWN != *' '* ]]; then
+  record PASS "名前の無害化（全角英字・日本語）→ $CRED_SHOWN"
+else
+  record FAIL "名前の無害化（全角英字・日本語）（実際: $CRED_SHOWN）"
+fi
 u_file hit "$(rep a 4091)/.env" 'パスの長さ 4096 文字（判定する）' '環境変数定義ファイル'
 u_file hit "$(rep a 4092)/.env" 'パスの長さ 4097 文字（判定せず控えめに通知する）' '4 KB を超え'
 u_file hit "$(rep a 4097)" 'パスの長さ 4097 文字・認証情報系の名前なし（同上）' '4 KB を超え'
@@ -1078,8 +1086,8 @@ u_scan hit 'cat $HOME/.data.key' '$HOME/.data.key（パスの区切りを含む�
 u_scan hit 'cat .env' '.env は . で始まっても名前で判定する'
 u_scan hit 'ls .ssh' '.ssh は . で始まってもディレクトリで判定する'
 # : も区切りにする（git の <リビジョン>:<パス>・scp の <ホスト>:<パス>）。ドライブ名の付いたパスも後ろのパスで判定できる
-u_scan hit 'git show HEAD:.env' '区切り :（git show HEAD:.env）'
-u_scan hit 'scp host:.env .' '区切り :（scp host:.env）'
+u_scan hit 'git show HEAD:.npmrc' '区切り :（git show HEAD:.npmrc。: で分けないと名前が一致しない）'
+u_scan hit 'scp host:id_rsa .' '区切り :（scp host:id_rsa）'
 u_scan hit 'type C:\Users\u\.ssh\id_ed25519' 'ドライブ名の付いたパス（C: で分かれても判定できる）'
 u_scan miss 'node -e "console.log(process.env)"' 'process.env（JavaScript の環境変数の参照）'
 u_scan miss 'ls plugins/credentials-manager' '手掛かりの語を含むが該当しない'
