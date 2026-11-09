@@ -33,7 +33,8 @@
 
 PowerShell 側の過検出抑制の重要分岐。PowerShell ツールは必須プリフィクスを付けて呼ばれることが多く、
 プリフィクスで誤発火すると全呼び出しに通知が付き、context の消費が増大する。
-`Get-Process` / `Get-Command bash -All` / `Test-Path "$HOME\.ssh"` も同様に no-op。
+`Get-Process` / `Get-Command bash -All` / `Copy-Item .\docs\ssh-notes.md .\out\`（パス中の `ssh` は CLI の `ssh` ではない）も同様に no-op。
+なお `~/.ssh` などの認証情報のディレクトリを指すコマンド（`Test-Path "$HOME\.ssh"`）は、認証情報系ファイルの操作として通知される（`case-46`）。
 
 一方、パスの末尾の要素や引用符の中の語が CLI 名と一致する場合（`Set-Location .\terraform` / `Write-Output "HTTP status: 200"`）は
 通知される（既知の誤検出。PowerShell ではパス付き・引用符付きの起動を検出するため）。

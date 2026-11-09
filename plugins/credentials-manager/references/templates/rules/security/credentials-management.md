@@ -66,8 +66,9 @@ SessionStart フックによって自動配置されるテンプレートであ�
 | `Bash` / `PowerShell` の `command` で認証情報らしい環境変数を設定 | `export FOO_TOKEN=...` / `set FOO_KEY=...` / `$env:FOO_TOKEN = ...` / `[Environment]::SetEnvironmentVariable('FOO_SECRET', ...)` / `setx FOO_PASSWORD ...` 等（変数名に認証情報キーワードを含むもの） |
 | `Bash` / `PowerShell` の `command`、`Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 1.2 のパターン（UserPromptSubmit と共通） |
 | `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` が下記ファイルを対象とする | 認証情報系ファイル（次表） |
+| `Bash` / `PowerShell` の `command` が下記ファイルを指す（`cat .env` / `Get-Content ~/.aws/credentials` 等） | 認証情報系ファイル（次表） |
 
-認証情報系ファイル（`PreToolUse` で検出する `file_path`）:
+認証情報系ファイル（`PreToolUse` がファイル系ツールのパスと、シェルのコマンド中のパスで検出するもの）:
 
 | 種別 | 対象ファイル |
 |-----|------------|
@@ -76,7 +77,7 @@ SessionStart フックによって自動配置されるテンプレートであ�
 | ツール設定 | `.npmrc` / `.netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` |
 | 秘密鍵 (SSH) | `id_rsa` / `id_dsa` / `id_ecdsa` / `id_ed25519` / `id_xmss` |
 | クラウド認証 | `~/.aws/credentials` / `~/.aws/config` / `~/.docker/config.json` / `~/.kube/config` / `kubeconfig` / `serviceAccountKey.json` / `service-account.json` / `application_default_credentials.json` / `gcloud-credentials.json` |
-| ディレクトリ全体 | `~/.ssh/*` / `~/.gnupg/*` |
+| ディレクトリ全体 | `~/.ssh` / `~/.gnupg` とその配下 |
 | 拡張子 | `*.pem` / `*.key` / `*.p12` / `*.pfx` / `*.jks` / `*.keystore` / `*.crt` / `*.cer` / `*.der` / `*.asc` / `*.gpg` |
 
 これらを検出した場合は **`credentials-reader` を最優先起動** し、書き込みが必要な場合のみ

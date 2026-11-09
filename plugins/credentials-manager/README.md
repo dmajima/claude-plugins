@@ -158,6 +158,7 @@ Claude（要約）:
 | `WebFetch` / `WebSearch` | 常に対象 |
 | `mcp__*`（任意の MCP サーバ呼び出し） | 常に対象 |
 | `Bash` / `PowerShell` の `command` に対象のコマンド・設定・パターンを含む | 下記 2 / 3 / 5 のいずれか |
+| `Bash` / `PowerShell` の `command` が認証情報系ファイルを指す（`cat .env` / `Get-Content ~/.aws/credentials` 等） | 下記 4 のリストに該当 |
 | `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` の `file_path`（`NotebookEdit` は `notebook_path`）が認証情報系 | 下記 4 のリストに該当 |
 | `Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 下記 5 のいずれか |
 
@@ -205,7 +206,7 @@ setx FOO_TOKEN ...        / setx /M FOO_SECRET ...
 | 3 の PowerShell / Windows の書き方（`$env:` 〜 `setx`） | 区別しない | 区別しない |
 | 5 のシークレットパターン | 区別する | 区別する |
 
-#### 4. 認証情報系ファイルパス（Read/Write/Edit 等で対象化）
+#### 4. 認証情報系ファイルパス（ファイル系ツールのパス、シェルのコマンド中のパス）
 
 | 種別 | 対象 |
 |-----|------|
@@ -213,9 +214,12 @@ setx FOO_TOKEN ...        / setx /M FOO_SECRET ...
 | 認証情報ストア | `credentials.json` / `credentials.yml` / `secrets.json` / `secret.json` 等 |
 | ツール設定 | `.npmrc` / `.netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` |
 | 秘密鍵 | `id_rsa` / `id_dsa` / `id_ecdsa` / `id_ed25519` / `id_xmss` |
-| クラウド認証 | `~/.aws/credentials` / `~/.aws/config` / `~/.docker/config.json` / `~/.kube/config` / `kubeconfig` / `serviceAccountKey.json` / `application_default_credentials.json` |
-| ディレクトリ全体 | `~/.ssh/*` / `~/.gnupg/*` |
-| 拡張子 | `*.pem` / `*.key` / `*.p12` / `*.pfx` / `*.jks` / `*.keystore` / `*.crt` / `*.cer` / `*.der` / `*.asc` / `*.gpg` |
+| クラウド認証 | `~/.aws/credentials` / `~/.aws/config` / `~/.docker/config.json` / `~/.kube/config` / `kubeconfig` / `serviceAccountKey.json` / `application_default_credentials.json`（`~/.aws` / `~/.docker` / `~/.kube` のディレクトリそのものを含む） |
+| ディレクトリ全体 | `~/.ssh` / `~/.gnupg` とその配下 |
+| 拡張子 | `*.pem` / `*.key` / `*.p12` / `*.pfx` / `*.jks` / `*.keystore` / `*.crt` / `*.cer` / `*.der` / `*.asc` / `*.gpg`（拡張子の前に 1 文字以上あるもの） |
+
+シェルのコマンドは、空白・区切り・括弧・引用符・`=` で区切ったトークンごとにこの表で判定します（`.env` / `.aws` などの手掛かりの語を含むコマンドだけ）。
+`.env*` / `*.pem` のようなワイルドカードも対象です。jq のフィルタ `'.key'` のような語幹の無い語や、`credentials-manager` のような語の一部の一致は対象外です。
 
 #### 5. シークレットパターン（`Bash` / `PowerShell` の command、`Write` / `Edit` 等のコンテンツ）
 
@@ -238,7 +242,7 @@ Basic <base64>  -----BEGIN ... PRIVATE KEY-----
 
 | 種別 | 例 |
 |-----|---|
-| 誤検出 | 変数名のキーワードへの部分一致（`GIT_AUTHOR_NAME` の `AUTH`、`API_BASE_URL` の `API`）。PowerShell で、パスの末尾の要素や引用符の中の語が CLI 名と一致するもの（`Set-Location .\terraform` / `Write-Output "HTTP status: 200"`）。引用符の中の `IRM` / `IWR` という語。`Basic` の直後に英数字だけの長い語（16 文字以上）が続くもの（認証スキーム名のような識別子） |
+| 誤検出 | 変数名のキーワードへの部分一致（`GIT_AUTHOR_NAME` の `AUTH`、`API_BASE_URL` の `API`）。PowerShell で、パスの末尾の要素や引用符の中の語が CLI 名と一致するもの（`Set-Location .\terraform` / `Write-Output "HTTP status: 200"`）。引用符の中の `IRM` / `IWR` という語。`Basic` の直後に英数字だけの長い語（16 文字以上）が続くもの（認証スキーム名のような識別子）。シェルで `.env` 等を指すトークンは、操作の種類によらず通知される（`echo ".env" >> .gitignore` 等） |
 | 検出漏れ | `Bash` でのパス付きの起動（`/usr/bin/curl`）。`-Name` を `-Path Env:` より前に書く `New-Item`。レジストリ（`HKCU:\Environment`）経由の環境変数の設定。`git` 経由の通信。値の表示（`Write-Output $env:FOO_TOKEN`）。文字列の連結や `-EncodedCommand` 等で難読化したコマンド |
 
 フックはツールの実行を止めません。通知がモデルに届くのは、通知の対象となったツール呼び出しの後です。
@@ -365,7 +369,7 @@ plugins/credentials-manager/
             ├── case-26_update_with_confirm.md         # update
             ├── case-27_manage_command.md              # /credentials-manager:manage 経由
             ├── case-28_handoff_from_reader.md         # reader 引き継ぎ受け入れ
-            └── case-29〜45                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
+            └── case-29〜47                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
 ```
 
 ## 技術スタック・アーキテクチャ

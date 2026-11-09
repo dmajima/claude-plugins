@@ -299,7 +299,7 @@ t miss PowerShell 'New-Item -Path Env: -Name FOO -Value 1'
 t miss PowerShell $'Set-Content a.txt \'x\'\nGet-Item Env:GITHUB_TOKEN' "PowerShell: Set-Content a.txt 'x'<改行>Get-Item Env:GITHUB_TOKEN（2 行目は参照のみ）"
 t miss PowerShell 'Set-Location C:\repos\gh-pages; git status'
 t miss PowerShell 'Copy-Item .\docs\op\readme.md .\out\'
-t miss PowerShell 'Test-Path "$HOME\.ssh"'
+t miss PowerShell 'Copy-Item .\docs\ssh-notes.md .\out\' 'PowerShell: Copy-Item .\docs\ssh-notes.md .\out\（パス中の ssh は CLI の ssh ではない）'
 
 echo "=== 7. Bash: 既存の判定（case-19・20・29・30） ==="
 want='外部通信'
@@ -402,6 +402,7 @@ tk miss PowerShell "New-Item -Name API_KEY -Path Env: -Value '<dummy>'" 'PowerSh
 tk miss PowerShell "Set-ItemProperty -Path 'HKCU:\\Environment' -Name GITHUB_TOKEN -Value '<dummy>'" 'PowerShell: HKCU:\Environment への設定（レジストリ経由は検出しない）'
 tk miss Bash 'git push origin main' 'Bash: git push（git 経由の通信は検出しない）'
 tk miss PowerShell 'Write-Output $env:GITHUB_TOKEN' 'PowerShell: Write-Output $env:GITHUB_TOKEN（値の表示は検出しない）'
+tk hit Bash 'echo ".env" >> .gitignore' 'Bash: echo ".env" >> .gitignore（.env を無視する設定の追加も、.env を指すトークンとして通知される）'
 tk hit Bash "echo \"Basic $(printf '%s%s' Authentication SchemeHandler)\"" 'Bash: echo "Basic <英字だけの 27 文字の識別子>"（Basic の後に 16 文字以上の英数字が続く語は通知される）'
 
 echo "=== 13. UserPromptSubmit: ユーザ入力の秘密情報（case-17・24） ==="
@@ -471,6 +472,34 @@ want=''
 run miss - "$(prompt_json 'task-management-system.md を読んで')" 'プロンプト: task-management-system.md を読んで'
 JUDGE_SCRIPT=""
 JUDGE_EVENT=""
+
+echo "=== 15. シェルでの認証情報系ファイルの操作（case-46・47） ==="
+want='で環境変数定義ファイル'
+t hit Bash 'cat .env'
+t hit Bash 'cp .env.example .env.local'
+t hit Bash 'git add .env'
+t hit PowerShell 'Get-ChildItem -Filter .env*'
+t hit Bash $'cd /repo\nsource ./.env' 'Bash: cd /repo<改行>source ./.env（複数行）'
+want='で AWS 認証情報ファイル'
+t hit PowerShell 'Get-Content $HOME\.aws\credentials'
+t hit Bash 'ls ~/.aws'
+want='で認証情報を含む可能性が高いファイル'
+t hit PowerShell 'type C:\Users\u\.ssh\id_ed25519'
+t hit Bash 'chmod 600 ~/.npmrc'
+t hit Bash 'jq . config/secrets.json'
+want='で SSH 鍵格納ディレクトリ'
+t hit Bash 'ls -la ~/.ssh'
+t hit PowerShell 'Test-Path "$HOME\.ssh"' 'PowerShell: Test-Path "$HOME\.ssh"（ディレクトリそのものも対象）'
+want='で秘密鍵 / 証明書らしい拡張子のファイル'
+t hit Bash "find . -name '*.pem'"
+t hit PowerShell 'openssl x509 -in server.crt -noout -text'
+want=''
+t miss Bash "jq -r '.key' data.json" "Bash: jq -r '.key' data.json（語幹の無い .key は対象外）"
+t miss Bash 'cat .env.example'
+t miss Bash 'ls plugins/credentials-manager/skills'
+t miss Bash 'grep -rn secret-scan docs/'
+t miss PowerShell 'Get-Content README.md'
+t miss Bash 'npm run build'
 
 echo
 printf '結果: PASS=%s FAIL=%s（既知の制約 %s 件のうち挙動が変わったもの %s 件）\n' "$pass" "$fail" "$known" "$changed"

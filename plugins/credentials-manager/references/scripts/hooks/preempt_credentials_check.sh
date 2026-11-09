@@ -27,26 +27,32 @@ if ! source "$hooks_dir/lib/credential_patterns.sh" 2>/dev/null; then
   exit 0
 fi
 
-# テスト用のファイルパス判定関数
-# 戻り値: 該当する場合は理由文字列を stdout に、該当なしは空
-test_credential_file() {
+# 認証情報系ファイルの判定。$1（パス、またはワイルドカードを含むパターン）が該当すれば、
+# 通知の理由文を CF_REASON に入れる（該当しなければ空）。
+# ファイル系ツールのパス・シェルのコマンド中のトークン・Grep / Glob のパターンで共通に使う。
+# サブシェルを起動しないよう、結果は変数で返す（シェルのトークンごとに呼ぶため）
+credential_file_reason() {
+  CF_REASON=""
   local path="$1"
   [[ -z "$path" ]] && return 0
 
   local lower="${path//\\/\/}"
   lower="${lower,,}"
   local basename="${lower##*/}"
+  # ワイルドカード（.env* / id_rsa* 等）は除いた形で名前を判定する
+  local plain="${basename//\*/}"
+  plain="${plain//\?/}"
 
   # .env / .env.* の判定 (example/sample/template/dist/test/spec は除外)
-  if [[ "$basename" == ".env" ]]; then
-    printf '%s' "環境変数定義ファイル ($basename) を操作"
+  if [[ "$plain" == ".env" ]]; then
+    CF_REASON="環境変数定義ファイル ($basename) を操作"
     return 0
   fi
-  if [[ "$basename" == .env.* ]]; then
-    case "$basename" in
+  if [[ "$plain" == .env.* ]]; then
+    case "$plain" in
       .env.example|.env.sample|.env.template|.env.dist|.env.test|.env.spec) ;;
       *)
-        printf '%s' "環境変数定義ファイル ($basename) を操作"
+        CF_REASON="環境変数定義ファイル ($basename) を操作"
         return 0
         ;;
     esac
@@ -65,46 +71,53 @@ test_credential_file() {
   )
   local match
   for match in "${exact_matches[@]}"; do
-    if [[ "$basename" == "$match" ]]; then
-      printf '%s' "認証情報を含む可能性が高いファイル ($basename) を操作"
+    if [[ "$plain" == "$match" ]]; then
+      CF_REASON="認証情報を含む可能性が高いファイル ($basename) を操作"
       return 0
     fi
   done
 
-  # 拡張子 (秘密鍵 / 証明書)
+  # 拡張子 (秘密鍵 / 証明書)。拡張子の前に 1 文字以上あるものに限る
+  # （シェルのコマンドでは、jq のフィルタ '.key' のような語幹の無い語が頻出するため）
   local secret_extensions=('.pem' '.key' '.p12' '.pfx' '.jks' '.keystore' '.crt' '.cer' '.der' '.asc' '.gpg')
   local ext
   for ext in "${secret_extensions[@]}"; do
-    if [[ "$basename" == *"$ext" ]]; then
-      printf '%s' "秘密鍵 / 証明書らしい拡張子のファイル ($basename) を操作"
+    if [[ "$basename" == ?*"$ext" ]]; then
+      CF_REASON="秘密鍵 / 証明書らしい拡張子のファイル ($basename) を操作"
       return 0
     fi
   done
 
-  # 特殊ディレクトリ配下
-  if [[ "$lower" =~ (^|/)\.aws/(credentials|config)(\.|$) ]]; then
-    printf '%s' "AWS 認証情報ファイル (~/.aws/...) を操作"
+  # 特殊ディレクトリ配下（ディレクトリそのものを含む。Grep の path やシェルの ls ~/.ssh 等）
+  if [[ "$lower" =~ (^|/)\.aws(/(credentials|config)(\.|$)|/?$) ]]; then
+    CF_REASON="AWS 認証情報ファイル (~/.aws/...) を操作"
     return 0
   fi
-  if [[ "$lower" =~ (^|/)\.docker/config\.json($|\.) ]]; then
-    printf '%s' "Docker 認証ファイル (~/.docker/config.json) を操作"
+  if [[ "$lower" =~ (^|/)\.docker(/config\.json($|\.)|/?$) ]]; then
+    CF_REASON="Docker 認証ファイル (~/.docker/config.json) を操作"
     return 0
   fi
-  if [[ "$lower" =~ (^|/)\.kube/config($|\.) ]]; then
-    printf '%s' "Kubernetes 認証ファイル (~/.kube/config) を操作"
+  if [[ "$lower" =~ (^|/)\.kube(/config($|\.)|/?$) ]]; then
+    CF_REASON="Kubernetes 認証ファイル (~/.kube/config) を操作"
     return 0
   fi
-  if [[ "$lower" =~ (^|/)\.ssh/ ]]; then
-    printf '%s' "SSH 鍵格納ディレクトリ (~/.ssh/) のファイルを操作"
+  if [[ "$lower" =~ (^|/)\.ssh(/|$) ]]; then
+    CF_REASON="SSH 鍵格納ディレクトリ (~/.ssh/) のファイルを操作"
     return 0
   fi
-  if [[ "$lower" =~ (^|/)\.gnupg/ ]]; then
-    printf '%s' "GPG 設定ディレクトリ (~/.gnupg/) のファイルを操作"
+  if [[ "$lower" =~ (^|/)\.gnupg(/|$) ]]; then
+    CF_REASON="GPG 設定ディレクトリ (~/.gnupg/) のファイルを操作"
     return 0
   fi
 
   return 0
 }
+
+# シェルのコマンド中で認証情報系ファイルを指すトークンを探す手掛かり（大文字小文字を区別しない）。
+# これを含まないコマンドはトークンに分けずに済ませる
+CRED_FILE_HINT='(\.env|credential|secret|npmrc|netrc|pgpass|dockercfg|id_(rsa|dsa|ecdsa|ed25519|xmss)|serviceaccountkey|service-account|kubeconfig|\.(pem|key|p12|pfx|jks|keystore|crt|cer|der|asc|gpg)|\.aws|\.docker|\.kube|\.ssh|\.gnupg)'
+# トークンの区切り（空白・改行・シェルの区切り・括弧・引用符・= ・カンマ）。] は角括弧式の先頭に置く
+SHELL_SEPS=$']\n\r\t;|&()<>"\'=,`{}['
 
 stdin="$(cat)"
 # 空白以外の文字が無ければ終了する。"${stdin//[[:space:]]/}" で空白を除去する判定は、空白の多い大きな入力
@@ -186,15 +199,30 @@ case "$tool_name" in
         cred_reason "$tool_name コマンドに"
         set_reason "$CRED_REASON"
       fi
+      # 認証情報系ファイルの操作（cat .env / Get-Content ~/.aws/credentials / cp .env.example .env 等）。
+      # ファイル系ツールと同じ判定を、コマンドを区切り文字で分けたトークンごとに行う
+      if [[ -z "$reason" ]] && match_i "$cmd" "$CRED_FILE_HINT"; then
+        read -ra tokens <<< "${cmd//[$SHELL_SEPS]/ }"
+        for tok in "${tokens[@]}"; do
+          match_i "$tok" "$CRED_FILE_HINT" || continue
+          credential_file_reason "$tok"
+          if [[ -n "$CF_REASON" ]]; then
+            CRED_LABEL=$CF_REASON
+            cred_reason "$tool_name で"
+            set_reason "$CRED_REASON"
+            break
+          fi
+        done
+      fi
     fi
     ;;
   Read|Write|Edit|MultiEdit|NotebookEdit)
     # NotebookEdit はパスを notebook_path に持つ
     file_path="$(printf '%s' "$stdin" | jq -er '.tool_input.file_path // .tool_input.notebook_path // empty' 2>/dev/null)"
     if [[ -n "$file_path" ]]; then
-      file_reason="$(test_credential_file "$file_path")"
-      if [[ -n "$file_reason" ]]; then
-        set_reason "$file_reason"
+      credential_file_reason "$file_path"
+      if [[ -n "$CF_REASON" ]]; then
+        set_reason "$CF_REASON"
       fi
     fi
     if [[ "$tool_name" != "Read" && -z "$reason" ]]; then
