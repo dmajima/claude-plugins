@@ -37,19 +37,24 @@ if [[ ! $stdin =~ [^[:space:]] ]]; then
   exit 0
 fi
 
-# JSON 解析（無効なら exit 0）
-prompt="$(printf '%s' "$stdin" | jq -er '.prompt // empty' 2>/dev/null)"
-if [[ -z "$prompt" ]]; then
-  exit 0
-fi
+# 入力が CRED_INPUT_MAX（4 MB）を超える場合は、照合に timeout（10 秒）近くかかるため、照合せずに控えめに通知する
+if (( ${#stdin} > CRED_INPUT_MAX )); then
+  reason="ユーザープロンプトが 4 MB を超え、全体を照合できない"
+else
+  # JSON 解析（無効なら exit 0）
+  prompt="$(printf '%s' "$stdin" | jq -er '.prompt // empty' 2>/dev/null)"
+  if [[ -z "$prompt" ]]; then
+    exit 0
+  fi
 
-# 照合は bash 組み込みの正規表現で行う（grep に渡すと、- で始まる PEM のパターンをオプションと解釈して
-# エラーで終了し、検出されなかった。大きな入力でも grep の起動を待たずに済む）
-if ! cred_find_secret "$prompt"; then
-  exit 0
+  # 照合は bash 組み込みの正規表現で行う（grep に渡すと、- で始まる PEM のパターンをオプションと解釈して
+  # エラーで終了し、検出されなかった。大きな入力でも grep の起動を待たずに済む）
+  if ! cred_find_secret "$prompt"; then
+    exit 0
+  fi
+  cred_reason "ユーザープロンプトに"
+  reason=$CRED_REASON
 fi
-cred_reason "ユーザープロンプトに"
-reason=$CRED_REASON
 
 message="[credentials-manager] ${reason}。フル値を復唱せずマスク表示 (先頭4+****+末尾4、8文字以下は全マスク****) してください。credentials-reader を最優先起動して既存照合 + 保存提案を行い、ユーザ承諾時のみ credentials-manager に引き継いで保存します。詳細: rules/security/credentials-management.md"
 

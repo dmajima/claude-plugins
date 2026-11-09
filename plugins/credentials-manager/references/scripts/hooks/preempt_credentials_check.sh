@@ -69,7 +69,14 @@ SH_LEAD='[[:space:];|&(`]'                 # コマンド名の直前に来る�
 PS_LEAD=$'[[:space:];|&(`{="\']'          # PowerShell ではさらに { = と引用符（{irm ...} / $r=irm ... / & 'irm'）
 PS_PATH_LEAD=$'[[:space:];|&(`{="\'\\/]'  # CLI 名ではさらにパス区切り（C:\...\gh.exe / .\gh.exe / C:/Tools/gh.exe）
 
-case "$tool_name" in
+# 入力が CRED_INPUT_MAX（4 MB）を超える場合は、中身を照合すると timeout（10 秒）近くかかるため、照合せずに控えめに通知する
+dispatch=$tool_name
+if (( ${#stdin} > CRED_INPUT_MAX )); then
+  set_reason "$tool_name の入力が 4 MB を超え、全体を照合できない"
+  dispatch=""
+fi
+
+case "$dispatch" in
   WebFetch|WebSearch)
     set_reason "外部 URL アクセスツール ($tool_name) の呼び出し"
     ;;
@@ -109,7 +116,9 @@ case "$tool_name" in
       # Bash から pwsh -c で実行する場合も対象
       ps_env_assign='\$\{?env:'"$CRED_NAME"'[A-Za-z0-9_]*\}?[[:blank:]]*\+?='                          # $env:NAME = ... / ${env:NAME} += ...
       ps_env_dotnet='\[(system\.)?environment\]::setenvironmentvariable\([[:space:]]*'"$Q"'?'"$CRED_NAME"  # [Environment]::SetEnvironmentVariable('NAME', ...)
-      ps_env_provider='((set|new)-(item|itemproperty|content)|(^|'"$PS_LEAD"')(si|ni))[^;|&'"$NL"']*[[:blank:]]'"$Q"'?env:[\/]?[[:blank:]]*(-name[[:blank:]]+)?'"$Q"'?'"$CRED_NAME"  # Set-Item -Path Env:NAME / si Env:NAME / New-Item -Path Env: -Name NAME
+      # Set-Item -Path Env:NAME / si Env:NAME / New-Item -Path Env: -Name NAME。コマンド名の直後は空白に限り（single 等の語頭に一致させない）、
+      # Env: までの引数は 100 文字までにする（上限が無いと、Linux（glibc）の照合で区切りの無い長い行に入力長の二乗の時間がかかる）
+      ps_env_provider='((set|new)-(item|itemproperty|content)|(^|'"$PS_LEAD"')(si|ni))[[:blank:]]([^;|&'"$NL"']{0,100}[[:blank:]])?'"$Q"'?env:[\/]?[[:blank:]]*(-name[[:blank:]]+)?'"$Q"'?'"$CRED_NAME"
       ps_env_setx='(^|'"$SH_LEAD"')setx([[:blank:]]+/m)?[[:blank:]]+'"$Q"'?'"$CRED_NAME"                # setx NAME ... / setx /M NAME ...
       ps_env_pattern="($ps_env_assign|$ps_env_dotnet|$ps_env_provider|$ps_env_setx)"
       if match "$cmd" "$env_set_pattern" || match_i "$cmd" "$ps_env_pattern"; then
@@ -135,8 +144,10 @@ case "$tool_name" in
     # パス（NotebookEdit は notebook_path）と、照合するコンテンツを 1 回の jq で取り出す（1 行目がパス、2 行目以降がコンテンツ）。
     # コンテンツは tool_input の文字列（内容・置換の前後・パス）だけにする。入力 JSON 全体を照合すると、
     # cwd や transcript_path 等のメタデータに含まれる語にも一致し、JSON のエスケープ（\n 等）でパターンの境界も崩れるため。
-    # 受け取りはコマンド置換で行う（read -d は 1 バイトずつ読むため、数 MB の書き込みで数秒かかる）。NUL は jq で除く
-    extracted="$(printf '%s' "$stdin" | jq -r '((.tool_input.file_path // .tool_input.notebook_path // "") | tostring | gsub("[\r\n\u0000]"; " ")), ([.tool_input | .. | strings] | join("\n") | gsub("\u0000"; ""))' 2>/dev/null)"
+    # 受け取りはコマンド置換で行う（read -d は 1 バイトずつ読むため、数 MB の書き込みで数秒かかる）。
+    # パスは 1 行にするため改行・NUL を空白にする。jq の gsub は入力長の二乗の時間がかかるため、判定に要る先頭 4097 文字に限って掛ける
+    # （4 KB を超えるパスは中身を判定しない）。コンテンツの NUL はコマンド置換が取り除く（bash が stderr に警告を出すだけで照合は途切れない）
+    extracted="$(printf '%s' "$stdin" | jq -r '((.tool_input.file_path // .tool_input.notebook_path // "") | tostring | .[0:4097] | gsub("[\r\n\u0000]"; " ")), ([.tool_input | .. | strings] | join("\n"))' 2>/dev/null)"
     file_path=${extracted%%$'\n'*}
     content=${extracted:${#file_path}+1}
     file_path=${file_path%$'\r'}

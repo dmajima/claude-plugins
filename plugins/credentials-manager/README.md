@@ -261,15 +261,17 @@ PEM は PGP の秘密鍵（先頭行が `PRIVATE KEY BLOCK` で終わるもの�
 | 種別 | 例 |
 |-----|---|
 | 誤検出 | 変数名のキーワードへの部分一致（`GIT_AUTHOR_NAME` の `AUTH`、`API_BASE_URL` の `API`）。PowerShell で、パスの末尾の要素や引用符の中の語が CLI 名と一致するもの（`Set-Location .\terraform` / `Write-Output "HTTP status: 200"`）。引用符の中の `IRM` / `IWR` という語。`Basic` の直後に英数字だけの長い語（16 文字以上）が続くもの（認証スキーム名のような識別子）。シェルで `.env` 等を指すトークンは、操作の種類によらず通知される（`echo ".env" >> .gitignore` 等）。語幹のあるプロパティやソート指定が拡張子と一致するもの（`console.log(c.key)` / `--order=name.asc`） |
-| 検出漏れ | `Bash` でのパス付きの起動（`/usr/bin/curl`）。`-Name` を `-Path Env:` より前に書く `New-Item`。レジストリ（`HKCU:\Environment`）経由の環境変数の設定。`git` 経由の通信。値の表示（`Write-Output $env:FOO_TOKEN`）。文字列の連結や `-EncodedCommand` 等で難読化したコマンド。シェルで、パスを付けずに書いた `.` で始まる鍵ファイル（`cat .server.key`。jq のパスと区別できない）。シェルの波括弧（`cat {config,secrets}.json`。展開せずに区切りとして扱う）。`~/.aws` の `credentials` / `config` 以外のファイル（`~/.aws/sso/cache/*.json` 等） |
+| 検出漏れ | `Bash` でのパス付きの起動（`/usr/bin/curl`）。`-Name` を `-Path Env:` より前に書く `New-Item`。レジストリ（`HKCU:\Environment`）経由の環境変数の設定。コマンド名から `Env:` までが 100 文字を超える `Set-Item` / `New-Item`（`Set-Item -Value '<長い値>' -Path Env:FOO_TOKEN`）。`git` 経由の通信。値の表示（`Write-Output $env:FOO_TOKEN`）。文字列の連結や `-EncodedCommand` 等で難読化したコマンド。シェルで、パスを付けずに書いた `.` で始まる鍵ファイル（`cat .server.key`。jq のパスと区別できない）。シェルの波括弧（`cat {config,secrets}.json`。展開せずに区切りとして扱う）。`~/.aws` の `credentials` / `config` 以外のファイル（`~/.aws/sso/cache/*.json` 等） |
 
 フックはツールの実行を止めません。通知がモデルに届くのは、通知の対象となったツール呼び出しの後です。
 判定には、対象のツールの呼び出しごとに 1 回あたり約 0.2〜0.3 秒かかります（Windows の Git Bash での計測）。
 
 大きな入力でも `hooks.json` の `timeout`（10 秒）以内に判定を終えるよう、次のように扱います（3 MB の入力で約 1〜3.5 秒。同じ環境での計測）。
+正規表現は、区切りの無い長い行で入力長の二乗の時間がかからない形にしています（Linux の glibc の正規表現でも確認しています）。
 
 | 入力 | 扱い |
 |-----|------|
+| フックの入力全体（JSON）が 4 MB 超 | 中身を照合せずに「全体を照合できない」として通知する |
 | `Write` / `Edit` 等のコンテンツ、ユーザープロンプト（256 KB 超） | grep でまとめて照合する（末尾まで照合し、検出漏れは生じない） |
 | `Bash` / `PowerShell` のコマンド（256 KB 超） | 先頭 256 KB を照合し、そこで何も見つからなければ「全体を照合できないコマンド」として通知する |
 | 4 KB を超えるパス・手掛かりの語を含むトークンが 256 個を超えるコマンド | 4. の説明のとおり、判定を打ち切って通知する |
@@ -296,9 +298,11 @@ bash references/scripts/hooks/tests/test_hooks.sh   # プラグインのルー�
 ```
 
 Windows では Git Bash で実行してください（PowerShell から `bash` と呼ぶと、WSL の bash に解決されることがあります）。
+正規表現の速さは環境の正規表現の実装で異なる（Git Bash では線形でも、Linux の glibc では入力長の二乗の時間になる形がある）ため、
+正規表現を変えたときは Linux（WSL 等）でも実行してください。
 
 対象のツール名は、`hooks.json` の matcher とスクリプトの `case` 分岐の 2 か所に書かれています。片方だけを直しても検査は働かないため、回帰テストは matcher の一致と、分岐ごとの通知の両方を検証します。
-回帰テストは、空白や改行の多い大きな入力（300 KB〜1 MB）を `hooks.json` の `timeout` の 8 割以内で判定できることと、README・ルールテンプレートに書かれたツール名が matcher と一致することも確かめます。`timeout` を超えるとフックは打ち切られ、通知は出ません。
+回帰テストは、空白や改行の多い大きな入力（300 KB〜1 MB）・区切りの無い長い行・NUL や改行の多い入力・4 MB を超える入力を `hooks.json` の `timeout` の 8 割以内で判定できることと、README・ルールテンプレートに書かれたツール名が matcher と一致することも確かめます。`timeout` を超えるとフックは打ち切られ、通知は出ません。
 
 ### フックを無効化したい場合
 

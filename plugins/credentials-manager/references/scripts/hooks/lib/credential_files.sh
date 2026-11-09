@@ -25,9 +25,10 @@ credential_file_reason() {
   lower="${lower,,}"
   local basename="${lower##*/}"
   # Windows はファイル名の末尾の空白・ピリオドと、既定のデータストリームの指定（::$DATA）を無視する
-  # （.env. / 末尾に空白の付いた .env / .env::$DATA は .env と同じファイルを指す）。. と .. はそのまま
+  # （.env. / 末尾に空白の付いた .env / .env::$DATA は .env と同じファイルを指す）。. と .. はそのまま。
+  # 正規表現はファイル名として有り得る 255 文字までに限る（ピリオドの多い長い語で、照合に入力長の二乗以上の時間がかかる）
   basename="${basename%::\$data}"
-  if [[ $basename =~ ^(.*[^.\ ])[.\ ]+$ ]]; then
+  if (( ${#basename} <= 255 )) && [[ $basename =~ ^(.*[^.\ ])[.\ ]+$ ]]; then
     basename=${BASH_REMATCH[1]}
   fi
   # ワイルドカード（.env* / id_rsa* 等）は除いた形で名前を判定する

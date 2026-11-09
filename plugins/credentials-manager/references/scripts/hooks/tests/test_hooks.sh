@@ -57,6 +57,7 @@ fake_bearer="Bearer ${pad24// /y}"
 fake_basic="Basic $(printf '%s' 'demo-user:not-a-real-password' | base64 | tr -d '\r\n')"
 printf -v fake_pem '%sBEGIN RSA PRIVATE %s' '-----' 'KEY-----'
 printf -v blank '%*s' 300000 ''
+printf -v big4m '%*s' 4300000 ''                                                         # 入力の上限（4 MB）を超える大きさ
 big_lines="$(yes x 2>/dev/null | head -n 500000)"                                        # 改行の多い約 1 MB（x と改行の繰り返し）
 big_words="$(yes 'lorem ipsum dolor sit amet,' 2>/dev/null | head -n 40000 | tr '\n' ' ')"  # 通常の文の約 1 MB
 matcher=""
@@ -350,6 +351,7 @@ t miss PowerShell $'Set-Content a.txt \'x\'\nGet-Item Env:GITHUB_TOKEN' "PowerSh
 t miss PowerShell 'Set-Location C:\repos\gh-pages; git status'
 t miss PowerShell 'Copy-Item .\docs\op\readme.md .\out\'
 t miss PowerShell 'Copy-Item .\docs\ssh-notes.md .\out\' 'PowerShell: Copy-Item .\docs\ssh-notes.md .\out\（パス中の ssh は CLI の ssh ではない）'
+t miss PowerShell 'Write-Output "single Env:API_KEY"' 'PowerShell: single Env:API_KEY（si で始まる語は別名の si ではない）'
 
 echo "=== 7. Bash: 既存の判定（case-19・20・29・30） ==="
 want='外部通信'
@@ -481,6 +483,22 @@ want='4 KB を超え'
 perf hit "$(big_json Bash "cat $(rep "$(rep a.env1 700) " 256)")" 'Bash: 手掛かりの語を含む 4 KB のトークン 256 個'
 want='環境変数定義ファイル'
 perf hit "$(big_json Bash "cat $(rep "$(rep '\' 4000).env " 50)")" 'Bash: \ が 4000 個続く .env のトークン 50 個（200 KB）'
+# 照合の時間が入力長に対して超線形になりうる入力（Linux の glibc の正規表現・jq の gsub・ピリオドの多い名前）
+tok_dots=".env$(rep a 2000)$(rep . 2000)"
+perf hit "$(big_json Bash "cat $(rep "$tok_dots " 15) .env")" 'Bash: .env + a 2000 個 + . 2000 個のトークン 15 個の後に .env'
+perf hit "$(jq -cn --arg p "{$(rep ',' 28)}$(rep a 2000){$(rep . 2000),/.env}" '{tool_name: "Glob", tool_input: {pattern: $p}}' | tr -d '\r')" 'Glob: 波括弧で、ピリオドの多い 4 KB の候補を 58 個作るパターン'
+want=''
+perf miss "$(big_json PowerShell "$(rep 'si ' 87000)")" 'PowerShell: si と空白を区切りなしで 256 KB 近く繰り返すコマンド'
+perf miss "$(big_json PowerShell "$(rep 'set-item ' 29000)")" 'PowerShell: set-item と空白を区切りなしで 256 KB 近く繰り返すコマンド'
+perf miss "$(big_json Bash "echo '${big_words:0:260000}'")" 'Bash: 区切りの無い 256 KB 近くの英文'
+want='認証情報パターン'
+perf hit "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"/repo/a.txt\",\"content\":\"$(rep '\u0000' 100000) $fake_sk\"}}" 'Write: NUL 10 万個の後に sk-…'
+want='4 KB を超え'
+perf hit "{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"$(rep 'a\n' 40000).env\"}}" 'Read: 改行 4 万個を含むパス'
+# 入力が 4 MB を超える場合は、中身を照合せずに控えめに通知する
+want='4 MB を超え'
+perf hit "$(big_json Write "$big4m")" 'Write: 4 MB を超えるコンテンツ（照合せずに控えめに通知）'
+perf hit "$(big_json Bash "echo '$big4m'")" 'Bash: 4 MB を超えるコマンド（同上）'
 want=''
 
 echo "=== 12. 既知の制約（合否に含めない。README の「既知の制約」と対応） ==="
@@ -492,6 +510,7 @@ tk hit Bash 'echo "IRM results"' 'Bash: echo "IRM results"（引用符の中の 
 tk miss Bash '/usr/bin/curl https://api.example.com/v1/users' 'Bash: /usr/bin/curl https://...（Bash ではパス付きの起動を検出しない）'
 tk miss PowerShell "New-Item -Name API_KEY -Path Env: -Value '<dummy>'" 'PowerShell: New-Item -Name ... -Path Env:（-Name を先に書くと検出しない）'
 tk miss PowerShell "Set-ItemProperty -Path 'HKCU:\\Environment' -Name GITHUB_TOKEN -Value '<dummy>'" 'PowerShell: HKCU:\Environment への設定（レジストリ経由は検出しない）'
+tk miss PowerShell "Set-Item -Value '$(rep x 120)' -Path Env:API_KEY" 'PowerShell: Set-Item -Value <120 文字> -Path Env:API_KEY（コマンド名から Env: までが 100 文字を超えると検出しない）'
 tk miss Bash 'git push origin main' 'Bash: git push（git 経由の通信は検出しない）'
 tk miss PowerShell 'Write-Output $env:GITHUB_TOKEN' 'PowerShell: Write-Output $env:GITHUB_TOKEN（値の表示は検出しない）'
 tk hit Bash 'echo ".env" >> .gitignore' 'Bash: echo ".env" >> .gitignore（.env を無視する設定の追加も、.env を指すトークンとして通知される）'
@@ -526,6 +545,9 @@ perf hit "$(big_json prompt "$big_lines"$'\n'"key=$fake_sk")" 'プロンプト: 
 want=''
 perf miss "$(big_json prompt "${blank}x")" 'プロンプト: 空白の多い 300 KB の入力（秘密情報なし）'
 perf miss "$(big_json prompt "$big_lines")" 'プロンプト: 改行の多い 1 MB の入力（秘密情報なし）'
+want='4 MB を超え'
+perf hit "$(big_json prompt "$big4m")" 'プロンプト: 4 MB を超える入力（照合せずに控えめに通知）'
+want=''
 JUDGE_SCRIPT=""
 JUDGE_EVENT=""
 
@@ -771,7 +793,8 @@ fi
 echo "=== 18. ルールテンプレート・README の記載と PreToolUse の matcher の突き合わせ ==="
 # 記載と実装の食い違い（記載にあるツールが matcher に無い、またはその逆）を検出する
 doc_tools() {  # $1=ファイル $2=表の開始の行（正規表現） $3=表の終了の行（正規表現）→ 1 列目に書かれたツール名
-  awk -v s="$2" -v e="$3" '$0 ~ s {f=1; next} f && $0 ~ e {f=0} f && /^\|/ {n=split($0, c, "|"); print c[2]}' "$1" \
+  # 正規表現は環境変数で渡す（awk -v はエスケープを解釈し、\. で警告を出す awk がある）
+  DOC_START="$2" DOC_END="$3" awk '$0 ~ ENVIRON["DOC_START"] {f=1; next} f && $0 ~ ENVIRON["DOC_END"] {f=0} f && /^\|/ {n=split($0, c, "|"); print c[2]}' "$1" \
     | grep -oE '`(mcp__\*|[A-Z][A-Za-z]+)`' | tr -d '`' | sort -u
 }
 IFS='|' read -ra matcher_tools <<< "${matcher//mcp__.\*/mcp__*}"
