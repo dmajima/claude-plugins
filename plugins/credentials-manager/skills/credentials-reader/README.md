@@ -10,7 +10,7 @@
 
 | 機能 | 説明 |
 |-----|------|
-| URL/ドメイン自動マッチ | リクエスト URL から保存済み認証情報を検索し、ホストが確定する一致（`domains[]` の完全一致・ホスト部に `*` の無い `urls[]`）なら `auth_method` に従って自動適用。ワイルドカードのホストや説明文の部分一致では、適用してよいか確認する |
+| URL/ドメイン自動マッチ | リクエスト URL から保存済み認証情報を検索し、`https://` の URL で、ホストが確定する一致（`domains[]` の完全一致・ホスト部に `*` の無い `urls[]`）なら `auth_method` に従って自動適用。ワイルドカードのホスト・説明文の部分一致・`https://` 以外の URL・ホストの解釈が分かれる URL（`\` や authority の `@` を含む）では、適用してよいか確認する |
 | 取得（retrieve） | 識別名（部分一致）から保存済み値を取り出し、API 呼び出しに利用 |
 | 一覧（list） | 表形式で保存済み認証情報を表示（マスク済み値） |
 | プロアクティブ検出 | 会話中の認証情報パターン（`sk-` `ghp_` `xoxb-` `Bearer` 等）を検出し、保存提案 |
@@ -63,7 +63,11 @@ skills/credentials-reader/
     ├── case-09_localhost_skip.md
     ├── case-10_json_parse_error.md
     ├── case-11_weak_match_description_confirm.md     # 説明文の部分一致だけ → 確認
-    └── case-12_weak_match_host_wildcard_confirm.md   # ホスト部のワイルドカード → 確認
+    ├── case-12_weak_match_host_wildcard_confirm.md   # ホスト部のワイルドカード → 確認
+    ├── case-13_ambiguous_url_host_confirm.md         # ホストの解釈が分かれる URL → 自動適用しない
+    ├── case-14_non_https_confirm.md                  # http:// の URL → 自動適用しない
+    ├── case-15_wildcard_no_match_boundaries.md       # ワイルドカードが一致しない境界 → 一致なし
+    └── case-16_non_interactive_weak_match_skip.md    # 非対話モードで弱い一致だけ → 適用しない
 ```
 
 ## 関連スキル

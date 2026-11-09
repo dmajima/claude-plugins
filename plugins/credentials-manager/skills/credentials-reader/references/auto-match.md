@@ -18,11 +18,18 @@
 
 ユーザリクエストから対象 URL を取り出し、ホスト名を次のとおり求める（ここを誤ると、別のホストに認証情報を付けてしまう）。
 
-- スキームの後の `//` から、最初の `/` `?` `#` の前までを取り出す
-- `@` があれば、その後ろだけをホストとする（`https://api.example.com@evil.test/` のホストは `evil.test`）
-- `:` の後ろのポートは除き、小文字にする（ポートはホストとは別に比較する）
+1. `//` の後から、最初の `/` `\` `?` `#` の前までを **authority** とする。`\` は `/` と同じに扱う（Node の fetch やブラウザはそう解釈する）
+2. authority に `@` があれば、**最後の** `@` の後ろをホスト部とする（`https://api.example.com@evil.test/` と `https://a@b@evil.test/` のホストは `evil.test`）
+3. ホスト部から `:` の後ろのポートを除き、小文字にする（ポートはホストとは別に比較する）
 
-以下の順で `credentials.json` の `credentials.{name}` を検索する。**一致の強さ** が「強い」のは、保存済みの値がそのホスト用だと確定する一致だけである。
+次のどちらかに当たる URL は、**強い一致の対象にしない**（候補があれば、完全な URL と理由を示して確認する）。
+
+| 当たる URL | 理由 |
+|----------|------|
+| スキームが `https://` でない（`http://`、スキームの無い URL を含む。curl はスキームが無いと http で送る） | 認証情報が平文で送られる |
+| `//` の後ろに `\` を含む、または authority に `@` `%`・空白・ASCII 以外の文字を含む | ツールによってホストの解釈が分かれる（`https://evil.test\@api.example.com/` は、`@` の後ろを見ると `api.example.com` に見えるが、Node の fetch では `evil.test` に送られる） |
+
+以下の順で `credentials.json` の `credentials.{name}` を検索する。**一致の強さ** が「強い」のは、保存済みの値がそのホスト用だと確定する一致だけである（上の 2 種類の URL を除く）。
 
 | 優先 | 突き合わせフィールド | 判定 | 一致の強さ |
 |----|------------------|------|----------|
@@ -41,7 +48,7 @@
 |-----|----------|------------|
 | 強い一致が 1 件 | 自動適用。ユーザに「保存済み認証情報 `<name>` (`<masked>`) を `<domain>` に自動適用しました。」と通知 | 同左 |
 | 強い一致が複数件 | `AskUserQuestion` でどれを使うか確認。選択肢にはマスク済み値・関連ドメイン・更新日を表示 | 最新の `updated_at` のエントリを採用し、採用したことを通知 |
-| 強い一致が無く、弱い一致がある | 候補（マスク済み値・一致の根拠・更新日）を示し、`AskUserQuestion` で「適用する / 適用しない」を確認。承諾されたものだけ適用する | 適用しない（確認できないため）。「`<domain>` に一致しうる候補 `<name>` があるが、確認できないため適用しなかった」と通知 |
+| 強い一致が無く、弱い一致がある（2 章の 2 種類の URL での一致を含む） | 候補（マスク済み値・一致の根拠・更新日。2 章の URL では完全な URL と理由）を示し、`AskUserQuestion` で「適用する / 適用しない」を確認。承諾されたものだけ適用する | 適用しない（確認できないため）。「`<domain>` に一致しうる候補 `<name>` があるが、確認できないため適用しなかった」と通知 |
 | 一致なし（0 件） | ユーザに「`<domain>` 用の認証情報は保存されていません。提供しますか？」と確認。提供されたら **`credentials-manager` への引き継ぎ**（[`handoff.md`](handoff.md) 参照） | 同左 |
 
 確認なしで自動適用させたい認証情報は、保存時に `domains[]` へ完全なホスト名を入れる（`credentials-manager` の save / update）。
@@ -55,6 +62,9 @@
 | `query:<param>` | URL に `?<param>=<value>` を付与（既存クエリがあれば `&` で連結） |
 
 `auth_method` 未指定時は `header:Authorization:Bearer` を既定値として扱う。
+
+認証情報を付けた要求では、別ホストへのリダイレクトを自動で追わない（`curl -L` を付けない、`--location-trusted` を使わない等）。
+ツールによっては、リダイレクト先が別ホストでも独自のヘッダを送ることがあり、適用した値が転送先に渡ってしまう。
 
 ## 5. ワイルドカード仕様
 
@@ -70,7 +80,7 @@
 | パターン | マッチ例 | 不一致例 |
 |---------|--------|--------|
 | `https://api.example.com/v1/*` | `https://api.example.com/v1/users` `https://api.example.com/v1/orders/123` | `https://api.example.com/v2/users` `http://api.example.com/v1/users` |
-| `https://*.example.com/api` | `https://a.example.com/api` `https://b.example.com/api` | `https://example.com/api` `https://a.b.example.com/api` `https://evil.test/x.example.com/api` `https://evil.test/?.example.com/api` |
+| `https://*.example.com/api` | `https://a.example.com/api` `https://b.example.com/api` | `https://example.com/api` `https://a.b.example.com/api` `https://evil.test/x.example.com/api` `https://evil.test/?.example.com/api` `https://a.example.com.evil.test/api` `https://a.example.com:8443/api` |
 
 ホスト部の `*` はホストを確定しないため、この一致は弱い一致として扱う（3 章。自動適用せず確認する）。
 正規表現は使用しない（誤マッチ防止）。

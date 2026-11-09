@@ -96,9 +96,9 @@ SessionStart フックによって自動配置されるテンプレートであ�
 | 状況 | 起動するスキル | 動作 |
 |-----|-------------|------|
 | 参照のみ（保存済み照合・自動適用） | `credentials-reader` | マッチ件数に応じた挙動 |
-| ホストが確定する一致（`domains[]` の完全一致・ホスト部に `*` の無い `urls[]`）が **1 件** | `credentials-reader` | 自動適用し、ユーザに「`<name>` (`****`) を `<domain>` に自動適用しました」と通知 |
+| ホストが確定する一致（`https://` の URL で、`domains[]` の完全一致・ホスト部に `*` の無い `urls[]`）が **1 件** | `credentials-reader` | 自動適用し、ユーザに「`<name>` (`****`) を `<domain>` に自動適用しました」と通知 |
 | ホストが確定する一致が **複数件** | `credentials-reader` | `AskUserQuestion` でどれを使うか確認（マスク済み値を表示） |
-| ホストが確定しない一致のみ（ホスト部に `*` のある `urls[]`・説明文の部分一致） | `credentials-reader` | 候補を示して、適用してよいか `AskUserQuestion` で確認（承諾されたものだけ適用） |
+| ホストが確定しない一致のみ（ホスト部に `*` のある `urls[]`・説明文の部分一致・`https://` 以外の URL・`\` や authority の `@` 等でホストの解釈が分かれる URL） | `credentials-reader` | 候補を示して、適用してよいか `AskUserQuestion` で確認（承諾されたものだけ適用） |
 | 保存済み認証情報が **0 件** | `credentials-reader` | 「`<domain>` 用の認証情報は保存されていません。提供しますか？」と確認 → 承諾なら `credentials-manager` に引き継ぎ |
 | 書き込み（追加・編集・削除・修復） | `credentials-manager` | 該当フローを実行 |
 | 対話メニューでの管理 | `/credentials-manager:manage` | メニュー UI で両スキルを呼び分け |
