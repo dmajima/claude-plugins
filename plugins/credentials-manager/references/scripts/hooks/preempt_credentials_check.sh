@@ -78,6 +78,10 @@ case "$tool_name" in
     ;;
   Bash|PowerShell)
     cmd="$(printf '%s' "$stdin" | jq -er '.tool_input.command // empty' 2>/dev/null)"
+    # 照合するのは先頭 CRED_SCAN_MAX 文字（256 KB）まで（下の照合は bash の [[ =~ ]] で、巨大なコマンドでは timeout 近くかかる）。
+    # それより長いコマンドは、先頭で何も見つからなければ、残りを判定できないものとして控えめに通知する（末尾に置いた curl 等を見逃さない）
+    cmd_len=${#cmd}
+    cmd=${cmd:0:CRED_SCAN_MAX}
     if [[ -n "$cmd" ]]; then
       # 外部通信 / IaC / シークレット管理 CLI（Windows では curl.exe・az.cmd のように拡張子付きでも呼ばれる）
       ext_cmd_pattern='(^|'"$SH_LEAD"')('"$CLI_NAMES"')(\.exe|\.cmd)?([[:space:]]|$)'
@@ -122,15 +126,20 @@ case "$tool_name" in
         cred_reason "$tool_name で"
         set_reason "$CRED_REASON"
       fi
+      if (( cmd_len > CRED_SCAN_MAX )); then
+        set_reason "$tool_name で長さが 256 KB を超え、全体を照合できないコマンドを実行"
+      fi
     fi
     ;;
   Read|Write|Edit|MultiEdit|NotebookEdit)
-    # パス（NotebookEdit は notebook_path）と、照合するコンテンツを 1 回の jq で取り出す（NUL 区切り）。
+    # パス（NotebookEdit は notebook_path）と、照合するコンテンツを 1 回の jq で取り出す（1 行目がパス、2 行目以降がコンテンツ）。
     # コンテンツは tool_input の文字列（内容・置換の前後・パス）だけにする。入力 JSON 全体を照合すると、
-    # cwd や transcript_path 等のメタデータに含まれる語にも一致し、JSON のエスケープ（\n 等）でパターンの境界も崩れるため
-    file_path=""
-    content=""
-    { IFS= read -r -d '' file_path; IFS= read -r -d '' content; } < <(printf '%s' "$stdin" | jq -j '((.tool_input.file_path // .tool_input.notebook_path // "") | tostring), "\u0000", ([.tool_input | .. | strings] | join("\n")), "\u0000"' 2>/dev/null)
+    # cwd や transcript_path 等のメタデータに含まれる語にも一致し、JSON のエスケープ（\n 等）でパターンの境界も崩れるため。
+    # 受け取りはコマンド置換で行う（read -d は 1 バイトずつ読むため、数 MB の書き込みで数秒かかる）。NUL は jq で除く
+    extracted="$(printf '%s' "$stdin" | jq -r '((.tool_input.file_path // .tool_input.notebook_path // "") | tostring | gsub("[\r\n\u0000]"; " ")), ([.tool_input | .. | strings] | join("\n") | gsub("\u0000"; ""))' 2>/dev/null)"
+    file_path=${extracted%%$'\n'*}
+    content=${extracted:${#file_path}+1}
+    file_path=${file_path%$'\r'}
     if [[ -n "$file_path" ]]; then
       credential_file_reason "$file_path"
       if [[ -n "$CF_REASON" ]]; then

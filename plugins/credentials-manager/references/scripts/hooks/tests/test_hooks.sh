@@ -57,6 +57,8 @@ fake_bearer="Bearer ${pad24// /y}"
 fake_basic="Basic $(printf '%s' 'demo-user:not-a-real-password' | base64 | tr -d '\r\n')"
 printf -v fake_pem '%sBEGIN RSA PRIVATE %s' '-----' 'KEY-----'
 printf -v blank '%*s' 300000 ''
+big_lines="$(yes x 2>/dev/null | head -n 500000)"                                        # 改行の多い約 1 MB（x と改行の繰り返し）
+big_words="$(yes 'lorem ipsum dolor sit amet,' 2>/dev/null | head -n 40000 | tr '\n' ' ')"  # 通常の文の約 1 MB
 matcher=""
 timeout_sec=""
 prompt_timeout_sec=""
@@ -160,6 +162,37 @@ tk() {  # $1=現在の挙動(hit|miss) $2=ツール $3=コマンド $4=表示名
   else
     changed=$((changed + 1))
     printf '  [CHANGED] %s（記録: %s / 現在: %s。意図した変更なら記録を更新する）\n' "$4" "$1" "$now"
+  fi
+}
+
+# 大きなフック入力を組み立てる。値はヒアストリングで渡す（printf でパイプに書くと、改行の多い値では 1 行ずつ書き込まれて遅い）
+big_json() {  # $1=種別(Bash|PowerShell|Write|prompt) $2=値（Bash / PowerShell はコマンド、Write はコンテンツ）
+  case $1 in
+    Bash|PowerShell) jq -Rsc --arg t "$1" '{tool_name: $t, tool_input: {command: .}}' <<< "$2" ;;
+    Write) jq -Rsc '{tool_name: "Write", tool_input: {file_path: "/repo/big.txt", content: .}}' <<< "$2" ;;
+    prompt) jq -Rsc '{prompt: .}' <<< "$2" ;;
+  esac | tr -d '\r'
+}
+
+# 大きな入力の判定と所要時間を検証する。期待どおりの判定を limit_ms（timeout の 8 割）以内に返せば PASS。
+# 理由文は want（空なら照合しない）で確かめる。timeout を超えると通知が無言で欠落するため、時間も合否に含める
+perf() {  # $1=期待(hit|miss) $2=フック入力 JSON $3=表示名
+  local start ctx elapsed reason
+  start=$(now_ms)
+  ctx="$(judge "$2")"
+  elapsed=$(( $(now_ms) - start ))
+  reason="${ctx#\[credentials-manager\] }"
+  reason="${reason%%。*}"
+  if [[ $ctx == EXIT=* || $ctx == INVALID_OUTPUT ]]; then
+    record FAIL "$3 （フックの出力が異常: $ctx）"
+  elif [[ ($1 == hit && -z $ctx) || ($1 == miss && -n $ctx) ]]; then
+    record FAIL "$3 （期待: $1 / 実際: ${reason:-通知なし}）"
+  elif [[ $1 == hit && -n $want && $reason != *"$want"* ]]; then
+    record FAIL "$3 （理由文に「$want」が無い: $reason）"
+  elif (( elapsed >= limit_ms )); then
+    record FAIL "$3 （${elapsed} ms / 上限 ${limit_ms} ms）"
+  else
+    record PASS "$3 → ${elapsed} ms${reason:+ / $reason}"
   fi
 }
 
@@ -393,25 +426,27 @@ for hook in "$TARGET" "$PROMPT_HOOK"; do
   fi
 done
 
-echo "=== 11. 大きな入力（hooks.json の timeout の 8 割以内で判定する） ==="
+echo "=== 11. 大きな入力（hooks.json の timeout の 8 割以内で判定する。256 KB を超える部分も判定の対象にする） ==="
 limit_ms=$(( ${timeout_sec:-60} * 800 ))
-for kind in Write PowerShell; do
-  if [[ $kind == Write ]]; then
-    json="$({ printf '%s' "$blank"; printf 'github_token=%s' "$fake_ghp"; } | jq -Rsc '{tool_name: "Write", tool_input: {file_path: "/repo/big.txt", content: .}}' | tr -d '\r')"
-    label='Write: 空白の多い 300 KB のコンテンツ（末尾に ghp_… のダミー）'
-  else
-    json="$(printf "Write-Output '%s'; irm https://api.example.com" "$blank" | jq -Rsc '{tool_name: "PowerShell", tool_input: {command: .}}' | tr -d '\r')"
-    label='PowerShell: 空白の多い 300 KB のコマンド（末尾に irm）'
-  fi
-  start=$(now_ms)
-  ctx="$(judge "$json")"
-  elapsed=$(( $(now_ms) - start ))
-  if [[ -n $ctx && $ctx != EXIT=* && $ctx != INVALID_OUTPUT && $elapsed -lt $limit_ms ]]; then
-    record PASS "$label → ${elapsed} ms"
-  else
-    record FAIL "$label （${elapsed} ms / 上限 ${limit_ms} ms / 結果: ${ctx:-通知なし}）"
-  fi
-done
+# コンテンツは 256 KB を超えると grep でまとめて照合する（末尾の秘密情報も検出し、種類も判定する）
+want='認証情報パターン'
+perf hit "$(big_json Write "${blank}github_token=$fake_ghp")" 'Write: 空白の多い 300 KB のコンテンツ（末尾に ghp_… のダミー）'
+perf hit "$(big_json Write "$big_lines"$'\n'"$fake_sk")" 'Write: 改行の多い 1 MB のコンテンツ（末尾に sk-… のダミー）'
+want='Bearer'
+perf hit "$(big_json Write "$big_words Authorization: $fake_bearer")" 'Write: 1 MB の文（末尾に Bearer … のダミー）'
+want=''
+perf miss "$(big_json Write "$big_lines")" 'Write: 改行の多い 1 MB のコンテンツ（秘密情報なし）'
+# コマンドは先頭 256 KB を照合する。それより長いコマンドは、残りを判定できないものとして控えめに通知する
+want='外部通信コマンド'
+perf hit "$(big_json PowerShell "Write-Output '${blank:0:200000}'; irm https://api.example.com")" 'PowerShell: 空白の多い 200 KB のコマンド（末尾に irm）'
+want='長さが 256 KB を超え'
+perf hit "$(big_json PowerShell "Write-Output '$blank'; irm https://api.example.com")" 'PowerShell: 空白の多い 300 KB のコマンド（末尾に irm。256 KB を超える）'
+perf hit "$(big_json Bash "echo '$big_words'; curl https://api.example.com")" 'Bash: 1 MB のコマンド（末尾に curl。256 KB を超える）'
+want='4 KB を超え'
+perf hit "$(big_json Bash "cat $(rep "$(rep a.env1 700) " 256)")" 'Bash: 手掛かりの語を含む 4 KB のトークン 256 個'
+want='環境変数定義ファイル'
+perf hit "$(big_json Bash "cat $(rep "$(rep '\' 4000).env " 50)")" 'Bash: \ が 4000 個続く .env のトークン 50 個（200 KB）'
+want=''
 
 echo "=== 12. 既知の制約（合否に含めない。README の「既知の制約」と対応） ==="
 tk hit PowerShell "\$env:GIT_AUTHOR_NAME = 'example'" 'PowerShell: $env:GIT_AUTHOR_NAME = ...（AUTH への部分一致で通知される）'
@@ -445,27 +480,12 @@ run miss - '' '空の標準入力'
 run miss - '{not json' '不正な JSON'
 run miss - '{"prompt":""}' 'prompt が空'
 limit_ms=$(( ${prompt_timeout_sec:-60} * 800 ))
-for kind in secret none; do
-  if [[ $kind == secret ]]; then
-    json="$({ printf '%s' "$blank"; printf 'key=%s' "$fake_sk"; } | jq -Rsc '{prompt: .}' | tr -d '\r')"
-    label='プロンプト: 空白の多い 300 KB の入力（末尾に sk-… のダミー）'
-  else
-    json="$(printf '%s' "$blank" | jq -Rsc '{prompt: (. + "x")}' | tr -d '\r')"
-    label='プロンプト: 空白の多い 300 KB の入力（秘密情報なし）'
-  fi
-  start=$(now_ms)
-  ctx="$(judge "$json")"
-  elapsed=$(( $(now_ms) - start ))
-  if [[ $ctx == EXIT=* || $ctx == INVALID_OUTPUT ]]; then
-    record FAIL "$label （フックの出力が異常: $ctx）"
-  elif [[ ($kind == secret && -z $ctx) || ($kind == none && -n $ctx) ]]; then
-    record FAIL "$label （判定が期待と異なる: ${ctx:-通知なし}）"
-  elif [[ $elapsed -ge $limit_ms ]]; then
-    record FAIL "$label （${elapsed} ms / 上限 ${limit_ms} ms）"
-  else
-    record PASS "$label → ${elapsed} ms"
-  fi
-done
+want='認証情報パターン'
+perf hit "$(big_json prompt "${blank}key=$fake_sk")" 'プロンプト: 空白の多い 300 KB の入力（末尾に sk-… のダミー）'
+perf hit "$(big_json prompt "$big_lines"$'\n'"key=$fake_sk")" 'プロンプト: 改行の多い 1 MB の入力（末尾に sk-… のダミー）'
+want=''
+perf miss "$(big_json prompt "${blank}x")" 'プロンプト: 空白の多い 300 KB の入力（秘密情報なし）'
+perf miss "$(big_json prompt "$big_lines")" 'プロンプト: 改行の多い 1 MB の入力（秘密情報なし）'
 JUDGE_SCRIPT=""
 JUDGE_EVENT=""
 
@@ -525,29 +545,12 @@ decoys=""
 for ((i = 0; i < 300; i++)); do decoys+='a.env1 '; done
 t hit Bash "cat $decoys" 'Bash: cat a.env1 a.env1 …（300 個。判定の上限を超える）'
 # 最悪ケースの所要時間（timeout の 8 割以内）
-want=''
 limit_ms=$(( ${timeout_sec:-60} * 800 ))
-decoys=""
-for ((i = 0; i < 20000; i++)); do decoys+='a.env1 '; done
-seps=""
-for ((i = 0; i < 100000; i++)); do seps+=';'; done
-for kind in tokens seps; do
-  if [[ $kind == tokens ]]; then
-    json="$(printf 'cat %s~/.aws/credentials' "$decoys" | jq -Rsc '{tool_name: "Bash", tool_input: {command: .}}' | tr -d '\r')"
-    label='Bash: 手掛かりの語を含むトークン 2 万個の後に ~/.aws/credentials'
-  else
-    json="$(printf 'echo %s .env' "$seps" | jq -Rsc '{tool_name: "Bash", tool_input: {command: .}}' | tr -d '\r')"
-    label='Bash: 区切り文字 10 万個の後に .env'
-  fi
-  start=$(now_ms)
-  ctx="$(judge "$json")"
-  elapsed=$(( $(now_ms) - start ))
-  if [[ -n $ctx && $ctx != EXIT=* && $ctx != INVALID_OUTPUT && $elapsed -lt $limit_ms ]]; then
-    record PASS "$label → ${elapsed} ms"
-  else
-    record FAIL "$label （${elapsed} ms / 上限 ${limit_ms} ms / 結果: ${ctx:-通知なし}）"
-  fi
-done
+want='多数含むコマンド'
+perf hit "$(big_json Bash "cat $(rep 'a.env1 ' 20000)~/.aws/credentials")" 'Bash: 手掛かりの語を含むトークン 2 万個の後に ~/.aws/credentials'
+want='環境変数定義ファイル'
+perf hit "$(big_json Bash "echo $(rep ';' 100000) .env")" 'Bash: 区切り文字 10 万個の後に .env'
+want=''
 
 echo "=== 16. Grep / Glob の検索対象（case-48・49） ==="
 want='Grep で環境変数定義ファイル'
@@ -663,15 +666,23 @@ source "$HOOKS/lib/credential_files.sh"
 u_check() {  # $1=期待(hit|miss) $2=実際(hit|miss) $3=表示名 [$4=補足]
   if [[ $2 == "$1" ]]; then record PASS "$3 → $2${4:+（$4）}"; else record FAIL "$3 （期待: $1 / 実際: $2${4:+ / $4}）"; fi
 }
-u_secret() {  # $1=期待 $2=文字列 $3=表示名
+u_secret() {  # $1=期待 $2=文字列 $3=表示名 [$4=CRED_LABEL に含まれるべき語]
   local got=miss
   cred_find_secret "$2" && got=hit
+  if [[ $got == hit && -n ${4:-} && $CRED_LABEL != *"$4"* ]]; then
+    record FAIL "$3 （種類の語句に「$4」が無い: $CRED_LABEL）"
+    return
+  fi
   u_check "$1" "$got" "$3" "$CRED_LABEL"
 }
-u_file() {  # $1=期待 $2=パス $3=表示名
+u_file() {  # $1=期待 $2=パス $3=表示名 [$4=CF_REASON に含まれるべき語]
   local got=miss
   credential_file_reason "$2"
   [[ -n $CF_REASON ]] && got=hit
+  if [[ $got == hit && -n ${4:-} && $CF_REASON != *"$4"* ]]; then
+    record FAIL "$3 （理由文に「$4」が無い: $CF_REASON）"
+    return
+  fi
   u_check "$1" "$got" "$3"
 }
 u_scan() {  # $1=期待 $2=コマンド $3=表示名
@@ -717,6 +728,24 @@ for pre in ' ' '=' '"' "'" ':' '(' '/' $'\n' $'\t'; do
   u_secret hit "x${pre}sk-$a16" "sk- の直前が「$(printf '%q' "$pre")」"
 done
 u_secret hit "sk-$a16" 'sk- が文字列の先頭'
+# 256 KB（CRED_SCAN_MAX）を超える文字列は grep でまとめて照合する。境界の前後で判定が変わらず、
+# 種類・優先順・左側の境界・改行の扱いも bash の照合と同じであること
+printf -v sp '%*s' $((CRED_SCAN_MAX - ${#fake_sk})) ''
+u_secret hit "$sp$fake_sk" "長さ $CRED_SCAN_MAX 文字（bash で照合）の末尾に sk-" '認証情報パターン'
+u_secret hit " $sp$fake_sk" "長さ $((CRED_SCAN_MAX + 1)) 文字（grep で照合）の末尾に sk-" '認証情報パターン'
+printf -v sp '%*s' "$CRED_SCAN_MAX" ''
+u_secret hit "$sp$fake_bearer" '256 KB 超の末尾に Bearer' 'Bearer'
+u_secret hit "${sp}bearer $a16" '256 KB 超の末尾に bearer（小文字）' 'Bearer'
+u_secret hit "$sp$fake_basic" '256 KB 超の末尾に Basic' 'Basic'
+u_secret hit "$sp$fake_pem" '256 KB 超の末尾に PEM の先頭行' 'PEM'
+u_secret hit "$sp$fake_bearer $fake_sk" '256 KB 超に Bearer と sk- の両方（bash と同じく既知のトークン形式を優先）' '認証情報パターン'
+u_secret hit "${sp}x"$'\n'"sk-$a16" '256 KB 超・sk- の直前が改行'
+u_secret hit "${sp}Bearer"$'\n'"$a16" '256 KB 超・Bearer の後に改行してトークン（grep は行ごとに照合するが、改行をまたいでも一致する）' 'Bearer'
+u_secret hit "${sp}Bearer${sp:0:5000}$a16" '256 KB 超・Bearer の後に空白 5000 個（一致した部分が 4 KB で切れても通知する）'
+u_secret miss "${sp}xsk-$a16" '256 KB 超・sk- の直前が英字（語の途中）'
+u_secret miss "${sp}sk-$a15" '256 KB 超・sk- + 15 文字'
+u_secret miss "$sp" '256 KB 超・空白だけ'
+u_secret miss "$big_lines" '改行の多い 1 MB・秘密情報なし'
 
 echo "=== 20. 単体: 認証情報系ファイルの判定（ルールテンプレートの表から生成） ==="
 mapfile -t file_rows < <(awk '/^認証情報系ファイル（/{f=1; next} f && /^\|/ {seen=1; print; next} f && seen {exit}' "$TEMPLATE" | tail -n +3)
@@ -764,8 +793,9 @@ u_file hit '**/*.pem' 'ワイルドカード: **/*.pem'
 u_file miss '*credentials-manager*' 'ワイルドカード: *credentials-manager*（語の一部）'
 u_file miss 'plugins/credentials-manager/README.md' '語の一部: plugins/credentials-manager/README.md'
 u_file miss '/repo/.env.spec' '除外リスト: .env.spec'
-u_file hit "$(rep a 4091)/.env" 'パスの長さ 4096 文字（判定する）'
-u_file miss "$(rep a 4092)/.env" 'パスの長さ 4097 文字（判定しない）'
+u_file hit "$(rep a 4091)/.env" 'パスの長さ 4096 文字（判定する）' '環境変数定義ファイル'
+u_file hit "$(rep a 4092)/.env" 'パスの長さ 4097 文字（判定せず控えめに通知する）' '4 KB を超え'
+u_file hit "$(rep a 4097)" 'パスの長さ 4097 文字・認証情報系の名前なし（同上）' '4 KB を超え'
 
 echo "=== 21. 単体: コマンドのトークン分割（区切り文字ごと・上限の境界） ==="
 u_scan hit 'cat .env;ls' '区切り ;'
@@ -792,6 +822,22 @@ u_scan miss 'ls plugins/credentials-manager' '手掛かりの語を含むが該�
 u_scan miss 'echo hello' '手掛かりの語を含まない'
 u_scan miss "cat $(rep 'a.env1 ' 256)" '手掛かりの語を含むトークン 256 個（上限ちょうど。通知しない）'
 u_scan hit "cat $(rep 'a.env1 ' 257)" '手掛かりの語を含むトークン 257 個（上限を超える。控えめに通知）'
+# 16 KB（SCAN_INLINE_MAX）を超えるコマンドは、tr と grep で手掛かりの語を含むトークンだけを取り出す。
+# 境界の前後と、区切り文字・大文字小文字・除外・上限の扱いが bash による分割と変わらないこと
+printf -v sp '%*s' $((SCAN_INLINE_MAX - 8)) ''
+u_scan hit "${sp}cat .env" "長さ $SCAN_INLINE_MAX 文字（bash で分割）の末尾に .env"
+u_scan hit " ${sp}cat .env" "長さ $((SCAN_INLINE_MAX + 1)) 文字（tr と grep で分割）の末尾に .env"
+printf -v sp '%*s' "$SCAN_INLINE_MAX" ''
+for sep in ';' '|' '&' '(' ')' '<' '>' '"' "'" '=' ',' '`' '{' '}' '[' ']' $'\t' $'\r'; do
+  u_scan hit "${sp}cat${sep}.env${sep}x" "16 KB 超・区切り $(printf '%q' "$sep")"
+done
+u_scan hit "${sp}cat .ENV" '16 KB 超・大文字の .ENV'
+u_scan hit "$(yes x 2>/dev/null | head -n 9000)"$'\n''cat .env' '16 KB 超・改行の多いコマンドの末尾に .env'
+u_scan miss "${sp}cat .env.example" '16 KB 超・除外リスト'
+u_scan miss "${sp}ls plugins/credentials-manager" '16 KB 超・手掛かりの語を含むが該当しない'
+u_scan miss "${sp}echo hello" '16 KB 超・手掛かりの語を含まない'
+u_scan miss "${sp}cat $(rep 'a.env1 ' 256)" '16 KB 超・手掛かりの語を含むトークン 256 個（上限ちょうど）'
+u_scan hit "${sp}cat $(rep 'a.env1 ' 257)" '16 KB 超・手掛かりの語を含むトークン 257 個（上限を超える）'
 
 echo
 printf '結果: PASS=%s FAIL=%s（既知の制約 %s 件のうち挙動が変わったもの %s 件）\n' "$pass" "$fail" "$known" "$changed"

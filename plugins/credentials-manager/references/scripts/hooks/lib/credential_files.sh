@@ -13,8 +13,12 @@ credential_file_reason() {
   CF_REASON=""
   local path="$1"
   [[ -z "$path" ]] && return 0
-  # 実在するパスより十分長い文字列は判定しない（下の置換は、区切り文字の多い長い文字列で入力長の二乗の時間がかかる）
-  (( ${#path} > 4096 )) && return 0
+  # 実在するパスより十分長い文字列は、中身を判定せずに控えめに通知する（下の置換は、区切り文字の多い長い文字列で
+  # 入力長の二乗の時間がかかる。黙って除外すると、長いパスで判定を逃れられてしまう）
+  if (( ${#path} > 4096 )); then
+    CF_REASON="長さが 4 KB を超え、認証情報系ファイルかを判定できないパスを操作"
+    return 0
+  fi
 
   local lower="${path//\\/\/}"
   lower="${lower,,}"
@@ -91,26 +95,32 @@ credential_file_reason() {
 CRED_FILE_HINT='(\.env|credential|secret|npmrc|netrc|pgpass|dockercfg|id_(rsa|dsa|ecdsa|ed25519|xmss)|serviceaccountkey|service-account|kubeconfig|\.(pem|key|p12|pfx|jks|keystore|crt|cer|der|asc|gpg)|\.aws|\.docker|\.kube|\.ssh|\.gnupg)'
 # トークンの区切り（空白・改行・シェルの区切り・括弧・引用符・= ・カンマ）。IFS として使う
 SHELL_SEPS=$' \t\n\r;|&()<>"\'=,`{}[]'
+# 同じ区切りを tr に渡す形（[ と ] は tr の記法と衝突するため 8 進数で書く）
+SHELL_SEPS_TR=$' \t\n\r;|&()<>"\'=,`{}\\133\\135'
 # 判定するトークンの上限（手掛かりの語を含むトークンが大量にあるコマンドで、timeout を超えないようにする）
 MAX_FILE_TOKENS=256
+# これより長いコマンドは、bash のループではなく tr と grep で手掛かりの語を含むトークンだけを取り出す
+# （bash の照合はトークン 1 つあたり数十 µs かかり、トークンの総数に比例して遅くなるため）
+SCAN_INLINE_MAX=16384
 
 # シェルのコマンド $1 の中で、認証情報系ファイルを指すトークンを探す。
 # 見つかれば理由（credential_file_reason の文言）を CF_REASON に入れて 0 を返す。見つからなければ 1 を返す。
 # 分割は IFS による読み取りで行う（置換で区切り文字を空白に変えると、区切り文字の多い大きな入力で二乗の時間がかかる）。
-# 手掛かりの語を含むトークンが MAX_FILE_TOKENS 個を超えたら判定を打ち切り、控えめに「多数含む」の理由で 0 を返す（無言で欠落させない）
+# 手掛かりの語を含むトークンが MAX_FILE_TOKENS 個を超えたら判定を打ち切り、控えめに「多数含む」の理由で 0 を返す（無言で欠落させない）。
+# 照合は小文字にした文字列で行う（手掛かりの語は小文字で書いてある。nocasematch は他の照合に影響するため使わない）
 cred_scan_command_files() {
-  local cmd=$1 tok candidates=0 hint
-  local -a tokens
+  local cmd=$1 tok candidates=0
+  local -a tokens=()
   CF_REASON=""
-  shopt -s nocasematch
-  [[ $cmd =~ $CRED_FILE_HINT ]]
-  hint=$?
-  shopt -u nocasematch
-  (( hint == 0 )) || return 1
-  IFS="$SHELL_SEPS" read -r -d '' -a tokens <<< "$cmd"
-  shopt -s nocasematch
+  if (( ${#cmd} <= SCAN_INLINE_MAX )); then
+    [[ ${cmd,,} =~ $CRED_FILE_HINT ]] || return 1
+    IFS="$SHELL_SEPS" read -r -d '' -a tokens <<< "$cmd"
+  else
+    # 入力はヒアストリングで渡す（printf でパイプに書くと、改行の多い入力では 1 行ずつ書き込まれて遅い）
+    mapfile -t tokens < <(LC_ALL=C tr "$SHELL_SEPS_TR" '\n' <<< "$cmd" | LC_ALL=C grep -aiE -m $((MAX_FILE_TOKENS + 1)) -- "$CRED_FILE_HINT" 2>/dev/null)
+  fi
   for tok in "${tokens[@]}"; do
-    [[ -n "$tok" && "$tok" =~ $CRED_FILE_HINT ]] || continue
+    [[ -n "$tok" && ${tok,,} =~ $CRED_FILE_HINT ]] || continue
     candidates=$((candidates + 1))
     if (( candidates > MAX_FILE_TOKENS )); then
       CF_REASON="認証情報系ファイルらしい名前を多数含むコマンドを実行"
@@ -119,6 +129,5 @@ cred_scan_command_files() {
     credential_file_reason "$tok"
     [[ -n "$CF_REASON" ]] && break
   done
-  shopt -u nocasematch
   [[ -n "$CF_REASON" ]]
 }
