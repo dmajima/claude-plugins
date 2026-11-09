@@ -13,7 +13,9 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 stdin="$(cat)"
-[[ -z "${stdin//[[:space:]]/}" ]] && exit 0
+# 空白以外の文字が無ければ終了する。${stdin//[[:space:]]/} で空白を除去する判定は、空白の多い大きな入力で
+# 入力長の二乗の時間がかかるため使わない
+[[ ! $stdin =~ [^[:space:]] ]] && exit 0
 
 tool_name="$(printf '%s' "$stdin" | jq -er '.tool_name // empty' 2>/dev/null)"
 # Bash と PowerShell の両方を受け入れる
