@@ -529,7 +529,7 @@ perf miss "$(big_json prompt "$big_lines")" 'プロンプト: 改行の多い 1 
 JUDGE_SCRIPT=""
 JUDGE_EVENT=""
 
-echo "=== 14. 秘密情報のパターン（lib/credential_patterns.sh。PreToolUse と UserPromptSubmit で共通） ==="
+echo "=== 14. 秘密情報のパターン（lib/credential_patterns.sh。PreToolUse と UserPromptSubmit で共通。case-44・45・53） ==="
 want='に Basic'
 t hit Bash "echo \"Authorization: $fake_basic\"" 'Bash: echo "Authorization: Basic …"（ダミー）'
 want='に PEM'
@@ -557,7 +557,7 @@ run miss - "$(prompt_json 'task-management-system.md を読んで')" 'プロン�
 JUDGE_SCRIPT=""
 JUDGE_EVENT=""
 
-echo "=== 15. シェルでの認証情報系ファイルの操作（case-46・47） ==="
+echo "=== 15. シェルでの認証情報系ファイルの操作（case-46・47・54・55） ==="
 want='で環境変数定義ファイル'
 t hit Bash 'cat .env'
 t hit Bash 'cp .env.example .env.local'

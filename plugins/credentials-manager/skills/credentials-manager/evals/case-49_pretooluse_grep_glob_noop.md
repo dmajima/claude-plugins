@@ -31,11 +31,11 @@
 
 ## 分岐の根拠
 
-Grep / Glob は呼び出しが多い（過去の記録で Grep 約 2,600 件・Glob 約 650 件）。手掛かりの語の部分一致で判定すると、
+Grep / Glob はセッション中の呼び出しが特に多い。手掛かりの語の部分一致で判定すると、
 `credentials-manager` のようなパスを含む検索のたびに通知されるため、ファイル名の規則で判定する。
-過去の記録の Grep / Glob では、この規則で通知の対象になる呼び出しは無かった。
+ソースコードや文書を探す通常の検索は、この規則では通知の対象にならない。
 
 ## 関連ケース
 
 - `case-48_pretooluse_grep_glob_credential_trigger.md`（対比：trigger するケース）
-- `case-47_pretooluse_shell_credential_file_noop.md`（同じ境界をシェルのコマンドで判定するケース）
+- `case-55_pretooluse_shell_partial_word_noop.md`（同じ境界をシェルのコマンドで判定するケース）

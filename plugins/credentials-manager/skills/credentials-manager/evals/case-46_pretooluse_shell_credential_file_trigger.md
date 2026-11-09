@@ -43,4 +43,4 @@
 ## 関連ケース
 
 - `case-21_pretooluse_read_env_trigger.md`（同じファイルを Read ツールで読むケース）
-- `case-47_pretooluse_shell_credential_file_noop.md`（対比：no-op のケース）
+- `case-47_pretooluse_shell_extension_like_word_noop.md`（対比：no-op のケース）

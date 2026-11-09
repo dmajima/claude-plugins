@@ -17,7 +17,7 @@
 
 ### Phase 2: ファイルパス判定
 
-- `test_credential_file` で basename `notes.txt` は認証情報系ファイル該当なし
+- `credential_file_reason`（`lib/credential_files.sh`）で basename `notes.txt` は認証情報系ファイル該当なし
 - `REASON` 未設定のまま次の判定へ
 
 ### Phase 3: コンテンツ判定

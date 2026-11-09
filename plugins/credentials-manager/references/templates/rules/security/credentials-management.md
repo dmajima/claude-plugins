@@ -73,7 +73,7 @@ SessionStart フックによって自動配置されるテンプレートであ�
 
 | 種別 | 対象ファイル |
 |-----|------------|
-| 環境変数定義 | `.env` / `.env.<name>` / `.envrc`（`.env.example` `.sample` `.template` `.dist` `.test` は除外） |
+| 環境変数定義 | `.env` / `.env.<name>` / `.envrc`（`.env.example` `.sample` `.template` `.dist` `.test` `.spec` は除外） |
 | 認証情報ストア | `credentials.json` / `credentials.yml` / `credentials.yaml` / `credential.json` / `secrets.json` / `secrets.yml` / `secrets.yaml` / `secret.json` |
 | ツール設定 | `.npmrc` / `.netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` / `~/.config/gh/hosts.yml`（GitHub CLI） |
 | 秘密鍵 (SSH) | `id_rsa` / `id_dsa` / `id_ecdsa` / `id_ed25519` / `id_xmss` |

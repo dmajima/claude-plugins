@@ -41,10 +41,9 @@ Claude Code セッションをまたいで認証情報（API キー・トーク�
 # 1. リポジトリを複製
 git clone https://github.com/dmajima/claude-plugins ~/claude-plugins
 
-# 2. リリースタグ（推奨）またはブランチに切替
+# 2. ブランチに切替（リリースタグを付けている場合は、タグを指定してもよい）
 cd ~/claude-plugins
-git checkout v2.0.0   # 推奨: 検証済みリリースタグ
-# または: git checkout main   # 最新追従
+git checkout main   # 最新追従
 ```
 
 ```text
@@ -221,7 +220,7 @@ setx FOO_TOKEN ...        / setx /M FOO_SECRET ...
 
 | 種別 | 対象 |
 |-----|------|
-| 環境変数定義 | `.env` / `.env.<name>` / `.envrc`（`.env.example` `.sample` `.template` `.dist` `.test` は除外） |
+| 環境変数定義 | `.env` / `.env.<name>` / `.envrc`（`.env.example` `.sample` `.template` `.dist` `.test` `.spec` は除外） |
 | 認証情報ストア | `credentials.json` / `credentials.yml` / `secrets.json` / `secret.json` 等 |
 | ツール設定 | `.npmrc` / `.netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` / `~/.config/gh/hosts.yml`（GitHub CLI。Windows では `%AppData%\GitHub CLI\hosts.yml`） |
 | 秘密鍵 | `id_rsa` / `id_dsa` / `id_ecdsa` / `id_ed25519` / `id_xmss` |
@@ -281,14 +280,12 @@ PEM は PGP の秘密鍵（先頭行が `PRIVATE KEY BLOCK` で終わるもの�
 
 会話中で平文の認証情報がそのまま復唱されることを防ぎ、保存ファイル経由で安全に扱えるようにします。
 
-### フックの軽量化（v2.0.0 から）
+### フックが起動を指示するスキル
 
-`additionalContext` で Claude に最優先起動を指示する対象が **`credentials-reader`** に絞られたことで、フック起動時のコンテキスト読み込み量が大幅に減少しました。
+`additionalContext` で Claude に最優先起動を指示する対象は、参照に特化した軽量な **`credentials-reader`** です。
+保存・編集・削除などの書き込みが必要な場合だけ、`credentials-manager`（save / retrieve / list / delete・自動マッチ・運用・セキュリティの全体）に引き継ぎます。
 
-- v1 系: フックが `credentials-manager` 全体（save / retrieve / list / delete + auto-match + operations + security）を起動指示
-- v2 系: フックが `credentials-reader` のみ（軽量・参照特化）を起動指示。書き込みが必要な場合のみ `credentials-manager` に引き継ぐ
-
-参照のみで完結するケース（自動マッチ・一覧・取得）が多くを占めるため、平均的なフック起動時のコンテキスト消費が抑えられます。
+参照のみで完結するケース（自動マッチ・一覧・取得）が多くを占めるため、フック起動時に読み込むコンテキストが抑えられます。
 
 ### フックを変更する場合
 
@@ -398,7 +395,7 @@ plugins/credentials-manager/
             ├── case-26_update_with_confirm.md         # update
             ├── case-27_manage_command.md              # /credentials-manager:manage 経由
             ├── case-28_handoff_from_reader.md         # reader 引き継ぎ受け入れ
-            └── case-29〜52                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM、SessionStart の自己診断）
+            └── case-29〜55                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM、SessionStart の自己診断）
 ```
 
 ## 技術スタック・アーキテクチャ
@@ -421,8 +418,8 @@ plugins/credentials-manager/
 
 ### 設計上の特徴
 
-- **責務分離（v2.0.0 〜）**: 参照系と書き込み系を別スキルに分離。フック経由の起動時に軽量な `credentials-reader` のみが読み込まれ、コンテキスト消費を抑制
-- **対話 UI コマンド（v2.0.0 〜）**: `/credentials-manager:manage` で `/config` 風のメニュー UI を提供
+- **責務分離**: 参照系と書き込み系を別スキルに分離。フック経由の起動時に軽量な `credentials-reader` のみが読み込まれ、コンテキスト消費を抑制
+- **対話 UI コマンド**: `/credentials-manager:manage` で `/config` 風のメニュー UI を提供
 - **グローバルルール非依存**: 各 SKILL.md description に URL/API アクセス時の自動起動条件を記述しているため、利用者環境にグローバルルールが無くても自動的に認証情報問い合わせ先として機能する
 - **install スコープ自動解決**: ワーキングディレクトリに `.git` があればプロジェクト単位、無ければユーザー単位を自動選択
 
