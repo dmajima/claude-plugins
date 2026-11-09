@@ -42,9 +42,11 @@
 ## 分岐の根拠
 
 URL の解釈はツールで異なる。`@` の後ろをホストとする解釈と、`\` を `/` とみなす解釈（WHATWG URL）で送り先が変わると、
-保存済みの値が攻撃者のホストに送られる。authority に `@` や `%`・空白・ASCII 以外の文字を含む URL も同じ扱いにする（auto-match.md 2 章）。
+保存済みの値が攻撃者のホストに送られる。authority に `@` や `%`・空白・ASCII 以外の文字を含む URL と、
+スキームの直後が `//` でない URL（`https:\\host` / `https:host`）も同じ扱いにする（auto-match.md 2 章）。
 
 ## 関連ケース
 
 - `case-14_non_https_confirm.md`（https 以外の URL でも強い一致にしない）
+- `case-17_tls_unverified_or_redirected_confirm.md`（URL は確定しても、TLS の検証の無効化や送信先の上書きで強い一致にしない）
 - `case-01_auto_match_single.md`（対比：解釈が分かれない https の URL で自動適用）

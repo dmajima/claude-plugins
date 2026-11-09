@@ -17,7 +17,7 @@
 
 ### Phase 2: Claude へ通知
 
-- `additionalContext` で「`[credentials-manager] 外部 URL アクセスツール (WebFetch) の呼び出し。credentials-reader を最優先起動して保存済み認証情報を照合してください (ホストが確定する一致1件->自動適用 / 複数件・ホストが確定しない一致->確認 / 0件->保有有無確認)。`」に続けて、認証情報パターンをマスクして扱うこと・書き込み (保存・編集・削除) は `credentials-manager` に引き継ぐことを通知
+- `additionalContext` で「`[credentials-manager] 外部 URL アクセスツール (WebFetch) の呼び出し。credentials-reader を最優先起動して保存済み認証情報を照合してください (https でホストが確定する一致1件->自動適用 / 複数件・ホストが確定しない一致・TLS 検証の無効化等->確認 / 0件->保有有無確認)。`」に続けて、認証情報パターンをマスクして扱うこと・書き込み (保存・編集・削除) は `credentials-manager` に引き継ぐことを通知
 
 ### Phase 3: Claude の動作
 
