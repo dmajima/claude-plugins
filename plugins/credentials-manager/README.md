@@ -341,7 +341,8 @@ plugins/credentials-manager/
 │   ├── scripts/
 │   │   └── hooks/
 │   │       ├── lib/
-│   │       │   └── credential_patterns.sh             # 秘密情報のパターン（PreToolUse / UserPromptSubmit で共通）
+│   │       │   ├── credential_patterns.sh             # 秘密情報のパターン（PreToolUse / UserPromptSubmit で共通）
+│   │       │   └── credential_files.sh                # 認証情報系ファイルの判定とコマンドのトークン分割（PreToolUse）
 │   │       ├── install_rule_template.sh               # SessionStart：テンプレート配置
 │   │       ├── preempt_credentials_check.sh           # PreToolUse：reader 起動指示
 │   │       ├── detect_credentials_in_prompt.sh       # UserPromptSubmit：マスキング + reader 起動指示

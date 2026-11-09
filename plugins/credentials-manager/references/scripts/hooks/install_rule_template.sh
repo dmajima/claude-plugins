@@ -29,7 +29,9 @@ if [[ -z "${BASH_VERSINFO:-}" || "${BASH_VERSINFO[0]}" -lt 4 ]]; then
   modern_bash=0
   add_problem "bash ${BASH_VERSION:-?} では動かない（4 以上が必要）"
 fi
-[[ -f "$hooks_dir/lib/credential_patterns.sh" ]] || add_problem "lib/credential_patterns.sh が無い"
+for lib in credential_patterns.sh credential_files.sh; do
+  [[ -f "$hooks_dir/lib/$lib" ]] || add_problem "lib/$lib が無い"
+done
 diag=""
 if [[ -n "$problems" ]]; then
   diag="[credentials-manager] 認証情報の検出フック（PreToolUse / UserPromptSubmit）が動作しません（${problems}）。ツールの実行は止めませんが、外部通信や認証情報の扱いの念押しは出ません。ユーザーにこの状態を伝え、前提（bash 4 以上と jq）を整えるよう案内してください。"

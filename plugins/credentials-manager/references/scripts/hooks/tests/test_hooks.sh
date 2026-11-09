@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # test_hooks.sh
 #
-# credentials-manager の同梱フック（PreToolUse の preempt_credentials_check.sh と
-# UserPromptSubmit の detect_credentials_in_prompt.sh）と、hooks.json の登録の回帰テスト。
-# 実際のフック入力 JSON を流し、通知の有無・理由文・出力の形式・所要時間を検証する。
+# credentials-manager の同梱フック（PreToolUse の preempt_credentials_check.sh・
+# UserPromptSubmit の detect_credentials_in_prompt.sh・SessionStart の install_rule_template.sh）と、
+# hooks.json の登録の回帰テスト。実際のフック入力 JSON を流し、通知の有無・理由文・出力の形式・所要時間を検証する。
+# 後半の群（単体）は lib/ の関数を直接呼び、パターン・ファイル判定・トークン分割を表駆動で検証する。
 #
 # 実行: bash references/scripts/hooks/tests/test_hooks.sh [検証するスクリプト]
 #   引数を省略するとプラグイン同梱の preempt_credentials_check.sh を検証する
@@ -31,6 +32,10 @@ SHELL_BIN="${BASH:-bash}"   # フックはテストと同じ bash で起動す�
 JUDGE_SCRIPT=""             # 検証するフック（空なら $TARGET）。UserPromptSubmit の群で切り替える
 JUDGE_EVENT=""              # 出力の hookEventName（空なら PreToolUse）
 
+if [[ -z "${BASH_VERSINFO:-}" || "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+  echo "ERROR: bash 4 以上で実行してください（フックとこのテストは bash 4 の機能を使う。現在: ${BASH_VERSION:-?}）"
+  exit 2
+fi
 if ! command -v jq >/dev/null 2>&1; then
   echo "ERROR: jq が見つかりません（フックは jq が無いと何も出力しないため検証できません）"
   exit 2
@@ -43,10 +48,20 @@ fi
 TMP_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
+# 各群で共有する値（群を入れ替えたり一部だけを動かしたりしても未定義にならないよう、ここでまとめて定義する）
+rep() { local s="" i; for ((i = 0; i < $2; i++)); do s+=$1; done; printf '%s' "$s"; }  # $1 を $2 回繰り返す
 pad24="$(printf '%24s' '')"
 fake_sk="sk-${pad24// /x}"
 fake_ghp="ghp_${pad24// /z}"
 fake_bearer="Bearer ${pad24// /y}"
+fake_basic="Basic $(printf '%s' 'demo-user:not-a-real-password' | base64 | tr -d '\r\n')"
+printf -v fake_pem '%sBEGIN RSA PRIVATE %s' '-----' 'KEY-----'
+printf -v blank '%*s' 300000 ''
+matcher=""
+timeout_sec=""
+prompt_timeout_sec=""
+prompt_json() { jq -cn --arg p "$1" '{prompt: $p}' | tr -d '\r'; }
+TEMPLATE="$PLUGIN_ROOT/references/templates/rules/security/credentials-management.md"
 CLI_NAMES=(curl wget http httpie aria2c scp sftp ssh rsync gh az aws gcloud kubectl doctl heroku firebase vercel netlify
   docker podman psql mysql mongosh mongo redis-cli terraform tofu ansible ansible-playbook helm pulumi packer vault op bw)
 CRED_KW=(TOKEN KEY SECRET PASSWORD PASSWD API AUTH CREDENTIAL SESSION BEARER PRIVATE)
@@ -189,7 +204,6 @@ else
   fi
 fi
 # SessionStart / UserPromptSubmit の登録（matcher は持たない）
-prompt_timeout_sec=""
 for pair in SessionStart:install_rule_template.sh UserPromptSubmit:detect_credentials_in_prompt.sh; do
   ev=${pair%%:*}
   sc=${pair#*:}
@@ -381,7 +395,6 @@ done
 
 echo "=== 11. 大きな入力（hooks.json の timeout の 8 割以内で判定する） ==="
 limit_ms=$(( ${timeout_sec:-60} * 800 ))
-printf -v blank '%*s' 300000 ''
 for kind in Write PowerShell; do
   if [[ $kind == Write ]]; then
     json="$({ printf '%s' "$blank"; printf 'github_token=%s' "$fake_ghp"; } | jq -Rsc '{tool_name: "Write", tool_input: {file_path: "/repo/big.txt", content: .}}' | tr -d '\r')"
@@ -417,9 +430,6 @@ tk hit Bash "echo \"Basic $(printf '%s%s' Authentication SchemeHandler)\"" 'Bash
 echo "=== 13. UserPromptSubmit: ユーザ入力の秘密情報（case-17・24） ==="
 JUDGE_SCRIPT=$PROMPT_HOOK
 JUDGE_EVENT=UserPromptSubmit
-prompt_json() { jq -cn --arg p "$1" '{prompt: $p}' | tr -d '\r'; }
-fake_basic="Basic $(printf '%s' 'demo-user:not-a-real-password' | base64 | tr -d '\r\n')"
-printf -v fake_pem '%sBEGIN RSA PRIVATE %s' '-----' 'KEY-----'
 want='認証情報パターン'
 run hit - "$(prompt_json "OpenAI のキーは $fake_sk を使ってください")" 'プロンプト: OpenAI のキーは sk-…（ダミー）を使って'
 want='に Bearer'
@@ -557,7 +567,6 @@ run miss Glob '{"tool_name":"Glob","tool_input":{"pattern":"**/.env.example"}}' 
 run miss Glob '{"tool_name":"Glob","tool_input":{}}' 'Glob: 入力が空'
 
 echo "=== 17. SessionStart: ルールの配置と自己診断（case-14〜16・25・50） ==="
-TEMPLATE="$PLUGIN_ROOT/references/templates/rules/security/credentials-management.md"
 # $1=ラベル $2=CLAUDE_PLUGIN_ROOT $3=配置先のプロジェクト $4=PATH（空なら現在の PATH）→ SESSION_OUT / SESSION_RC
 session_run() {
   local root=$2 project=$3 path_val=${4:-$PATH}
@@ -645,6 +654,144 @@ for doc in "ルールテンプレート 1.3|$TEMPLATE|^### 1\\.3|^認証情報�
     record FAIL "$dname と matcher が食い違う（記載のみ: ${missing_in_matcher[*]:-なし} / matcher のみ: ${missing_in_doc[*]:-なし}）"
   fi
 done
+
+# ---- 単体テスト（共通の lib を読み込み、関数を直接呼ぶ。フックの起動を伴わないため速い）----
+# shellcheck source=/dev/null
+source "$HOOKS/lib/credential_patterns.sh"
+# shellcheck source=/dev/null
+source "$HOOKS/lib/credential_files.sh"
+u_check() {  # $1=期待(hit|miss) $2=実際(hit|miss) $3=表示名 [$4=補足]
+  if [[ $2 == "$1" ]]; then record PASS "$3 → $2${4:+（$4）}"; else record FAIL "$3 （期待: $1 / 実際: $2${4:+ / $4}）"; fi
+}
+u_secret() {  # $1=期待 $2=文字列 $3=表示名
+  local got=miss
+  cred_find_secret "$2" && got=hit
+  u_check "$1" "$got" "$3" "$CRED_LABEL"
+}
+u_file() {  # $1=期待 $2=パス $3=表示名
+  local got=miss
+  credential_file_reason "$2"
+  [[ -n $CF_REASON ]] && got=hit
+  u_check "$1" "$got" "$3"
+}
+u_scan() {  # $1=期待 $2=コマンド $3=表示名
+  local got=miss
+  cred_scan_command_files "$2" && got=hit
+  u_check "$1" "$got" "$3"
+}
+
+echo "=== 19. 単体: 秘密情報のパターン（全形式・最小長・左側の境界） ==="
+a15=$(rep a 15); a16=$(rep a 16); b19=$(rep b 19); b20=$(rep b 20)
+u_secret hit "sk-$a16" 'sk- + 16 文字'
+u_secret miss "sk-$a15" 'sk- + 15 文字'
+u_secret hit "sk-proj-$b20" 'sk-proj- 形式'
+for p in ghp_ gho_ ghu_ ghs_ ghr_ glpat-; do
+  u_secret hit "$p$b20" "$p + 20 文字"
+  u_secret miss "$p$b19" "$p + 19 文字"
+done
+for p in xoxb- xoxp- xoxa- xoxr- xoxs-; do
+  u_secret hit "$p$(rep c 10)" "$p + 10 文字"
+  u_secret miss "$p$(rep c 9)" "$p + 9 文字"
+done
+u_secret hit "AKIA$(rep A 16)" 'AKIA + 英大文字・数字 16 文字'
+u_secret miss "AKIA$(rep A 15)" 'AKIA + 15 文字'
+u_secret hit "AIza$(rep d 35)" 'AIza + 35 文字'
+u_secret miss "AIza$(rep d 34)" 'AIza + 34 文字'
+u_secret hit "eyJ$(rep e 8).$(rep f 4).$(rep g 4)" 'JWT（eyJ の後に 8 文字）'
+u_secret miss "eyJ$(rep e 7).$(rep f 4).$(rep g 4)" 'JWT（eyJ の後に 7 文字）'
+u_secret hit "Bearer $a16" 'Bearer + 16 文字'
+u_secret hit "bearer $a16" 'bearer（小文字）+ 16 文字'
+u_secret miss "Bearer $a15" 'Bearer + 15 文字'
+u_secret hit "Basic $a16" 'Basic + 16 文字'
+u_secret miss "Basic $a15" 'Basic + 15 文字'
+for kind in 'RSA ' 'DSA ' 'EC ' 'OPENSSH ' 'ENCRYPTED ' ''; do
+  printf -v pem '%sBEGIN %sPRIVATE %s' '-----' "$kind" 'KEY-----'
+  u_secret hit "$pem" "PEM の先頭行（${kind:-種別なし}）"
+done
+printf -v pem '%sBEGIN PUBLIC %s' '-----' 'KEY-----'
+u_secret miss "$pem" 'PEM の公開鍵の先頭行'
+for pre in a Z 0 _ -; do
+  u_secret miss "x${pre}sk-$a16" "sk- の直前が「$pre」（語の途中）"
+done
+for pre in ' ' '=' '"' "'" ':' '(' '/' $'\n' $'\t'; do
+  u_secret hit "x${pre}sk-$a16" "sk- の直前が「$(printf '%q' "$pre")」"
+done
+u_secret hit "sk-$a16" 'sk- が文字列の先頭'
+
+echo "=== 20. 単体: 認証情報系ファイルの判定（ルールテンプレートの表から生成） ==="
+mapfile -t file_rows < <(awk '/^認証情報系ファイル（/{f=1; next} f && /^\|/ {seen=1; print; next} f && seen {exit}' "$TEMPLATE" | tail -n +3)
+if [[ ${#file_rows[@]} -lt 5 ]]; then
+  record FAIL "ルールテンプレートの認証情報系ファイルの表を読み取れない（${#file_rows[@]} 行）"
+fi
+for row in "${file_rows[@]}"; do
+  IFS='|' read -r _ kind targets _ <<< "$row"
+  kind=${kind# }
+  kind=${kind% }
+  mapfile -t names < <(grep -oE '`[^`]+`' <<< "$targets" | tr -d '`')
+  for n in "${names[@]}"; do
+    case "$kind" in
+      環境変数定義)
+        case "$n" in
+          .env) u_file hit "/repo/.env" "テンプレート（$kind）: .env" ;;
+          '.env.<name>') u_file hit "/repo/.env.local" "テンプレート（$kind）: .env.local" ;;
+          .env.*) u_file miss "/repo/$n" "テンプレート（$kind の除外）: $n" ;;
+          .*) u_file miss "/repo/.env$n" "テンプレート（$kind の除外）: .env$n" ;;
+        esac
+        ;;
+      拡張子)
+        u_file hit "/repo/server${n#\*}" "テンプレート（$kind）: server${n#\*}"
+        u_file miss "${n#\*}" "テンプレート（$kind・語幹なし）: ${n#\*}"
+        ;;
+      ディレクトリ全体)
+        u_file hit "$n" "テンプレート（$kind）: $n"
+        u_file hit "$n/config" "テンプレート（$kind）: $n/config"
+        ;;
+      *)
+        if [[ $n == '~/'* ]]; then
+          u_file hit "$n" "テンプレート（$kind）: $n"
+        else
+          u_file hit "/repo/$n" "テンプレート（$kind）: $n"
+        fi
+        ;;
+    esac
+  done
+done
+u_file hit '/repo/CREDENTIALS.JSON' '大文字のファイル名'
+u_file hit 'C:\Users\U\.SSH\ID_RSA' 'Windows の区切り・大文字'
+u_file hit '.env*' 'ワイルドカード: .env*'
+u_file hit 'id_rsa*' 'ワイルドカード: id_rsa*'
+u_file hit '**/*.pem' 'ワイルドカード: **/*.pem'
+u_file miss '*credentials-manager*' 'ワイルドカード: *credentials-manager*（語の一部）'
+u_file miss 'plugins/credentials-manager/README.md' '語の一部: plugins/credentials-manager/README.md'
+u_file miss '/repo/.env.spec' '除外リスト: .env.spec'
+u_file hit "$(rep a 4091)/.env" 'パスの長さ 4096 文字（判定する）'
+u_file miss "$(rep a 4092)/.env" 'パスの長さ 4097 文字（判定しない）'
+
+echo "=== 21. 単体: コマンドのトークン分割（区切り文字ごと・上限の境界） ==="
+u_scan hit 'cat .env;ls' '区切り ;'
+u_scan hit 'cat .env|grep x' '区切り |'
+u_scan hit 'cat .env&&ls' '区切り &'
+u_scan hit 'echo (.env' '区切り ('
+u_scan hit 'echo .env)' '区切り )'
+u_scan hit 'grep x<.env' '区切り <'
+u_scan hit 'echo x>.env' '区切り >'
+u_scan hit 'cat ".env"' '区切り "'
+u_scan hit "cat '.env'" "区切り '"
+u_scan hit 'docker run --env-file=.env x' '区切り ='
+u_scan hit 'tar czf a.tgz a.txt,.env' '区切り ,'
+u_scan hit 'echo `cat .env`' '区切り `'
+u_scan hit 'echo {.env' '区切り {'
+u_scan hit 'echo .env}' '区切り }'
+u_scan hit 'echo [.env' '区切り ['
+u_scan hit 'echo .env]' '区切り ]'
+u_scan hit $'cat\t.env' '区切り タブ'
+u_scan hit $'cat .env\r' '区切り CR'
+u_scan hit $'ls\ncat .env' '区切り 改行'
+u_scan miss 'cat .env.example' '除外リスト'
+u_scan miss 'ls plugins/credentials-manager' '手掛かりの語を含むが該当しない'
+u_scan miss 'echo hello' '手掛かりの語を含まない'
+u_scan miss "cat $(rep 'a.env1 ' 256)" '手掛かりの語を含むトークン 256 個（上限ちょうど。通知しない）'
+u_scan hit "cat $(rep 'a.env1 ' 257)" '手掛かりの語を含むトークン 257 個（上限を超える。控えめに通知）'
 
 echo
 printf '結果: PASS=%s FAIL=%s（既知の制約 %s 件のうち挙動が変わったもの %s 件）\n' "$pass" "$fail" "$known" "$changed"

@@ -24,103 +24,16 @@ if [[ -z "${BASH_VERSINFO:-}" || "${BASH_VERSINFO[0]}" -lt 4 ]]; then
   exit 0
 fi
 
-# 秘密情報のパターン（UserPromptSubmit のフックと共有する）
+# 秘密情報のパターン（UserPromptSubmit のフックと共有する）と、認証情報系ファイルの判定
 hooks_dir="${BASH_SOURCE[0]%/*}"
 [[ $hooks_dir == "${BASH_SOURCE[0]}" ]] && hooks_dir=.
-# shellcheck source=lib/credential_patterns.sh
-if ! source "$hooks_dir/lib/credential_patterns.sh" 2>/dev/null; then
-  echo "[credentials-manager] lib/credential_patterns.sh を読み込めないため、検査を省略します" >&2
-  exit 0
-fi
-
-# 認証情報系ファイルの判定。$1（パス、またはワイルドカードを含むパターン）が該当すれば、
-# 通知の理由文を CF_REASON に入れる（該当しなければ空）。
-# ファイル系ツールのパス・シェルのコマンド中のトークン・Grep / Glob のパターンで共通に使う。
-# サブシェルを起動しないよう、結果は変数で返す（シェルのトークンごとに呼ぶため）
-credential_file_reason() {
-  CF_REASON=""
-  local path="$1"
-  [[ -z "$path" ]] && return 0
-  # 実在するパスより十分長い文字列は判定しない（下の置換は、区切り文字の多い長い文字列で入力長の二乗の時間がかかる）
-  (( ${#path} > 4096 )) && return 0
-
-  local lower="${path//\\/\/}"
-  lower="${lower,,}"
-  local basename="${lower##*/}"
-  # ワイルドカード（.env* / id_rsa* 等）は除いた形で名前を判定する
-  local plain="${basename//\*/}"
-  plain="${plain//\?/}"
-
-  # .env / .env.* の判定 (example/sample/template/dist/test/spec は除外)
-  if [[ "$plain" == ".env" ]]; then
-    CF_REASON="環境変数定義ファイル ($basename) を操作"
-    return 0
+for lib in credential_patterns.sh credential_files.sh; do
+  # shellcheck source=/dev/null
+  if ! source "$hooks_dir/lib/$lib" 2>/dev/null; then
+    echo "[credentials-manager] lib/$lib を読み込めないため、検査を省略します" >&2
+    exit 0
   fi
-  if [[ "$plain" == .env.* ]]; then
-    case "$plain" in
-      .env.example|.env.sample|.env.template|.env.dist|.env.test|.env.spec) ;;
-      *)
-        CF_REASON="環境変数定義ファイル ($basename) を操作"
-        return 0
-        ;;
-    esac
-  fi
-
-  # 完全一致 (ファイル名)。シェルのトークンごとに呼ぶため、ループではなく case で判定する
-  case "$plain" in
-    credentials.json|credentials.yml|credentials.yaml|credential.json|\
-    secrets.json|secrets.yml|secrets.yaml|secret.json|\
-    .npmrc|.netrc|.pgpass|.git-credentials|.dockercfg|\
-    id_rsa|id_dsa|id_ecdsa|id_ed25519|id_xmss|\
-    serviceaccountkey.json|service-account.json|application_default_credentials.json|gcloud-credentials.json|\
-    kubeconfig)
-      CF_REASON="認証情報を含む可能性が高いファイル ($basename) を操作"
-      return 0
-      ;;
-  esac
-
-  # 拡張子 (秘密鍵 / 証明書)。拡張子の前に 1 文字以上あるものに限る
-  # （シェルのコマンドでは、jq のフィルタ '.key' のような語幹の無い語が頻出するため）
-  case "$basename" in
-    ?*.pem|?*.key|?*.p12|?*.pfx|?*.jks|?*.keystore|?*.crt|?*.cer|?*.der|?*.asc|?*.gpg)
-      CF_REASON="秘密鍵 / 証明書らしい拡張子のファイル ($basename) を操作"
-      return 0
-      ;;
-  esac
-
-  # 特殊ディレクトリ配下（ディレクトリそのものを含む。Grep の path やシェルの ls ~/.ssh 等）
-  [[ "$lower" =~ (^|/)\.(aws|docker|kube|ssh|gnupg)(/|$) ]] || return 0
-  if [[ "$lower" =~ (^|/)\.aws(/(credentials|config)(\.|$)|/?$) ]]; then
-    CF_REASON="AWS 認証情報ファイル (~/.aws/...) を操作"
-    return 0
-  fi
-  if [[ "$lower" =~ (^|/)\.docker(/config\.json($|\.)|/?$) ]]; then
-    CF_REASON="Docker 認証ファイル (~/.docker/config.json) を操作"
-    return 0
-  fi
-  if [[ "$lower" =~ (^|/)\.kube(/config($|\.)|/?$) ]]; then
-    CF_REASON="Kubernetes 認証ファイル (~/.kube/config) を操作"
-    return 0
-  fi
-  if [[ "$lower" =~ (^|/)\.ssh(/|$) ]]; then
-    CF_REASON="SSH 鍵格納ディレクトリ (~/.ssh/) のファイルを操作"
-    return 0
-  fi
-  if [[ "$lower" =~ (^|/)\.gnupg(/|$) ]]; then
-    CF_REASON="GPG 設定ディレクトリ (~/.gnupg/) のファイルを操作"
-    return 0
-  fi
-
-  return 0
-}
-
-# シェルのコマンド中で認証情報系ファイルを指すトークンを探す手掛かり（大文字小文字を区別しない）。
-# これを含まないコマンドはトークンに分けずに済ませる
-CRED_FILE_HINT='(\.env|credential|secret|npmrc|netrc|pgpass|dockercfg|id_(rsa|dsa|ecdsa|ed25519|xmss)|serviceaccountkey|service-account|kubeconfig|\.(pem|key|p12|pfx|jks|keystore|crt|cer|der|asc|gpg)|\.aws|\.docker|\.kube|\.ssh|\.gnupg)'
-# トークンの区切り（空白・改行・シェルの区切り・括弧・引用符・= ・カンマ）。IFS として使う
-SHELL_SEPS=$' \t\n\r;|&()<>"\'=,`{}[]'
-# 判定するトークンの上限（手掛かりの語を含むトークンが大量にあるコマンドで、timeout を超えないようにする）
-MAX_FILE_TOKENS=256
+done
 
 stdin="$(cat)"
 # 空白以外の文字が無ければ終了する。"${stdin//[[:space:]]/}" で空白を除去する判定は、空白の多い大きな入力
@@ -203,29 +116,11 @@ case "$tool_name" in
         set_reason "$CRED_REASON"
       fi
       # 認証情報系ファイルの操作（cat .env / Get-Content ~/.aws/credentials / cp .env.example .env 等）。
-      # ファイル系ツールと同じ判定を、コマンドを区切り文字で分けたトークンごとに行う。
-      # 分割は IFS による読み取りで行う（置換で区切り文字を空白に変えると、区切り文字の多い大きな入力で二乗の時間がかかる）。
-      # 判定するトークンは MAX_FILE_TOKENS 個までとし、超えたら判定を打ち切って控えめに通知する（無言で欠落させない）
-      if [[ -z "$reason" ]] && match_i "$cmd" "$CRED_FILE_HINT"; then
-        IFS="$SHELL_SEPS" read -r -d '' -a tokens <<< "$cmd"
-        candidates=0
-        shopt -s nocasematch
-        for tok in "${tokens[@]}"; do
-          [[ -n "$tok" && "$tok" =~ $CRED_FILE_HINT ]] || continue
-          candidates=$((candidates + 1))
-          if (( candidates > MAX_FILE_TOKENS )); then
-            set_reason "$tool_name で認証情報系ファイルらしい名前を多数含むコマンドを実行"
-            break
-          fi
-          credential_file_reason "$tok"
-          if [[ -n "$CF_REASON" ]]; then
-            CRED_LABEL=$CF_REASON
-            cred_reason "$tool_name で"
-            set_reason "$CRED_REASON"
-            break
-          fi
-        done
-        shopt -u nocasematch
+      # ファイル系ツールと同じ判定を、コマンドのトークンごとに行う（lib/credential_files.sh）
+      if [[ -z "$reason" ]] && cred_scan_command_files "$cmd"; then
+        CRED_LABEL=$CF_REASON
+        cred_reason "$tool_name で"
+        set_reason "$CRED_REASON"
       fi
     fi
     ;;
