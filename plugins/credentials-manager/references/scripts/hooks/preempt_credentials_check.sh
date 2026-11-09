@@ -217,8 +217,12 @@ case "$tool_name" in
     fi
     ;;
   Read|Write|Edit|MultiEdit|NotebookEdit)
-    # NotebookEdit はパスを notebook_path に持つ
-    file_path="$(printf '%s' "$stdin" | jq -er '.tool_input.file_path // .tool_input.notebook_path // empty' 2>/dev/null)"
+    # パス（NotebookEdit は notebook_path）と、照合するコンテンツを 1 回の jq で取り出す（NUL 区切り）。
+    # コンテンツは tool_input の文字列（内容・置換の前後・パス）だけにする。入力 JSON 全体を照合すると、
+    # cwd や transcript_path 等のメタデータに含まれる語にも一致し、JSON のエスケープ（\n 等）でパターンの境界も崩れるため
+    file_path=""
+    content=""
+    { IFS= read -r -d '' file_path; IFS= read -r -d '' content; } < <(printf '%s' "$stdin" | jq -j '((.tool_input.file_path // .tool_input.notebook_path // "") | tostring), "\u0000", ([.tool_input | .. | strings] | join("\n")), "\u0000"' 2>/dev/null)
     if [[ -n "$file_path" ]]; then
       credential_file_reason "$file_path"
       if [[ -n "$CF_REASON" ]]; then
@@ -226,14 +230,25 @@ case "$tool_name" in
       fi
     fi
     if [[ "$tool_name" != "Read" && -z "$reason" ]]; then
-      # 照合するのは tool_input の文字列（内容・置換の前後・パス）だけにする。入力 JSON 全体を照合すると、
-      # cwd や transcript_path 等のメタデータに含まれる語にも一致し、JSON のエスケープ（\n 等）でパターンの境界も崩れるため
-      content="$(printf '%s' "$stdin" | jq -r '[.tool_input | .. | strings] | join("\n")' 2>/dev/null)"
       if cred_find_secret "$content"; then
         cred_reason "$tool_name のコンテンツに"
         set_reason "$CRED_REASON"
       fi
     fi
+    ;;
+  Grep|Glob)
+    # Grep は該当ファイルの内容を出力する。Glob はファイル名の一覧だけだが、認証情報系ファイルを探す操作として扱う。
+    # 判定するのはパス（path）とファイル名のパターン（Grep の glob、Glob の pattern）。Grep の pattern は検索する正規表現なので対象外
+    while IFS= read -r target; do
+      [[ -z "$target" ]] && continue
+      credential_file_reason "$target"
+      if [[ -n "$CF_REASON" ]]; then
+        CRED_LABEL=$CF_REASON
+        cred_reason "$tool_name で"
+        set_reason "$CRED_REASON"
+        break
+      fi
+    done < <(printf '%s' "$stdin" | jq -r 'if .tool_name == "Glob" then [.tool_input.path, .tool_input.pattern] else [.tool_input.path, .tool_input.glob] end | .[] | select(type == "string" and . != "")' 2>/dev/null | tr -d '\r')
     ;;
 esac
 

@@ -160,6 +160,7 @@ Claude（要約）:
 | `Bash` / `PowerShell` の `command` に対象のコマンド・設定・パターンを含む | 下記 2 / 3 / 5 のいずれか |
 | `Bash` / `PowerShell` の `command` が認証情報系ファイルを指す（`cat .env` / `Get-Content ~/.aws/credentials` 等） | 下記 4 のリストに該当 |
 | `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` の `file_path`（`NotebookEdit` は `notebook_path`）が認証情報系 | 下記 4 のリストに該当 |
+| `Grep` の `path` / `glob`、`Glob` の `path` / `pattern` が認証情報系ファイルを指す（Grep の `pattern` は検索する正規表現のため対象外） | 下記 4 のリストに該当 |
 | `Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 下記 5 のいずれか |
 
 #### 2. シェルコマンドの外部通信 / 認証付きクライアント / IaC / シークレット管理 CLI
@@ -246,6 +247,7 @@ Basic <base64>  -----BEGIN ... PRIVATE KEY-----
 | 検出漏れ | `Bash` でのパス付きの起動（`/usr/bin/curl`）。`-Name` を `-Path Env:` より前に書く `New-Item`。レジストリ（`HKCU:\Environment`）経由の環境変数の設定。`git` 経由の通信。値の表示（`Write-Output $env:FOO_TOKEN`）。文字列の連結や `-EncodedCommand` 等で難読化したコマンド |
 
 フックはツールの実行を止めません。通知がモデルに届くのは、通知の対象となったツール呼び出しの後です。
+判定には、対象のツールの呼び出しごとに 1 回あたり約 0.2〜0.3 秒かかります（Windows の Git Bash での計測）。
 
 ### UserPromptSubmit — ユーザー入力に含まれるシークレットの保存提案
 
@@ -369,7 +371,7 @@ plugins/credentials-manager/
             ├── case-26_update_with_confirm.md         # update
             ├── case-27_manage_command.md              # /credentials-manager:manage 経由
             ├── case-28_handoff_from_reader.md         # reader 引き継ぎ受け入れ
-            └── case-29〜47                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
+            └── case-29〜49                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
 ```
 
 ## 技術スタック・アーキテクチャ

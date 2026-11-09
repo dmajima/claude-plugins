@@ -26,7 +26,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "WebFetch|WebSearch|Bash|PowerShell|Read|Write|Edit|MultiEdit|NotebookEdit|mcp__.*",
+        "matcher": "WebFetch|WebSearch|Bash|PowerShell|Read|Write|Edit|MultiEdit|NotebookEdit|Grep|Glob|mcp__.*",
         "hooks": [
           {
             "type": "command",

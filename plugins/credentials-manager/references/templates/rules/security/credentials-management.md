@@ -67,6 +67,7 @@ SessionStart フックによって自動配置されるテンプレートであ�
 | `Bash` / `PowerShell` の `command`、`Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 1.2 のパターン（UserPromptSubmit と共通） |
 | `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` が下記ファイルを対象とする | 認証情報系ファイル（次表） |
 | `Bash` / `PowerShell` の `command` が下記ファイルを指す（`cat .env` / `Get-Content ~/.aws/credentials` 等） | 認証情報系ファイル（次表） |
+| `Grep` の `path` / `glob`、`Glob` の `path` / `pattern` が下記ファイルを指す | 認証情報系ファイル（次表） |
 
 認証情報系ファイル（`PreToolUse` がファイル系ツールのパスと、シェルのコマンド中のパスで検出するもの）:
 

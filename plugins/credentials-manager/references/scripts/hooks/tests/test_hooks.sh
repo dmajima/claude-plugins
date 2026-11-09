@@ -151,7 +151,7 @@ if [[ -z $entry ]]; then
   record FAIL "PreToolUse に preempt_credentials_check.sh の登録が無い"
 else
   matcher="$(printf '%s' "$entry" | jq -r '.matcher // empty' | tr -d '\r')"
-  for tool in WebFetch WebSearch Bash PowerShell Read Write Edit MultiEdit NotebookEdit mcp__github__get_me; do
+  for tool in WebFetch WebSearch Bash PowerShell Read Write Edit MultiEdit NotebookEdit Grep Glob mcp__github__get_me; do
     if [[ $tool =~ ^($matcher)$ ]]; then
       record PASS "matcher が $tool に一致する"
     else
@@ -500,6 +500,23 @@ t miss Bash 'ls plugins/credentials-manager/skills'
 t miss Bash 'grep -rn secret-scan docs/'
 t miss PowerShell 'Get-Content README.md'
 t miss Bash 'npm run build'
+
+echo "=== 16. Grep / Glob の検索対象（case-48・49） ==="
+want='Grep で環境変数定義ファイル'
+run hit Grep '{"tool_name":"Grep","tool_input":{"pattern":"API_KEY","path":"/repo/.env"}}' 'Grep: path が /repo/.env'
+run hit Grep '{"tool_name":"Grep","tool_input":{"pattern":"token","glob":"**/.env*"}}' 'Grep: glob が **/.env*'
+want='Grep で SSH 鍵格納ディレクトリ'
+run hit Grep '{"tool_name":"Grep","tool_input":{"pattern":"Host","path":"C:\\Users\\u\\.ssh"}}' 'Grep: path が C:\Users\u\.ssh（ディレクトリ）'
+want='Glob で秘密鍵 / 証明書らしい拡張子のファイル'
+run hit Glob '{"tool_name":"Glob","tool_input":{"pattern":"**/*.pem"}}' 'Glob: pattern が **/*.pem'
+want='Glob で認証情報を含む可能性が高いファイル'
+run hit Glob '{"tool_name":"Glob","tool_input":{"pattern":"**/credentials*.json","path":"/repo"}}' 'Glob: pattern が **/credentials*.json'
+want=''
+run miss Grep '{"tool_name":"Grep","tool_input":{"pattern":"sk-[A-Za-z0-9]+","path":"/repo/src"}}' 'Grep: pattern（検索する正規表現）は判定しない'
+run miss Grep '{"tool_name":"Grep","tool_input":{"pattern":"TODO","glob":"*.md","path":"/repo"}}' 'Grep: *.md を検索'
+run miss Glob '{"tool_name":"Glob","tool_input":{"pattern":"plugins/credentials-manager/**/*.md"}}' 'Glob: plugins/credentials-manager/**/*.md（語の一部の一致では判定しない）'
+run miss Glob '{"tool_name":"Glob","tool_input":{"pattern":"**/.env.example"}}' 'Glob: **/.env.example（除外リスト）'
+run miss Glob '{"tool_name":"Glob","tool_input":{}}' 'Glob: 入力が空'
 
 echo
 printf '結果: PASS=%s FAIL=%s（既知の制約 %s 件のうち挙動が変わったもの %s 件）\n' "$pass" "$fail" "$known" "$changed"
