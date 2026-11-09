@@ -67,7 +67,7 @@ Claude（要約）:
 |-----|------------|
 | 保存先のスコープ | リポジトリ内の場合は project-scoped、外なら user-scoped を自動選択 |
 | `auth_method` の既定 | `header:Authorization:Bearer`。サービス固有の方式が必要なら `header:X-API-Key:` 等を保存時に指定 |
-| URL ワイルドカード | `urls[]` で末尾 `*` および中間 `*` を利用可能（`../credentials-reader/references/auto-match.md` 参照） |
+| URL ワイルドカード | `urls[]` で末尾 `*` および中間 `*` を利用可能。ホスト部の `*` は 1 つのラベルにだけ一致し、その一致では自動適用せず確認を求める。確認なしで自動適用させたいホストは `domains[]` に入れる（`../credentials-reader/references/auto-match.md` 参照） |
 
 ## ファイル構成
 
@@ -89,7 +89,8 @@ skills/credentials-manager/
     ├── case-14〜25                            # 同梱フック動作の評価（SessionStart / PreToolUse / UserPromptSubmit）
     ├── case-26_update_with_confirm.md       # update
     ├── case-27_manage_command.md            # /credentials-manager:manage コマンド経由
-    └── case-28_handoff_from_reader.md       # reader 引き継ぎ受け入れ
+    ├── case-28_handoff_from_reader.md       # reader 引き継ぎ受け入れ
+    └── case-29〜55                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM、SessionStart の自己診断）
 ```
 
 ## 関連ドキュメント

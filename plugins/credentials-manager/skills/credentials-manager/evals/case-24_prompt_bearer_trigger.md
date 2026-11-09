@@ -12,8 +12,8 @@
 
 ### Phase 1: パターン検出
 
-- `detect_credentials_in_prompt.sh` が `SECRET_PATTERN`（sk- / ghp_ / 等）にマッチしない
-- `BEARER_PATTERN`（`[Bb]earer\s+<16+ 文字>`）にマッチ
+- `detect_credentials_in_prompt.sh` が `CRED_SECRET_PATTERN`（sk- / ghp_ / 等）にマッチしない
+- `CRED_BEARER_PATTERN`（`[Bb]earer\s+<16+ 文字>`）にマッチ
 - `set_reason "ユーザープロンプトに Bearer トークンを検出"`
 
 ### Phase 2: Claude へ通知
@@ -33,9 +33,9 @@
 
 ## 分岐の根拠
 
-`SECRET_PATTERN` ではマッチしない（Bearer トークンの値そのものは API キー固有プレフィクスを持たないことが多い）が、`Bearer` という文脈で識別する分岐。
+`CRED_SECRET_PATTERN` ではマッチしない（Bearer トークンの値そのものは API キー固有プレフィクスを持たないことが多い）が、`Bearer` という文脈で識別する分岐。
 
 ## 関連ケース
 
-- `case-17_prompt_secret_pattern_trigger.md`（SECRET_PATTERN 分岐）
-- `case-28_prompt_pem_key_trigger.md`（PEM 秘密鍵分岐、任意で追加）
+- `case-17_prompt_secret_pattern_trigger.md`（CRED_SECRET_PATTERN 分岐）
+- `case-43_prompt_pem_private_key_trigger.md`（PEM 秘密鍵の分岐）

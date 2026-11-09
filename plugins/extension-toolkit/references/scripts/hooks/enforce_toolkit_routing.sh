@@ -13,7 +13,9 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 stdin="$(cat)"
-[[ -z "${stdin//[[:space:]]/}" ]] && exit 0
+# 空白以外の文字が無ければ終了する。${stdin//[[:space:]]/} で空白を除去する判定は、空白の多い大きな入力
+# （インデント付きの Write 等）で入力長の二乗の時間がかかるため使わない
+[[ ! $stdin =~ [^[:space:]] ]] && exit 0
 
 file_path="$(printf '%s' "$stdin" | jq -er '.tool_input.file_path // empty' 2>/dev/null)"
 [[ -z "$file_path" ]] && exit 0

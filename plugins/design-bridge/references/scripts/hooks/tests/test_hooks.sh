@@ -338,6 +338,18 @@ else
   printf '  [SKIP] jq が無い環境のため縮退テストを省略\n'
 fi
 
+echo "=== 21. 空白の多い大きな入力でも timeout の範囲で記録する ==="
+# 空判定に ${stdin//[[:space:]]/} を使うと、入力長の二乗の時間がかかり timeout（10 秒）を超えて記録が抜ける
+setup_proj
+enable_bridge
+big="$(printf '%*s' 300000 '')"
+start=$SECONDS
+printf '{"tool_input":{"file_path":"%s","content":"%s"},"cwd":"%s"}' "$PROJ/mocks/S001_login.html" "$big" "$PROJ" \
+  | bash "$HOOKS/mark_design_dirty.sh" >/dev/null 2>&1
+elapsed=$((SECONDS - start))
+check "300 KB の空白を含む入力でも記録する" "1" "$(pending_lines)"
+check "300 KB の空白を含む入力を 8 秒未満で処理する" "yes" "$([[ $elapsed -lt 8 ]] && echo yes || echo "no（${elapsed} 秒）")"
+
 echo
 printf '結果: PASS=%s FAIL=%s\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]

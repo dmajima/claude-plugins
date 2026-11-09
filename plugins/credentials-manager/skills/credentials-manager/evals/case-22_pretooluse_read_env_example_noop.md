@@ -16,7 +16,7 @@
 
 ### Phase 2: ファイルパス判定（除外）
 
-- `detect_credential_file` が basename `.env.example` を検出
+- `credential_file_reason`（`lib/credential_files.sh`）が basename `.env.example` を判定
 - `.env.<name>` 分岐に入るが、case 文で `.env.example` は除外リストに含まれる
   - 除外: `.env.example` / `.env.sample` / `.env.template` / `.env.dist` / `.env.test` / `.env.spec`
 - `REASON` が空のまま `exit 0`

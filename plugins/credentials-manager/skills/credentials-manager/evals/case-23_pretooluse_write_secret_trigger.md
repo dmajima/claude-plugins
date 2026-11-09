@@ -17,14 +17,14 @@
 
 ### Phase 2: ファイルパス判定
 
-- `detect_credential_file` で basename `notes.txt` は認証情報系ファイル該当なし
+- `credential_file_reason`（`lib/credential_files.sh`）で basename `notes.txt` は認証情報系ファイル該当なし
 - `REASON` 未設定のまま次の判定へ
 
 ### Phase 3: コンテンツ判定
 
-- `tool_name != Read` のため、INPUT_FLAT 全体を `SECRET_PATTERN` で grep
-- `ghp_<20+ 文字>` にマッチ
-- `set_reason "Write のコンテンツに認証情報パターンを検出"` に到達
+- `tool_name != Read` のため、`tool_input` の文字列（内容・置換の前後・パス）を改行で連結して、共通のパターン（`lib/credential_patterns.sh`）で照合する。`cwd` 等のメタデータは照合しない
+- `ghp_<20+ 文字>` にマッチ（直前が `=` のため、語の途中ではない）
+- `REASON` = `Write のコンテンツに認証情報パターンを検出`
 
 ### Phase 4: Claude へ通知
 

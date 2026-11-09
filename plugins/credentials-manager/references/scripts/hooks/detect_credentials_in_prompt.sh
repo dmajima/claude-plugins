@@ -11,42 +11,49 @@
 
 set +e
 
+# 前提を欠くときは、保護が外れたことを stderr に 1 行出して終了する（SessionStart のフックも同じ前提を自己診断して知らせる）
 if ! command -v jq >/dev/null 2>&1; then
+  echo "[credentials-manager] jq が無いため、検査を省略します" >&2
+  exit 0
+fi
+if [[ -z "${BASH_VERSINFO:-}" || "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+  echo "[credentials-manager] bash 4 以上が必要なため、検査を省略します（${BASH_VERSION:-?}）" >&2
+  exit 0
+fi
+
+# 秘密情報のパターン（PreToolUse のフックと共有する）
+hooks_dir="${BASH_SOURCE[0]%/*}"
+[[ $hooks_dir == "${BASH_SOURCE[0]}" ]] && hooks_dir=.
+# shellcheck source=lib/credential_patterns.sh
+if ! source "$hooks_dir/lib/credential_patterns.sh" 2>/dev/null; then
+  echo "[credentials-manager] lib/credential_patterns.sh を読み込めないため、検査を省略します" >&2
   exit 0
 fi
 
 stdin="$(cat)"
-if [[ -z "${stdin//[[:space:]]/}" ]]; then
+# 空白以外の文字が無ければ終了する。"${stdin//[[:space:]]/}" で空白を除去する判定は、空白の多い大きな入力
+# （貼り付けたログ等）で入力長の二乗の時間がかかり、hooks.json の timeout を超えて検査が無言で欠落するため使わない
+if [[ ! $stdin =~ [^[:space:]] ]]; then
   exit 0
 fi
 
-# JSON 解析（無効なら exit 0）
-prompt="$(printf '%s' "$stdin" | jq -er '.prompt // empty' 2>/dev/null)"
-if [[ -z "$prompt" ]]; then
-  exit 0
-fi
+# 入力が CRED_INPUT_MAX（4 MB）を超える場合は、照合に timeout（10 秒）近くかかるため、照合せずに控えめに通知する
+if (( ${#stdin} > CRED_INPUT_MAX )); then
+  reason="ユーザープロンプトが 4 MB を超え、全体を照合できない"
+else
+  # JSON 解析（無効なら exit 0）
+  prompt="$(printf '%s' "$stdin" | jq -er '.prompt // empty' 2>/dev/null)"
+  if [[ -z "$prompt" ]]; then
+    exit 0
+  fi
 
-# 検出パターン
-secret_pattern='(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,}|ghu_[A-Za-z0-9]{20,}|ghs_[A-Za-z0-9]{20,}|ghr_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|glpat-[A-Za-z0-9_-]{20,}|eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)'
-bearer_pattern='[Bb]earer[[:space:]]+[A-Za-z0-9._~+/=-]{16,}'
-basic_pattern='[Bb]asic[[:space:]]+[A-Za-z0-9+/=]{16,}'
-pem_pattern='-----BEGIN[[:space:]]+(RSA[[:space:]]+|DSA[[:space:]]+|EC[[:space:]]+|OPENSSH[[:space:]]+|ENCRYPTED[[:space:]]+|PGP[[:space:]]+)?PRIVATE[[:space:]]+KEY-----'
-
-reason=""
-# secret_pattern は case-sensitive
-if [[ "$prompt" =~ $secret_pattern ]]; then
-  reason="ユーザープロンプトに認証情報パターンを検出"
-# 以降は case-insensitive
-elif printf '%s' "$prompt" | grep -qE "$bearer_pattern" 2>/dev/null; then
-  reason="ユーザープロンプトに Bearer トークンを検出"
-elif printf '%s' "$prompt" | grep -qE "$basic_pattern" 2>/dev/null; then
-  reason="ユーザープロンプトに Basic 認証ヘッダらしい文字列を検出"
-elif printf '%s' "$prompt" | grep -qE "$pem_pattern" 2>/dev/null; then
-  reason="ユーザープロンプトに PEM 形式の秘密鍵を検出"
-fi
-
-if [[ -z "$reason" ]]; then
-  exit 0
+  # 照合は bash 組み込みの正規表現で行う（grep に渡すと、- で始まる PEM のパターンをオプションと解釈して
+  # エラーで終了し、検出されなかった。大きな入力でも grep の起動を待たずに済む）
+  if ! cred_find_secret "$prompt"; then
+    exit 0
+  fi
+  cred_reason "ユーザープロンプトに"
+  reason=$CRED_REASON
 fi
 
 message="[credentials-manager] ${reason}。フル値を復唱せずマスク表示 (先頭4+****+末尾4、8文字以下は全マスク****) してください。credentials-reader を最優先起動して既存照合 + 保存提案を行い、ユーザ承諾時のみ credentials-manager に引き継いで保存します。詳細: rules/security/credentials-management.md"

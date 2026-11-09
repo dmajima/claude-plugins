@@ -30,8 +30,8 @@
 | `type` | 必須 | `api_key` / `token` / `password` / `custom` |
 | `value` | 必須 | 秘密値（フル文字列） |
 | `description` | 必須 | 用途の説明（人間可読） |
-| `urls` | 任意 | 適用対象 URL パターンの配列。`*` ワイルドカード対応（例: `https://api.example.com/v1/*`） |
-| `domains` | 任意 | 適用対象ドメインの配列（例: `api.example.com`）。URL 保存時に自動抽出 |
+| `urls` | 任意 | 適用対象 URL パターンの配列。`*` ワイルドカード対応（例: `https://api.example.com/v1/*`）。ホスト部の `*` は 1 つのラベルにだけ一致し、ホスト部に `*` を含むパターンでの一致は自動適用せず確認を求める（`credentials-reader` の auto-match.md 3 章・5 章） |
+| `domains` | 任意 | 適用対象ドメインの配列（例: `api.example.com`）。URL 保存時に自動抽出。`https://` の URL のホストと完全一致したときは確認なしで自動適用されるため、自動適用させたいホストはここに入れる |
 | `auth_method` | 任意 | 送信方法。書式: `header:<header-name>:<prefix>` または `query:<param-name>`。未指定時は `header:Authorization:Bearer` |
 | `created_at` / `updated_at` | 必須 | ISO 8601 タイムスタンプ |
 

@@ -13,7 +13,7 @@
 ### Phase 1: パターン検出
 
 - `detect_credentials_in_prompt.sh` が `prompt` フィールドから `sk-...` パターンを検出
-- `SECRET_PATTERN` の正規表現にマッチ
+- `CRED_SECRET_PATTERN` の正規表現にマッチ
 
 ### Phase 2: Claude へ通知
 
@@ -38,7 +38,7 @@
 
 ## 分岐の根拠
 
-`SECRET_PATTERN` 系（sk-* / ghp_* / xoxb-* / AKIA / AIza / glpat- / JWT）で trigger する分岐。v2.0.0 では reader 起動指示に統一されている（hooks 軽量化）。
+`CRED_SECRET_PATTERN` 系（sk-* / ghp_* / xoxb-* / AKIA / AIza / glpat- / JWT）で trigger する分岐。通知は参照特化の `credentials-reader` の起動を指示する（フック起動時に読み込むコンテキストを小さくするため）。
 
 ## 関連ケース
 

@@ -17,7 +17,7 @@
 
 ### Phase 2: ファイルパス判定
 
-- `detect_credential_file` が basename `.env` を検出
+- `credential_file_reason`（`lib/credential_files.sh`）が basename `.env` を判定
 - 完全一致 `.env` → 認証情報系ファイル該当
 - `set_reason "環境変数定義ファイル (.env) を操作"` に到達
 

@@ -62,21 +62,25 @@ SessionStart フックによって自動配置されるテンプレートであ�
 | ツール / 条件 | 対象 |
 |------------|------|
 | `WebFetch` / `WebSearch` / `mcp__*` | 常に対象 |
-| `Bash` の `command` に外部通信 / IaC / シークレット管理コマンド | `curl` / `wget` / `gh` / `ssh` / `scp` / `sftp` / `rsync` / `aws` / `az` / `gcloud` / `kubectl` / `doctl` / `heroku` / `firebase` / `vercel` / `netlify` / `docker` / `podman` / `psql` / `mysql` / `mongosh` / `redis-cli` / `terraform` / `tofu` / `ansible` / `helm` / `pulumi` / `packer` / `vault` / `op` / `bw` / `Invoke-WebRequest` / `Invoke-RestMethod` / `iwr` / `irm` |
-| `Bash` の `command` で認証情報らしい環境変数を設定 | `export FOO_TOKEN=...` / `set FOO_KEY=...` 等 |
-| `Bash` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 1.2 のパターンを含む |
+| `Bash` / `PowerShell` の `command` に外部通信 / IaC / シークレット管理コマンド | `curl` / `wget` / `gh` / `ssh` / `scp` / `sftp` / `rsync` / `aws` / `az` / `gcloud` / `kubectl` / `doctl` / `heroku` / `firebase` / `vercel` / `netlify` / `docker` / `podman` / `psql` / `mysql` / `mongosh` / `redis-cli` / `terraform` / `tofu` / `ansible` / `helm` / `pulumi` / `packer` / `vault` / `op` / `bw`（`curl.exe` のような拡張子付きを含む） / `Invoke-WebRequest` / `Invoke-RestMethod` / `iwr` / `irm` / `Start-BitsTransfer` / `Net.WebClient` / `Net.Http.HttpClient` / `[Net.WebRequest]` |
+| `Bash` / `PowerShell` の `command` で認証情報らしい環境変数を設定 | `export FOO_TOKEN=...` / `set FOO_KEY=...` / `$env:FOO_TOKEN = ...` / `[Environment]::SetEnvironmentVariable('FOO_SECRET', ...)` / `setx FOO_PASSWORD ...` 等（変数名に認証情報キーワードを含むもの） |
+| `Bash` / `PowerShell` の `command`、`Write` / `Edit` / `MultiEdit` / `NotebookEdit` のコンテンツにシークレットパターン | 1.2 のパターン（UserPromptSubmit と共通） |
 | `Read` / `Write` / `Edit` / `MultiEdit` / `NotebookEdit` が下記ファイルを対象とする | 認証情報系ファイル（次表） |
+| `Bash` / `PowerShell` の `command` が下記ファイルを指す（`cat .env` / `Get-Content ~/.aws/credentials` 等） | 認証情報系ファイル（次表） |
+| `Grep` の `path` / `glob`、`Glob` の `path` / `pattern` が下記ファイルを指す | 認証情報系ファイル（次表） |
 
-認証情報系ファイル（`PreToolUse` で検出する `file_path`）:
+認証情報系ファイル（`PreToolUse` がファイル系ツールのパスと、シェルのコマンド中のパスで検出するもの）:
 
 | 種別 | 対象ファイル |
 |-----|------------|
-| 環境変数定義 | `.env` / `.env.<name>`（`.env.example` `.sample` `.template` `.dist` `.test` は除外） |
-| 認証情報ストア | `credentials.json` / `credentials.yml` / `credentials.yaml` / `credential.json` / `secrets.json` / `secrets.yml` / `secrets.yaml` / `secret.json` |
-| ツール設定 | `.npmrc` / `.netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` |
+| 環境変数定義 | `.env` / `.env.<name>` / `<name>.env` / `.envrc`（`.env.example` `.sample` `.template` `.dist` `.test` `.spec` と、`example.env` のような同じ語の `<name>.env` は除外） |
+| 認証情報ストア | `credentials.json` / `credentials.yml` / `credentials.yaml` / `credential.json` / `credentials.toml` / `credentials.tfrc.json` / `secrets.json` / `secrets.yml` / `secrets.yaml` / `secret.json` / `secrets.toml` |
+| ツール設定 | `.npmrc` / `.netrc` / `_netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` / `.pypirc` / `.vault-token` / `~/.config/gh/hosts.yml`（GitHub CLI） |
 | 秘密鍵 (SSH) | `id_rsa` / `id_dsa` / `id_ecdsa` / `id_ed25519` / `id_xmss` |
-| クラウド認証 | `~/.aws/credentials` / `~/.aws/config` / `~/.docker/config.json` / `~/.kube/config` / `kubeconfig` / `serviceAccountKey.json` / `service-account.json` / `application_default_credentials.json` / `gcloud-credentials.json` |
-| ディレクトリ全体 | `~/.ssh/*` / `~/.gnupg/*` |
+| クラウド認証 | `~/.aws/credentials` / `~/.aws/config` / `~/.docker/config.json` / `~/.kube/config` / `kubeconfig` / `serviceAccountKey.json` / `service-account.json` / `application_default_credentials.json` / `gcloud-credentials.json` / `credentials.db` / `access_tokens.db`（gcloud）/ `msal_token_cache.json`（Azure CLI）（`~/.aws/*` のように配下をワイルドカードで指すものを含む） |
+| IaC の状態 | `*.tfstate` / `*.tfstate.backup`（Terraform の state。秘密の値を平文で含む） |
+| プロセスの環境変数 | `/proc/self/environ` |
+| ディレクトリ全体 | `~/.ssh` / `~/.gnupg` とその配下 |
 | 拡張子 | `*.pem` / `*.key` / `*.p12` / `*.pfx` / `*.jks` / `*.keystore` / `*.crt` / `*.cer` / `*.der` / `*.asc` / `*.gpg` |
 
 これらを検出した場合は **`credentials-reader` を最優先起動** し、書き込みが必要な場合のみ
@@ -94,8 +98,9 @@ SessionStart フックによって自動配置されるテンプレートであ�
 | 状況 | 起動するスキル | 動作 |
 |-----|-------------|------|
 | 参照のみ（保存済み照合・自動適用） | `credentials-reader` | マッチ件数に応じた挙動 |
-| 保存済み認証情報が **1 件マッチ** | `credentials-reader` | 自動適用し、ユーザに「`<name>` (`****`) を `<domain>` に自動適用しました」と通知 |
-| 保存済み認証情報が **複数件マッチ** | `credentials-reader` | `AskUserQuestion` でどれを使うか確認（マスク済み値を表示） |
+| ホストが確定する一致（`https://` の URL で、`domains[]` の完全一致・ホスト部に `*` の無い `urls[]`）が **1 件** | `credentials-reader` | 自動適用し、ユーザに「`<name>` (`****`) を `<domain>` に自動適用しました」と通知 |
+| ホストが確定する一致が **複数件** | `credentials-reader` | `AskUserQuestion` でどれを使うか確認（マスク済み値を表示） |
+| ホストが確定しない一致のみ（ホスト部に `*` のある `urls[]`・説明文の部分一致・`https://` 以外の URL・`\` や authority の `@` 等でホストの解釈が分かれる URL・TLS の証明書の検証を無効にする要求（`curl -k` 等）・送信先が URL とは別に決まる要求（SDK の base URL の上書き等）） | `credentials-reader` | 候補を示して、適用してよいか `AskUserQuestion` で確認（承諾されたものだけ適用） |
 | 保存済み認証情報が **0 件** | `credentials-reader` | 「`<domain>` 用の認証情報は保存されていません。提供しますか？」と確認 → 承諾なら `credentials-manager` に引き継ぎ |
 | 書き込み（追加・編集・削除・修復） | `credentials-manager` | 該当フローを実行 |
 | 対話メニューでの管理 | `/credentials-manager:manage` | メニュー UI で両スキルを呼び分け |
@@ -133,6 +138,10 @@ SessionStart フックによって自動配置されるテンプレートであ�
 発火するため、層 1 の description が AI トリガー判定で読み飛ばされた場合の **冗長な保険**
 として機能する。本ルール（層 3）は、フック非対応環境への移行や、ルール体系として
 明示的に最優先度を宣言する目的で配置される。
+
+フック（層 2）は `bash` 4 以上と `jq` を前提とし、欠けると何もせずに終了する。この場合は
+セッション開始時に `SessionStart` フックが「検出フックが動作していない」ことと対処を通知する
+（前提を欠く環境でも本ルールは配置される）ため、通知を受けたらユーザに伝え、層 2 が無い前提で本ルールを守ること。
 
 参照系を `credentials-reader` に絞ることでフック起動時に読み込まれるコンテキストが軽量化され、
 書き込みが必要な場合のみ `credentials-manager` の本体ドキュメントが読み込まれる設計である。
@@ -175,7 +184,7 @@ SessionStart フックによって自動配置されるテンプレートであ�
 
 - 認証情報のフル値を会話出力・ログ・コミットメッセージに出すこと
 - `credentials.json` をリポジトリにコミットすること
-- 外部通信ツール（`WebFetch` / `Bash`(curl/wget/gh) / `mcp__*` 等）を呼び出す前に
+- 外部通信ツール（`WebFetch` / `Bash`・`PowerShell`（curl / wget / gh / Invoke-RestMethod 等） / `mcp__*` 等）を呼び出す前に
   `credentials-reader` での認証情報照合を省略すること
 - 「ローカルホストアクセス」「短いコマンド」等を理由に本ルールを省略すること
 - 参照系（retrieve / list / auto-match）に `credentials-manager` 全体を起動して不要なコンテキストを読み込むこと（`credentials-reader` を使う）

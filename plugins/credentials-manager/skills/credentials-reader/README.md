@@ -10,7 +10,7 @@
 
 | 機能 | 説明 |
 |-----|------|
-| URL/ドメイン自動マッチ | リクエスト URL から保存済み認証情報を検索し、ヒット時は `auth_method` に従って自動適用 |
+| URL/ドメイン自動マッチ | リクエスト URL から保存済み認証情報を検索し、`https://` の URL で、ホストが確定する一致（`domains[]` の完全一致・ホスト部に `*` の無い `urls[]`）なら `auth_method` に従って自動適用。ワイルドカードのホスト・説明文の部分一致・`https://` 以外の URL・ホストの解釈が分かれる URL（`\` や authority の `@` を含む）・TLS の検証を無効にする要求・送信先を上書きする要求では、適用してよいか確認する |
 | 取得（retrieve） | 識別名（部分一致）から保存済み値を取り出し、API 呼び出しに利用 |
 | 一覧（list） | 表形式で保存済み認証情報を表示（マスク済み値） |
 | プロアクティブ検出 | 会話中の認証情報パターン（`sk-` `ghp_` `xoxb-` `Bearer` 等）を検出し、保存提案 |
@@ -26,7 +26,7 @@
 ## 起動契機
 
 - ユーザが URL / API エンドポイントへのアクセスを依頼した場合（暗黙トリガー）
-- `Bash` で `curl` / `wget` / `gh api` 等を呼び出す場合（PreToolUse フック経由）
+- `Bash` / `PowerShell` で `curl` / `wget` / `gh api` / `Invoke-RestMethod` 等を呼び出す場合（PreToolUse フック経由）
 - 会話中に認証情報パターンが検出された場合（UserPromptSubmit フック経由）
 - 認証情報系ファイル（`.env` / `id_rsa` / `*.pem` 等）を読み書きする場合（PreToolUse フック経由）
 - ユーザが「保存済みを一覧」「前のキーで API を叩いて」等と要求した場合（明示要求）
@@ -61,7 +61,14 @@ skills/credentials-reader/
     ├── case-07_proactive_detect.md
     ├── case-08_non_interactive_multi.md
     ├── case-09_localhost_skip.md
-    └── case-10_json_parse_error.md
+    ├── case-10_json_parse_error.md
+    ├── case-11_weak_match_description_confirm.md     # 説明文の部分一致だけ → 確認
+    ├── case-12_weak_match_host_wildcard_confirm.md   # ホスト部のワイルドカード → 確認
+    ├── case-13_ambiguous_url_host_confirm.md         # ホストの解釈が分かれる URL → 自動適用しない
+    ├── case-14_non_https_confirm.md                  # http:// の URL → 自動適用しない
+    ├── case-15_wildcard_no_match_boundaries.md       # ワイルドカードが一致しない境界 → 一致なし
+    ├── case-16_non_interactive_weak_match_skip.md    # 非対話モードで弱い一致だけ → 適用しない
+    └── case-17_tls_unverified_or_redirected_confirm.md # TLS の検証の無効化・送信先の上書き → 自動適用しない
 ```
 
 ## 関連スキル
