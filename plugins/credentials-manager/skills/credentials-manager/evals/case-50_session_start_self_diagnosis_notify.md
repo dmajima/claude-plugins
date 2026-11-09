@@ -1,41 +1,45 @@
-# Case 50: SessionStart hook — 検出フックの前提を欠く → 動作していないことを通知
+# Case 50: SessionStart hook — jq が無い → ルールを配置し、検出フックが動作しないことを平文で通知
 
 ## 入力
 
 | 項目 | 値 |
 |-----|---|
 | トリガー | Claude Code セッション開始 |
-| 既存状態 例 1 | `jq` が PATH に無い |
-| 既存状態 例 2 | `jq` はあるが、`references/scripts/hooks/lib/credential_patterns.sh` が無い（不完全なインストール等） |
+| 既存状態 | `jq` が PATH に無い（`mkdir` / `cp` は使える）。ルールファイルは未配置 |
 | フラグ | なし |
 
 ## 期待動作
 
 ### Phase 1: 自己診断
 
-- 検出フック（PreToolUse / UserPromptSubmit）が動く前提を確かめる: `jq` がある / `bash` が 4 以上 / 共通のパターン定義がある
-- 欠けているものを並べた通知文を作る（例: `jq が見つからない`）
+- 検出フック（PreToolUse / UserPromptSubmit）が動く前提を確かめる: `jq` がある / `bash` が 4 以上 / `references/scripts/hooks/lib/` の共通定義がある
+- 欠けているもの（`jq が見つからない`）と、その対処（`jq をインストールする`）を並べた通知文を作る
 
-### Phase 2: 出力
+### Phase 2: ルールの配置
 
-- 例 1: `jq` が無い（または `bash` が 4 未満）ため JSON を組み立てられない。通知文を **平文** で標準出力に出し、テンプレートの配置は行わずに `exit 0`
-- 例 2: 通常どおりテンプレートの配置を判定し、`additionalContext` の先頭に通知文を添えて出力する（配置しない場合も通知文だけを出す）
+- 前提を欠いていても、通常どおりスコープを判定してルールのテンプレートを配置する（検出フックの念押しが無い分、ルールで補う）
+
+### Phase 3: 出力
+
+- `jq` が無いため JSON を組み立てられない。自己診断の通知文と配置の通知を **平文** で標準出力に出して `exit 0`
 
 ## 期待出力
 
 | 項目 | 期待値 |
 |-----|-------|
-| Hook stdout | 例 1: `[credentials-manager] 認証情報の検出フック（PreToolUse / UserPromptSubmit）が動作しません（jq が見つからない）。…` の平文 / 例 2: 同じ通知文を含む `hookSpecificOutput.additionalContext` の JSON |
+| Hook stdout | `[credentials-manager] 認証情報の検出フック（PreToolUse / UserPromptSubmit）が動作しません（jq が見つからない）。…対処（jq をインストールする）を案内してください。 [credentials-manager] project 向けにルール … を配置しました。…` の平文 |
+| 配置 | `.claude/rules/security/credentials-management.md`（テンプレートと同じ内容） |
 | 終了コード | 0 |
-| Claude のコンテキスト | 検出フックが動作していないこと、ユーザに伝えて前提を整えるよう案内すること |
+| Claude のコンテキスト | 検出フックが動作していないこと、ユーザに伝えて `jq` のインストールを案内すること、ルールを配置したこと |
 
 ## 分岐の根拠
 
 検出フックは前提を欠くと何もせずに終了する（フェイルオープン）。通知が出ない状態は「検出対象が無い」状態と区別できず、
 保護が外れたことに気付けない。SessionStart の標準出力は終了コード 0 ならそのままコンテキストに入るため、
-`jq` が無くても平文で知らせられる。前提を満たす通常の環境では、自己診断は何も出力しない（`case-14`〜`16`・`25` の動作は変わらない）。
+`jq` が無くても平文で知らせられる。ルールは検出フックが動かない環境でこそ必要なため、配置は省略しない。
 
 ## 関連ケース
 
-- `case-25_session_start_missing_env_silent_exit.md`（前提は満たし、環境変数が無いケース。何も出力しない）
+- `case-51_session_start_self_diagnosis_with_jq.md`（`jq` はあるが他の前提を欠くケース。JSON で通知）
+- `case-52_session_start_install_failed_notify.md`（ルールを配置できないケース）
 - `case-42_pretooluse_invalid_input_silent_exit.md`（検出フック側のフェイルオープン）

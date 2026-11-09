@@ -16,45 +16,52 @@
 # フェイルオープン用に set -e は使わない。明示的にエラー処理する。
 set +e
 
+# このスクリプトは、検出フックが動かない環境（bash 4 未満・jq なし）でもルールを配置して知らせるため、
+# bash 3.2（macOS の既定）でも動く書き方に限る（${var,,}・mapfile・連想配列等の bash 4 以降の構文を使わない。
+# 回帰テストで確認している）
+
 hooks_dir="${BASH_SOURCE[0]%/*}"
 [[ $hooks_dir == "${BASH_SOURCE[0]}" ]] && hooks_dir=.
 
-# 自己診断（bash 4 未満でも動く書き方に限る。以降の処理は bash 4 の ${var,,} を使う）
+# 自己診断。問題ごとに、ユーザーに案内する対処を添える（同じ対処は 1 回だけ）
 problems=""
-add_problem() { problems="${problems:+$problems、}$1"; }
+remedies=""
+add_problem() {  # $1=問題 $2=対処
+  problems="${problems:+$problems、}$1"
+  case "$remedies" in
+    *"$2"*) ;;
+    *) remedies="${remedies:+$remedies / }$2" ;;
+  esac
+}
 has_jq=1
-command -v jq >/dev/null 2>&1 || { has_jq=0; add_problem "jq が見つからない"; }
-modern_bash=1
+command -v jq >/dev/null 2>&1 || { has_jq=0; add_problem "jq が見つからない" "jq をインストールする"; }
 if [[ -z "${BASH_VERSINFO:-}" || "${BASH_VERSINFO[0]}" -lt 4 ]]; then
-  modern_bash=0
-  add_problem "bash ${BASH_VERSION:-?} では動かない（4 以上が必要）"
+  add_problem "bash ${BASH_VERSION:-?} では動かない（4 以上が必要）" "bash 4 以上を使う（macOS は Homebrew の bash 等）"
 fi
 for lib in credential_patterns.sh credential_files.sh; do
-  [[ -f "$hooks_dir/lib/$lib" ]] || add_problem "lib/$lib が無い"
+  [[ -f "$hooks_dir/lib/$lib" ]] || add_problem "lib/$lib が無い" "プラグインを更新するか入れ直す"
 done
 diag=""
 if [[ -n "$problems" ]]; then
-  diag="[credentials-manager] 認証情報の検出フック（PreToolUse / UserPromptSubmit）が動作しません（${problems}）。ツールの実行は止めませんが、外部通信や認証情報の扱いの念押しは出ません。ユーザーにこの状態を伝え、前提（bash 4 以上と jq）を整えるよう案内してください。"
+  diag="[credentials-manager] 認証情報の検出フック（PreToolUse / UserPromptSubmit）が動作しません（${problems}）。ツールの実行は止めませんが、外部通信や認証情報の扱いの念押しは出ません。ユーザーにこの状態を伝え、対処（${remedies}）を案内してください。"
 fi
 
-# jq が無い・bash が古い場合は、JSON を組み立てられない・以降の処理が動かないため、平文で知らせて終了する
-# （SessionStart の標準出力は、終了コード 0 ならそのままコンテキストに入る）
-if [[ $has_jq -eq 0 || $modern_bash -eq 0 ]]; then
-  printf '%s\n' "$diag"
-  exit 0
-fi
-
-# 診断の結果とテンプレートの配置の結果を、1 つの JSON にまとめて出力する
+# 診断の結果とテンプレートの配置の結果を、まとめて 1 回で出力する。
+# jq が無いときは平文で出す（SessionStart の標準出力は、終了コード 0 ならそのままコンテキストに入る）
 emit() {  # $1=メッセージ（空なら何も出さない）
   [[ -z "$1" ]] && exit 0
-  jq -nc --arg msg "$1" '{
-    continue: true,
-    suppressOutput: false,
-    hookSpecificOutput: {
-      hookEventName: "SessionStart",
-      additionalContext: $msg
-    }
-  }'
+  if [[ $has_jq -eq 1 ]]; then
+    jq -nc --arg msg "$1" '{
+      continue: true,
+      suppressOutput: false,
+      hookSpecificOutput: {
+        hookEventName: "SessionStart",
+        additionalContext: $msg
+      }
+    }'
+  else
+    printf '%s\n' "$1"
+  fi
   exit 0
 }
 
@@ -81,11 +88,13 @@ target_dir=""
 if [[ -n "$home_dir" ]]; then
   home_dir_norm="${home_dir//\\/\/}"
   home_prefix="${home_dir_norm}/.claude/"
-  # case-insensitive prefix 比較
-  if [[ "${plugin_root_norm,,}" == "${home_prefix,,}"* ]]; then
+  # 大文字小文字を区別しない前方一致（bash 3 でも動くよう、${var,,} ではなく nocasematch で比べる）
+  shopt -s nocasematch
+  if [[ "$plugin_root_norm" == "$home_prefix"* ]]; then
     scope="user"
     target_dir="$home_dir/.claude/rules/security"
   fi
+  shopt -u nocasematch
 fi
 
 if [[ -z "$scope" ]]; then
@@ -103,11 +112,13 @@ if [[ -f "$target" ]]; then
   emit "$diag"
 fi
 
+# 配置できなかったときも、ルールが無いままになることを知らせる
+failed="[credentials-manager] ルール 'credentials-management.md' を ${target} に配置できませんでした（ディレクトリの作成かコピーに失敗）。権限とパスを確認するよう、ユーザーに案内してください。"
 if ! mkdir -p -- "$target_dir" 2>/dev/null; then
-  emit "$diag"
+  emit "${diag:+$diag }$failed"
 fi
 if ! cp -- "$template" "$target" 2>/dev/null; then
-  emit "$diag"
+  emit "${diag:+$diag }$failed"
 fi
 
 message="[credentials-manager] ${scope} 向けにルール 'credentials-management.md' を ${target} に配置しました。本ルールは認証情報・URL アクセス・外部通信を伴うすべての処理で参照系を credentials-reader、書き込み系を credentials-manager に分離して最優先起動するよう定めています。CLAUDE.md からの参照追加が未済みの場合、ユーザーに案内してください。"

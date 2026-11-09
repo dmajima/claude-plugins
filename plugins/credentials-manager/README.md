@@ -149,11 +149,12 @@ Claude（要約）:
 | 上記以外（project / local スコープ） | `${CLAUDE_PROJECT_DIR}/.claude/rules/security/credentials-management.md` |
 
 - 既に同名ファイルが存在する場合は **何もしません**（ユーザーの編集を尊重）
-- 配置時のみ `additionalContext` で Claude に通知します
+- 配置時のみ `additionalContext` で Claude に通知します（配置できなかった場合も、その旨を通知します）
 - 配置後は `CLAUDE.md` から `rules/security/credentials-management.md` を参照する 1 行を追記してください（既存運用と整合）
 
-あわせて、検出フック（PreToolUse / UserPromptSubmit）が動く前提（`bash` 4 以上・`jq`・`references/scripts/hooks/lib/credential_patterns.sh`）を自己診断します。
-検出フックは前提を欠くと何もせずに終了する（フェイルオープン）ため、欠けているものがあれば、検出フックが動作していないことをセッションの開始時に Claude へ知らせます（`jq` が無い・`bash` が古い場合は JSON を組み立てられないため平文で出力します）。
+あわせて、検出フック（PreToolUse / UserPromptSubmit）が動く前提（`bash` 4 以上・`jq`・`references/scripts/hooks/lib/` の共通定義）を自己診断します。
+検出フックは前提を欠くと何もせずに終了する（フェイルオープン）ため、欠けているものがあれば、検出フックが動作していないことと対処（`jq` のインストール・`bash` の更新・プラグインの入れ直し）をセッションの開始時に Claude へ知らせます。
+前提を欠く環境でも、ルールの配置は行います（検出フックの念押しが無い分、ルールで補うため）。このフックは `bash` 3.2 でも動く書き方に限っており、`jq` が無い場合は通知を平文で出力します。
 検出フック自身も、前提を欠くときは stderr に 1 行出してから終了します（詳細モードでのみ表示）。
 
 ### PreToolUse — 認証情報を扱い得る全ツール呼び出しの注意喚起
@@ -397,7 +398,7 @@ plugins/credentials-manager/
             ├── case-26_update_with_confirm.md         # update
             ├── case-27_manage_command.md              # /credentials-manager:manage 経由
             ├── case-28_handoff_from_reader.md         # reader 引き継ぎ受け入れ
-            └── case-29〜50                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
+            └── case-29〜52                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM、SessionStart の自己診断）
 ```
 
 ## 技術スタック・アーキテクチャ

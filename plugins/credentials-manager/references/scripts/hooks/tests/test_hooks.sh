@@ -425,6 +425,41 @@ for hook in "$TARGET" "$PROMPT_HOOK"; do
     record FAIL "jq が無い環境（$name）: 終了コード $rc / 標準出力 $(wc -c < "$TMP_ROOT/nojq.out") バイト / stderr: $(head -c 100 "$TMP_ROOT/nojq.err")"
   fi
 done
+# 共通の lib が無い環境（プラグインのファイルの欠け）: 同じく出力なし・終了コード 0・stderr に 1 行
+cp -r "$HOOKS" "$TMP_ROOT/hooks-nolib"
+rm -rf "$TMP_ROOT/hooks-nolib/lib"
+for name in preempt_credentials_check.sh detect_credentials_in_prompt.sh; do
+  input="$(shell_json Bash 'curl https://api.example.com')"
+  [[ $name == detect_credentials_in_prompt.sh ]] && input="$(prompt_json "key=$fake_sk")"
+  printf '%s' "$input" | "$SHELL_BIN" "$TMP_ROOT/hooks-nolib/$name" > "$TMP_ROOT/nolib.out" 2> "$TMP_ROOT/nolib.err"
+  rc=$?
+  if [[ $rc -eq 0 && ! -s "$TMP_ROOT/nolib.out" ]] && grep -q 'lib/credential_patterns.sh を読み込めない' "$TMP_ROOT/nolib.err"; then
+    record PASS "lib が無い環境（$name）: 出力なし・終了コード 0・stderr に 1 行"
+  else
+    record FAIL "lib が無い環境（$name）: 終了コード $rc / 標準出力 $(wc -c < "$TMP_ROOT/nolib.out") バイト / stderr: $(head -c 100 "$TMP_ROOT/nolib.err")"
+  fi
+done
+# bash が 4 未満の環境（判定の閾値を書き換えた複製で再現）: 同じく出力なし・終了コード 0・stderr に 1 行
+cp -r "$HOOKS" "$TMP_ROOT/hooks-oldbash"
+for name in preempt_credentials_check.sh detect_credentials_in_prompt.sh; do
+  f="$TMP_ROOT/hooks-oldbash/$name"
+  s="$(cat "$f"; printf x)"
+  s=${s%x}
+  if [[ $s != *'-lt 4 ]]'* ]]; then
+    record FAIL "bash 4 未満の環境（$name）: 判定の閾値（-lt 4）が見つからず、再現できない"
+    continue
+  fi
+  printf '%s' "${s/-lt 4 ]]/-lt 99 ]]}" > "$f"
+  input="$(shell_json Bash 'curl https://api.example.com')"
+  [[ $name == detect_credentials_in_prompt.sh ]] && input="$(prompt_json "key=$fake_sk")"
+  printf '%s' "$input" | "$SHELL_BIN" "$f" > "$TMP_ROOT/oldbash.out" 2> "$TMP_ROOT/oldbash.err"
+  rc=$?
+  if [[ $rc -eq 0 && ! -s "$TMP_ROOT/oldbash.out" ]] && grep -q 'bash 4 以上が必要' "$TMP_ROOT/oldbash.err"; then
+    record PASS "bash 4 未満の環境（$name）: 出力なし・終了コード 0・stderr に 1 行"
+  else
+    record FAIL "bash 4 未満の環境（$name）: 終了コード $rc / 標準出力 $(wc -c < "$TMP_ROOT/oldbash.out") バイト / stderr: $(head -c 100 "$TMP_ROOT/oldbash.err")"
+  fi
+done
 
 echo "=== 11. 大きな入力（hooks.json の timeout の 8 割以内で判定する。256 KB を超える部分も判定の対象にする） ==="
 limit_ms=$(( ${timeout_sec:-60} * 800 ))
@@ -606,7 +641,7 @@ run miss Glob '{"tool_name":"Glob","tool_input":{"pattern":"plugins/credentials-
 run miss Glob '{"tool_name":"Glob","tool_input":{"pattern":"**/.env.example"}}' 'Glob: **/.env.example（除外リスト）'
 run miss Glob '{"tool_name":"Glob","tool_input":{}}' 'Glob: 入力が空'
 
-echo "=== 17. SessionStart: ルールの配置と自己診断（case-14〜16・25・50） ==="
+echo "=== 17. SessionStart: ルールの配置と自己診断（case-14〜16・25・50〜52） ==="
 # $1=ラベル $2=CLAUDE_PLUGIN_ROOT $3=配置先のプロジェクト $4=PATH（空なら現在の PATH）→ SESSION_OUT / SESSION_RC
 session_run() {
   local root=$2 project=$3 path_val=${4:-$PATH}
@@ -640,21 +675,88 @@ if [[ $SESSION_RC -eq 0 && "$(session_ctx)" == *user*配置しました* ]] && c
 else
   record FAIL "user スコープ: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:120}"
 fi
-# 自己診断: jq が無い → 平文で知らせ、配置はしない
-session_run "" "$PLUGIN_ROOT" "$TMP_ROOT/project-nojq" /nonexistent
-if [[ $SESSION_RC -eq 0 && $SESSION_OUT == *'jq が見つからない'* && ! -e "$TMP_ROOT/project-nojq/.claude" ]]; then
-  record PASS '自己診断: jq が無いと、検出フックが動作しないことを平文で知らせる'
+# 指定したコマンドだけを使える PATH 用のディレクトリを作る（各コマンドは元の実行ファイルを絶対パスで呼ぶラッパー）。
+# jq と mkdir / cp が同じディレクトリにある環境（Linux の /usr/bin 等）でも、jq だけが無い状態を再現するため
+make_bin() {  # $1=ディレクトリ $2...=コマンド名
+  local dir=$1 c p
+  shift
+  mkdir -p "$dir"
+  for c in "$@"; do
+    p="$(command -v "$c")" || continue
+    printf '#!%s\nexec "%s" "$@"\n' "$SHELL_BIN" "$p" > "$dir/$c"
+    chmod +x "$dir/$c"
+  done
+}
+count_of() { local s=$1 n=0; while [[ $s == *"$2"* ]]; do s=${s#*"$2"}; n=$((n + 1)); done; printf '%s' "$n"; }  # $1 に $2 が現れる回数
+placed_ok() { cmp -s "$1/.claude/rules/security/credentials-management.md" "$TEMPLATE"; }  # $1=プロジェクト
+make_bin "$TMP_ROOT/bin-nojq" mkdir cp
+# 自己診断: jq が無い（mkdir / cp は使える）→ ルールを配置し、検出フックが動作しないことと対処を平文で知らせる
+session_run "" "$PLUGIN_ROOT" "$TMP_ROOT/project-nojq" "$TMP_ROOT/bin-nojq"
+if [[ $SESSION_RC -eq 0 && $SESSION_OUT != '{'* && $SESSION_OUT == *'jq が見つからない'*'jq をインストールする'*配置しました* ]] && placed_ok "$TMP_ROOT/project-nojq"; then
+  record PASS '自己診断: jq が無くてもルールを配置し、検出フックが動作しないことと対処を平文で知らせる'
 else
-  record FAIL "自己診断（jq なし）: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:120}"
+  record FAIL "自己診断（jq なし）: 終了コード $SESSION_RC / 配置 $(placed_ok "$TMP_ROOT/project-nojq" && echo あり || echo なし) / 出力: ${SESSION_OUT:0:160}"
 fi
-# 自己診断: 共通のパターン定義が無い → 配置の通知に添えて知らせる
+# 自己診断: 共通のパターン定義が無い → 配置の通知に添えて、プラグインの入れ直しを案内する
 cp -r "$PLUGIN_ROOT" "$TMP_ROOT/nolib"
 rm -rf "$TMP_ROOT/nolib/references/scripts/hooks/lib"
 session_run "" "$TMP_ROOT/nolib" "$TMP_ROOT/project-nolib"
-if [[ $SESSION_RC -eq 0 && "$(session_ctx)" == *'lib/credential_patterns.sh が無い'*配置しました* ]]; then
-  record PASS '自己診断: lib/credential_patterns.sh が無いと、配置の通知に添えて知らせる'
+ctx="$(session_ctx)"
+if [[ $SESSION_RC -eq 0 && $ctx == *'lib/credential_patterns.sh が無い'*'プラグインを更新するか入れ直す'*配置しました* && $ctx != *'jq をインストール'* ]]; then
+  record PASS '自己診断: lib が無いと、配置の通知に添えてプラグインの入れ直しを案内する'
 else
-  record FAIL "自己診断（lib なし）: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:120}"
+  record FAIL "自己診断（lib なし）: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:160}"
+fi
+# 自己診断: 問題が複数（jq なし・lib 2 つなし）→ すべての問題を挙げ、同じ対処は 1 回だけ案内する
+session_run "" "$TMP_ROOT/nolib" "$TMP_ROOT/project-multi" "$TMP_ROOT/bin-nojq"
+if [[ $SESSION_RC -eq 0 && $SESSION_OUT == *'jq が見つからない'*'lib/credential_patterns.sh が無い'*'lib/credential_files.sh が無い'* \
+      && $(count_of "$SESSION_OUT" 'プラグインを更新するか入れ直す') -eq 1 && $SESSION_OUT == *'jq をインストールする'* ]] && placed_ok "$TMP_ROOT/project-multi"; then
+  record PASS '自己診断: 問題が複数でも、すべての問題と対処（重複なし）を知らせてルールを配置する'
+else
+  record FAIL "自己診断（複数）: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:200}"
+fi
+# 自己診断: bash が 4 未満（判定の閾値を書き換えた複製で再現）→ ルールを配置し、bash の更新を案内する
+cp -r "$PLUGIN_ROOT" "$TMP_ROOT/oldbash"
+f="$TMP_ROOT/oldbash/references/scripts/hooks/install_rule_template.sh"
+s="$(cat "$f"; printf x)"
+s=${s%x}
+if [[ $s == *'-lt 4 ]]'* ]]; then
+  printf '%s' "${s/-lt 4 ]]/-lt 99 ]]}" > "$f"
+  session_run "" "$TMP_ROOT/oldbash" "$TMP_ROOT/project-oldbash"
+  ctx="$(session_ctx)"
+  if [[ $SESSION_RC -eq 0 && $ctx == *'では動かない（4 以上が必要）'*'bash 4 以上を使う'*配置しました* ]] && placed_ok "$TMP_ROOT/project-oldbash"; then
+    record PASS '自己診断: bash が 4 未満でもルールを配置し、bash の更新を案内する'
+  else
+    record FAIL "自己診断（bash 4 未満）: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:160}"
+  fi
+else
+  record FAIL '自己診断（bash 4 未満）: 判定の閾値（-lt 4）が見つからず、再現できない'
+fi
+# SessionStart のスクリプトは bash 3.2 でも動く書き方に限る（検出フックが動かない環境でもルールを配置するため）。
+# bash 4 以降の構文が無いことを確かめる（コメント行は除く）
+b4="$(grep -nE ',,\}|\^\^\}|declare -A|local -A|mapfile|readarray|coproc|\|&|&>>|;;&|@Q\}|\[\[ -v ' "$HOOKS/install_rule_template.sh" | grep -vE '^[0-9]+:[[:space:]]*#')"
+if [[ -z $b4 ]]; then
+  record PASS 'install_rule_template.sh に bash 4 以降の構文が無い'
+else
+  record FAIL "install_rule_template.sh に bash 4 以降の構文がある: ${b4:0:120}"
+fi
+# 配置に失敗した（.claude がファイルでディレクトリを作れない / コピーに失敗）→ 終了コード 0 で、配置できなかったことを知らせる
+mkdir -p "$TMP_ROOT/project-blocked"
+: > "$TMP_ROOT/project-blocked/.claude"
+session_run "" "$PLUGIN_ROOT" "$TMP_ROOT/project-blocked"
+if [[ $SESSION_RC -eq 0 && "$(session_ctx)" == *配置できませんでした* ]]; then
+  record PASS '配置の失敗（ディレクトリを作れない）: 終了コード 0 で、配置できなかったことを知らせる'
+else
+  record FAIL "配置の失敗（mkdir）: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:160}"
+fi
+make_bin "$TMP_ROOT/bin-failcp" mkdir jq
+printf '#!%s\nexit 1\n' "$SHELL_BIN" > "$TMP_ROOT/bin-failcp/cp"
+chmod +x "$TMP_ROOT/bin-failcp/cp"
+session_run "" "$PLUGIN_ROOT" "$TMP_ROOT/project-failcp" "$TMP_ROOT/bin-failcp"
+if [[ $SESSION_RC -eq 0 && "$(session_ctx)" == *配置できませんでした* ]] && ! placed_ok "$TMP_ROOT/project-failcp"; then
+  record PASS '配置の失敗（コピーできない）: 終了コード 0 で、配置できなかったことを知らせる'
+else
+  record FAIL "配置の失敗（cp）: 終了コード $SESSION_RC / 出力: ${SESSION_OUT:0:160}"
 fi
 # CLAUDE_PLUGIN_ROOT が無い（前提は満たす）→ 何も出力しない
 printf '{}' | env HOME="$TMP_ROOT/home" USERPROFILE="$TMP_ROOT/home" CLAUDE_PLUGIN_ROOT= CLAUDE_PROJECT_DIR="$TMP_ROOT/project-x" \
