@@ -7,10 +7,10 @@
 # source して使う（単体では実行しない）。照合は bash の [[ =~ ]]（POSIX ERE）で行う。
 
 # 既知のトークン形式。左側に境界を置き、単語の途中（task-management-system 等の語に含まれる部分）には一致させない。
-# 境界は、文字列の先頭・英数字と _ - 以外の文字に加え、エスケープした改行・タブ（\n \r \t、PowerShell の `n `r `t）と
-# URL エンコード（%3D 等）の直後も含める（n や 3D は英数字のため、直前の 1 文字だけで判定すると
+# 境界は、文字列の先頭・英数字と _ - 以外の文字に加え、エスケープ（\n \r \t \v \f \e \0 \xHH \uHHHH、PowerShell の `n `r `t `v `f `0）と
+# URL エンコード（%3D・%u003D 等）の直後も含める（n や 3D は英数字のため、直前の 1 文字だけで判定すると
 # printf 'a\n<トークン>'・"`n<トークン>"・%3D<トークン> のような書き方で検出されなくなる）
-CRED_SECRET_PATTERN='(^|[^A-Za-z0-9_-]|\\[nrt]|`[nrt]|%[0-9A-Fa-f]{2})(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,}|ghu_[A-Za-z0-9]{20,}|ghs_[A-Za-z0-9]{20,}|ghr_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|glpat-[A-Za-z0-9_-]{20,}|eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)'
+CRED_SECRET_PATTERN='(^|[^A-Za-z0-9_-]|\\[nrtvfe0]|\\x[0-9A-Fa-f]{2}|\\u[0-9A-Fa-f]{4}|`[nrtvf0]|%[0-9A-Fa-f]{2}|%u[0-9A-Fa-f]{4})(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,}|ghu_[A-Za-z0-9]{20,}|ghs_[A-Za-z0-9]{20,}|ghr_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|glpat-[A-Za-z0-9_-]{20,}|eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)'
 CRED_BEARER_PATTERN='[Bb]earer[[:space:]]+[A-Za-z0-9._~+/=-]{16,}'
 CRED_BASIC_PATTERN='[Bb]asic[[:space:]]+[A-Za-z0-9+/=]{16,}'
 # PEM 形式の秘密鍵の先頭行。PGP の秘密鍵は、先頭行の KEY の後に BLOCK が続く
@@ -63,6 +63,17 @@ cred_find_secret_large() {
   if [[ -n $hit && -z $CRED_LABEL ]]; then
     CRED_LABEL='認証情報パターンを検出'
   fi
+}
+
+# 通知文に入れる名前（ファイル名・ツール名）を CRED_SHOWN に入れる。$2 文字（既定 48）までにし、英数字と . _ - * ? ~ @ + 以外は _ に置き換える
+# （名前は additionalContext にそのまま入るため、名前に書いた文がモデルへの指示として読まれないようにする）。
+# 置き換えは LC_ALL=C で行う（日本語のロケールでは、範囲 a-z の照合が照合順序に依存し、全角英字を置き換えないことがある）
+cred_display_name() {
+  local LC_ALL=C max=${2:-48} s
+  s=${1:0:max}
+  s=${s//[^A-Za-z0-9._*?~@+-]/_}
+  (( ${#1} > max )) && s+="…"
+  CRED_SHOWN=$s
 }
 
 # 通知の理由文を CRED_REASON に組み立てる: $1（「Bash コマンドに」等）+ CRED_LABEL。

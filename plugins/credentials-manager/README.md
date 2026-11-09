@@ -220,20 +220,23 @@ setx FOO_TOKEN ...        / setx /M FOO_SECRET ...
 
 | 種別 | 対象 |
 |-----|------|
-| 環境変数定義 | `.env` / `.env.<name>` / `.envrc`（`.env.example` `.sample` `.template` `.dist` `.test` `.spec` は除外） |
-| 認証情報ストア | `credentials.json` / `credentials.yml` / `secrets.json` / `secret.json` 等 |
-| ツール設定 | `.npmrc` / `.netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` / `~/.config/gh/hosts.yml`（GitHub CLI。Windows では `%AppData%\GitHub CLI\hosts.yml`） |
+| 環境変数定義 | `.env` / `.env.<name>` / `<name>.env`（`prod.env` 等）/ `.envrc`（`.env.example` `.sample` `.template` `.dist` `.test` `.spec` と、`example.env` のような同じ語の `<name>.env`、JavaScript の `process.env` / `import.meta.env` は除外） |
+| 認証情報ストア | `credentials.json` / `credentials.yml` / `credentials.toml` / `credentials.tfrc.json` / `secrets.json` / `secret.json` / `secrets.toml` 等 |
+| ツール設定 | `.npmrc` / `.netrc` / `_netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` / `.pypirc` / `.vault-token` / `~/.config/gh/hosts.yml`（GitHub CLI。Windows では `%AppData%\GitHub CLI\hosts.yml`） |
 | 秘密鍵 | `id_rsa` / `id_dsa` / `id_ecdsa` / `id_ed25519` / `id_xmss` |
-| クラウド認証 | `~/.aws/credentials` / `~/.aws/config` / `~/.docker/config.json` / `~/.kube/config` / `kubeconfig` / `serviceAccountKey.json` / `application_default_credentials.json`（`~/.aws` / `~/.docker` / `~/.kube` のディレクトリそのものと、配下をワイルドカードだけで指すもの（`~/.aws/*` / `**/.kube/**` 等）を含む） |
+| クラウド認証 | `~/.aws/credentials` / `~/.aws/config` / `~/.docker/config.json` / `~/.kube/config` / `kubeconfig` / `serviceAccountKey.json` / `application_default_credentials.json` / `credentials.db` / `access_tokens.db`（gcloud）/ `msal_token_cache.json`（Azure CLI）（`~/.aws` / `~/.docker` / `~/.kube` のディレクトリそのもの、配下をワイルドカードだけで指すもの（`~/.aws/*` / `**/.kube/**` 等）、途中にディレクトリやワイルドカードを挟むもの（`**/.aws/**/credentials` 等）を含む） |
 | ディレクトリ全体 | `~/.ssh` / `~/.gnupg` とその配下 |
 | 拡張子 | `*.pem` / `*.key` / `*.p12` / `*.pfx` / `*.jks` / `*.keystore` / `*.crt` / `*.cer` / `*.der` / `*.asc` / `*.gpg`（拡張子の前に 1 文字以上あるもの） |
+| IaC の状態 | `*.tfstate` / `*.tfstate.backup`（Terraform の state。秘密の値を平文で含む） |
+| プロセスの環境変数 | `/proc/self/environ`（`/proc/<pid>/environ`） |
 
-シェルのコマンドは、空白・区切り・括弧・引用符・`=` で区切ったトークンごとにこの表で判定します（`.env` / `.aws` などの手掛かりの語を含むコマンドだけ）。
+シェルのコマンドは、空白・区切り・括弧・引用符・`=`・`:` で区切ったトークンごとにこの表で判定します（`.env` / `.aws` などの手掛かりの語を含むコマンドだけ。`:` で区切るのは `git show HEAD:.env` や `scp host:.env` のため）。
 `.env*` / `*.pem` のようなワイルドカードも対象です。jq のフィルタ `'.key'` のような語幹の無い語や、`credentials-manager` のような語の一部の一致は対象外です。
-シェルのトークンのうち、`$` か `.` で始まりパスの区切りを含まないもの（`$_.Key` / `$cfg.pem` / jq のパス `.data.key` 等）は、変数のプロパティや jq のパスとみなし、拡張子では判定しません。
-Grep の `glob`・Glob の `pattern` の波括弧（`**/{.env,*.pem}` / `*.{pem,key}`）は展開し、候補ごとに判定します（候補が 64 個を超えるパターンは、判定を打ち切って通知します）。
-Windows ではファイル名の末尾の空白・ピリオドと `::$DATA` が無視されるため、`.env.` / `.env::$DATA` も `.env` として判定します。
-通知文に入れるファイル名は 48 文字までにし、英数字と `. _ - * ? ~ @ +` 以外の文字を `_` に置き換えます（名前に書いた文がそのままモデルに届かないようにするため）。
+シェルのトークンのうち、パスの区切りを含まず `.` で始まるもの（jq のパス `.data.key` 等）と、PowerShell ではさらに `$` で始まるもの（`$_.Key` / `$cfg.pem` 等の変数のプロパティ）は、拡張子では判定しません（Bash の `$name.pem` は変数 + 拡張子のファイル名として判定します）。
+Grep の `glob`・Glob の `pattern` の波括弧（`**/{.env,*.pem}` / `*.{pem,key}`）は展開し、空白・カンマで区切った複数のパターンも 1 つずつ判定します（展開で作る候補が 64 個、区切った候補が 256 個を超えるパターンは、判定を打ち切って通知します）。
+名前で判定できないワイルドカード（`.e[n]v` / `cred*` / `id_*` 等）は、認証情報系ファイルの代表的な名前と逆向きに照合します。`*.json` / `**/*` / `*.toml` のように、どこにでもある名前（`README.md` / `Cargo.toml` 等）にも一致する広いパターンは対象外です。
+Windows ではファイル名の末尾の空白・ピリオドと `::$DATA` が無視されるため、`.env.` / `.env::$DATA` / `.aws.\credentials`（親ディレクトリの名前）も同じファイルとして判定します。
+通知文に入れるファイル名・`mcp__` のツール名は 48 文字（ツール名は 64 文字）までにし、英数字と `. _ - * ? ~ @ +` 以外の文字を `_` に置き換えます（名前に書いた文がそのままモデルに届かないようにするため。`-` でつないだ語は残ります）。
 判定するトークンは 256 個までで、手掛かりの語を含むトークンがそれを超えるコマンドは、判定を打ち切って「認証情報系ファイルらしい名前を多数含むコマンド」として通知します（timeout を超えて無言で欠落しないようにするため）。
 4 KB を超えるパス（シェルのトークン、ファイル系ツールのパス、Grep / Glob の対象）は、中身を判定せずに「認証情報系ファイルかを判定できないパス」として通知します（判定に時間がかかる一方、黙って除外すると長いパスで判定を逃れられるため）。
 
@@ -248,7 +251,7 @@ Basic <base64>  -----BEGIN ... PRIVATE KEY-----
 
 パターンは UserPromptSubmit のフックと共通です（`references/scripts/hooks/lib/credential_patterns.sh`）。
 1〜3 行目の既知のトークン形式は、単語の途中（`task-management-system` 等の語に含まれる部分）には一致しません（左側に英数字・`_`・`-` が無いことを条件にしています）。
-ただし、エスケープした改行・タブ（`\n` / PowerShell の `` `n `` 等）と URL エンコード（`%3D` 等）の直後は、英数字が続いていても境界として扱います。
+ただし、エスケープ（`\n` `\t` `\0` `\x3D` `=` / PowerShell の `` `n `` 等）と URL エンコード（`%3D` / `%u003D`）の直後は、英数字が続いていても境界として扱います。
 PEM は PGP の秘密鍵（先頭行が `PRIVATE KEY BLOCK` で終わるもの）も対象です。
 `Write` / `Edit` 等は `tool_input` の文字列（内容・置換の前後・パス）だけを照合し、`cwd` などのメタデータは照合しません。
 
@@ -261,7 +264,7 @@ PEM は PGP の秘密鍵（先頭行が `PRIVATE KEY BLOCK` で終わるもの�
 | 種別 | 例 |
 |-----|---|
 | 誤検出 | 変数名のキーワードへの部分一致（`GIT_AUTHOR_NAME` の `AUTH`、`API_BASE_URL` の `API`）。PowerShell で、パスの末尾の要素や引用符の中の語が CLI 名と一致するもの（`Set-Location .\terraform` / `Write-Output "HTTP status: 200"`）。引用符の中の `IRM` / `IWR` という語。`Basic` の直後に英数字だけの長い語（16 文字以上）が続くもの（認証スキーム名のような識別子）。シェルで `.env` 等を指すトークンは、操作の種類によらず通知される（`echo ".env" >> .gitignore` 等）。語幹のあるプロパティやソート指定が拡張子と一致するもの（`console.log(c.key)` / `--order=name.asc`） |
-| 検出漏れ | `Bash` でのパス付きの起動（`/usr/bin/curl`）。`-Name` を `-Path Env:` より前に書く `New-Item`。レジストリ（`HKCU:\Environment`）経由の環境変数の設定。コマンド名から `Env:` までが 100 文字を超える `Set-Item` / `New-Item`（`Set-Item -Value '<長い値>' -Path Env:FOO_TOKEN`）。`git` 経由の通信。値の表示（`Write-Output $env:FOO_TOKEN`）。文字列の連結や `-EncodedCommand` 等で難読化したコマンド。シェルで、パスを付けずに書いた `.` で始まる鍵ファイル（`cat .server.key`。jq のパスと区別できない）。シェルの波括弧（`cat {config,secrets}.json`。展開せずに区切りとして扱う）。`~/.aws` の `credentials` / `config` 以外のファイル（`~/.aws/sso/cache/*.json` 等） |
+| 検出漏れ | `Bash` でのパス付きの起動（`/usr/bin/curl`）。`-Name` を `-Path Env:` より前に書く `New-Item`。レジストリ（`HKCU:\Environment`）経由の環境変数の設定。コマンド名から `Env:` までが 100 文字を超える `Set-Item` / `New-Item`（`Set-Item -Value '<長い値>' -Path Env:FOO_TOKEN`）。`git` 経由の通信。値の表示（`Write-Output $env:FOO_TOKEN`）。文字列の連結や `-EncodedCommand` 等で難読化したコマンド。シェルで、パスを付けずに書いた `.` で始まる鍵ファイル（`cat .server.key`。jq のパスと区別できない）。シェルの波括弧（`cat {config,secrets}.json`。展開せずに区切りとして扱う）。Grep / Glob の範囲の波括弧（`id_rs{a..a}`）。`~/.aws` の `credentials` / `config` 以外のファイル（`~/.aws/sso/cache/*.json` 等）。Windows の 8.3 形式の短い名前（`CREDEN~1.JSO`） |
 
 フックはツールの実行を止めません。通知がモデルに届くのは、通知の対象となったツール呼び出しの後です。
 判定には、対象のツールの呼び出しごとに 1 回あたり約 0.2〜0.3 秒かかります（Windows の Git Bash での計測）。

@@ -69,10 +69,14 @@ SH_LEAD='[[:space:];|&(`]'                 # コマンド名の直前に来る�
 PS_LEAD=$'[[:space:];|&(`{="\']'          # PowerShell ではさらに { = と引用符（{irm ...} / $r=irm ... / & 'irm'）
 PS_PATH_LEAD=$'[[:space:];|&(`{="\'\\/]'  # CLI 名ではさらにパス区切り（C:\...\gh.exe / .\gh.exe / C:/Tools/gh.exe）
 
+# 通知文に入れるツール名（mcp__ のツール名はサーバの設定で決まるため、ファイル名と同じく無害化する）
+cred_display_name "$tool_name" 64
+tool_shown=$CRED_SHOWN
+
 # 入力が CRED_INPUT_MAX（4 MB）を超える場合は、中身を照合すると timeout（10 秒）近くかかるため、照合せずに控えめに通知する
 dispatch=$tool_name
 if (( ${#stdin} > CRED_INPUT_MAX )); then
-  set_reason "$tool_name の入力が 4 MB を超え、全体を照合できない"
+  set_reason "$tool_shown の入力が 4 MB を超え、全体を照合できない"
   dispatch=""
 fi
 
@@ -81,7 +85,7 @@ case "$dispatch" in
     set_reason "外部 URL アクセスツール ($tool_name) の呼び出し"
     ;;
   mcp__*)
-    set_reason "MCP サーバ呼び出し ($tool_name)"
+    set_reason "MCP サーバ呼び出し ($tool_shown)"
     ;;
   Bash|PowerShell)
     cmd="$(printf '%s' "$stdin" | jq -er '.tool_input.command // empty' 2>/dev/null)"
@@ -130,7 +134,10 @@ case "$dispatch" in
       fi
       # 認証情報系ファイルの操作（cat .env / Get-Content ~/.aws/credentials / cp .env.example .env 等）。
       # ファイル系ツールと同じ判定を、コマンドのトークンごとに行う（lib/credential_files.sh）
-      if [[ -z "$reason" ]] && cred_scan_command_files "$cmd"; then
+      # PowerShell では $_.Key 等の変数のプロパティを拡張子で判定しない（Bash の $name.pem はファイル名として判定する）
+      scan_mode=shell
+      [[ $tool_name == PowerShell ]] && scan_mode=pwsh
+      if [[ -z "$reason" ]] && cred_scan_command_files "$cmd" "$scan_mode"; then
         CRED_LABEL=$CF_REASON
         cred_reason "$tool_name で"
         set_reason "$CRED_REASON"
