@@ -113,6 +113,10 @@ Claude（要約）:
 Claude（要約）:
 > `credentials-reader` スキルを起動 → 保存済み認証情報 `openai-api-key` (`sk-p****f456`) を `api.openai.com` に自動適用しました。
 
+確認なしで自動適用されるのは、ホストが確定する一致（`domains[]` の完全一致、ホスト部に `*` を含まない `urls[]` の一致）が 1 件のときだけです。
+ホスト部に `*` を含む `urls[]`（`https://*.example.com/...`）や説明文の部分一致では、候補を示して適用してよいか確認します（非対話モードでは適用しません）。
+ホスト部の `*` は 1 つのラベルにだけ一致します（`https://*.example.com/api` は `https://a.example.com/api` に一致し、`https://a.b.example.com/api` や `https://evil.test/x.example.com/api` には一致しません）。
+
 ### 応用例
 
 | 目的 | フレーズ | 起動スキル |
@@ -357,7 +361,7 @@ plugins/credentials-manager/
     │   │   └── security.md                            # セキュリティ注意（参照系）
     │   └── evals/
     │       ├── README.md
-    │       └── case-01〜10                            # 参照系の動作分岐
+    │       └── case-01〜12                            # 参照系の動作分岐（11・12 は確認が必要な弱い一致）
     └── credentials-manager/                           # 書き込み系特化スキル
         ├── SKILL.md
         ├── README.md

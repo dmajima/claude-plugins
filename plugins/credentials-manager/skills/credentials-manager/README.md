@@ -67,7 +67,7 @@ Claude（要約）:
 |-----|------------|
 | 保存先のスコープ | リポジトリ内の場合は project-scoped、外なら user-scoped を自動選択 |
 | `auth_method` の既定 | `header:Authorization:Bearer`。サービス固有の方式が必要なら `header:X-API-Key:` 等を保存時に指定 |
-| URL ワイルドカード | `urls[]` で末尾 `*` および中間 `*` を利用可能（`../credentials-reader/references/auto-match.md` 参照） |
+| URL ワイルドカード | `urls[]` で末尾 `*` および中間 `*` を利用可能。ホスト部の `*` は 1 つのラベルにだけ一致し、その一致では自動適用せず確認を求める。確認なしで自動適用させたいホストは `domains[]` に入れる（`../credentials-reader/references/auto-match.md` 参照） |
 
 ## ファイル構成
 

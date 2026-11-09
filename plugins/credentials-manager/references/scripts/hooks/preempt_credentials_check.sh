@@ -262,7 +262,7 @@ if [[ -z "$reason" ]]; then
   exit 0
 fi
 
-message="[credentials-manager] ${reason}。credentials-reader を最優先起動して保存済み認証情報を照合してください (1件->自動適用 / 複数件->選択 / 0件->保有有無確認)。コマンド・コンテンツに認証情報パターンが含まれる場合はフル値を復唱せずマスク (先頭4+****+末尾4、8文字以下は全マスク****) で扱ってください。書き込み (保存・編集・削除) は credentials-manager に引き継ぎます。詳細: rules/security/credentials-management.md"
+message="[credentials-manager] ${reason}。credentials-reader を最優先起動して保存済み認証情報を照合してください (ホストが確定する一致1件->自動適用 / 複数件・ホストが確定しない一致->確認 / 0件->保有有無確認)。コマンド・コンテンツに認証情報パターンが含まれる場合はフル値を復唱せずマスク (先頭4+****+末尾4、8文字以下は全マスク****) で扱ってください。書き込み (保存・編集・削除) は credentials-manager に引き継ぎます。詳細: rules/security/credentials-management.md"
 
 jq -nc --arg msg "$message" '{
   continue: true,

@@ -10,7 +10,7 @@
 
 | 機能 | 説明 |
 |-----|------|
-| URL/ドメイン自動マッチ | リクエスト URL から保存済み認証情報を検索し、ヒット時は `auth_method` に従って自動適用 |
+| URL/ドメイン自動マッチ | リクエスト URL から保存済み認証情報を検索し、ホストが確定する一致（`domains[]` の完全一致・ホスト部に `*` の無い `urls[]`）なら `auth_method` に従って自動適用。ワイルドカードのホストや説明文の部分一致では、適用してよいか確認する |
 | 取得（retrieve） | 識別名（部分一致）から保存済み値を取り出し、API 呼び出しに利用 |
 | 一覧（list） | 表形式で保存済み認証情報を表示（マスク済み値） |
 | プロアクティブ検出 | 会話中の認証情報パターン（`sk-` `ghp_` `xoxb-` `Bearer` 等）を検出し、保存提案 |
@@ -61,7 +61,9 @@ skills/credentials-reader/
     ├── case-07_proactive_detect.md
     ├── case-08_non_interactive_multi.md
     ├── case-09_localhost_skip.md
-    └── case-10_json_parse_error.md
+    ├── case-10_json_parse_error.md
+    ├── case-11_weak_match_description_confirm.md     # 説明文の部分一致だけ → 確認
+    └── case-12_weak_match_host_wildcard_confirm.md   # ホスト部のワイルドカード → 確認
 ```
 
 ## 関連スキル
