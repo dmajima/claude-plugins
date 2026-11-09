@@ -28,7 +28,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/lib/design_bridge_common.sh" 2>/dev/null || exit 0
 
 stdin="$(cat)"
-[[ -z "${stdin//[[:space:]]/}" ]] && exit 0
+# 空白以外の文字が無ければ終了する。${stdin//[[:space:]]/} で空白を除去する判定は、空白の多い大きな入力
+# （インデント付きのモック等）で入力長の二乗の時間がかかり、timeout を超えて記録が抜けるため使わない
+[[ ! $stdin =~ [^[:space:]] ]] && exit 0
 
 # 入力 JSON から値を取り出す。jq があれば jq、無ければ sed で縮退抽出する。
 if db_has_jq; then

@@ -43,7 +43,8 @@ elif printf '%s' "$stdin" | grep -q '"stop_hook_active"[[:space:]]*:[[:space:]]*
 fi
 
 cwd=""
-if [[ -n "${stdin//[[:space:]]/}" ]]; then
+# 空白以外の文字があるかを正規表現で判定する（空白を除去する判定は大きな入力で入力長の二乗の時間がかかる）
+if [[ $stdin =~ [^[:space:]] ]]; then
   if db_has_jq; then
     cwd="$(printf '%s' "$stdin" | jq -er '.cwd // empty' 2>/dev/null | tr -d '\r')"
   else
