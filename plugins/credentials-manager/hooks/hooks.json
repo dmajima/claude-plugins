@@ -6,7 +6,8 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/install_rule_template.sh\"",
-            "shell": "bash"
+            "shell": "bash",
+            "timeout": 10
           }
         ]
       }
@@ -17,7 +18,8 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/references/scripts/hooks/detect_credentials_in_prompt.sh\"",
-            "shell": "bash"
+            "shell": "bash",
+            "timeout": 10
           }
         ]
       }

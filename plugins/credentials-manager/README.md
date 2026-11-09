@@ -323,7 +323,7 @@ plugins/credentials-manager/
 │   │       ├── preempt_credentials_check.sh           # PreToolUse：reader 起動指示
 │   │       ├── detect_credentials_in_prompt.sh       # UserPromptSubmit：マスキング + reader 起動指示
 │   │       └── tests/
-│   │           └── test_hooks.sh                      # PreToolUse フックと matcher の回帰テスト
+│   │           └── test_hooks.sh                      # 同梱フックと hooks.json の回帰テスト
 │   └── templates/
 │       └── rules/
 │           └── security/
@@ -358,7 +358,7 @@ plugins/credentials-manager/
             ├── case-26_update_with_confirm.md         # update
             ├── case-27_manage_command.md              # /credentials-manager:manage 経由
             ├── case-28_handoff_from_reader.md         # reader 引き継ぎ受け入れ
-            └── case-29〜42                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等）
+            └── case-29〜43                            # 同梱フック動作の評価（PreToolUse の環境変数・PowerShell 等、UserPromptSubmit の PEM）
 ```
 
 ## 技術スタック・アーキテクチャ

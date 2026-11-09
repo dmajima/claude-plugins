@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_hooks.sh
 #
-# credentials-manager の PreToolUse フック（preempt_credentials_check.sh）と、
-# hooks.json の PreToolUse 登録の回帰テスト。実際のフック入力 JSON を流し、
-# 通知の有無・理由文・出力の形式・所要時間を検証する。
+# credentials-manager の同梱フック（PreToolUse の preempt_credentials_check.sh と
+# UserPromptSubmit の detect_credentials_in_prompt.sh）と、hooks.json の登録の回帰テスト。
+# 実際のフック入力 JSON を流し、通知の有無・理由文・出力の形式・所要時間を検証する。
 #
 # 実行: bash references/scripts/hooks/tests/test_hooks.sh [検証するスクリプト]
 #   引数を省略するとプラグイン同梱の preempt_credentials_check.sh を検証する
@@ -25,8 +25,11 @@ export MSYS_NO_PATHCONV=1
 HOOKS="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN_ROOT="$(cd "$HOOKS/../../.." && pwd)"
 TARGET="${1:-$HOOKS/preempt_credentials_check.sh}"
+PROMPT_HOOK="$HOOKS/detect_credentials_in_prompt.sh"
 HOOKS_JSON="$PLUGIN_ROOT/hooks/hooks.json"
 SHELL_BIN="${BASH:-bash}"   # フックはテストと同じ bash で起動する
+JUDGE_SCRIPT=""             # 検証するフック（空なら $TARGET）。UserPromptSubmit の群で切り替える
+JUDGE_EVENT=""              # 出力の hookEventName（空なら PreToolUse）
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "ERROR: jq が見つかりません（フックは jq が無いと何も出力しないため検証できません）"
@@ -66,13 +69,13 @@ now_ms() {
 # フックを起動し、additionalContext を返す（通知なしなら空）。
 # 終了コードが 0 以外なら "EXIT=<n>"、出力が約束どおりの JSON でなければ "INVALID_OUTPUT" を返す
 judge() {  # $1=フック入力 JSON
-  local out rc ctx
-  out="$(printf '%s' "$1" | "$SHELL_BIN" "$TARGET" 2>/dev/null)"
+  local out rc ctx script=${JUDGE_SCRIPT:-$TARGET} event=${JUDGE_EVENT:-PreToolUse}
+  out="$(printf '%s' "$1" | "$SHELL_BIN" "$script" 2>/dev/null)"
   rc=$?
   if [[ $rc -ne 0 ]]; then printf 'EXIT=%s' "$rc"; return; fi
   [[ $out =~ [^[:space:]] ]] || return
-  # continue は必ず true（false だとツール呼び出しが止まる）。通知文は PreToolUse の additionalContext に入れる
-  if ! ctx="$(printf '%s' "$out" | jq -er 'select(.continue == true and .hookSpecificOutput.hookEventName == "PreToolUse") | .hookSpecificOutput.additionalContext' 2>/dev/null)"; then
+  # continue は必ず true（false だとツール呼び出しが止まる）。通知文は該当イベントの additionalContext に入れる
+  if ! ctx="$(printf '%s' "$out" | jq -er --arg e "$event" 'select(.continue == true and .hookSpecificOutput.hookEventName == $e) | .hookSpecificOutput.additionalContext' 2>/dev/null)"; then
     printf 'INVALID_OUTPUT'
     return
   fi
@@ -182,6 +185,35 @@ else
     record FAIL "timeout が未指定（既定の 60 秒になる）"
   fi
 fi
+# SessionStart / UserPromptSubmit の登録（matcher は持たない）
+prompt_timeout_sec=""
+for pair in SessionStart:install_rule_template.sh UserPromptSubmit:detect_credentials_in_prompt.sh; do
+  ev=${pair%%:*}
+  sc=${pair#*:}
+  def="$(jq -c --arg ev "$ev" --arg sc "$sc" '[.hooks[$ev][]?.hooks[]? | select((.command // "") | contains($sc))][0] // empty' < "$HOOKS_JSON" | tr -d '\r')"
+  if [[ -z $def ]]; then
+    record FAIL "$ev に $sc の登録が無い"
+    continue
+  fi
+  c="$(printf '%s' "$def" | jq -r '.command' | tr -d '\r')"
+  if [[ $c =~ \$\{CLAUDE_PLUGIN_ROOT\}/([^\"]+) && -f "$PLUGIN_ROOT/${BASH_REMATCH[1]}" ]]; then
+    record PASS "$ev: command が同梱のスクリプトを指す（${BASH_REMATCH[1]}）"
+  else
+    record FAIL "$ev: command が同梱のスクリプトを指していない: $c"
+  fi
+  if [[ "$(printf '%s' "$def" | jq -r '.shell // empty' | tr -d '\r')" == bash ]]; then
+    record PASS "$ev: shell が \"bash\""
+  else
+    record FAIL "$ev: shell が \"bash\" でない"
+  fi
+  t_sec="$(printf '%s' "$def" | jq -r '.timeout // empty' | tr -d '\r')"
+  if [[ $t_sec =~ ^[0-9]+$ ]]; then
+    record PASS "$ev: timeout が指定されている（${t_sec} 秒）"
+    [[ $ev == UserPromptSubmit ]] && prompt_timeout_sec=$t_sec
+  else
+    record FAIL "$ev: timeout が未指定（既定の 60 秒になる）"
+  fi
+done
 
 echo "=== 2. 陽性対照（これが通知されない場合は以降の結果も疑う） ==="
 want='外部通信'
@@ -370,6 +402,51 @@ tk miss PowerShell "New-Item -Name API_KEY -Path Env: -Value '<dummy>'" 'PowerSh
 tk miss PowerShell "Set-ItemProperty -Path 'HKCU:\\Environment' -Name GITHUB_TOKEN -Value '<dummy>'" 'PowerShell: HKCU:\Environment への設定（レジストリ経由は検出しない）'
 tk miss Bash 'git push origin main' 'Bash: git push（git 経由の通信は検出しない）'
 tk miss PowerShell 'Write-Output $env:GITHUB_TOKEN' 'PowerShell: Write-Output $env:GITHUB_TOKEN（値の表示は検出しない）'
+
+echo "=== 13. UserPromptSubmit: ユーザ入力の秘密情報（case-17・24） ==="
+JUDGE_SCRIPT=$PROMPT_HOOK
+JUDGE_EVENT=UserPromptSubmit
+prompt_json() { jq -cn --arg p "$1" '{prompt: $p}' | tr -d '\r'; }
+fake_basic="Basic $(printf '%s' 'demo-user:not-a-real-password' | base64 | tr -d '\r\n')"
+printf -v fake_pem '%sBEGIN RSA PRIVATE %s' '-----' 'KEY-----'
+want='認証情報パターン'
+run hit - "$(prompt_json "OpenAI のキーは $fake_sk を使ってください")" 'プロンプト: OpenAI のキーは sk-…（ダミー）を使って'
+want='Bearer'
+run hit - "$(prompt_json "Authorization: $fake_bearer で API を呼んで")" 'プロンプト: Authorization: Bearer …（ダミー）'
+want='Basic'
+run hit - "$(prompt_json "Authorization: $fake_basic を付けて")" 'プロンプト: Authorization: Basic …（ダミー）'
+want='PEM'
+run hit - "$(prompt_json "$fake_pem"$'\nMIIE...\n')" 'プロンプト: PEM 形式の秘密鍵の先頭行（ダミー）'
+want=''
+run miss - "$(prompt_json 'README の誤字を直して')" 'プロンプト: README の誤字を直して'
+run miss - "$(prompt_json 'Basic 認証の設定方法を教えて')" 'プロンプト: Basic 認証の設定方法を教えて'
+run miss - '' '空の標準入力'
+run miss - '{not json' '不正な JSON'
+run miss - '{"prompt":""}' 'prompt が空'
+limit_ms=$(( ${prompt_timeout_sec:-60} * 800 ))
+for kind in secret none; do
+  if [[ $kind == secret ]]; then
+    json="$({ printf '%s' "$blank"; printf 'key=%s' "$fake_sk"; } | jq -Rsc '{prompt: .}' | tr -d '\r')"
+    label='プロンプト: 空白の多い 300 KB の入力（末尾に sk-… のダミー）'
+  else
+    json="$(printf '%s' "$blank" | jq -Rsc '{prompt: (. + "x")}' | tr -d '\r')"
+    label='プロンプト: 空白の多い 300 KB の入力（秘密情報なし）'
+  fi
+  start=$(now_ms)
+  ctx="$(judge "$json")"
+  elapsed=$(( $(now_ms) - start ))
+  if [[ $ctx == EXIT=* || $ctx == INVALID_OUTPUT ]]; then
+    record FAIL "$label （フックの出力が異常: $ctx）"
+  elif [[ ($kind == secret && -z $ctx) || ($kind == none && -n $ctx) ]]; then
+    record FAIL "$label （判定が期待と異なる: ${ctx:-通知なし}）"
+  elif [[ $elapsed -ge $limit_ms ]]; then
+    record FAIL "$label （${elapsed} ms / 上限 ${limit_ms} ms）"
+  else
+    record PASS "$label → ${elapsed} ms"
+  fi
+done
+JUDGE_SCRIPT=""
+JUDGE_EVENT=""
 
 echo
 printf '結果: PASS=%s FAIL=%s（既知の制約 %s 件のうち挙動が変わったもの %s 件）\n' "$pass" "$fail" "$known" "$changed"

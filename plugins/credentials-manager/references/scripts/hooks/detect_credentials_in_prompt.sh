@@ -16,7 +16,9 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 stdin="$(cat)"
-if [[ -z "${stdin//[[:space:]]/}" ]]; then
+# 空白以外の文字が無ければ終了する。"${stdin//[[:space:]]/}" で空白を除去する判定は、空白の多い大きな入力
+# （貼り付けたログ等）で入力長の二乗の時間がかかり、hooks.json の timeout を超えて検査が無言で欠落するため使わない
+if [[ ! $stdin =~ [^[:space:]] ]]; then
   exit 0
 fi
 
@@ -33,15 +35,15 @@ basic_pattern='[Bb]asic[[:space:]]+[A-Za-z0-9+/=]{16,}'
 pem_pattern='-----BEGIN[[:space:]]+(RSA[[:space:]]+|DSA[[:space:]]+|EC[[:space:]]+|OPENSSH[[:space:]]+|ENCRYPTED[[:space:]]+|PGP[[:space:]]+)?PRIVATE[[:space:]]+KEY-----'
 
 reason=""
-# secret_pattern は case-sensitive
-if [[ "$prompt" =~ $secret_pattern ]]; then
+# 照合は bash 組み込みの正規表現で行う（grep に渡すと、- で始まる PEM のパターンをオプションと解釈して
+# エラーで終了し、検出されなかった。大きな入力でも grep の起動を待たずに済む）
+if [[ $prompt =~ $secret_pattern ]]; then
   reason="ユーザープロンプトに認証情報パターンを検出"
-# 以降は case-insensitive
-elif printf '%s' "$prompt" | grep -qE "$bearer_pattern" 2>/dev/null; then
+elif [[ $prompt =~ $bearer_pattern ]]; then
   reason="ユーザープロンプトに Bearer トークンを検出"
-elif printf '%s' "$prompt" | grep -qE "$basic_pattern" 2>/dev/null; then
+elif [[ $prompt =~ $basic_pattern ]]; then
   reason="ユーザープロンプトに Basic 認証ヘッダらしい文字列を検出"
-elif printf '%s' "$prompt" | grep -qE "$pem_pattern" 2>/dev/null; then
+elif [[ $prompt =~ $pem_pattern ]]; then
   reason="ユーザープロンプトに PEM 形式の秘密鍵を検出"
 fi
 
