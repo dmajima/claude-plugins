@@ -73,11 +73,11 @@ SessionStart フックによって自動配置されるテンプレートであ�
 
 | 種別 | 対象ファイル |
 |-----|------------|
-| 環境変数定義 | `.env` / `.env.<name>`（`.env.example` `.sample` `.template` `.dist` `.test` は除外） |
+| 環境変数定義 | `.env` / `.env.<name>` / `.envrc`（`.env.example` `.sample` `.template` `.dist` `.test` は除外） |
 | 認証情報ストア | `credentials.json` / `credentials.yml` / `credentials.yaml` / `credential.json` / `secrets.json` / `secrets.yml` / `secrets.yaml` / `secret.json` |
-| ツール設定 | `.npmrc` / `.netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` |
+| ツール設定 | `.npmrc` / `.netrc` / `.pgpass` / `.git-credentials` / `.dockercfg` / `~/.config/gh/hosts.yml`（GitHub CLI） |
 | 秘密鍵 (SSH) | `id_rsa` / `id_dsa` / `id_ecdsa` / `id_ed25519` / `id_xmss` |
-| クラウド認証 | `~/.aws/credentials` / `~/.aws/config` / `~/.docker/config.json` / `~/.kube/config` / `kubeconfig` / `serviceAccountKey.json` / `service-account.json` / `application_default_credentials.json` / `gcloud-credentials.json` |
+| クラウド認証 | `~/.aws/credentials` / `~/.aws/config` / `~/.docker/config.json` / `~/.kube/config` / `kubeconfig` / `serviceAccountKey.json` / `service-account.json` / `application_default_credentials.json` / `gcloud-credentials.json`（`~/.aws/*` のように配下をワイルドカードで指すものを含む） |
 | ディレクトリ全体 | `~/.ssh` / `~/.gnupg` とその配下 |
 | 拡張子 | `*.pem` / `*.key` / `*.p12` / `*.pfx` / `*.jks` / `*.keystore` / `*.crt` / `*.cer` / `*.der` / `*.asc` / `*.gpg` |
 

@@ -6,11 +6,15 @@
 # フックごとに定義すると検出範囲が食い違うため、ここで一元管理する。
 # source して使う（単体では実行しない）。照合は bash の [[ =~ ]]（POSIX ERE）で行う。
 
-# 既知のトークン形式。左側に境界を置き、単語の途中（task-management-system 等の語に含まれる部分）には一致させない
-CRED_SECRET_PATTERN='(^|[^A-Za-z0-9_-])(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,}|ghu_[A-Za-z0-9]{20,}|ghs_[A-Za-z0-9]{20,}|ghr_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|glpat-[A-Za-z0-9_-]{20,}|eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)'
+# 既知のトークン形式。左側に境界を置き、単語の途中（task-management-system 等の語に含まれる部分）には一致させない。
+# 境界は、文字列の先頭・英数字と _ - 以外の文字に加え、エスケープした改行・タブ（\n \r \t、PowerShell の `n `r `t）と
+# URL エンコード（%3D 等）の直後も含める（n や 3D は英数字のため、直前の 1 文字だけで判定すると
+# printf 'a\n<トークン>'・"`n<トークン>"・%3D<トークン> のような書き方で検出されなくなる）
+CRED_SECRET_PATTERN='(^|[^A-Za-z0-9_-]|\\[nrt]|`[nrt]|%[0-9A-Fa-f]{2})(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9]{20,}|gho_[A-Za-z0-9]{20,}|ghu_[A-Za-z0-9]{20,}|ghs_[A-Za-z0-9]{20,}|ghr_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{35}|glpat-[A-Za-z0-9_-]{20,}|eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)'
 CRED_BEARER_PATTERN='[Bb]earer[[:space:]]+[A-Za-z0-9._~+/=-]{16,}'
 CRED_BASIC_PATTERN='[Bb]asic[[:space:]]+[A-Za-z0-9+/=]{16,}'
-CRED_PEM_PATTERN='-----BEGIN[[:space:]]+(RSA[[:space:]]+|DSA[[:space:]]+|EC[[:space:]]+|OPENSSH[[:space:]]+|ENCRYPTED[[:space:]]+|PGP[[:space:]]+)?PRIVATE[[:space:]]+KEY-----'
+# PEM 形式の秘密鍵の先頭行。PGP の秘密鍵は、先頭行の KEY の後に BLOCK が続く
+CRED_PEM_PATTERN='-----BEGIN[[:space:]]+(RSA[[:space:]]+|DSA[[:space:]]+|EC[[:space:]]+|OPENSSH[[:space:]]+|ENCRYPTED[[:space:]]+|PGP[[:space:]]+)?PRIVATE[[:space:]]+KEY([[:space:]]+BLOCK)?-----'
 
 # bash の照合に掛ける文字列の長さの上限（256 KB）。bash の [[ =~ ]] は 1 MB あたり 0.5〜1 秒かかるため、
 # これより長い文字列は grep でまとめて照合する（数 MB の書き込みやプロンプトで照合に timeout（10 秒）近くかかり、

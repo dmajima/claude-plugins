@@ -7,6 +7,7 @@
 | トリガー | PreToolUse hook |
 | stdin (Claude → hook) 例 1 | `{"tool_name":"Grep","tool_input":{"pattern":"API_KEY","path":"/repo/.env"}}` |
 | stdin (Claude → hook) 例 2 | `{"tool_name":"Glob","tool_input":{"pattern":"**/*.pem"}}` |
+| stdin (Claude → hook) 例 3 | `{"tool_name":"Glob","tool_input":{"pattern":"**/{.env,*.pem}"}}` |
 | 既存状態 | 任意 |
 
 ## 期待動作
@@ -18,9 +19,10 @@
 
 ### Phase 2: 検索対象の判定
 
-- Grep は `path` と `glob`、Glob は `path` と `pattern` を、ファイル系ツールと同じ規則（`credential_file_reason`）で判定する
+- Grep は `path` と `glob`、Glob は `path` と `pattern` を、ファイル系ツールと同じ規則で判定する（`credential_pattern_reason`。波括弧を展開した候補ごとに `credential_file_reason` で判定する）
 - 例 1: `path` が `.env` → `REASON` = `Grep で環境変数定義ファイル (.env) を操作`
 - 例 2: `pattern` の末尾が `*.pem`（ワイルドカード付きの拡張子）→ `REASON` = `Glob で秘密鍵 / 証明書らしい拡張子のファイル (*.pem) を操作`
+- 例 3: 波括弧を展開した `**/.env` と `**/*.pem` のうち、先に判定した `**/.env` が該当する → `REASON` = `Glob で環境変数定義ファイル (.env) を操作`
 
 ### Phase 3: Claude へ通知
 
@@ -38,6 +40,8 @@
 Grep は該当したファイルの内容（`.env` の値等）を出力できるため、Read と同じく認証情報系ファイルへの操作として扱う。
 Glob はファイル名の一覧だけを返すが、認証情報系ファイルを探す操作として同じ規則で通知する。
 `**/.env*` / `**/credentials*.json` のようなワイルドカードは、ワイルドカードを除いた名前で判定する。
+波括弧（`*.{pem,key}`）は展開しないと名前の規則に一致しないため、展開してから判定する（候補が 64 個を超えるパターンは判定を打ち切って通知する）。
+`~/.aws/*` / `**/.kube/**` のように特殊ディレクトリの配下をワイルドカードだけで指すものも対象にする。
 Grep の `pattern` は検索する正規表現であり、ファイルを指さないため判定しない。
 
 ## 関連ケース

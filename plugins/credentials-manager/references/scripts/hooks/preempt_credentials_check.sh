@@ -155,10 +155,11 @@ case "$tool_name" in
     ;;
   Grep|Glob)
     # Grep は該当ファイルの内容を出力する。Glob はファイル名の一覧だけだが、認証情報系ファイルを探す操作として扱う。
-    # 判定するのはパス（path）とファイル名のパターン（Grep の glob、Glob の pattern）。Grep の pattern は検索する正規表現なので対象外
+    # 判定するのはパス（path）とファイル名のパターン（Grep の glob、Glob の pattern）。Grep の pattern は検索する正規表現なので対象外。
+    # パターンの波括弧（**/{.env,*.pem}）は展開して判定する
     while IFS= read -r target; do
       [[ -z "$target" ]] && continue
-      credential_file_reason "$target"
+      credential_pattern_reason "$target"
       if [[ -n "$CF_REASON" ]]; then
         CRED_LABEL=$CF_REASON
         cred_reason "$tool_name で"

@@ -6,7 +6,7 @@
 |-----|---|
 | トリガー | PreToolUse hook |
 | stdin (Claude → hook) 例 1 | `{"tool_name":"Glob","tool_input":{"pattern":"plugins/credentials-manager/**/*.md"}}` |
-| stdin (Claude → hook) 例 2 | `{"tool_name":"Grep","tool_input":{"pattern":"sk-[A-Za-z0-9]+","path":"/repo/src"}}` |
+| stdin (Claude → hook) 例 2 | `{"tool_name":"Grep","tool_input":{"pattern":"\\.env","path":"/repo/src"}}` |
 | 既存状態 | 任意 |
 
 ## 期待動作
@@ -18,7 +18,7 @@
 ### Phase 2: 検索対象の判定
 
 - 例 1: `pattern` の末尾は `*.md` で、パスの途中の `credentials-manager` は認証情報系ファイルの規則に該当しない（語の一部の一致では判定しない）
-- 例 2: `path` の `/repo/src` は該当しない。`pattern`（検索する正規表現）は判定の対象外
+- 例 2: `path` の `/repo/src` は該当しない。`pattern`（検索する正規表現）は、`.env` を探すものでも判定の対象外
 - `REASON` が空のまま `exit 0`
 
 ## 期待出力
